@@ -11,6 +11,7 @@ const Dashboard = () => {
     addUrl,
     addNote,
     addPdf,
+    searchWeb,
     removeSource,
   } = useSources();
 
@@ -23,16 +24,16 @@ const Dashboard = () => {
 
   return (
     <DashboardLayout>
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex min-h-0">
         <SourcePanel
           sources={sources}
           loading={sourcesLoading}
           onAddUrl={addUrl}
           onAddNote={addNote}
           onAddPdf={addPdf}
+          onSearchWeb={searchWeb}
           onRemove={removeSource}
         />
-        <div className="w-px bg-border/20" />
         <ChatPanel
           sources={sources}
           messages={messages}
