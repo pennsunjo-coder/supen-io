@@ -8,6 +8,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic";
+import { sanitizeInput } from "@/lib/security";
 
 const PlatformX = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
@@ -51,17 +53,44 @@ const Studio = () => {
   const [generatedContent, setGeneratedContent] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleGenerate = () => {
-    if (!selectedFormat || !topic.trim()) return;
+  const handleGenerate = async () => {
+    if (!selectedFormat || !selectedPlatform) return;
+
+    const sanitizedTopic = sanitizeInput(topic, 2000);
+    if (!sanitizedTopic) return;
+
     setIsGenerating(true);
     setGeneratedContent("");
-    setTimeout(() => {
-      setGeneratedContent(
-        `Voici ton contenu pour ${selectedPlatform?.name} (${selectedFormat}) :\n\n"${topic.trim()}" — c'est un sujet qui mérite qu'on en parle.\n\nLa plupart des gens pensent que c'est compliqué. En réalité, c'est plus simple qu'on croit.\n\nVoici ce que j'ai appris après des mois de recherche :\n\n→ La clé, c'est la constance\n→ Le contenu authentique gagne toujours\n→ L'audience grandit quand tu apportes de la valeur\n\nQu'est-ce que t'en penses ? Dis-moi en commentaire 👇`
-      );
+    setError(null);
+
+    try {
+      const response = await anthropic.messages.create({
+        model: CLAUDE_MODEL,
+        max_tokens: 2048,
+        system: `Tu es un expert en création de contenu pour les réseaux sociaux. Tu génères du contenu prêt à publier, engageant et optimisé pour chaque plateforme. Réponds uniquement avec le contenu généré, sans explication ni commentaire autour.`,
+        messages: [
+          {
+            role: "user",
+            content: `Génère un contenu de type "${selectedFormat}" pour la plateforme "${selectedPlatform.name}" sur le sujet suivant :\n\n${sanitizedTopic}`,
+          },
+        ],
+      });
+
+      const text = response.content
+        .filter((block) => block.type === "text")
+        .map((block) => block.text)
+        .join("");
+
+      setGeneratedContent(text);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Erreur inconnue";
+      setError(`Erreur de génération : ${message}`);
+    } finally {
       setIsGenerating(false);
-    }, 1500);
+    }
   };
 
   const handleCopy = () => {
@@ -197,6 +226,7 @@ const Studio = () => {
                     value={topic}
                     onChange={(e) => setTopic(e.target.value)}
                     placeholder="Ex: Les 3 erreurs que font les créateurs de contenu débutants..."
+                    maxLength={2000}
                     className="bg-accent/30 border-border/30 min-h-[100px] resize-none focus:ring-primary/30 text-sm"
                   />
                 </div>
@@ -219,6 +249,13 @@ const Studio = () => {
                     </>
                   )}
                 </Button>
+
+                {/* Error */}
+                {error && (
+                  <div className="mt-4 px-3 py-2 rounded-lg bg-destructive/10 border border-destructive/20 text-xs text-destructive">
+                    {error}
+                  </div>
+                )}
 
                 {/* Output */}
                 {generatedContent && (

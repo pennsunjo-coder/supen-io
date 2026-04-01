@@ -1,9 +1,14 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Send, Sparkles, Bot, User, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { anthropic, CLAUDE_MODEL, SYSTEM_PROMPT } from "@/lib/anthropic";
+import { sanitizeInput, createRateLimiter } from "@/lib/security";
 import type { MessageParam } from "@anthropic-ai/sdk/resources/messages";
+
+const MAX_MESSAGE_LENGTH = 4000;
+const RATE_LIMIT_MAX = 10;
+const RATE_LIMIT_WINDOW_MS = 60_000;
 
 interface Message {
   id: string;
@@ -25,6 +30,10 @@ const ChatPanel = () => {
   const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const rateLimiter = useMemo(
+    () => createRateLimiter(RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MS),
+    []
+  );
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -34,8 +43,20 @@ const ChatPanel = () => {
 
   const sendMessage = useCallback(
     async (text?: string) => {
-      const content = text || input.trim();
-      if (!content || isLoading) return;
+      const raw = text || input.trim();
+      if (!raw || isLoading) return;
+
+      const content = sanitizeInput(raw, MAX_MESSAGE_LENGTH);
+      if (!content) return;
+
+      // Rate limiting : 10 messages par minute
+      if (!rateLimiter.canProceed()) {
+        const wait = Math.ceil(rateLimiter.getRemainingTime() / 1000);
+        setError(
+          `Limite atteinte : ${RATE_LIMIT_MAX} messages par minute. Réessaie dans ${wait}s.`
+        );
+        return;
+      }
 
       setError(null);
       const userMsg: Message = {
@@ -100,7 +121,7 @@ const ChatPanel = () => {
         abortRef.current = null;
       }
     },
-    [input, isLoading, messages]
+    [input, isLoading, messages, rateLimiter]
   );
 
   // Cleanup on unmount
@@ -219,6 +240,7 @@ const ChatPanel = () => {
                 e.key === "Enter" && !e.shiftKey && sendMessage()
               }
               placeholder="Pose une question sur tes sources..."
+              maxLength={MAX_MESSAGE_LENGTH}
               disabled={isLoading}
               className="w-full bg-accent/30 border border-border/30 rounded-xl px-4 py-3 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/30 transition-all disabled:opacity-50"
             />
