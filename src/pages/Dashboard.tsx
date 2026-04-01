@@ -1,28 +1,45 @@
-import { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import SourcePanel from "@/components/SourcePanel";
 import ChatPanel from "@/components/ChatPanel";
+import { useSources } from "@/hooks/use-sources";
+import { useConversation } from "@/hooks/use-conversation";
 
 const Dashboard = () => {
-  const [sources, setSources] = useState<Array<{ id: string; type: string; title: string }>>([
-    { id: "1", type: "note", title: "Product launch ideas" },
-    { id: "2", type: "url", title: "competitor-analysis.com" },
-  ]);
+  const {
+    sources,
+    loading: sourcesLoading,
+    addUrl,
+    addNote,
+    addPdf,
+    removeSource,
+  } = useSources();
+
+  const {
+    messages,
+    setMessages,
+    loading: conversationLoading,
+    clearConversation,
+  } = useConversation();
 
   return (
     <DashboardLayout>
       <div className="flex-1 flex overflow-hidden">
         <SourcePanel
           sources={sources}
-          onAddSource={() => {
-            setSources((prev) => [
-              ...prev,
-              { id: String(Date.now()), type: "note", title: "New note" },
-            ]);
-          }}
+          loading={sourcesLoading}
+          onAddUrl={addUrl}
+          onAddNote={addNote}
+          onAddPdf={addPdf}
+          onRemove={removeSource}
         />
         <div className="w-px bg-border/20" />
-        <ChatPanel />
+        <ChatPanel
+          sources={sources}
+          messages={messages}
+          onMessagesChange={setMessages}
+          conversationLoading={conversationLoading}
+          onClearConversation={clearConversation}
+        />
       </div>
     </DashboardLayout>
   );
