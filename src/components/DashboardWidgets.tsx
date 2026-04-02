@@ -1,15 +1,16 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import {
-  Flame, TrendingUp, Zap, Copy, Check, ImagePlus, RefreshCw,
-  ChevronDown,
+  Copy, Check, ImagePlus, RefreshCw, ChevronDown,
+  LayoutGrid, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic";
-import type { WeeklyStats, DashboardContent } from "@/hooks/use-dashboard";
+import type { DashboardContent } from "@/hooks/use-dashboard";
 
-/* ─── Icônes plateformes mini ─── */
+/* ─── Icônes plateformes ─── */
 
 const platformIcons: Record<string, React.FC<{ className?: string }>> = {
   "Instagram": ({ className }) => <svg viewBox="0 0 24 24" className={className} fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0z"/></svg>,
@@ -20,53 +21,7 @@ const platformIcons: Record<string, React.FC<{ className?: string }>> = {
   "X (Twitter)": ({ className }) => <svg viewBox="0 0 24 24" className={className} fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>,
 };
 
-/* ─── Widget Ma Semaine ─── */
-
-export function WeeklyWidget({ stats }: { stats: WeeklyStats }) {
-  return (
-    <div className="px-5 pt-4 pb-3 border-b border-border/10">
-      <div className="flex items-center gap-3">
-        {/* Contenus */}
-        <div className="flex-1 flex items-center gap-2.5 px-3 py-2 rounded-lg bg-accent/20 border border-border/15">
-          <Zap className="w-3.5 h-3.5 text-primary" />
-          <div>
-            <p className="text-lg font-bold leading-none">{stats.contentCount}</p>
-            <p className="text-[9px] text-muted-foreground">cette semaine</p>
-          </div>
-        </div>
-
-        {/* Streak */}
-        <div className="flex-1 flex items-center gap-2.5 px-3 py-2 rounded-lg bg-accent/20 border border-border/15">
-          <Flame className={cn("w-3.5 h-3.5", stats.streak >= 3 ? "text-orange-400 animate-pulse" : "text-muted-foreground")} />
-          <div>
-            <p className="text-lg font-bold leading-none">{stats.streak}j</p>
-            <p className="text-[9px] text-muted-foreground">streak</p>
-          </div>
-        </div>
-
-        {/* Score */}
-        <div className="flex-1 flex items-center gap-2.5 px-3 py-2 rounded-lg bg-accent/20 border border-border/15">
-          <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-          <div>
-            <p className="text-lg font-bold leading-none">{stats.creatorScore}</p>
-            <p className="text-[9px] text-muted-foreground">score</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Plateformes utilisées */}
-      {stats.platforms.length > 0 && (
-        <div className="flex items-center gap-1.5 mt-2">
-          <span className="text-[9px] text-muted-foreground/50">Plateformes :</span>
-          {stats.platforms.map((p) => {
-            const Icon = platformIcons[p];
-            return Icon ? <Icon key={p} className="w-3 h-3 text-muted-foreground/60" /> : null;
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
+type PanelMode = null | "image" | "infographic";
 
 /* ─── Top Content Card ─── */
 
@@ -79,12 +34,16 @@ function TopContentCard({
 }) {
   const [expanded, setExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [generatingImage, setGeneratingImage] = useState(false);
+  const [panel, setPanel] = useState<PanelMode>(null);
+  const [generating, setGenerating] = useState(false);
+  const [imagePrompt, setImagePrompt] = useState(item.image_prompt || "");
+  const [infographic, setInfographic] = useState("");
   const [promptCopied, setPromptCopied] = useState(false);
+  const [infraCopied, setInfraCopied] = useState(false);
 
   const Icon = platformIcons[item.platform];
   const score = item.viral_score || 0;
-  const preview = item.content.split(/\s+/).slice(0, 20).join(" ");
+  const preview = item.content.split(/\s+/).slice(0, 15).join(" ");
 
   function handleCopy() {
     navigator.clipboard.writeText(item.content);
@@ -92,39 +51,76 @@ function TopContentCard({
     setTimeout(() => setCopied(false), 2000);
   }
 
-  function handleCopyPrompt() {
-    navigator.clipboard.writeText(item.image_prompt);
-    setPromptCopied(true);
-    setTimeout(() => setPromptCopied(false), 2000);
+  function copyText(text: string, setter: (v: boolean) => void) {
+    navigator.clipboard.writeText(text);
+    setter(true);
+    setTimeout(() => setter(false), 2000);
   }
 
-  async function handleGenerateImagePrompt() {
-    setGeneratingImage(true);
+  async function handleGenerateImage() {
+    setPanel("image");
+    if (imagePrompt) return; // déjà généré
+    setGenerating(true);
     try {
       const response = await anthropic.messages.create({
         model: CLAUDE_MODEL,
         max_tokens: 300,
-        system: "Tu es un expert en prompts pour la génération d'images IA. Crée un prompt optimisé en anglais pour Midjourney/DALL-E. Format : [Style photographique]. [Sujet principal]. [Ambiance/couleurs]. [Composition]. Optimisé pour [plateforme]. Réponds UNIQUEMENT avec le prompt, rien d'autre. Max 80 mots.",
-        messages: [{ role: "user", content: `Crée un prompt d'image pour ce contenu ${item.platform} :\n\n${item.content.slice(0, 500)}` }],
+        system: `Tu es expert en prompts pour générateurs d'images. Génère un prompt en anglais, optimisé pour ${item.platform}, qui illustre visuellement ce contenu. Format : style photographique + sujet + ambiance + couleurs + composition. Max 100 mots. Réponds UNIQUEMENT avec le prompt.`,
+        messages: [{ role: "user", content: item.content.slice(0, 600) }],
       });
-      const prompt = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
-      onUpdateImagePrompt(item.id, prompt);
-    } catch {
-      // Silencieux
-    } finally {
-      setGeneratingImage(false);
-    }
+      const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
+      setImagePrompt(text);
+      onUpdateImagePrompt(item.id, text);
+    } catch { /* silencieux */ }
+    setGenerating(false);
+  }
+
+  async function handleGenerateInfographic() {
+    setPanel("infographic");
+    if (infographic) return;
+    setGenerating(true);
+    try {
+      const response = await anthropic.messages.create({
+        model: CLAUDE_MODEL,
+        max_tokens: 400,
+        system: `Tu es expert en design d'infographies virales. Crée une structure d'infographie pour ce contenu ${item.platform}. Format exact :
+TITRE: [titre accrocheur, max 8 mots]
+POINT 1: [texte court]
+POINT 2: [texte court]
+POINT 3: [texte court]
+POINT 4: [texte court, optionnel]
+POINT 5: [texte court, optionnel]
+CTA: [appel à l'action]
+En français. Réponds UNIQUEMENT avec la structure.`,
+        messages: [{ role: "user", content: item.content.slice(0, 600) }],
+      });
+      const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
+      setInfographic(text);
+    } catch { /* silencieux */ }
+    setGenerating(false);
+  }
+
+  async function handleRegenerateImage() {
+    setImagePrompt("");
+    setGenerating(true);
+    try {
+      const response = await anthropic.messages.create({
+        model: CLAUDE_MODEL,
+        max_tokens: 300,
+        system: `Tu es expert en prompts pour générateurs d'images. Génère un prompt en anglais, optimisé pour ${item.platform}, qui illustre visuellement ce contenu. Format : style photographique + sujet + ambiance + couleurs + composition. Max 100 mots. Réponds UNIQUEMENT avec le prompt.`,
+        messages: [{ role: "user", content: item.content.slice(0, 600) }],
+      });
+      const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
+      setImagePrompt(text);
+      onUpdateImagePrompt(item.id, text);
+    } catch { /* silencieux */ }
+    setGenerating(false);
   }
 
   return (
-    <div
-      onClick={() => setExpanded(!expanded)}
-      className={cn(
-        "rounded-lg border p-3 cursor-pointer transition-all",
-        expanded ? "border-border/40 bg-card" : "border-border/15 hover:border-border/30",
-      )}
-    >
-      <div className="flex items-center gap-2">
+    <div className={cn("rounded-lg border transition-all", expanded ? "border-border/40 bg-card" : "border-border/15 hover:border-border/30")}>
+      {/* Header */}
+      <div onClick={() => { setExpanded(!expanded); if (expanded) setPanel(null); }} className="flex items-center gap-2 p-3 cursor-pointer">
         {Icon && (
           <div className="w-6 h-6 rounded-md bg-accent/40 flex items-center justify-center shrink-0">
             <Icon className="w-3 h-3" />
@@ -134,55 +130,103 @@ function TopContentCard({
           <p className="text-[11px] text-muted-foreground/70 truncate">{preview}...</p>
         </div>
         <div className="flex items-center gap-1 shrink-0">
-          {score > 0 && (
-            <span className="text-[10px] text-emerald-400/80 font-medium">{score}%</span>
-          )}
+          {score > 0 && <span className="text-[10px] text-emerald-400/80 font-medium">{score}%</span>}
           <ChevronDown className={cn("w-3 h-3 text-muted-foreground/40 transition-transform", expanded && "rotate-180")} />
         </div>
       </div>
 
+      {/* Expanded */}
       <AnimatePresence>
         {expanded && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <div className="mt-2 pt-2 border-t border-border/15">
-              <p className="text-xs leading-relaxed whitespace-pre-wrap text-foreground/85 mb-2">{item.content}</p>
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.2 }}>
+            <div className="px-3 pb-3 pt-0">
+              <div className="pt-2 border-t border-border/15">
+                <p className="text-xs leading-relaxed whitespace-pre-wrap text-foreground/85 mb-3">{item.content}</p>
 
-              {/* Image prompt */}
-              {item.image_prompt && (
-                <div className="mb-2 p-2 rounded-md bg-accent/20 border border-border/15">
-                  <p className="text-[10px] text-muted-foreground/60 mb-1">Prompt image :</p>
-                  <p className="text-[11px] text-foreground/70 italic">{item.image_prompt}</p>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleCopyPrompt(); }}
-                    className="mt-1 text-[10px] text-primary/70 hover:text-primary flex items-center gap-1"
-                  >
-                    {promptCopied ? <Check className="w-2.5 h-2.5" /> : <Copy className="w-2.5 h-2.5" />}
-                    {promptCopied ? "Copié" : "Copier le prompt"}
-                  </button>
+                {/* 3 boutons */}
+                <div className="flex items-center gap-1.5">
+                  <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-1.5 px-2.5 text-muted-foreground" onClick={(e) => { e.stopPropagation(); handleCopy(); }}>
+                    {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                    {copied ? "Copié" : "Copier"}
+                  </Button>
+                  <Button variant="ghost" size="sm" className={cn("h-7 text-[10px] gap-1.5 px-2.5", panel === "image" ? "text-primary" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); handleGenerateImage(); }}>
+                    <ImagePlus className="w-3 h-3" /> Image
+                  </Button>
+                  <Button variant="ghost" size="sm" className={cn("h-7 text-[10px] gap-1.5 px-2.5", panel === "infographic" ? "text-primary" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); handleGenerateInfographic(); }}>
+                    <LayoutGrid className="w-3 h-3" /> Infographie
+                  </Button>
                 </div>
-              )}
-
-              <div className="flex items-center gap-1.5">
-                <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 px-2 text-muted-foreground" onClick={(e) => { e.stopPropagation(); handleCopy(); }}>
-                  {copied ? <Check className="w-2.5 h-2.5 text-emerald-400" /> : <Copy className="w-2.5 h-2.5" />}
-                  {copied ? "Copié" : "Copier"}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 text-[10px] gap-1 px-2 text-muted-foreground"
-                  disabled={generatingImage}
-                  onClick={(e) => { e.stopPropagation(); handleGenerateImagePrompt(); }}
-                >
-                  {generatingImage ? <RefreshCw className="w-2.5 h-2.5 animate-spin" /> : <ImagePlus className="w-2.5 h-2.5" />}
-                  {item.image_prompt ? "Regénérer image" : "Générer image"}
-                </Button>
               </div>
+
+              {/* Panel Image */}
+              <AnimatePresence>
+                {panel === "image" && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.15 }}>
+                    <div className="mt-2 p-3 rounded-lg bg-accent/20 border border-border/15 relative">
+                      <button onClick={(e) => { e.stopPropagation(); setPanel(null); }} className="absolute top-2 right-2 text-muted-foreground/40 hover:text-foreground">
+                        <X className="w-3 h-3" />
+                      </button>
+                      <p className="text-[10px] font-medium text-muted-foreground/70 mb-2">Prompt image</p>
+                      {generating ? (
+                        <div className="flex items-center gap-2 py-3">
+                          <RefreshCw className="w-3 h-3 animate-spin text-muted-foreground" />
+                          <span className="text-[10px] text-muted-foreground">Génération...</span>
+                        </div>
+                      ) : (
+                        <>
+                          <Textarea
+                            value={imagePrompt}
+                            onChange={(e) => setImagePrompt(e.target.value)}
+                            className="bg-background/50 border-border/20 text-[11px] min-h-[60px] resize-none mb-2"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <div className="flex items-center gap-1.5">
+                            <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 px-2 text-muted-foreground" onClick={(e) => { e.stopPropagation(); copyText(imagePrompt, setPromptCopied); }}>
+                              {promptCopied ? <Check className="w-2.5 h-2.5 text-emerald-400" /> : <Copy className="w-2.5 h-2.5" />}
+                              {promptCopied ? "Copié" : "Copier le prompt"}
+                            </Button>
+                            <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 px-2 text-muted-foreground" onClick={(e) => { e.stopPropagation(); handleRegenerateImage(); }}>
+                              <RefreshCw className="w-2.5 h-2.5" /> Regén��rer
+                            </Button>
+                          </div>
+                          <p className="text-[9px] text-muted-foreground/40 mt-1.5">Colle ce prompt dans Midjourney, DALL-E ou Nano Banana</p>
+                        </>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Panel Infographie */}
+              <AnimatePresence>
+                {panel === "infographic" && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.15 }}>
+                    <div className="mt-2 p-3 rounded-lg bg-accent/20 border border-border/15 relative">
+                      <button onClick={(e) => { e.stopPropagation(); setPanel(null); }} className="absolute top-2 right-2 text-muted-foreground/40 hover:text-foreground">
+                        <X className="w-3 h-3" />
+                      </button>
+                      <p className="text-[10px] font-medium text-muted-foreground/70 mb-2">Structure d'infographie</p>
+                      {generating ? (
+                        <div className="flex items-center gap-2 py-3">
+                          <RefreshCw className="w-3 h-3 animate-spin text-muted-foreground" />
+                          <span className="text-[10px] text-muted-foreground">Génération...</span>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="text-[11px] leading-relaxed whitespace-pre-wrap text-foreground/80 mb-2">{infographic}</div>
+                          <div className="flex items-center gap-1.5">
+                            <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 px-2 text-muted-foreground" onClick={(e) => { e.stopPropagation(); copyText(infographic, setInfraCopied); }}>
+                              {infraCopied ? <Check className="w-2.5 h-2.5 text-emerald-400" /> : <Copy className="w-2.5 h-2.5" />}
+                              {infraCopied ? "Copié" : "Copier la structure"}
+                            </Button>
+                          </div>
+                          <p className="text-[9px] text-muted-foreground/40 mt-1.5">Utilise cette structure dans Canva ou Nano Banana</p>
+                        </>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </motion.div>
         )}
@@ -191,7 +235,7 @@ function TopContentCard({
   );
 }
 
-/* ─── Top Content Section ─── */
+/* ─── Top Content Widget ─── */
 
 export function TopContentWidget({
   items,
@@ -204,7 +248,7 @@ export function TopContentWidget({
 
   return (
     <div className="px-5 py-3 border-b border-border/10">
-      <p className="text-[10px] font-medium text-muted-foreground/60 mb-2">Meilleurs contenus</p>
+      <p className="text-[10px] font-medium text-muted-foreground/60 mb-2">Tes derniers contenus</p>
       <div className="space-y-1.5">
         {items.map((item) => (
           <TopContentCard key={item.id} item={item} onUpdateImagePrompt={onUpdateImagePrompt} />
