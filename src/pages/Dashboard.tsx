@@ -54,6 +54,7 @@ const Dashboard = () => {
         <div className="flex-1 flex flex-col min-w-0 border-r border-border/20">
           <StudioWizard
             activeSourceIds={Array.from(activeSourceIds)}
+            sources={sources}
             onContentGenerated={setLastGeneratedContent}
           />
         </div>

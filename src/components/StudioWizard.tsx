@@ -13,6 +13,8 @@ import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic";
 import { sanitizeInput } from "@/lib/security";
 import { searchViralReferences, ViralReference, searchUserSources } from "@/lib/embeddings";
 import { supabase } from "@/lib/supabase";
+import type { Source } from "@/types/database";
+import { StickyNote, Globe as GlobeIcon } from "lucide-react";
 
 /* ─── Icônes plateformes ─── */
 
@@ -111,18 +113,26 @@ function parseVariations(raw: string): ParsedVariation[] {
 
 /* ─── Composant ─── */
 
+const sourceTypeIcons: Record<string, React.FC<{ className?: string }>> = {
+  pdf: FileText,
+  url: GlobeIcon,
+  note: StickyNote,
+};
+
 interface StudioWizardProps {
   activeSourceIds?: string[];
+  sources?: Source[];
   onContentGenerated?: (content: string) => void;
 }
 
-const StudioWizard = ({ activeSourceIds = [], onContentGenerated }: StudioWizardProps) => {
+const StudioWizard = ({ activeSourceIds = [], sources = [], onContentGenerated }: StudioWizardProps) => {
   const [started, setStarted] = useState(false);
   const [step, setStep] = useState(0);
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(null);
   const [selectedFormat, setSelectedFormat] = useState<string | null>(null);
   const [sourceMode, setSourceMode] = useState<SourceMode>("keyword");
   const [sourceText, setSourceText] = useState("");
+  const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
 
   const [variations, setVariations] = useState<ParsedVariation[]>([]);
   const [selectedVariation, setSelectedVariation] = useState<number | null>(null);
@@ -138,9 +148,16 @@ const StudioWizard = ({ activeSourceIds = [], onContentGenerated }: StudioWizard
     setSelectedFormat(null);
     setSourceMode("keyword");
     setSourceText("");
+    setSelectedDocumentIds([]);
     setVariations([]);
     setSelectedVariation(null);
     setError(null);
+  }
+
+  function toggleDocumentId(id: string) {
+    setSelectedDocumentIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
   }
 
   function goBack() {
@@ -154,8 +171,13 @@ const StudioWizard = ({ activeSourceIds = [], onContentGenerated }: StudioWizard
   /* ── Génération ── */
 
   async function handleGenerate() {
-    if (!selectedPlatform || !selectedFormat || !sourceText.trim()) return;
-    const sanitized = sanitizeInput(sourceText, 5000);
+    const isDocMode = sourceMode === "document" && selectedDocumentIds.length > 0;
+    if (!selectedPlatform || !selectedFormat) return;
+    if (!isDocMode && !sourceText.trim()) return;
+
+    const sanitized = isDocMode
+      ? sources.filter((s) => selectedDocumentIds.includes(s.id)).map((s) => s.title).join(", ")
+      : sanitizeInput(sourceText, 5000);
     if (!sanitized) return;
 
     setIsGenerating(true);
@@ -166,15 +188,28 @@ const StudioWizard = ({ activeSourceIds = [], onContentGenerated }: StudioWizard
     try {
       // === SECTION 2 : Contexte utilisateur (RAG sources) ===
       let userSection = "";
+      const ragIds = isDocMode
+        ? [...new Set([...selectedDocumentIds, ...activeSourceIds])]
+        : activeSourceIds;
+
       try {
-        if (activeSourceIds.length > 0) {
-          const userRefs = await searchUserSources(sanitized, activeSourceIds, 5);
+        if (ragIds.length > 0) {
+          const userRefs = await searchUserSources(sanitized, ragIds, 8);
           if (userRefs.length > 0) {
-            userSection = "\n\n## CONTEXTE UTILISATEUR (sources actives)\n" +
+            userSection = "\n\n## CONTEXTE UTILISATEUR (sources sélectionnées)\n" +
               userRefs.map((r) => `### [${r.type.toUpperCase()}] ${r.title}\n${r.content}`).join("\n\n");
           }
         }
       } catch { /* Sources indisponibles */ }
+
+      // Si mode document et pas de résultats RAG, injecter directement le contenu des sources sélectionnées
+      if (isDocMode && !userSection) {
+        const selected = sources.filter((s) => selectedDocumentIds.includes(s.id));
+        if (selected.length > 0) {
+          userSection = "\n\n## CONTEXTE UTILISATEUR (sources sélectionnées)\n" +
+            selected.map((s) => `### [${s.type.toUpperCase()}] ${s.title}\n${s.content.slice(0, 3000)}`).join("\n\n");
+        }
+      }
 
       // === SECTION 3 : Modèles viraux (RAG viral) ===
       let viralSection = "";
@@ -186,8 +221,18 @@ const StudioWizard = ({ activeSourceIds = [], onContentGenerated }: StudioWizard
         }
       } catch { /* RAG indisponible */ }
 
-      const modeLabel = sourceMode === "document" ? "Voici un document source à transformer"
+      const modeLabel = isDocMode
+        ? "Voici des documents sources à transformer en contenu"
         : sourceMode === "idea" ? "Voici une idée à développer" : "Voici un sujet / mot-clé";
+
+      const userMessage = isDocMode
+        ? `${modeLabel}. Les sources sélectionnées sont : ${sanitized}. Génère du contenu basé UNIQUEMENT sur ces sources.`
+        : `${modeLabel} :\n\n${sanitized}`;
+
+      // === Instruction spéciale mode document ===
+      const docInstruction = isDocMode
+        ? `\n11. Tu dois baser le contenu UNIQUEMENT sur les sources fournies en SECTION 2. Cite des faits, chiffres et idées qui viennent directement de ces sources. Ne génère PAS d'informations qui ne sont pas dans les sources.`
+        : "";
 
       // === PROMPT STRUCTURÉ ===
       const systemPrompt = `## SECTION 1 — IDENTITÉ
@@ -212,13 +257,13 @@ Règles strictes :
 7. Pas de markdown (pas de gras, pas d'italique, pas de titres) sauf si le format le demande.
 8. Adapte le ton et la longueur à ${selectedPlatform.name} + ${selectedFormat}.
 9. Réponds UNIQUEMENT avec les 5 variations séparées par ---VARIATION---. Rien d'autre.
-10. Réponds toujours en français.`;
+10. Réponds toujours en français.${docInstruction}`;
 
       const response = await anthropic.messages.create({
         model: CLAUDE_MODEL,
         max_tokens: 4096,
         system: systemPrompt,
-        messages: [{ role: "user", content: `${modeLabel} :\n\n${sanitized}` }],
+        messages: [{ role: "user", content: userMessage }],
       });
 
       const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
@@ -234,12 +279,13 @@ Règles strictes :
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
+          const allSourceIds = [...new Set([...activeSourceIds, ...selectedDocumentIds])];
           const inserts = parsed.map((v) => ({
             user_id: user.id,
             platform: selectedPlatform.name,
             format: selectedFormat,
             content: v.content,
-            source_ids: activeSourceIds,
+            source_ids: allSourceIds,
           }));
           await supabase.from("generated_content").insert(inserts);
         }
@@ -364,17 +410,96 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                       <p className="text-xs text-muted-foreground mb-3">Ta matière source</p>
                       <div className="flex gap-1 mb-4 p-0.5 rounded-lg bg-accent/20 border border-border/20">
                         {sourceModes.map((m) => (
-                          <button key={m.id} onClick={() => { setSourceMode(m.id); setSourceText(""); }} className={cn("flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-[11px] font-medium transition-all", sourceMode === m.id ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
+                          <button key={m.id} onClick={() => { setSourceMode(m.id); setSourceText(""); setSelectedDocumentIds([]); }} className={cn("flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-[11px] font-medium transition-all", sourceMode === m.id ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
                             <m.icon className="w-3 h-3" />{m.label}
                           </button>
                         ))}
                       </div>
-                      {sourceMode === "keyword" ? (
-                        <Input value={sourceText} onChange={(e) => setSourceText(e.target.value)} placeholder={sourceModes.find((m) => m.id === sourceMode)?.placeholder} maxLength={200} className="bg-accent/20 border-border/30 h-11 text-sm" onKeyDown={(e) => e.key === "Enter" && sourceText.trim() && handleGenerate()} />
-                      ) : (
+
+                      {/* MODE DOCUMENT — sélection de sources */}
+                      {sourceMode === "document" && (
+                        <div>
+                          {sources.length === 0 ? (
+                            <div className="rounded-xl border border-dashed border-border/30 p-6 text-center">
+                              <FileText className="w-5 h-5 text-muted-foreground/40 mx-auto mb-2" />
+                              <p className="text-xs font-medium text-muted-foreground mb-1">Aucun document disponible</p>
+                              <p className="text-[11px] text-muted-foreground/60">Ajoute des sources (PDF, URL, Notes) dans ton Notebook pour les utiliser ici.</p>
+                            </div>
+                          ) : (
+                            <>
+                              <p className="text-[11px] text-muted-foreground/70 mb-2">
+                                Sélectionne les documents à utiliser comme base ({selectedDocumentIds.length} sélectionné{selectedDocumentIds.length > 1 ? "s" : ""})
+                              </p>
+                              <div className="space-y-1.5 max-h-[240px] overflow-y-auto">
+                                {sources.map((s) => {
+                                  const isChecked = selectedDocumentIds.includes(s.id);
+                                  const TypeIcon = sourceTypeIcons[s.type] || StickyNote;
+                                  const words = s.content ? s.content.split(/\s+/).length : 0;
+                                  return (
+                                    <button
+                                      key={s.id}
+                                      type="button"
+                                      onClick={() => toggleDocumentId(s.id)}
+                                      className={cn(
+                                        "w-full flex items-center gap-2.5 p-2.5 rounded-lg border text-left transition-all",
+                                        isChecked
+                                          ? "border-primary/40 bg-primary/5"
+                                          : "border-border/20 hover:border-border/40 hover:bg-accent/20",
+                                      )}
+                                    >
+                                      {/* Checkbox */}
+                                      <div className={cn(
+                                        "w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors",
+                                        isChecked ? "bg-primary border-primary" : "border-border/40",
+                                      )}>
+                                        {isChecked && <Check className="w-2.5 h-2.5 text-primary-foreground" />}
+                                      </div>
+                                      {/* Icon */}
+                                      <div className={cn(
+                                        "w-6 h-6 rounded-md flex items-center justify-center shrink-0",
+                                        isChecked ? "bg-primary/15 text-primary" : "bg-accent/50 text-muted-foreground",
+                                      )}>
+                                        <TypeIcon className="w-3 h-3" />
+                                      </div>
+                                      {/* Info */}
+                                      <div className="flex-1 min-w-0">
+                                        <p className={cn("text-xs truncate", isChecked ? "text-foreground font-medium" : "text-muted-foreground")}>{s.title}</p>
+                                        <p className="text-[10px] text-muted-foreground/50">
+                                          {s.type === "url" ? "Lien" : s.type === "pdf" ? "PDF" : "Note"}
+                                          {words > 0 && ` · ${words} mots`}
+                                        </p>
+                                      </div>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                              {selectedDocumentIds.length > 0 && (
+                                <p className="text-[10px] text-primary/70 mt-2">
+                                  L'IA va générer du contenu basé sur ces {selectedDocumentIds.length} document{selectedDocumentIds.length > 1 ? "s" : ""}
+                                </p>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      )}
+
+                      {/* MODE IDÉE — textarea */}
+                      {sourceMode === "idea" && (
                         <Textarea value={sourceText} onChange={(e) => setSourceText(e.target.value)} placeholder={sourceModes.find((m) => m.id === sourceMode)?.placeholder} maxLength={5000} className="bg-accent/20 border-border/30 min-h-[120px] resize-none text-sm" />
                       )}
-                      <Button onClick={handleGenerate} disabled={!sourceText.trim() || isGenerating} className="w-full h-11 mt-4 glow-sm gap-2 font-semibold text-sm">
+
+                      {/* MODE MOT-CLÉ — input */}
+                      {sourceMode === "keyword" && (
+                        <Input value={sourceText} onChange={(e) => setSourceText(e.target.value)} placeholder={sourceModes.find((m) => m.id === sourceMode)?.placeholder} maxLength={200} className="bg-accent/20 border-border/30 h-11 text-sm" onKeyDown={(e) => e.key === "Enter" && sourceText.trim() && handleGenerate()} />
+                      )}
+
+                      <Button
+                        onClick={handleGenerate}
+                        disabled={
+                          (sourceMode === "document" ? selectedDocumentIds.length === 0 : !sourceText.trim()) || isGenerating
+                        }
+                        className="w-full h-11 mt-4 glow-sm gap-2 font-semibold text-sm"
+                      >
                         {isGenerating ? (<><RefreshCw className="w-4 h-4 animate-spin" /> Génération en cours...</>) : (<><Sparkles className="w-4 h-4" /> Générer 5 variations</>)}
                       </Button>
                     </motion.div>
