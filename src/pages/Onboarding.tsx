@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -83,8 +83,6 @@ const stepAnim = {
   exit: { opacity: 0, x: -40 },
 };
 
-/* ─── Confetti ─── */
-
 function ConfettiPiece({ index }: { index: number }) {
   const color = CONFETTI_COLORS[index % CONFETTI_COLORS.length];
   const left = 10 + (index * 17) % 80;
@@ -92,7 +90,6 @@ function ConfettiPiece({ index }: { index: number }) {
   const duration = 1.8 + (index % 3) * 0.4;
   const size = 4 + (index % 3) * 2;
   const rotation = index * 45;
-
   return (
     <motion.div
       initial={{ y: -20, opacity: 1, rotate: 0 }}
@@ -120,10 +117,12 @@ const Onboarding = () => {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [showButton, setShowButton] = useState(false);
 
-  if (onboardingCompleted && step !== 4) {
-    navigate("/dashboard", { replace: true });
-    return null;
-  }
+  // Redirect si onboarding déjà fait (dans un useEffect, pas pendant le render)
+  useEffect(() => {
+    if (onboardingCompleted && step !== 4) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [onboardingCompleted, step, navigate]);
 
   function togglePlatform(id: string) {
     setSelectedPlatforms((prev) =>
@@ -131,10 +130,13 @@ const Onboarding = () => {
     );
   }
 
+  // UN SEUL upsert à la fin — pas d'appel Supabase pendant les étapes intermédiaires
   async function handleComplete() {
     setSaving(true);
     setSaveError(null);
+
     const finalNiche = niche === "Autre" ? customNiche || "Autre" : niche;
+
     const result = await updateProfile({
       first_name: firstName.trim(),
       platforms: selectedPlatforms,
@@ -142,11 +144,14 @@ const Onboarding = () => {
       niche: finalNiche,
       onboarding_completed: true,
     });
+
     setSaving(false);
+
     if (!result.success) {
       setSaveError(result.error || "Erreur lors de la sauvegarde. Réessaie.");
       return;
     }
+
     setStep(4);
     setTimeout(() => setShowButton(true), 2000);
   }
@@ -155,12 +160,10 @@ const Onboarding = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Progress bar */}
       <div className="h-1 bg-accent/20">
         <motion.div className="h-full bg-primary rounded-r-full" initial={false} animate={{ width: `${progress}%` }} transition={{ duration: 0.4 }} />
       </div>
 
-      {/* Logo */}
       <div className="flex items-center gap-2 px-6 pt-5">
         <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
           <Zap className="w-3.5 h-3.5 text-primary" />
@@ -168,7 +171,6 @@ const Onboarding = () => {
         <span className="text-sm font-bold">Supen.io</span>
       </div>
 
-      {/* Content */}
       <div className="flex-1 flex items-center justify-center px-6">
         <div className="w-full max-w-md">
           <AnimatePresence mode="wait">
@@ -192,7 +194,7 @@ const Onboarding = () => {
               </motion.div>
             )}
 
-            {/* ÉTAPE 2 — Plateformes (icônes SVG) */}
+            {/* ÉTAPE 2 — Plateformes */}
             {step === 1 && (
               <motion.div key="s1" {...stepAnim} transition={{ duration: 0.25 }}>
                 <h1 className="text-2xl font-bold text-foreground mb-2">Sur quelles plateformes crées-tu du contenu ?</h1>
@@ -250,7 +252,7 @@ const Onboarding = () => {
               </motion.div>
             )}
 
-            {/* ÉTAPE 4 — Niche (icônes Lucide) */}
+            {/* ÉTAPE 4 — Niche */}
             {step === 3 && (
               <motion.div key="s3" {...stepAnim} transition={{ duration: 0.25 }}>
                 <h1 className="text-2xl font-bold text-foreground mb-2">Dans quel domaine évolues-tu ?</h1>
@@ -305,7 +307,7 @@ const Onboarding = () => {
               </motion.div>
             )}
 
-            {/* ÉTAPE FINALE — Bienvenue + Confetti */}
+            {/* ÉTAPE FINALE — Bienvenue */}
             {step === 4 && (
               <motion.div key="welcome" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, ease: "easeOut" }} className="text-center relative">
                 <div className="absolute inset-0 overflow-hidden pointer-events-none -top-20" style={{ height: 500 }}>
