@@ -15,6 +15,10 @@ import { searchViralReferences, ViralReference, searchUserSources } from "@/lib/
 import { supabase } from "@/lib/supabase";
 import type { Source } from "@/types/database";
 import type { UserProfile } from "@/hooks/use-profile";
+import type { DashboardContent } from "@/hooks/use-dashboard";
+import type { ActivityData } from "@/hooks/use-activity";
+import { TopContentWidget } from "@/components/DashboardWidgets";
+import { ActivityWidget } from "@/components/ActivityWidget";
 import { StickyNote, Globe as GlobeIcon } from "lucide-react";
 
 /* ─── Icônes plateformes ─── */
@@ -124,11 +128,14 @@ interface StudioWizardProps {
   activeSourceIds?: string[];
   sources?: Source[];
   profile?: UserProfile | null;
+  topContent?: DashboardContent[];
+  onUpdateImagePrompt?: (id: string, prompt: string) => void;
+  activityData?: ActivityData & { DAYS_FR: string[]; refetch: () => void };
   onContentGenerated?: (content: string) => void;
   onGenerationComplete?: () => void;
 }
 
-const StudioWizard = ({ activeSourceIds = [], sources = [], profile, onContentGenerated, onGenerationComplete }: StudioWizardProps) => {
+const StudioWizard = ({ activeSourceIds = [], sources = [], profile, topContent = [], onUpdateImagePrompt, activityData, onContentGenerated, onGenerationComplete }: StudioWizardProps) => {
   const [started, setStarted] = useState(false);
   const [step, setStep] = useState(0);
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(null);
@@ -356,29 +363,43 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
 
         {/* ═══════ ACCUEIL ═══════ */}
         {!started && variations.length === 0 && (
-          <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }} className="flex-1 flex flex-col items-center justify-center px-8">
-            <div className="max-w-sm w-full text-center">
-              <div className="w-12 h-12 rounded-2xl bg-primary/8 flex items-center justify-center mx-auto mb-5">
-                <Sparkles className="w-5 h-5 text-primary/80" />
-              </div>
-              <h2 className="text-lg font-semibold text-foreground mb-1.5">{greeting}</h2>
-              <p className="text-sm text-muted-foreground leading-relaxed mb-8">{subtitle}</p>
-              <Button onClick={() => setStarted(true)} className="h-12 px-8 text-sm font-semibold glow-sm gap-2.5">
+          <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }} className="flex-1 flex flex-col overflow-y-auto">
+
+            {/* 1. BIENVENUE + CTA */}
+            <div className="px-6 pt-6 pb-5 text-center">
+              <h2 className="text-lg font-semibold text-foreground mb-1">{greeting}</h2>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-5">{subtitle}</p>
+              <Button onClick={() => setStarted(true)} className="h-11 px-7 text-sm font-semibold glow-sm gap-2">
                 <Sparkles className="w-4 h-4" /> Créer du contenu
               </Button>
-              <div className="flex items-center justify-center gap-6 mt-10">
-                <div className="flex items-center gap-1.5 text-muted-foreground/50">
-                  <Layers className="w-3.5 h-3.5" /><span className="text-[11px]">5 variations</span>
+              <div className="flex items-center justify-center gap-5 mt-4">
+                <div className="flex items-center gap-1.5 text-muted-foreground/40">
+                  <Layers className="w-3 h-3" /><span className="text-[10px]">5 variations</span>
                 </div>
-                <div className="flex items-center gap-1.5 text-muted-foreground/50">
-                  <Shield className="w-3.5 h-3.5" /><span className="text-[11px]">Anti-IA activé</span>
+                <div className="flex items-center gap-1.5 text-muted-foreground/40">
+                  <Shield className="w-3 h-3" /><span className="text-[10px]">Anti-IA</span>
                 </div>
-                <div className={cn("flex items-center gap-1.5", activeSourceIds.length > 0 ? "text-primary/70" : "text-muted-foreground/50")}>
-                  <Globe className="w-3.5 h-3.5" />
-                  <span className="text-[11px]">{activeSourceIds.length > 0 ? `${activeSourceIds.length} source${activeSourceIds.length > 1 ? "s" : ""} active${activeSourceIds.length > 1 ? "s" : ""}` : "6 plateformes"}</span>
+                <div className={cn("flex items-center gap-1.5", activeSourceIds.length > 0 ? "text-primary/60" : "text-muted-foreground/40")}>
+                  <Globe className="w-3 h-3" />
+                  <span className="text-[10px]">{activeSourceIds.length > 0 ? `${activeSourceIds.length} source${activeSourceIds.length > 1 ? "s" : ""}` : "6 plateformes"}</span>
                 </div>
               </div>
             </div>
+
+            {/* 2. DERNIERS CONTENUS (si > 0) */}
+            {topContent.length > 0 && onUpdateImagePrompt && (
+              <TopContentWidget items={topContent} onUpdateImagePrompt={onUpdateImagePrompt} />
+            )}
+
+            {/* 3. STATS D'ACTIVITÉ (si > 0) */}
+            {activityData && activityData.total > 0 && (
+              <>
+                <div className="px-5 pt-3 pb-1">
+                  <p className="text-[10px] font-medium text-muted-foreground/50">Ton activité</p>
+                </div>
+                <ActivityWidget data={activityData} daysLabels={activityData.DAYS_FR} />
+              </>
+            )}
           </motion.div>
         )}
 

@@ -3,8 +3,6 @@ import DashboardLayout from "@/components/DashboardLayout";
 import SourcePanel from "@/components/SourcePanel";
 import ChatPanel from "@/components/ChatPanel";
 import StudioWizard from "@/components/StudioWizard";
-import { TopContentWidget } from "@/components/DashboardWidgets";
-import { ActivityWidget } from "@/components/ActivityWidget";
 import { useSources } from "@/hooks/use-sources";
 import { useConversation } from "@/hooks/use-conversation";
 import { useProfile } from "@/hooks/use-profile";
@@ -30,7 +28,7 @@ const Dashboard = () => {
     clearConversation,
   } = useConversation();
 
-  const { topContent, refetch: refetchDashboard, updateImagePrompt } = useDashboard();
+  const dashboard = useDashboard();
   const activity = useActivity();
 
   const [activeSourceIds, setActiveSourceIds] = useState<Set<string>>(new Set());
@@ -46,9 +44,9 @@ const Dashboard = () => {
   }, []);
 
   const handleGenerationComplete = useCallback(() => {
-    refetchDashboard();
+    dashboard.refetch();
     activity.refetch();
-  }, [refetchDashboard, activity]);
+  }, [dashboard, activity]);
 
   return (
     <DashboardLayout>
@@ -66,19 +64,13 @@ const Dashboard = () => {
         />
 
         <div className="flex-1 flex flex-col min-w-0 border-r border-border/20">
-          {/* Widget activité */}
-          <ActivityWidget data={activity} daysLabels={activity.DAYS_FR} />
-
-          {/* Top contenus */}
-          {topContent.length > 0 && (
-            <TopContentWidget items={topContent} onUpdateImagePrompt={updateImagePrompt} />
-          )}
-
-          {/* Studio Wizard */}
           <StudioWizard
             activeSourceIds={Array.from(activeSourceIds)}
             sources={sources}
             profile={profile}
+            topContent={dashboard.topContent}
+            onUpdateImagePrompt={dashboard.updateImagePrompt}
+            activityData={activity}
             onContentGenerated={setLastGeneratedContent}
             onGenerationComplete={handleGenerationComplete}
           />
