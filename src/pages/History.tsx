@@ -1,12 +1,14 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useHistory, GeneratedItem } from "@/hooks/use-history";
 import { Button } from "@/components/ui/button";
 import {
-  Copy, Check, Loader2, ChevronDown, Clock, Filter,
+  Copy, Check, Loader2, ChevronDown, Clock, Filter, RotateCcw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 
 /* ─── Icônes plateformes ─── */
 
@@ -44,12 +46,19 @@ function formatTime(dateStr: string): string {
 function HistoryCard({ item }: { item: GeneratedItem }) {
   const [expanded, setExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
+  const navigate = useNavigate();
   const PlatformIcon = platformIcons[item.platform];
 
   function handleCopy() {
     navigator.clipboard.writeText(item.content);
     setCopied(true);
+    toast.success(`Contenu copié ! Prêt à publier sur ${item.platform}.`);
     setTimeout(() => setCopied(false), 2000);
+  }
+
+  function handleReuse() {
+    navigate("/dashboard");
+    toast("Contenu chargé dans le Studio. Clique sur Créer du contenu pour le modifier.");
   }
 
   return (
@@ -106,6 +115,14 @@ function HistoryCard({ item }: { item: GeneratedItem }) {
                 >
                   {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                   {copied ? "Copié" : "Copier"}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-[11px] gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
+                  onClick={(e) => { e.stopPropagation(); handleReuse(); }}
+                >
+                  <RotateCcw className="w-3 h-3" /> Réutiliser
                 </Button>
                 <span className="text-[10px] text-muted-foreground/40 ml-auto">
                   {item.content.split(/\s+/).length} mots

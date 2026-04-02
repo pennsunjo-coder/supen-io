@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic";
 import { sanitizeInput } from "@/lib/security";
+import { toast } from "sonner";
 import { searchViralReferences, ViralReference, searchUserSources } from "@/lib/embeddings";
 import { supabase } from "@/lib/supabase";
 import type { Source } from "@/types/database";
@@ -326,6 +327,7 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
       });
       const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
       setVariations((prev) => prev.map((v, i) => i === idx ? { ...v, content: text, words: wordCount(text) } : v));
+      toast.success("Version humanisée. Indétectable par les détecteurs d'IA.");
     } catch (err: unknown) {
       setError(`Erreur d'humanisation : ${err instanceof Error ? err.message : "Erreur inconnue"}`);
     } finally {
@@ -333,10 +335,56 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
     }
   }
 
+  const [imagePanel, setImagePanel] = useState<number | null>(null);
+  const [imagePrompt, setImagePrompt] = useState("");
+  const [infraPanel, setInfraPanel] = useState<number | null>(null);
+  const [infraContent, setInfraContent] = useState("");
+  const [genImage, setGenImage] = useState(false);
+  const [genInfra, setGenInfra] = useState(false);
+  const [promptCopied, setPromptCopied] = useState(false);
+  const [infraCopied, setInfraCopied] = useState(false);
+
   function handleCopy(idx: number) {
     navigator.clipboard.writeText(variations[idx].content);
     setCopiedIdx(idx);
+    toast.success(`Contenu copié ! Prêt à publier sur ${selectedPlatform?.name || "ta plateforme"}.`);
     setTimeout(() => setCopiedIdx(null), 2000);
+  }
+
+  async function handleImagePrompt(idx: number) {
+    if (imagePanel === idx && imagePrompt) { setImagePanel(null); return; }
+    setImagePanel(idx);
+    setInfraPanel(null);
+    setImagePrompt("");
+    setGenImage(true);
+    try {
+      const response = await anthropic.messages.create({
+        model: CLAUDE_MODEL,
+        max_tokens: 300,
+        system: `Tu es expert en prompts pour générateurs d'images. Génère un prompt en anglais, optimisé pour ${selectedPlatform?.name || "les réseaux sociaux"}, qui illustre visuellement ce contenu. Format : style photographique + sujet + ambiance + couleurs + composition. Max 100 mots. Réponds UNIQUEMENT avec le prompt.`,
+        messages: [{ role: "user", content: variations[idx].content.slice(0, 600) }],
+      });
+      setImagePrompt(response.content.filter((b) => b.type === "text").map((b) => b.text).join(""));
+    } catch { /* silencieux */ }
+    setGenImage(false);
+  }
+
+  async function handleInfraPrompt(idx: number) {
+    if (infraPanel === idx && infraContent) { setInfraPanel(null); return; }
+    setInfraPanel(idx);
+    setImagePanel(null);
+    setInfraContent("");
+    setGenInfra(true);
+    try {
+      const response = await anthropic.messages.create({
+        model: CLAUDE_MODEL,
+        max_tokens: 400,
+        system: `Tu es expert en design d'infographies virales. Crée une structure d'infographie pour ce contenu ${selectedPlatform?.name || ""}. Format : TITRE: [max 8 mots]\nPOINT 1: [texte court]\nPOINT 2: [texte court]\nPOINT 3: [texte court]\nCTA: [appel à l'action]\nEn français. Réponds UNIQUEMENT avec la structure.`,
+        messages: [{ role: "user", content: variations[idx].content.slice(0, 600) }],
+      });
+      setInfraContent(response.content.filter((b) => b.type === "text").map((b) => b.text).join(""));
+    } catch { /* silencieux */ }
+    setGenInfra(false);
   }
 
   const breadcrumb = [selectedPlatform?.name, selectedFormat].filter(Boolean).join(" / ");
@@ -558,6 +606,7 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
         {/* ═══════ RÉSULTATS ═══════ */}
         {variations.length > 0 && (
           <motion.div key="results" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="flex-1 flex flex-col overflow-hidden">
+            {/* Header */}
             <div className="px-5 pt-4 pb-3 shrink-0 border-b border-border/10">
               <div className="flex items-center gap-2">
                 <button onClick={goBack} className="w-7 h-7 rounded-lg border border-border/30 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-colors">
@@ -567,63 +616,117 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                   <span className="text-xs font-semibold">{variations.length} variations</span>
                   <span className="text-[11px] text-muted-foreground ml-2">{breadcrumb}</span>
                 </div>
+                <span className="text-[9px] text-emerald-400/60 flex items-center gap-1"><Check className="w-2.5 h-2.5" /> Auto-sauvegardé</span>
               </div>
             </div>
+
+            {/* Cards */}
             <div className="flex-1 overflow-y-auto px-5 py-4">
               <div className="max-w-lg mx-auto space-y-3">
                 {variations.map((v, idx) => {
                   const isSelected = selectedVariation === idx;
                   const angleColor = ANGLE_COLORS[v.angle] || "bg-accent/40 text-muted-foreground";
                   return (
-                    <motion.div
-                      key={idx}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.05 }}
-                      onClick={() => setSelectedVariation(isSelected ? null : idx)}
-                      className={cn("rounded-xl border p-4 cursor-pointer transition-all", isSelected ? "border-primary/40 bg-primary/[0.03] ring-1 ring-primary/15" : "border-border/20 hover:border-border/40")}
-                    >
-                      {/* Header */}
-                      <div className="flex items-center gap-2 mb-2.5">
-                        <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded-full", angleColor)}>
-                          {v.angle}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground/50 ml-auto">
-                          {v.words} mots
-                        </span>
-                        <div className="flex items-center gap-1">
-                          <div className="w-10 h-1.5 rounded-full bg-accent/30 overflow-hidden">
-                            <div className="h-full rounded-full bg-emerald-500/60" style={{ width: `${v.score}%` }} />
+                    <div key={idx}>
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: idx * 0.05 }}
+                        onClick={() => { setSelectedVariation(isSelected ? null : idx); setImagePanel(null); setInfraPanel(null); }}
+                        className={cn("rounded-xl border p-4 cursor-pointer transition-all", isSelected ? "border-primary/40 bg-primary/[0.03] ring-1 ring-primary/15" : "border-border/20 hover:border-border/40")}
+                      >
+                        <div className="flex items-center gap-2 mb-2.5">
+                          <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded-full", angleColor)}>{v.angle}</span>
+                          <span className="text-[10px] text-muted-foreground/50 ml-auto">{v.words} mots</span>
+                          <div className="flex items-center gap-1">
+                            <div className="w-10 h-1.5 rounded-full bg-accent/30 overflow-hidden">
+                              <div className="h-full rounded-full bg-emerald-500/60" style={{ width: `${v.score}%` }} />
+                            </div>
+                            <span className="text-[10px] text-emerald-400/80 font-medium">{v.score}%</span>
                           </div>
-                          <span className="text-[10px] text-emerald-400/80 font-medium">{v.score}%</span>
                         </div>
-                      </div>
+                        <p className="text-[13px] leading-relaxed whitespace-pre-wrap text-foreground/85">{v.content}</p>
 
-                      <p className="text-[13px] leading-relaxed whitespace-pre-wrap text-foreground/85">{v.content}</p>
+                        {isSelected && (
+                          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-wrap items-center gap-1.5 mt-3 pt-3 border-t border-border/15">
+                            <Button variant="ghost" size="sm" className="h-7 text-[11px] gap-1.5 px-2.5 text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); handleCopy(idx); }}>
+                              {copiedIdx === idx ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                              {copiedIdx === idx ? "Copié" : "Copier"}
+                            </Button>
+                            <Button variant="ghost" size="sm" className="h-7 text-[11px] gap-1.5 px-2.5 text-muted-foreground hover:text-foreground" disabled={isHumanizing} onClick={(e) => { e.stopPropagation(); handleHumanize(idx); }}>
+                              {isHumanizing ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
+                              Humaniser
+                            </Button>
+                            <Button variant="ghost" size="sm" className={cn("h-7 text-[11px] gap-1.5 px-2.5", imagePanel === idx ? "text-primary" : "text-muted-foreground hover:text-foreground")} onClick={(e) => { e.stopPropagation(); handleImagePrompt(idx); }}>
+                              <ImagePlus className="w-3 h-3" /> Image
+                            </Button>
+                            <Button variant="ghost" size="sm" className={cn("h-7 text-[11px] gap-1.5 px-2.5", infraPanel === idx ? "text-primary" : "text-muted-foreground hover:text-foreground")} onClick={(e) => { e.stopPropagation(); handleInfraPrompt(idx); }}>
+                              <Layers className="w-3 h-3" /> Infographie
+                            </Button>
+                          </motion.div>
+                        )}
+                      </motion.div>
 
-                      {isSelected && (
-                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="flex items-center gap-1.5 mt-3 pt-3 border-t border-border/15">
-                          <Button variant="ghost" size="sm" className="h-7 text-[11px] gap-1.5 px-2.5 text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); handleCopy(idx); }}>
-                            {copiedIdx === idx ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                            {copiedIdx === idx ? "Copié" : "Copier"}
-                          </Button>
-                          <Button variant="ghost" size="sm" className="h-7 text-[11px] gap-1.5 px-2.5 text-muted-foreground hover:text-foreground" disabled={isHumanizing} onClick={(e) => { e.stopPropagation(); handleHumanize(idx); }}>
-                            {isHumanizing ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
-                            Humaniser
-                          </Button>
-                          <Button variant="ghost" size="sm" className="h-7 text-[11px] gap-1.5 px-2.5 text-muted-foreground hover:text-foreground" onClick={(e) => e.stopPropagation()}>
-                            <ImagePlus className="w-3 h-3" /> Image
-                          </Button>
-                        </motion.div>
-                      )}
-                    </motion.div>
+                      {/* Panel image inline */}
+                      <AnimatePresence>
+                        {imagePanel === idx && isSelected && (
+                          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.15 }}>
+                            <div className="mt-1 p-3 rounded-lg bg-accent/20 border border-border/15">
+                              <p className="text-[10px] font-medium text-muted-foreground/70 mb-2">Prompt image</p>
+                              {genImage ? (
+                                <div className="flex items-center gap-2 py-2"><RefreshCw className="w-3 h-3 animate-spin text-muted-foreground" /><span className="text-[10px] text-muted-foreground">Génération...</span></div>
+                              ) : (
+                                <>
+                                  <textarea value={imagePrompt} onChange={(e) => setImagePrompt(e.target.value)} className="w-full bg-background/50 border border-border/20 rounded-md px-2.5 py-2 text-[11px] min-h-[50px] resize-none focus:outline-none focus:ring-1 focus:ring-primary/30 mb-2" />
+                                  <div className="flex items-center gap-1.5">
+                                    <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 px-2 text-muted-foreground" onClick={() => { navigator.clipboard.writeText(imagePrompt); setPromptCopied(true); toast.success("Prompt copié. Colle-le dans Midjourney, DALL-E ou Nano Banana."); setTimeout(() => setPromptCopied(false), 2000); }}>
+                                      {promptCopied ? <Check className="w-2.5 h-2.5 text-emerald-400" /> : <Copy className="w-2.5 h-2.5" />}
+                                      {promptCopied ? "Copié" : "Copier le prompt"}
+                                    </Button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+
+                      {/* Panel infographie inline */}
+                      <AnimatePresence>
+                        {infraPanel === idx && isSelected && (
+                          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.15 }}>
+                            <div className="mt-1 p-3 rounded-lg bg-accent/20 border border-border/15">
+                              <p className="text-[10px] font-medium text-muted-foreground/70 mb-2">Structure d'infographie</p>
+                              {genInfra ? (
+                                <div className="flex items-center gap-2 py-2"><RefreshCw className="w-3 h-3 animate-spin text-muted-foreground" /><span className="text-[10px] text-muted-foreground">Génération...</span></div>
+                              ) : (
+                                <>
+                                  <div className="text-[11px] leading-relaxed whitespace-pre-wrap text-foreground/80 mb-2">{infraContent}</div>
+                                  <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 px-2 text-muted-foreground" onClick={() => { navigator.clipboard.writeText(infraContent); setInfraCopied(true); toast.success("Structure copiée. Utilise-la dans Canva ou Nano Banana."); setTimeout(() => setInfraCopied(false), 2000); }}>
+                                    {infraCopied ? <Check className="w-2.5 h-2.5 text-emerald-400" /> : <Copy className="w-2.5 h-2.5" />}
+                                    {infraCopied ? "Copié" : "Copier la structure"}
+                                  </Button>
+                                </>
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   );
                 })}
-                <div className="flex items-center justify-between pt-2">
+
+                {/* Actions en bas */}
+                <div className="flex items-center justify-between pt-3 border-t border-border/10">
                   <button onClick={reset} className="text-[11px] text-muted-foreground/60 hover:text-foreground transition-colors">Recommencer</button>
-                  <Button variant="ghost" size="sm" onClick={handleGenerate} disabled={isGenerating} className="h-7 text-[11px] gap-1.5 text-muted-foreground">
-                    <RefreshCw className={cn("w-3 h-3", isGenerating && "animate-spin")} /> Regénérer
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="sm" onClick={handleGenerate} disabled={isGenerating} className="h-7 text-[11px] gap-1.5 text-muted-foreground">
+                      <RefreshCw className={cn("w-3 h-3", isGenerating && "animate-spin")} /> Regénérer
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={reset} className="h-7 text-[11px] gap-1.5 border-primary/30 text-primary">
+                      <Sparkles className="w-3 h-3" /> Nouveau contenu
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
