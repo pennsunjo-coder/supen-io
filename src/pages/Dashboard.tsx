@@ -24,8 +24,8 @@ const Dashboard = () => {
     clearConversation,
   } = useConversation();
 
-  // Sources actives (toggles)
   const [activeSourceIds, setActiveSourceIds] = useState<Set<string>>(new Set());
+  const [lastGeneratedContent, setLastGeneratedContent] = useState<string>("");
 
   const handleToggleSource = useCallback((id: string) => {
     setActiveSourceIds((prev) => {
@@ -39,7 +39,6 @@ const Dashboard = () => {
   return (
     <DashboardLayout>
       <div className="flex-1 flex min-h-0">
-        {/* Colonne gauche — Sources (250px) */}
         <SourcePanel
           sources={sources}
           loading={sourcesLoading}
@@ -52,12 +51,13 @@ const Dashboard = () => {
           onRemove={removeSource}
         />
 
-        {/* Colonne centrale — Content Studio (flex-1) */}
         <div className="flex-1 flex flex-col min-w-0 border-r border-border/20">
-          <StudioWizard activeSourceIds={Array.from(activeSourceIds)} />
+          <StudioWizard
+            activeSourceIds={Array.from(activeSourceIds)}
+            onContentGenerated={setLastGeneratedContent}
+          />
         </div>
 
-        {/* Colonne droite — Coach IA (300px) */}
         <div className="w-[300px] shrink-0">
           <ChatPanel
             sources={sources}
@@ -65,6 +65,7 @@ const Dashboard = () => {
             onMessagesChange={setMessages}
             conversationLoading={conversationLoading}
             onClearConversation={clearConversation}
+            lastGeneratedContent={lastGeneratedContent}
           />
         </div>
       </div>

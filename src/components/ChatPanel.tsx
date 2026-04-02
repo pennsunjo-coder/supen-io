@@ -12,11 +12,18 @@ const MAX_MESSAGE_LENGTH = 4000;
 const RATE_LIMIT_MAX = 10;
 const RATE_LIMIT_WINDOW_MS = 60_000;
 
-const suggestedPrompts = [
+const defaultPrompts = [
   "Résume mes sources",
   "Trouve les idées clés",
   "Génère des hooks viraux",
   "Aide-moi à structurer",
+];
+
+const contentPrompts = [
+  "Améliore le hook",
+  "Rends-le plus percutant",
+  "Adapte pour un autre réseau",
+  "Propose un CTA",
 ];
 
 interface ChatPanelProps {
@@ -25,22 +32,32 @@ interface ChatPanelProps {
   onMessagesChange: (updater: (prev: ConversationMessage[]) => ConversationMessage[]) => void;
   conversationLoading: boolean;
   onClearConversation: () => void;
+  lastGeneratedContent?: string;
 }
 
-function buildSystemPrompt(sources: Source[]): string {
-  if (sources.length === 0) return SYSTEM_PROMPT;
-  let context = "\n\n## Sources de recherche de l'utilisateur\n\n";
-  for (const source of sources) {
-    const typeLabel = source.type === "url" ? "Lien" : source.type === "pdf" ? "PDF" : "Note";
-    context += `### [${typeLabel}] ${source.title}\n`;
-    if (source.content) context += `${source.content.slice(0, 3000)}\n`;
-    context += "\n";
+function buildSystemPrompt(sources: Source[], lastGenerated?: string): string {
+  let prompt = SYSTEM_PROMPT;
+
+  if (sources.length > 0) {
+    let context = "\n\n## Sources de recherche de l'utilisateur\n\n";
+    for (const source of sources) {
+      const typeLabel = source.type === "url" ? "Lien" : source.type === "pdf" ? "PDF" : "Note";
+      context += `### [${typeLabel}] ${source.title}\n`;
+      if (source.content) context += `${source.content.slice(0, 3000)}\n`;
+      context += "\n";
+    }
+    context += "Utilise ces sources pour répondre aux questions. Cite les sources quand c'est pertinent.";
+    prompt += context;
   }
-  context += "Utilise ces sources pour répondre aux questions. Cite les sources quand c'est pertinent.";
-  return SYSTEM_PROMPT + context;
+
+  if (lastGenerated) {
+    prompt += `\n\n## Dernier contenu généré par l'utilisateur\nL'utilisateur vient de générer ce contenu dans le Content Studio :\n\n${lastGenerated.slice(0, 2000)}\n\nTu peux l'aider à l'améliorer, le reformuler, trouver un meilleur hook, ou adapter le ton.`;
+  }
+
+  return prompt;
 }
 
-const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, onClearConversation }: ChatPanelProps) => {
+const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, onClearConversation, lastGeneratedContent }: ChatPanelProps) => {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
@@ -78,7 +95,7 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
     try {
       abortRef.current = new AbortController();
       const stream = anthropic.messages.stream(
-        { model: CLAUDE_MODEL, max_tokens: 2048, system: buildSystemPrompt(sources), messages: apiMessages },
+        { model: CLAUDE_MODEL, max_tokens: 2048, system: buildSystemPrompt(sources, lastGeneratedContent), messages: apiMessages },
         { signal: abortRef.current.signal },
       );
       let fullResponse = "";
@@ -94,7 +111,7 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
       setIsLoading(false);
       abortRef.current = null;
     }
-  }, [input, isLoading, messages, sources, rateLimiter, onMessagesChange]);
+  }, [input, isLoading, messages, sources, lastGeneratedContent, rateLimiter, onMessagesChange]);
 
   useEffect(() => { return () => { abortRef.current?.abort(); }; }, []);
 
@@ -140,7 +157,7 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
               <p className="text-[10px] text-primary/70 mb-3">{sources.length} source{sources.length > 1 ? "s" : ""}</p>
             )}
             <div className="grid grid-cols-1 gap-1.5 w-full">
-              {suggestedPrompts.map((prompt) => (
+              {(lastGeneratedContent ? contentPrompts : defaultPrompts).map((prompt) => (
                 <button
                   key={prompt}
                   onClick={() => sendMessage(prompt)}

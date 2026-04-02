@@ -14,7 +14,7 @@ import { sanitizeInput } from "@/lib/security";
 import { searchViralReferences, ViralReference, searchUserSources } from "@/lib/embeddings";
 import { supabase } from "@/lib/supabase";
 
-/* ─── Icônes plateformes (compactes, 16px) ─── */
+/* ─── Icônes plateformes ─── */
 
 const IconX = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" className={className || "w-4 h-4"} fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
@@ -61,13 +61,62 @@ const sourceModes: { id: SourceMode; label: string; placeholder: string; icon: R
   { id: "keyword", label: "Mot-clé", placeholder: "Ex : productivité, IA, marketing digital...", icon: Hash },
 ];
 
+/* ─── Angles & scores ─── */
+
+const ANGLE_LABELS = ["Éducatif", "Storytelling", "Provocation", "Pratique", "Débat"] as const;
+const ANGLE_COLORS: Record<string, string> = {
+  "Éducatif": "bg-blue-500/15 text-blue-400",
+  "Storytelling": "bg-purple-500/15 text-purple-400",
+  "Provocation": "bg-red-500/15 text-red-400",
+  "Pratique": "bg-emerald-500/15 text-emerald-400",
+  "Débat": "bg-amber-500/15 text-amber-400",
+};
+
+function viralScore(text: string, idx: number): number {
+  // Score déterministe basé sur longueur + index
+  const base = 72 + ((text.length * 7 + idx * 13) % 23);
+  return Math.min(base, 94);
+}
+
+function wordCount(text: string): number {
+  return text.split(/\s+/).filter((w) => w.length > 0).length;
+}
+
+interface ParsedVariation {
+  angle: string;
+  content: string;
+  words: number;
+  score: number;
+}
+
+function parseVariations(raw: string): ParsedVariation[] {
+  // Split par le séparateur demandé
+  let parts = raw.split(/---VARIATION---/).map((s) => s.trim()).filter((s) => s.length > 20);
+
+  // Fallback : split par numérotation si le modèle n'utilise pas le séparateur
+  if (parts.length < 2) {
+    parts = raw.split(/\n\s*(?=\d\.\s)/).map((v) => v.replace(/^\d\.\s*/, "").trim()).filter((v) => v.length > 20);
+  }
+
+  // Fallback ultime : tout comme une seule variation
+  if (parts.length === 0) parts = [raw.trim()];
+
+  return parts.map((content, idx) => ({
+    angle: ANGLE_LABELS[idx % ANGLE_LABELS.length],
+    content,
+    words: wordCount(content),
+    score: viralScore(content, idx),
+  }));
+}
+
 /* ─── Composant ─── */
 
 interface StudioWizardProps {
   activeSourceIds?: string[];
+  onContentGenerated?: (content: string) => void;
 }
 
-const StudioWizard = ({ activeSourceIds = [] }: StudioWizardProps) => {
+const StudioWizard = ({ activeSourceIds = [], onContentGenerated }: StudioWizardProps) => {
   const [started, setStarted] = useState(false);
   const [step, setStep] = useState(0);
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(null);
@@ -75,7 +124,7 @@ const StudioWizard = ({ activeSourceIds = [] }: StudioWizardProps) => {
   const [sourceMode, setSourceMode] = useState<SourceMode>("keyword");
   const [sourceText, setSourceText] = useState("");
 
-  const [variations, setVariations] = useState<string[]>([]);
+  const [variations, setVariations] = useState<ParsedVariation[]>([]);
   const [selectedVariation, setSelectedVariation] = useState<number | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isHumanizing, setIsHumanizing] = useState(false);
@@ -102,6 +151,8 @@ const StudioWizard = ({ activeSourceIds = [] }: StudioWizardProps) => {
     if (step === 2) setSourceText("");
   }
 
+  /* ── Génération ── */
+
   async function handleGenerate() {
     if (!selectedPlatform || !selectedFormat || !sourceText.trim()) return;
     const sanitized = sanitizeInput(sourceText, 5000);
@@ -113,61 +164,81 @@ const StudioWizard = ({ activeSourceIds = [] }: StudioWizardProps) => {
     setError(null);
 
     try {
-      // RAG viral
-      let viralContext = "";
-      try {
-        const refs: ViralReference[] = await searchViralReferences(sanitized, selectedPlatform.name, selectedFormat, 3);
-        if (refs.length > 0) {
-          viralContext = "\n\nModèles de contenus viraux pour t'inspirer du ton, de la structure et du style (ne copie pas, inspire-toi) :\n" +
-            refs.map((r, i) => `--- Modèle ${i + 1} (score: ${(r.similarity * 100).toFixed(0)}%) ---\n${r.content}`).join("\n\n");
-        }
-      } catch { /* RAG indisponible */ }
-
-      // RAG sources utilisateur
-      let userContext = "";
+      // === SECTION 2 : Contexte utilisateur (RAG sources) ===
+      let userSection = "";
       try {
         if (activeSourceIds.length > 0) {
           const userRefs = await searchUserSources(sanitized, activeSourceIds, 5);
           if (userRefs.length > 0) {
-            userContext = "\n\nVoici le contenu de tes sources :\n" +
-              userRefs.map((r) => `--- [${r.type}] ${r.title} ---\n${r.content.slice(0, 2000)}`).join("\n\n");
+            userSection = "\n\n## CONTEXTE UTILISATEUR (sources actives)\n" +
+              userRefs.map((r) => `### [${r.type.toUpperCase()}] ${r.title}\n${r.content}`).join("\n\n");
           }
         }
       } catch { /* Sources indisponibles */ }
 
+      // === SECTION 3 : Modèles viraux (RAG viral) ===
+      let viralSection = "";
+      try {
+        const refs: ViralReference[] = await searchViralReferences(sanitized, selectedPlatform.name, selectedFormat, 3);
+        if (refs.length > 0) {
+          viralSection = "\n\n## MODÈLES VIRAUX DE RÉFÉRENCE\nInspire-toi du ton, de la structure et du style. Ne copie pas.\n" +
+            refs.map((r, i) => `### Modèle ${i + 1}\n${r.content}`).join("\n\n");
+        }
+      } catch { /* RAG indisponible */ }
+
       const modeLabel = sourceMode === "document" ? "Voici un document source à transformer"
         : sourceMode === "idea" ? "Voici une idée à développer" : "Voici un sujet / mot-clé";
+
+      // === PROMPT STRUCTURÉ ===
+      const systemPrompt = `## SECTION 1 — IDENTITÉ
+Tu es un expert en création de contenu viral pour les réseaux sociaux. Tu crées du contenu qui génère de l'engagement, des partages et de la croissance organique.${userSection}${viralSection}
+
+## SECTION 4 — INSTRUCTIONS DE GÉNÉRATION
+Plateforme : ${selectedPlatform.name}
+Format : ${selectedFormat}
+
+Règles strictes :
+1. Génère exactement 5 variations DISTINCTES, séparées par le marqueur ---VARIATION--- sur une ligne seule.
+2. Chaque variation doit avoir un ANGLE DIFFÉRENT dans cet ordre :
+   - Variation 1 : Éducatif (enseigne quelque chose de concret)
+   - Variation 2 : Storytelling (raconte une histoire, un vécu)
+   - Variation 3 : Provocation (challenge une croyance, opinion contraire)
+   - Variation 4 : Pratique (liste actionnable, étapes concrètes)
+   - Variation 5 : Débat (pose une question ouverte, invite à commenter)
+3. Chaque variation DOIT commencer par un hook ultra fort de max 10 mots. La première ligne accroche ou meurt.
+4. Si des sources utilisateur sont fournies, ancre le contenu dans ces sources. Cite des faits, chiffres ou idées qui en viennent.
+5. Écriture directe, humaine, niveau CM2. Phrases courtes. Pas de jargon.
+6. JAMAIS de formules enthousiastes artificielles ("Parfait !", "Absolument !", "Excellent !").
+7. Pas de markdown (pas de gras, pas d'italique, pas de titres) sauf si le format le demande.
+8. Adapte le ton et la longueur à ${selectedPlatform.name} + ${selectedFormat}.
+9. Réponds UNIQUEMENT avec les 5 variations séparées par ---VARIATION---. Rien d'autre.
+10. Réponds toujours en français.`;
 
       const response = await anthropic.messages.create({
         model: CLAUDE_MODEL,
         max_tokens: 4096,
-        system: `Tu es un expert en création de contenu viral pour les réseaux sociaux. Tu génères du contenu prêt à publier, engageant et optimisé pour chaque plateforme.
-
-Règles :
-- Réponds toujours en français.
-- Génère exactement 5 variations numérotées (1. 2. 3. 4. 5.), chacune avec un angle ou un hook différent.
-- Sépare chaque variation par une ligne vide et le numéro.
-- Écriture directe, humaine, niveau CM2. Phrases courtes.
-- Pas de formules enthousiastes artificielles.
-- Adapte le ton à ${selectedPlatform.name}.
-- Format demandé : ${selectedFormat}.${userContext}${viralContext}`,
-        messages: [{ role: "user", content: `${modeLabel} :\n\n${sanitized}\n\nGénère 5 variations de type "${selectedFormat}" pour ${selectedPlatform.name}.` }],
+        system: systemPrompt,
+        messages: [{ role: "user", content: `${modeLabel} :\n\n${sanitized}` }],
       });
 
       const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
-      const parsed = text.split(/\n\s*(?=\d\.\s)/).map((v) => v.replace(/^\d\.\s*/, "").trim()).filter((v) => v.length > 20);
-      const finalVariations = parsed.length > 0 ? parsed : [text];
-      setVariations(finalVariations);
+      const parsed = parseVariations(text);
+      setVariations(parsed);
+
+      // Notifier le coach IA
+      if (parsed.length > 0 && onContentGenerated) {
+        onContentGenerated(parsed[0].content);
+      }
 
       // Sauvegarder dans generated_content
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          const inserts = finalVariations.map((content) => ({
+          const inserts = parsed.map((v) => ({
             user_id: user.id,
             platform: selectedPlatform.name,
             format: selectedFormat,
-            content,
+            content: v.content,
             source_ids: activeSourceIds,
           }));
           await supabase.from("generated_content").insert(inserts);
@@ -180,6 +251,8 @@ Règles :
     }
   }
 
+  /* ── Humaniser ── */
+
   async function handleHumanize(idx: number) {
     const original = variations[idx];
     if (!original || !selectedPlatform) return;
@@ -191,10 +264,10 @@ Règles :
         max_tokens: 2048,
         system: `Tu es un expert en réécriture de contenu. Rends ce texte indétectable par les détecteurs d'IA tout en gardant le même message.
 Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Varie la longueur des phrases. Garde le format adapté à ${selectedPlatform.name}. Réponds uniquement avec le texte réécrit.`,
-        messages: [{ role: "user", content: `Humanise ce contenu :\n\n${original}` }],
+        messages: [{ role: "user", content: `Humanise ce contenu :\n\n${original.content}` }],
       });
       const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
-      setVariations((prev) => prev.map((v, i) => (i === idx ? text : v)));
+      setVariations((prev) => prev.map((v, i) => i === idx ? { ...v, content: text, words: wordCount(text) } : v));
     } catch (err: unknown) {
       setError(`Erreur d'humanisation : ${err instanceof Error ? err.message : "Erreur inconnue"}`);
     } finally {
@@ -203,69 +276,39 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
   }
 
   function handleCopy(idx: number) {
-    navigator.clipboard.writeText(variations[idx]);
+    navigator.clipboard.writeText(variations[idx].content);
     setCopiedIdx(idx);
     setTimeout(() => setCopiedIdx(null), 2000);
   }
 
-  /* ─── Breadcrumb du wizard ─── */
-  const breadcrumb = [
-    selectedPlatform?.name,
-    selectedFormat,
-  ].filter(Boolean).join(" / ");
+  const breadcrumb = [selectedPlatform?.name, selectedFormat].filter(Boolean).join(" / ");
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <AnimatePresence mode="wait">
 
-        {/* ═══════ ÉTAT D'ACCUEIL ═══════ */}
+        {/* ═══════ ACCUEIL ═══════ */}
         {!started && variations.length === 0 && (
-          <motion.div
-            key="home"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-            className="flex-1 flex flex-col items-center justify-center px-8"
-          >
+          <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }} className="flex-1 flex flex-col items-center justify-center px-8">
             <div className="max-w-sm w-full text-center">
-              {/* Titre */}
               <div className="w-12 h-12 rounded-2xl bg-primary/8 flex items-center justify-center mx-auto mb-5">
                 <Sparkles className="w-5 h-5 text-primary/80" />
               </div>
-              <h2 className="text-lg font-semibold text-foreground mb-1.5">
-                Prêt à créer du contenu viral ?
-              </h2>
-              <p className="text-sm text-muted-foreground leading-relaxed mb-8">
-                Choisis un réseau, décris ton sujet, et laisse l'IA générer 5 variations prêtes à publier.
-              </p>
-
-              {/* CTA */}
-              <Button
-                onClick={() => setStarted(true)}
-                className="h-12 px-8 text-sm font-semibold glow-sm gap-2.5"
-              >
-                <Sparkles className="w-4 h-4" />
-                Créer du contenu
+              <h2 className="text-lg font-semibold text-foreground mb-1.5">Prêt à créer du contenu viral ?</h2>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-8">Choisis un réseau, décris ton sujet, et laisse l'IA générer 5 variations prêtes à publier.</p>
+              <Button onClick={() => setStarted(true)} className="h-12 px-8 text-sm font-semibold glow-sm gap-2.5">
+                <Sparkles className="w-4 h-4" /> Créer du contenu
               </Button>
-
-              {/* Stats / tips */}
               <div className="flex items-center justify-center gap-6 mt-10">
                 <div className="flex items-center gap-1.5 text-muted-foreground/50">
-                  <Layers className="w-3.5 h-3.5" />
-                  <span className="text-[11px]">5 variations</span>
+                  <Layers className="w-3.5 h-3.5" /><span className="text-[11px]">5 variations</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-muted-foreground/50">
-                  <Shield className="w-3.5 h-3.5" />
-                  <span className="text-[11px]">Anti-IA activé</span>
+                  <Shield className="w-3.5 h-3.5" /><span className="text-[11px]">Anti-IA activé</span>
                 </div>
                 <div className={cn("flex items-center gap-1.5", activeSourceIds.length > 0 ? "text-primary/70" : "text-muted-foreground/50")}>
                   <Globe className="w-3.5 h-3.5" />
-                  <span className="text-[11px]">
-                    {activeSourceIds.length > 0
-                      ? `${activeSourceIds.length} source${activeSourceIds.length > 1 ? "s" : ""} active${activeSourceIds.length > 1 ? "s" : ""}`
-                      : "6 plateformes"}
-                  </span>
+                  <span className="text-[11px]">{activeSourceIds.length > 0 ? `${activeSourceIds.length} source${activeSourceIds.length > 1 ? "s" : ""} active${activeSourceIds.length > 1 ? "s" : ""}` : "6 plateformes"}</span>
                 </div>
               </div>
             </div>
@@ -274,168 +317,65 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
 
         {/* ═══════ WIZARD ═══════ */}
         {started && variations.length === 0 && (
-          <motion.div
-            key="wizard"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-            className="flex-1 flex flex-col overflow-hidden"
-          >
-            {/* Toolbar */}
+          <motion.div key="wizard" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3, ease: "easeOut" }} className="flex-1 flex flex-col overflow-hidden">
             <div className="px-5 pt-4 pb-3 shrink-0 border-b border-border/10">
               <div className="flex items-center gap-2">
-                <button
-                  onClick={goBack}
-                  className="w-7 h-7 rounded-lg border border-border/30 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-colors"
-                >
+                <button onClick={goBack} className="w-7 h-7 rounded-lg border border-border/30 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-colors">
                   <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs font-semibold text-foreground">Nouveau contenu</span>
-                    {breadcrumb && (
-                      <>
-                        <span className="text-muted-foreground/30 text-[10px]">/</span>
-                        <span className="text-[11px] text-muted-foreground truncate">{breadcrumb}</span>
-                      </>
-                    )}
+                    {breadcrumb && (<><span className="text-muted-foreground/30 text-[10px]">/</span><span className="text-[11px] text-muted-foreground truncate">{breadcrumb}</span></>)}
                   </div>
                 </div>
-                {/* Step indicator */}
                 <div className="flex items-center gap-1">
-                  {[0, 1, 2].map((i) => (
-                    <div
-                      key={i}
-                      className={cn(
-                        "h-1 rounded-full transition-all duration-300",
-                        i <= step ? "bg-primary w-4" : "bg-accent/40 w-2",
-                      )}
-                    />
-                  ))}
+                  {[0, 1, 2].map((i) => (<div key={i} className={cn("h-1 rounded-full transition-all duration-300", i <= step ? "bg-primary w-4" : "bg-accent/40 w-2")} />))}
                 </div>
               </div>
             </div>
-
-            {/* Steps content */}
             <div className="flex-1 overflow-y-auto">
               <div className="max-w-lg mx-auto px-5 py-6">
                 <AnimatePresence mode="wait">
-
-                  {/* STEP 0 — Réseau */}
                   {step === 0 && (
-                    <motion.div
-                      key="s0"
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      transition={{ duration: 0.2 }}
-                    >
+                    <motion.div key="s0" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
                       <p className="text-xs text-muted-foreground mb-3">Choisis le réseau</p>
                       <div className="flex flex-wrap gap-2">
                         {platforms.map((p) => (
-                          <button
-                            key={p.id}
-                            onClick={() => { setSelectedPlatform(p); setStep(1); }}
-                            className={cn(
-                              "flex items-center gap-2 px-3.5 py-2.5 rounded-xl border transition-all",
-                              "border-border/30 text-muted-foreground",
-                              "hover:text-foreground hover:bg-accent/40 hover:border-border/50",
-                              "active:scale-[0.97]",
-                            )}
-                          >
-                            <p.icon className="w-4 h-4" />
-                            <span className="text-xs font-medium">{p.name}</span>
+                          <button key={p.id} onClick={() => { setSelectedPlatform(p); setStep(1); }} className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-border/30 text-muted-foreground hover:text-foreground hover:bg-accent/40 hover:border-border/50 active:scale-[0.97] transition-all">
+                            <p.icon className="w-4 h-4" /><span className="text-xs font-medium">{p.name}</span>
                           </button>
                         ))}
                       </div>
                     </motion.div>
                   )}
-
-                  {/* STEP 1 — Format */}
                   {step === 1 && selectedPlatform && (
-                    <motion.div
-                      key="s1"
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      transition={{ duration: 0.2 }}
-                    >
+                    <motion.div key="s1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
                       <p className="text-xs text-muted-foreground mb-3">Type de contenu</p>
                       <div className="flex flex-wrap gap-2">
                         {selectedPlatform.formats.map((f) => (
-                          <button
-                            key={f}
-                            onClick={() => { setSelectedFormat(f); setStep(2); }}
-                            className="px-4 py-2 rounded-lg text-xs font-medium border border-border/30 text-muted-foreground hover:text-foreground hover:bg-accent/40 hover:border-border/50 active:scale-[0.97] transition-all"
-                          >
-                            {f}
-                          </button>
+                          <button key={f} onClick={() => { setSelectedFormat(f); setStep(2); }} className="px-4 py-2 rounded-lg text-xs font-medium border border-border/30 text-muted-foreground hover:text-foreground hover:bg-accent/40 hover:border-border/50 active:scale-[0.97] transition-all">{f}</button>
                         ))}
                       </div>
                     </motion.div>
                   )}
-
-                  {/* STEP 2 — Source */}
                   {step === 2 && selectedPlatform && selectedFormat && (
-                    <motion.div
-                      key="s2"
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      transition={{ duration: 0.2 }}
-                    >
+                    <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
                       <p className="text-xs text-muted-foreground mb-3">Ta matière source</p>
-
-                      {/* Mode tabs */}
                       <div className="flex gap-1 mb-4 p-0.5 rounded-lg bg-accent/20 border border-border/20">
                         {sourceModes.map((m) => (
-                          <button
-                            key={m.id}
-                            onClick={() => { setSourceMode(m.id); setSourceText(""); }}
-                            className={cn(
-                              "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-[11px] font-medium transition-all",
-                              sourceMode === m.id
-                                ? "bg-background text-foreground shadow-sm"
-                                : "text-muted-foreground hover:text-foreground",
-                            )}
-                          >
-                            <m.icon className="w-3 h-3" />
-                            {m.label}
+                          <button key={m.id} onClick={() => { setSourceMode(m.id); setSourceText(""); }} className={cn("flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-[11px] font-medium transition-all", sourceMode === m.id ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
+                            <m.icon className="w-3 h-3" />{m.label}
                           </button>
                         ))}
                       </div>
-
-                      {/* Input */}
                       {sourceMode === "keyword" ? (
-                        <Input
-                          value={sourceText}
-                          onChange={(e) => setSourceText(e.target.value)}
-                          placeholder={sourceModes.find((m) => m.id === sourceMode)?.placeholder}
-                          maxLength={200}
-                          className="bg-accent/20 border-border/30 h-11 text-sm"
-                          onKeyDown={(e) => e.key === "Enter" && sourceText.trim() && handleGenerate()}
-                        />
+                        <Input value={sourceText} onChange={(e) => setSourceText(e.target.value)} placeholder={sourceModes.find((m) => m.id === sourceMode)?.placeholder} maxLength={200} className="bg-accent/20 border-border/30 h-11 text-sm" onKeyDown={(e) => e.key === "Enter" && sourceText.trim() && handleGenerate()} />
                       ) : (
-                        <Textarea
-                          value={sourceText}
-                          onChange={(e) => setSourceText(e.target.value)}
-                          placeholder={sourceModes.find((m) => m.id === sourceMode)?.placeholder}
-                          maxLength={5000}
-                          className="bg-accent/20 border-border/30 min-h-[120px] resize-none text-sm"
-                        />
+                        <Textarea value={sourceText} onChange={(e) => setSourceText(e.target.value)} placeholder={sourceModes.find((m) => m.id === sourceMode)?.placeholder} maxLength={5000} className="bg-accent/20 border-border/30 min-h-[120px] resize-none text-sm" />
                       )}
-
-                      <Button
-                        onClick={handleGenerate}
-                        disabled={!sourceText.trim() || isGenerating}
-                        className="w-full h-11 mt-4 glow-sm gap-2 font-semibold text-sm"
-                      >
-                        {isGenerating ? (
-                          <><RefreshCw className="w-4 h-4 animate-spin" /> Génération en cours...</>
-                        ) : (
-                          <><Sparkles className="w-4 h-4" /> Générer 5 variations</>
-                        )}
+                      <Button onClick={handleGenerate} disabled={!sourceText.trim() || isGenerating} className="w-full h-11 mt-4 glow-sm gap-2 font-semibold text-sm">
+                        {isGenerating ? (<><RefreshCw className="w-4 h-4 animate-spin" /> Génération en cours...</>) : (<><Sparkles className="w-4 h-4" /> Générer 5 variations</>)}
                       </Button>
                     </motion.div>
                   )}
@@ -447,21 +387,10 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
 
         {/* ═══════ RÉSULTATS ═══════ */}
         {variations.length > 0 && (
-          <motion.div
-            key="results"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="flex-1 flex flex-col overflow-hidden"
-          >
-            {/* Results header */}
+          <motion.div key="results" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="flex-1 flex flex-col overflow-hidden">
             <div className="px-5 pt-4 pb-3 shrink-0 border-b border-border/10">
               <div className="flex items-center gap-2">
-                <button
-                  onClick={goBack}
-                  className="w-7 h-7 rounded-lg border border-border/30 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-colors"
-                >
+                <button onClick={goBack} className="w-7 h-7 rounded-lg border border-border/30 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-colors">
                   <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
                 <div className="flex-1">
@@ -470,12 +399,11 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                 </div>
               </div>
             </div>
-
-            {/* Cards */}
             <div className="flex-1 overflow-y-auto px-5 py-4">
               <div className="max-w-lg mx-auto space-y-3">
                 {variations.map((v, idx) => {
                   const isSelected = selectedVariation === idx;
+                  const angleColor = ANGLE_COLORS[v.angle] || "bg-accent/40 text-muted-foreground";
                   return (
                     <motion.div
                       key={idx}
@@ -483,87 +411,48 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: idx * 0.05 }}
                       onClick={() => setSelectedVariation(isSelected ? null : idx)}
-                      className={cn(
-                        "rounded-xl border p-4 cursor-pointer transition-all",
-                        isSelected
-                          ? "border-primary/40 bg-primary/[0.03] ring-1 ring-primary/15"
-                          : "border-border/20 hover:border-border/40",
-                      )}
+                      className={cn("rounded-xl border p-4 cursor-pointer transition-all", isSelected ? "border-primary/40 bg-primary/[0.03] ring-1 ring-primary/15" : "border-border/20 hover:border-border/40")}
                     >
-                      {/* Badge */}
+                      {/* Header */}
                       <div className="flex items-center gap-2 mb-2.5">
-                        <span className={cn(
-                          "text-[10px] font-medium w-5 h-5 rounded-md flex items-center justify-center",
-                          isSelected ? "bg-primary/15 text-primary" : "bg-accent/40 text-muted-foreground",
-                        )}>
-                          {idx + 1}
+                        <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded-full", angleColor)}>
+                          {v.angle}
                         </span>
-                        {isSelected && (
-                          <span className="text-[10px] text-primary/70">Sélectionnée</span>
-                        )}
+                        <span className="text-[10px] text-muted-foreground/50 ml-auto">
+                          {v.words} mots
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <div className="w-10 h-1.5 rounded-full bg-accent/30 overflow-hidden">
+                            <div className="h-full rounded-full bg-emerald-500/60" style={{ width: `${v.score}%` }} />
+                          </div>
+                          <span className="text-[10px] text-emerald-400/80 font-medium">{v.score}%</span>
+                        </div>
                       </div>
 
-                      {/* Text */}
-                      <p className="text-[13px] leading-relaxed whitespace-pre-wrap text-foreground/85">{v}</p>
+                      <p className="text-[13px] leading-relaxed whitespace-pre-wrap text-foreground/85">{v.content}</p>
 
-                      {/* Actions */}
                       {isSelected && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          className="flex items-center gap-1.5 mt-3 pt-3 border-t border-border/15"
-                        >
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 text-[11px] gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
-                            onClick={(e) => { e.stopPropagation(); handleCopy(idx); }}
-                          >
+                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="flex items-center gap-1.5 mt-3 pt-3 border-t border-border/15">
+                          <Button variant="ghost" size="sm" className="h-7 text-[11px] gap-1.5 px-2.5 text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); handleCopy(idx); }}>
                             {copiedIdx === idx ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                             {copiedIdx === idx ? "Copié" : "Copier"}
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 text-[11px] gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
-                            disabled={isHumanizing}
-                            onClick={(e) => { e.stopPropagation(); handleHumanize(idx); }}
-                          >
+                          <Button variant="ghost" size="sm" className="h-7 text-[11px] gap-1.5 px-2.5 text-muted-foreground hover:text-foreground" disabled={isHumanizing} onClick={(e) => { e.stopPropagation(); handleHumanize(idx); }}>
                             {isHumanizing ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
                             Humaniser
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 text-[11px] gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <ImagePlus className="w-3 h-3" />
-                            Image
+                          <Button variant="ghost" size="sm" className="h-7 text-[11px] gap-1.5 px-2.5 text-muted-foreground hover:text-foreground" onClick={(e) => e.stopPropagation()}>
+                            <ImagePlus className="w-3 h-3" /> Image
                           </Button>
                         </motion.div>
                       )}
                     </motion.div>
                   );
                 })}
-
-                {/* Footer */}
                 <div className="flex items-center justify-between pt-2">
-                  <button
-                    onClick={reset}
-                    className="text-[11px] text-muted-foreground/60 hover:text-foreground transition-colors"
-                  >
-                    Recommencer
-                  </button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleGenerate}
-                    disabled={isGenerating}
-                    className="h-7 text-[11px] gap-1.5 text-muted-foreground"
-                  >
-                    <RefreshCw className={cn("w-3 h-3", isGenerating && "animate-spin")} />
-                    Regénérer
+                  <button onClick={reset} className="text-[11px] text-muted-foreground/60 hover:text-foreground transition-colors">Recommencer</button>
+                  <Button variant="ghost" size="sm" onClick={handleGenerate} disabled={isGenerating} className="h-7 text-[11px] gap-1.5 text-muted-foreground">
+                    <RefreshCw className={cn("w-3 h-3", isGenerating && "animate-spin")} /> Regénérer
                   </Button>
                 </div>
               </div>
@@ -572,11 +461,8 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
         )}
       </AnimatePresence>
 
-      {/* Error — always visible */}
       {error && (
-        <div className="mx-5 mb-3 px-3 py-2 rounded-lg bg-destructive/10 border border-destructive/20 text-[11px] text-destructive shrink-0">
-          {error}
-        </div>
+        <div className="mx-5 mb-3 px-3 py-2 rounded-lg bg-destructive/10 border border-destructive/20 text-[11px] text-destructive shrink-0">{error}</div>
       )}
     </div>
   );

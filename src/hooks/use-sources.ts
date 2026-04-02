@@ -5,6 +5,28 @@ import type { Source } from "@/types/database";
 
 const TAVILY_API_KEY = import.meta.env.VITE_TAVILY_API_KEY;
 
+const CHUNK_SIZE = 400; // mots par chunk (cible 300-500)
+const CHUNK_OVERLAP = 50; // mots de chevauchement
+
+/**
+ * Découpe un texte en chunks de CHUNK_SIZE mots avec CHUNK_OVERLAP mots de chevauchement.
+ * Retourne un tableau de strings. Si le texte est court (<= CHUNK_SIZE), retourne [texte].
+ */
+function chunkText(text: string): string[] {
+  const words = text.split(/\s+/).filter((w) => w.length > 0);
+  if (words.length <= CHUNK_SIZE) return [text.trim()];
+
+  const chunks: string[] = [];
+  let start = 0;
+  while (start < words.length) {
+    const end = Math.min(start + CHUNK_SIZE, words.length);
+    chunks.push(words.slice(start, end).join(" "));
+    if (end >= words.length) break;
+    start = end - CHUNK_OVERLAP;
+  }
+  return chunks;
+}
+
 /**
  * Extrait le texte principal d'une page HTML en supprimant
  * les balises script, style, nav, header, footer et publicités.
@@ -94,14 +116,28 @@ export function useSources() {
         pageContent = url;
       }
 
-      const { error } = await supabase.from("sources").insert({
-        user_id: user.id,
-        type: "url",
-        title,
-        content: pageContent || url,
-      });
+      const finalContent = pageContent || url;
+      const chunks = chunkText(finalContent);
 
-      if (error) return { error: error.message };
+      if (chunks.length === 1) {
+        const { error } = await supabase.from("sources").insert({
+          user_id: user.id,
+          type: "url",
+          title,
+          content: chunks[0],
+        });
+        if (error) return { error: error.message };
+      } else {
+        const inserts = chunks.map((chunk, i) => ({
+          user_id: user.id,
+          type: "url" as const,
+          title: `${title} (${i + 1}/${chunks.length})`,
+          content: chunk,
+        }));
+        const { error } = await supabase.from("sources").insert(inserts);
+        if (error) return { error: error.message };
+      }
+
       await fetchSources();
       return { error: null };
     },
@@ -112,14 +148,27 @@ export function useSources() {
     async (title: string, content: string): Promise<{ error: string | null }> => {
       if (!user) return { error: "Non connecté" };
 
-      const { error } = await supabase.from("sources").insert({
-        user_id: user.id,
-        type: "note",
-        title: title.slice(0, 200),
-        content,
-      });
+      const chunks = chunkText(content);
 
-      if (error) return { error: error.message };
+      if (chunks.length === 1) {
+        const { error } = await supabase.from("sources").insert({
+          user_id: user.id,
+          type: "note",
+          title: title.slice(0, 200),
+          content: chunks[0],
+        });
+        if (error) return { error: error.message };
+      } else {
+        const inserts = chunks.map((chunk, i) => ({
+          user_id: user.id,
+          type: "note" as const,
+          title: `${title.slice(0, 180)} (${i + 1}/${chunks.length})`,
+          content: chunk,
+        }));
+        const { error } = await supabase.from("sources").insert(inserts);
+        if (error) return { error: error.message };
+      }
+
       await fetchSources();
       return { error: null };
     },
