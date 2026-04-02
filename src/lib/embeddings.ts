@@ -10,8 +10,7 @@ export interface ViralReference {
 
 /**
  * Recherche les modèles viraux les plus similaires au texte donné.
- * Utilise pg_trgm (similarité trigram) directement dans Supabase,
- * sans API externe ni embeddings.
+ * Utilise pg_trgm directement dans Supabase.
  */
 export async function searchViralReferences(
   text: string,
@@ -31,4 +30,39 @@ export async function searchViralReferences(
   }
 
   return (data as ViralReference[]) ?? [];
+}
+
+/* ─── RAG sur les sources utilisateur ─── */
+
+export interface UserSourceMatch {
+  id: string;
+  title: string;
+  content: string;
+  type: string;
+  similarity: number;
+}
+
+/**
+ * Recherche dans les sources de l'utilisateur les contenus les plus
+ * pertinents par similarité textuelle (pg_trgm).
+ * Filtre par les IDs de sources actives.
+ */
+export async function searchUserSources(
+  query: string,
+  activeSourceIds: string[],
+  limit: number = 5
+): Promise<UserSourceMatch[]> {
+  if (activeSourceIds.length === 0) return [];
+
+  const { data, error } = await supabase.rpc("search_user_sources", {
+    query_text: query,
+    source_ids: activeSourceIds,
+    match_count: limit,
+  });
+
+  if (error) {
+    throw new Error(`Erreur recherche sources : ${error.message}`);
+  }
+
+  return (data as UserSourceMatch[]) ?? [];
 }

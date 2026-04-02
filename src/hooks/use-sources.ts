@@ -5,6 +5,34 @@ import type { Source } from "@/types/database";
 
 const TAVILY_API_KEY = import.meta.env.VITE_TAVILY_API_KEY;
 
+/**
+ * Extrait le texte principal d'une page HTML en supprimant
+ * les balises script, style, nav, header, footer et publicités.
+ */
+function extractTextFromHtml(html: string): string {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+
+  // Supprimer les éléments non-contenu
+  const selectorsToRemove = [
+    "script", "style", "nav", "header", "footer",
+    "iframe", "noscript", "aside",
+    "[role='navigation']", "[role='banner']", "[role='contentinfo']",
+    ".ad", ".ads", ".advertisement", ".sidebar", ".menu", ".cookie",
+  ];
+  for (const sel of selectorsToRemove) {
+    doc.querySelectorAll(sel).forEach((el) => el.remove());
+  }
+
+  // Chercher le contenu principal
+  const main = doc.querySelector("article") || doc.querySelector("main") || doc.querySelector("[role='main']") || doc.body;
+  const text = (main?.textContent || "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return text.slice(0, 30000);
+}
+
 export function useSources() {
   const { user } = useAuth();
   const [sources, setSources] = useState<Source[]>([]);
@@ -44,11 +72,33 @@ export function useSources() {
         title = url.slice(0, 120);
       }
 
+      // Fetch le contenu de la page
+      let pageContent = "";
+      try {
+        const response = await fetch(url, {
+          headers: { "Accept": "text/html" },
+          signal: AbortSignal.timeout(10000),
+        });
+        if (response.ok) {
+          const html = await response.text();
+          pageContent = extractTextFromHtml(html);
+
+          // Extraire un meilleur titre depuis la page
+          const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+          if (titleMatch?.[1]) {
+            title = titleMatch[1].trim().slice(0, 120);
+          }
+        }
+      } catch {
+        // Si le fetch échoue (CORS, timeout…), on stocke juste l'URL
+        pageContent = url;
+      }
+
       const { error } = await supabase.from("sources").insert({
         user_id: user.id,
         type: "url",
         title,
-        content: url,
+        content: pageContent || url,
       });
 
       if (error) return { error: error.message };
@@ -59,10 +109,7 @@ export function useSources() {
   );
 
   const addNote = useCallback(
-    async (
-      title: string,
-      content: string
-    ): Promise<{ error: string | null }> => {
+    async (title: string, content: string): Promise<{ error: string | null }> => {
       if (!user) return { error: "Non connecté" };
 
       const { error } = await supabase.from("sources").insert({
@@ -91,15 +138,32 @@ export function useSources() {
 
       if (uploadError) return { error: uploadError.message };
 
-      const { error: insertError } = await supabase.from("sources").insert({
-        user_id: user.id,
-        type: "pdf",
-        title: file.name.replace(/\.pdf$/i, ""),
-        content: "",
-        file_path: filePath,
-      });
+      const { data: insertData, error: insertError } = await supabase
+        .from("sources")
+        .insert({
+          user_id: user.id,
+          type: "pdf",
+          title: file.name.replace(/\.pdf$/i, ""),
+          content: "",
+          file_path: filePath,
+        })
+        .select("id")
+        .single();
 
       if (insertError) return { error: insertError.message };
+
+      // Appeler la Edge Function pour extraire le texte du PDF
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token && insertData?.id) {
+          await supabase.functions.invoke("extract-pdf", {
+            body: { file_path: filePath, source_id: insertData.id },
+          });
+        }
+      } catch {
+        // Si l'extraction échoue, la source reste avec content vide
+      }
+
       await fetchSources();
       return { error: null };
     },
@@ -131,7 +195,6 @@ export function useSources() {
 
       const data = await response.json();
 
-      // Construire le contenu à partir des résultats
       let content = "";
       if (data.answer) {
         content += `${data.answer}\n\n`;

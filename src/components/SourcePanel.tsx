@@ -18,11 +18,10 @@ import type { Source } from "@/types/database";
 interface SourcePanelProps {
   sources: Source[];
   loading: boolean;
+  activeSourceIds: Set<string>;
+  onToggleSource: (id: string) => void;
   onAddUrl: (url: string) => Promise<{ error: string | null }>;
-  onAddNote: (
-    title: string,
-    content: string
-  ) => Promise<{ error: string | null }>;
+  onAddNote: (title: string, content: string) => Promise<{ error: string | null }>;
   onAddPdf: (file: File) => Promise<{ error: string | null }>;
   onSearchWeb: (query: string) => Promise<{ error: string | null }>;
   onRemove: (source: Source) => Promise<{ error: string | null }>;
@@ -45,6 +44,8 @@ type FormMode = "url" | "note" | "search";
 const SourcePanel = ({
   sources,
   loading,
+  activeSourceIds,
+  onToggleSource,
   onAddUrl,
   onAddNote,
   onAddPdf,
@@ -65,6 +66,8 @@ const SourcePanel = ({
   const noteTitleRef = useRef<HTMLInputElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
+  const activeCount = activeSourceIds.size;
+
   const openForm = (mode: FormMode) => {
     setUrlValue("");
     setNoteTitle("");
@@ -73,7 +76,6 @@ const SourcePanel = ({
     setError(null);
     setFormMode(mode);
     setShowForm(true);
-    // Focus après le render
     requestAnimationFrame(() => {
       if (mode === "url") urlRef.current?.focus();
       if (mode === "note") noteTitleRef.current?.focus();
@@ -180,6 +182,9 @@ const SourcePanel = ({
         <h2 className="text-sm font-semibold text-foreground">Sources</h2>
         <p className="text-xs text-muted-foreground mt-0.5">
           {sources.length} élément{sources.length !== 1 ? "s" : ""}
+          {activeCount > 0 && (
+            <span className="text-primary"> · {activeCount} active{activeCount > 1 ? "s" : ""}</span>
+          )}
         </p>
       </div>
 
@@ -196,11 +201,8 @@ const SourcePanel = ({
                 if (isPdf) {
                   fileRef.current?.click();
                 } else {
-                  if (isActive) {
-                    closeForm();
-                  } else {
-                    openForm(mode as FormMode);
-                  }
+                  if (isActive) closeForm();
+                  else openForm(mode as FormMode);
                 }
               }}
               disabled={saving}
@@ -218,104 +220,40 @@ const SourcePanel = ({
         })}
       </div>
 
-      <input
-        ref={fileRef}
-        type="file"
-        accept="application/pdf"
-        className="hidden"
-        onChange={handleFile}
-      />
+      <input ref={fileRef} type="file" accept="application/pdf" className="hidden" onChange={handleFile} />
 
-      {/* Form — toujours dans le DOM, toggle via display */}
-      <div
-        className={cn(
-          "mx-4 mb-3 p-3 rounded-lg border border-border/40 bg-card shrink-0",
-          showForm ? "block" : "hidden"
-        )}
-      >
+      {/* Form */}
+      <div className={cn("mx-4 mb-3 p-3 rounded-lg border border-border/40 bg-card shrink-0", showForm ? "block" : "hidden")}>
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-medium text-foreground">
-            {formLabels[formMode]}
-          </span>
-          <button
-            type="button"
-            onClick={closeForm}
-            className="text-muted-foreground hover:text-foreground transition-colors"
-          >
+          <span className="text-xs font-medium text-foreground">{formLabels[formMode]}</span>
+          <button type="button" onClick={closeForm} className="text-muted-foreground hover:text-foreground transition-colors">
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
 
-        {/* URL form */}
         <div className={formMode === "url" ? "block" : "hidden"}>
-          <input
-            ref={urlRef}
-            value={urlValue}
-            onChange={(e) => setUrlValue(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-            placeholder="https://exemple.com/article"
-            className="w-full bg-accent/30 border border-border/30 rounded-md px-2.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary/30 mb-2"
-          />
+          <input ref={urlRef} value={urlValue} onChange={(e) => setUrlValue(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSubmit()} placeholder="https://exemple.com/article" className="w-full bg-accent/30 border border-border/30 rounded-md px-2.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary/30 mb-2" />
         </div>
 
-        {/* Note form */}
         <div className={formMode === "note" ? "block" : "hidden"}>
-          <input
-            ref={noteTitleRef}
-            value={noteTitle}
-            onChange={(e) => setNoteTitle(e.target.value)}
-            placeholder="Titre de la note"
-            maxLength={200}
-            className="w-full bg-accent/30 border border-border/30 rounded-md px-2.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary/30 mb-2"
-          />
-          <textarea
-            value={noteContent}
-            onChange={(e) => setNoteContent(e.target.value)}
-            placeholder="Contenu..."
-            rows={3}
-            maxLength={10000}
-            className="w-full bg-accent/30 border border-border/30 rounded-md px-2.5 py-2 text-xs resize-none focus:outline-none focus:ring-1 focus:ring-primary/30 mb-2"
-          />
+          <input ref={noteTitleRef} value={noteTitle} onChange={(e) => setNoteTitle(e.target.value)} placeholder="Titre de la note" maxLength={200} className="w-full bg-accent/30 border border-border/30 rounded-md px-2.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary/30 mb-2" />
+          <textarea value={noteContent} onChange={(e) => setNoteContent(e.target.value)} placeholder="Contenu..." rows={3} maxLength={10000} className="w-full bg-accent/30 border border-border/30 rounded-md px-2.5 py-2 text-xs resize-none focus:outline-none focus:ring-1 focus:ring-primary/30 mb-2" />
         </div>
 
-        {/* Search form */}
         <div className={formMode === "search" ? "block" : "hidden"}>
-          <input
-            ref={searchRef}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-            placeholder="Rechercher sur le web..."
-            className="w-full bg-accent/30 border border-border/30 rounded-md px-2.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary/30 mb-2"
-          />
+          <input ref={searchRef} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSubmit()} placeholder="Rechercher sur le web..." className="w-full bg-accent/30 border border-border/30 rounded-md px-2.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary/30 mb-2" />
         </div>
 
-        {error && (
-          <p className="text-[11px] text-destructive mb-2">{error}</p>
-        )}
+        {error && <p className="text-[11px] text-destructive mb-2">{error}</p>}
 
-        <Button
-          type="button"
-          size="sm"
-          className="w-full h-7 text-xs"
-          disabled={saving}
-          onClick={handleSubmit}
-        >
-          {saving ? (
-            <Loader2 className="w-3 h-3 animate-spin" />
-          ) : formMode === "search" ? (
-            "Rechercher"
-          ) : (
-            "Ajouter"
-          )}
+        <Button type="button" size="sm" className="w-full h-7 text-xs" disabled={saving} onClick={handleSubmit}>
+          {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : formMode === "search" ? "Rechercher" : "Ajouter"}
         </Button>
       </div>
 
-      {/* PDF upload indicator */}
       {saving && !showForm && (
         <div className="mx-4 mb-3 flex items-center gap-2 text-xs text-muted-foreground shrink-0">
-          <Loader2 className="w-3 h-3 animate-spin" />
-          Upload en cours...
+          <Loader2 className="w-3 h-3 animate-spin" /> Upload en cours...
         </div>
       )}
 
@@ -332,31 +270,55 @@ const SourcePanel = ({
             <div className="w-12 h-12 rounded-xl bg-accent/50 flex items-center justify-center mb-3">
               <StickyNote className="w-5 h-5 text-muted-foreground" />
             </div>
-            <p className="text-sm font-medium text-muted-foreground">
-              Aucune source
-            </p>
-            <p className="text-xs text-muted-foreground/60 mt-1 leading-relaxed">
-              Ajoute des fichiers, liens ou notes pour commencer
-            </p>
+            <p className="text-sm font-medium text-muted-foreground">Aucune source</p>
+            <p className="text-xs text-muted-foreground/60 mt-1 leading-relaxed">Ajoute des fichiers, liens ou notes pour commencer</p>
           </div>
         ) : (
           sources.map((source) => {
             const Icon = typeIcons[source.type] || StickyNote;
             const isDeleting = deletingId === source.id;
+            const isActive = activeSourceIds.has(source.id);
             return (
               <div
                 key={source.id}
-                className="group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-all"
+                className={cn(
+                  "group flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-all",
+                  isActive
+                    ? "bg-primary/5 border border-primary/20"
+                    : "hover:bg-accent/40 border border-transparent",
+                )}
               >
-                <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 bg-accent/60 group-hover:text-foreground transition-colors">
-                  <Icon className="w-3.5 h-3.5" />
+                {/* Toggle */}
+                <button
+                  type="button"
+                  onClick={() => onToggleSource(source.id)}
+                  className={cn(
+                    "w-8 h-4.5 rounded-full p-0.5 transition-colors shrink-0 flex items-center",
+                    isActive ? "bg-primary" : "bg-accent/60",
+                  )}
+                  title={isActive ? "Désactiver" : "Activer"}
+                >
+                  <div className={cn(
+                    "w-3.5 h-3.5 rounded-full bg-white transition-transform",
+                    isActive ? "translate-x-3.5" : "translate-x-0",
+                  )} />
+                </button>
+
+                <div className={cn(
+                  "w-6 h-6 rounded-md flex items-center justify-center shrink-0 transition-colors",
+                  isActive ? "bg-primary/15 text-primary" : "bg-accent/60 text-muted-foreground",
+                )}>
+                  <Icon className="w-3 h-3" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <span className="block truncate text-sm">
+                  <span className={cn("block truncate text-xs", isActive ? "text-foreground" : "text-muted-foreground")}>
                     {source.title}
                   </span>
-                  <span className="block text-[11px] text-muted-foreground/50 mt-0.5">
+                  <span className="block text-[10px] text-muted-foreground/50">
                     {typeLabels[source.type] || "Note"}
+                    {source.content && source.content.length > 0 && (
+                      <span> · {Math.ceil(source.content.split(/\s+/).length)} mots</span>
+                    )}
                   </span>
                 </div>
                 <button
@@ -366,11 +328,7 @@ const SourcePanel = ({
                   className="opacity-0 group-hover:opacity-100 shrink-0 p-1 rounded text-muted-foreground/50 hover:text-destructive transition-all"
                   title="Supprimer"
                 >
-                  {isDeleting ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Trash2 className="w-3.5 h-3.5" />
-                  )}
+                  {isDeleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
                 </button>
               </div>
             );

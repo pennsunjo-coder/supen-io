@@ -1,3 +1,4 @@
+import { useState, useCallback } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import SourcePanel from "@/components/SourcePanel";
 import ChatPanel from "@/components/ChatPanel";
@@ -23,6 +24,18 @@ const Dashboard = () => {
     clearConversation,
   } = useConversation();
 
+  // Sources actives (toggles)
+  const [activeSourceIds, setActiveSourceIds] = useState<Set<string>>(new Set());
+
+  const handleToggleSource = useCallback((id: string) => {
+    setActiveSourceIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
   return (
     <DashboardLayout>
       <div className="flex-1 flex min-h-0">
@@ -30,6 +43,8 @@ const Dashboard = () => {
         <SourcePanel
           sources={sources}
           loading={sourcesLoading}
+          activeSourceIds={activeSourceIds}
+          onToggleSource={handleToggleSource}
           onAddUrl={addUrl}
           onAddNote={addNote}
           onAddPdf={addPdf}
@@ -39,7 +54,7 @@ const Dashboard = () => {
 
         {/* Colonne centrale — Content Studio (flex-1) */}
         <div className="flex-1 flex flex-col min-w-0 border-r border-border/20">
-          <StudioWizard />
+          <StudioWizard activeSourceIds={Array.from(activeSourceIds)} />
         </div>
 
         {/* Colonne droite — Coach IA (300px) */}

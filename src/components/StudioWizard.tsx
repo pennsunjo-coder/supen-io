@@ -11,7 +11,8 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic";
 import { sanitizeInput } from "@/lib/security";
-import { searchViralReferences, ViralReference } from "@/lib/embeddings";
+import { searchViralReferences, ViralReference, searchUserSources } from "@/lib/embeddings";
+import { supabase } from "@/lib/supabase";
 
 /* ─── Icônes plateformes (compactes, 16px) ─── */
 
@@ -62,7 +63,11 @@ const sourceModes: { id: SourceMode; label: string; placeholder: string; icon: R
 
 /* ─── Composant ─── */
 
-const StudioWizard = () => {
+interface StudioWizardProps {
+  activeSourceIds?: string[];
+}
+
+const StudioWizard = ({ activeSourceIds = [] }: StudioWizardProps) => {
   const [started, setStarted] = useState(false);
   const [step, setStep] = useState(0);
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(null);
@@ -108,6 +113,7 @@ const StudioWizard = () => {
     setError(null);
 
     try {
+      // RAG viral
       let viralContext = "";
       try {
         const refs: ViralReference[] = await searchViralReferences(sanitized, selectedPlatform.name, selectedFormat, 3);
@@ -116,6 +122,18 @@ const StudioWizard = () => {
             refs.map((r, i) => `--- Modèle ${i + 1} (score: ${(r.similarity * 100).toFixed(0)}%) ---\n${r.content}`).join("\n\n");
         }
       } catch { /* RAG indisponible */ }
+
+      // RAG sources utilisateur
+      let userContext = "";
+      try {
+        if (activeSourceIds.length > 0) {
+          const userRefs = await searchUserSources(sanitized, activeSourceIds, 5);
+          if (userRefs.length > 0) {
+            userContext = "\n\nVoici le contenu de tes sources :\n" +
+              userRefs.map((r) => `--- [${r.type}] ${r.title} ---\n${r.content.slice(0, 2000)}`).join("\n\n");
+          }
+        }
+      } catch { /* Sources indisponibles */ }
 
       const modeLabel = sourceMode === "document" ? "Voici un document source à transformer"
         : sourceMode === "idea" ? "Voici une idée à développer" : "Voici un sujet / mot-clé";
@@ -132,13 +150,29 @@ Règles :
 - Écriture directe, humaine, niveau CM2. Phrases courtes.
 - Pas de formules enthousiastes artificielles.
 - Adapte le ton à ${selectedPlatform.name}.
-- Format demandé : ${selectedFormat}.${viralContext}`,
+- Format demandé : ${selectedFormat}.${userContext}${viralContext}`,
         messages: [{ role: "user", content: `${modeLabel} :\n\n${sanitized}\n\nGénère 5 variations de type "${selectedFormat}" pour ${selectedPlatform.name}.` }],
       });
 
       const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
       const parsed = text.split(/\n\s*(?=\d\.\s)/).map((v) => v.replace(/^\d\.\s*/, "").trim()).filter((v) => v.length > 20);
-      setVariations(parsed.length > 0 ? parsed : [text]);
+      const finalVariations = parsed.length > 0 ? parsed : [text];
+      setVariations(finalVariations);
+
+      // Sauvegarder dans generated_content
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const inserts = finalVariations.map((content) => ({
+            user_id: user.id,
+            platform: selectedPlatform.name,
+            format: selectedFormat,
+            content,
+            source_ids: activeSourceIds,
+          }));
+          await supabase.from("generated_content").insert(inserts);
+        }
+      } catch { /* Sauvegarde silencieuse */ }
     } catch (err: unknown) {
       setError(`Erreur de génération : ${err instanceof Error ? err.message : "Erreur inconnue"}`);
     } finally {
@@ -225,9 +259,13 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                   <Shield className="w-3.5 h-3.5" />
                   <span className="text-[11px]">Anti-IA activé</span>
                 </div>
-                <div className="flex items-center gap-1.5 text-muted-foreground/50">
+                <div className={cn("flex items-center gap-1.5", activeSourceIds.length > 0 ? "text-primary/70" : "text-muted-foreground/50")}>
                   <Globe className="w-3.5 h-3.5" />
-                  <span className="text-[11px]">6 plateformes</span>
+                  <span className="text-[11px]">
+                    {activeSourceIds.length > 0
+                      ? `${activeSourceIds.length} source${activeSourceIds.length > 1 ? "s" : ""} active${activeSourceIds.length > 1 ? "s" : ""}`
+                      : "6 plateformes"}
+                  </span>
                 </div>
               </div>
             </div>
