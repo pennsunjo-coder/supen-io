@@ -1,17 +1,9 @@
 import { ReactNode } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Zap, BookOpen, Wand2, Wrench, Settings, LogOut } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Link, useNavigate } from "react-router-dom";
+import { Zap, Settings, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
-const navItems = [
-  { label: "Notebook", icon: BookOpen, path: "/dashboard" },
-  { label: "Studio", icon: Wand2, path: "/dashboard/studio" },
-  { label: "Outils", icon: Wrench, path: "/dashboard/tools" },
-];
-
 const DashboardLayout = ({ children }: { children: ReactNode }) => {
-  const location = useLocation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
 
@@ -21,63 +13,38 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <div className="min-h-screen flex bg-background">
-      {/* Sidebar — compact & clean */}
-      <aside className="w-16 border-r border-border/20 flex flex-col items-center py-4 shrink-0">
-        {/* Logo */}
+    <div className="h-screen flex flex-col bg-background">
+      {/* Top bar */}
+      <header className="h-12 border-b border-border/20 flex items-center px-4 shrink-0">
         <Link
           to="/dashboard"
-          className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center mb-6 hover:bg-primary/15 transition-colors"
+          className="flex items-center gap-2 hover:opacity-80 transition-opacity"
         >
-          <Zap className="w-4 h-4 text-primary" />
+          <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+            <Zap className="w-3.5 h-3.5 text-primary" />
+          </div>
+          <span className="text-sm font-bold tracking-tight">Supen.io</span>
         </Link>
 
-        {/* Nav icons */}
-        <nav className="flex-1 flex flex-col items-center gap-1">
-          {navItems.map((item) => {
-            const isActive =
-              location.pathname === item.path ||
-              (item.path === "/dashboard" && location.pathname === "/dashboard");
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={cn(
-                  "w-10 h-10 rounded-xl flex items-center justify-center transition-all group relative",
-                  isActive
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                )}
-              >
-                <item.icon className="w-[18px] h-[18px]" />
-                {/* Tooltip */}
-                <span className="absolute left-full ml-2 px-2 py-1 rounded-md bg-popover text-popover-foreground text-xs font-medium opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap shadow-lg border border-border/30">
-                  {item.label}
-                </span>
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Bottom actions */}
-        <div className="flex flex-col items-center gap-1">
-          <Link
-            to="/dashboard/settings"
-            className="w-10 h-10 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all"
+        <div className="ml-auto flex items-center gap-1">
+          <button
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all"
+            title="Paramètres"
           >
-            <Settings className="w-[18px] h-[18px]" />
-          </Link>
+            <Settings className="w-4 h-4" />
+          </button>
           <button
             onClick={handleLogout}
-            className="w-10 h-10 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all"
+            title="Déconnexion"
           >
-            <LogOut className="w-[18px] h-[18px]" />
+            <LogOut className="w-4 h-4" />
           </button>
         </div>
-      </aside>
+      </header>
 
-      {/* Main */}
-      <main className="flex-1 flex flex-col overflow-hidden">{children}</main>
+      {/* Content area */}
+      <main className="flex-1 flex overflow-hidden">{children}</main>
     </div>
   );
 };

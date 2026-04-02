@@ -174,7 +174,7 @@ const SourcePanel = ({
   };
 
   return (
-    <div className="w-[280px] flex flex-col border-r border-border/20">
+    <div className="w-[250px] flex flex-col border-r border-border/20">
       {/* Header */}
       <div className="px-5 py-4 shrink-0">
         <h2 className="text-sm font-semibold text-foreground">Sources</h2>

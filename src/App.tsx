@@ -5,10 +5,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { Navigate } from "react-router-dom";
 import Index from "./pages/Index.tsx";
 import Login from "./pages/Login.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
-import Studio from "./pages/Studio.tsx";
 import Tools from "./pages/Tools.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -25,7 +25,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/dashboard/studio" element={<ProtectedRoute><Studio /></ProtectedRoute>} />
+            <Route path="/dashboard/studio" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard/tools" element={<ProtectedRoute><Tools /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

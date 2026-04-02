@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { Send, Sparkles, Bot, User, Loader2, Trash2 } from "lucide-react";
+import { Send, Bot, User, Loader2, Trash2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { anthropic, CLAUDE_MODEL, SYSTEM_PROMPT } from "@/lib/anthropic";
@@ -15,213 +15,136 @@ const RATE_LIMIT_WINDOW_MS = 60_000;
 const suggestedPrompts = [
   "Résume mes sources",
   "Trouve les idées clés",
-  "Génère un post LinkedIn",
-  "Compare les points de vue",
+  "Génère des hooks viraux",
+  "Aide-moi à structurer",
 ];
 
 interface ChatPanelProps {
   sources: Source[];
   messages: ConversationMessage[];
-  onMessagesChange: (
-    updater: (prev: ConversationMessage[]) => ConversationMessage[]
-  ) => void;
+  onMessagesChange: (updater: (prev: ConversationMessage[]) => ConversationMessage[]) => void;
   conversationLoading: boolean;
   onClearConversation: () => void;
 }
 
 function buildSystemPrompt(sources: Source[]): string {
   if (sources.length === 0) return SYSTEM_PROMPT;
-
   let context = "\n\n## Sources de recherche de l'utilisateur\n\n";
-
   for (const source of sources) {
-    const typeLabel =
-      source.type === "url" ? "Lien" : source.type === "pdf" ? "PDF" : "Note";
+    const typeLabel = source.type === "url" ? "Lien" : source.type === "pdf" ? "PDF" : "Note";
     context += `### [${typeLabel}] ${source.title}\n`;
-    if (source.content) {
-      context += `${source.content.slice(0, 3000)}\n`;
-    }
+    if (source.content) context += `${source.content.slice(0, 3000)}\n`;
     context += "\n";
   }
-
-  context +=
-    "Utilise ces sources pour répondre aux questions. Cite les sources quand c'est pertinent.";
-
+  context += "Utilise ces sources pour répondre aux questions. Cite les sources quand c'est pertinent.";
   return SYSTEM_PROMPT + context;
 }
 
-const ChatPanel = ({
-  sources,
-  messages,
-  onMessagesChange,
-  conversationLoading,
-  onClearConversation,
-}: ChatPanelProps) => {
+const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, onClearConversation }: ChatPanelProps) => {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
   const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const rateLimiter = useMemo(
-    () => createRateLimiter(RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MS),
-    []
-  );
+  const rateLimiter = useMemo(() => createRateLimiter(RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MS), []);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, streamingContent]);
 
-  const sendMessage = useCallback(
-    async (text?: string) => {
-      const raw = text || input.trim();
-      if (!raw || isLoading) return;
+  const sendMessage = useCallback(async (text?: string) => {
+    const raw = text || input.trim();
+    if (!raw || isLoading) return;
+    const content = sanitizeInput(raw, MAX_MESSAGE_LENGTH);
+    if (!content) return;
+    if (!rateLimiter.canProceed()) {
+      const wait = Math.ceil(rateLimiter.getRemainingTime() / 1000);
+      setError(`Limite : ${RATE_LIMIT_MAX} msg/min. Réessaie dans ${wait}s.`);
+      return;
+    }
 
-      const content = sanitizeInput(raw, MAX_MESSAGE_LENGTH);
-      if (!content) return;
+    setError(null);
+    setInput("");
+    setIsLoading(true);
+    setStreamingContent("");
 
-      if (!rateLimiter.canProceed()) {
-        const wait = Math.ceil(rateLimiter.getRemainingTime() / 1000);
-        setError(
-          `Limite atteinte : ${RATE_LIMIT_MAX} messages par minute. Réessaie dans ${wait}s.`
-        );
-        return;
-      }
+    const userMessage: ConversationMessage = { role: "user", content };
+    const updatedMessages = [...messages, userMessage];
+    onMessagesChange(() => updatedMessages);
 
-      setError(null);
-      setInput("");
-      setIsLoading(true);
+    const apiMessages: MessageParam[] = updatedMessages.map((msg) => ({ role: msg.role, content: msg.content }));
+
+    try {
+      abortRef.current = new AbortController();
+      const stream = anthropic.messages.stream(
+        { model: CLAUDE_MODEL, max_tokens: 2048, system: buildSystemPrompt(sources), messages: apiMessages },
+        { signal: abortRef.current.signal },
+      );
+      let fullResponse = "";
+      stream.on("text", (t) => { fullResponse += t; setStreamingContent(fullResponse); });
+      await stream.finalMessage();
       setStreamingContent("");
+      onMessagesChange((prev) => [...prev, { role: "assistant", content: fullResponse }]);
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === "AbortError") return;
+      setStreamingContent("");
+      setError(`Erreur : ${err instanceof Error ? err.message : "Inconnue"}`);
+    } finally {
+      setIsLoading(false);
+      abortRef.current = null;
+    }
+  }, [input, isLoading, messages, sources, rateLimiter, onMessagesChange]);
 
-      // Ajouter le message utilisateur
-      const userMessage: ConversationMessage = { role: "user", content };
-      const updatedMessages = [...messages, userMessage];
-      onMessagesChange(() => updatedMessages);
-
-      // Construire l'historique pour l'API
-      const apiMessages: MessageParam[] = updatedMessages.map((msg) => ({
-        role: msg.role,
-        content: msg.content,
-      }));
-
-      try {
-        abortRef.current = new AbortController();
-
-        const stream = anthropic.messages.stream(
-          {
-            model: CLAUDE_MODEL,
-            max_tokens: 2048,
-            system: buildSystemPrompt(sources),
-            messages: apiMessages,
-          },
-          { signal: abortRef.current.signal }
-        );
-
-        let fullResponse = "";
-
-        stream.on("text", (text) => {
-          fullResponse += text;
-          setStreamingContent(fullResponse);
-        });
-
-        await stream.finalMessage();
-
-        // Sauvegarder le message complet de l'assistant
-        setStreamingContent("");
-        const assistantMessage: ConversationMessage = {
-          role: "assistant",
-          content: fullResponse,
-        };
-        onMessagesChange((prev) => [...prev, assistantMessage]);
-      } catch (err: unknown) {
-        if (err instanceof Error && err.name === "AbortError") return;
-
-        const errorMessage =
-          err instanceof Error ? err.message : "Erreur inconnue";
-        setStreamingContent("");
-        setError(`Erreur de l'API Claude : ${errorMessage}`);
-      } finally {
-        setIsLoading(false);
-        abortRef.current = null;
-      }
-    },
-    [input, isLoading, messages, sources, rateLimiter, onMessagesChange]
-  );
-
-  useEffect(() => {
-    return () => {
-      abortRef.current?.abort();
-    };
-  }, []);
+  useEffect(() => { return () => { abortRef.current?.abort(); }; }, []);
 
   const isEmpty = messages.length === 0 && !streamingContent;
 
   return (
-    <div className="flex-1 flex flex-col min-w-0">
+    <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="px-6 py-3.5 border-b border-border/20 flex items-center gap-2.5">
-        <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center">
-          <Sparkles className="w-3.5 h-3.5 text-primary" />
+      <div className="px-4 py-3 border-b border-border/20 flex items-center gap-2 shrink-0">
+        <div className="w-5 h-5 rounded-md bg-primary/10 flex items-center justify-center">
+          <Sparkles className="w-3 h-3 text-primary" />
         </div>
-        <h2 className="text-sm font-medium text-foreground">Assistant IA</h2>
-        <div className="ml-auto flex items-center gap-3">
+        <h2 className="text-xs font-semibold">Coach IA</h2>
+        <div className="ml-auto flex items-center gap-2">
           {messages.length > 0 && (
-            <button
-              onClick={onClearConversation}
-              className="flex items-center gap-1 text-[11px] text-muted-foreground/60 hover:text-destructive transition-colors"
-              title="Nouvelle conversation"
-            >
-              <Trash2 className="w-3 h-3" />
-              Effacer
+            <button onClick={onClearConversation} className="text-[10px] text-muted-foreground/50 hover:text-destructive transition-colors flex items-center gap-1">
+              <Trash2 className="w-2.5 h-2.5" /> Effacer
             </button>
           )}
-          <div className="flex items-center gap-1.5">
-            <div
-              className={cn(
-                "w-1.5 h-1.5 rounded-full",
-                isLoading
-                  ? "bg-amber-400/80 animate-pulse"
-                  : "bg-emerald-400/80"
-              )}
-            />
-            <span className="text-[11px] text-muted-foreground">
-              {isLoading ? "Claude réfléchit…" : "Claude Sonnet"}
-            </span>
+          <div className="flex items-center gap-1">
+            <div className={cn("w-1.5 h-1.5 rounded-full", isLoading ? "bg-amber-400/80 animate-pulse" : "bg-emerald-400/80")} />
+            <span className="text-[10px] text-muted-foreground">{isLoading ? "Réflexion..." : "En ligne"}</span>
           </div>
         </div>
       </div>
 
-      {/* Messages or empty state */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto">
+      {/* Messages */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto min-h-0">
         {conversationLoading ? (
           <div className="h-full flex items-center justify-center">
-            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
           </div>
         ) : isEmpty ? (
-          <div className="h-full flex flex-col items-center justify-center px-8 max-w-md mx-auto">
-            <div className="w-14 h-14 rounded-2xl bg-primary/8 flex items-center justify-center mb-5">
-              <Sparkles className="w-6 h-6 text-primary/70" />
+          <div className="h-full flex flex-col items-center justify-center px-4">
+            <div className="w-10 h-10 rounded-xl bg-primary/8 flex items-center justify-center mb-3">
+              <Sparkles className="w-4 h-4 text-primary/70" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">
-              Comment puis-je t'aider ?
-            </h3>
-            <p className="text-sm text-muted-foreground text-center leading-relaxed mb-2">
-              Pose-moi des questions pour analyser, résumer ou créer du contenu.
+            <p className="text-xs font-medium text-foreground mb-1">Coach IA</p>
+            <p className="text-[11px] text-muted-foreground text-center mb-4 leading-relaxed">
+              Discute pendant que tu crées. Demande des hooks, des idées, des retours.
             </p>
             {sources.length > 0 && (
-              <p className="text-xs text-primary/70 mb-6">
-                {sources.length} source{sources.length > 1 ? "s" : ""} active
-                {sources.length > 1 ? "s" : ""}
-              </p>
+              <p className="text-[10px] text-primary/70 mb-3">{sources.length} source{sources.length > 1 ? "s" : ""}</p>
             )}
-            <div className="grid grid-cols-2 gap-2 w-full mt-2">
+            <div className="grid grid-cols-1 gap-1.5 w-full">
               {suggestedPrompts.map((prompt) => (
                 <button
                   key={prompt}
                   onClick={() => sendMessage(prompt)}
-                  className="px-3 py-2.5 rounded-xl border border-border/40 text-xs text-muted-foreground hover:text-foreground hover:bg-accent/40 hover:border-border/60 transition-all text-left leading-snug"
+                  className="px-3 py-2 rounded-lg border border-border/30 text-[11px] text-muted-foreground hover:text-foreground hover:bg-accent/40 hover:border-border/50 transition-all text-left"
                 >
                   {prompt}
                 </button>
@@ -229,49 +152,37 @@ const ChatPanel = ({
             </div>
           </div>
         ) : (
-          <div className="p-5 space-y-4">
+          <div className="p-3 space-y-3">
             {messages.map((msg, index) => (
-              <div
-                key={index}
-                className={cn(
-                  "flex gap-3 animate-fade-in",
-                  msg.role === "user" ? "justify-end" : "justify-start"
-                )}
-              >
+              <div key={index} className={cn("flex gap-2", msg.role === "user" ? "justify-end" : "justify-start")}>
                 {msg.role === "assistant" && (
-                  <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                    <Bot className="w-3.5 h-3.5 text-primary" />
+                  <div className="w-5 h-5 rounded-md bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                    <Bot className="w-3 h-3 text-primary" />
                   </div>
                 )}
-                <div
-                  className={cn(
-                    "max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap",
-                    msg.role === "user"
-                      ? "bg-primary text-primary-foreground rounded-br-md"
-                      : "bg-accent/50 text-foreground rounded-bl-md"
-                  )}
-                >
+                <div className={cn(
+                  "max-w-[85%] rounded-xl px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap",
+                  msg.role === "user" ? "bg-primary text-primary-foreground rounded-br-sm" : "bg-accent/50 text-foreground rounded-bl-sm",
+                )}>
                   {msg.content}
                 </div>
                 {msg.role === "user" && (
-                  <div className="w-7 h-7 rounded-lg bg-accent/60 flex items-center justify-center shrink-0 mt-0.5">
-                    <User className="w-3.5 h-3.5 text-muted-foreground" />
+                  <div className="w-5 h-5 rounded-md bg-accent/60 flex items-center justify-center shrink-0 mt-0.5">
+                    <User className="w-3 h-3 text-muted-foreground" />
                   </div>
                 )}
               </div>
             ))}
-
-            {/* Streaming message */}
             {isLoading && (
-              <div className="flex gap-3 animate-fade-in justify-start">
-                <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                  <Bot className="w-3.5 h-3.5 text-primary" />
+              <div className="flex gap-2 justify-start">
+                <div className="w-5 h-5 rounded-md bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                  <Bot className="w-3 h-3 text-primary" />
                 </div>
-                <div className="max-w-[75%] rounded-2xl rounded-bl-md px-4 py-3 bg-accent/50 text-foreground text-sm leading-relaxed whitespace-pre-wrap">
+                <div className="max-w-[85%] rounded-xl rounded-bl-sm px-3 py-2 bg-accent/50 text-foreground text-xs leading-relaxed whitespace-pre-wrap">
                   {streamingContent || (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span className="text-xs">Réflexion en cours…</span>
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      <span className="text-[10px]">Réflexion...</span>
                     </div>
                   )}
                 </div>
@@ -281,45 +192,34 @@ const ChatPanel = ({
         )}
       </div>
 
-      {/* Error banner */}
+      {/* Error */}
       {error && (
-        <div className="mx-4 mb-2 px-3 py-2 rounded-lg bg-destructive/10 border border-destructive/20 text-xs text-destructive">
+        <div className="mx-3 mb-2 px-2.5 py-1.5 rounded-lg bg-destructive/10 border border-destructive/20 text-[10px] text-destructive">
           {error}
         </div>
       )}
 
       {/* Input */}
-      <div className="p-4 border-t border-border/20">
-        <div className="flex gap-2 items-end">
-          <div className="flex-1 relative">
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) =>
-                e.key === "Enter" && !e.shiftKey && sendMessage()
-              }
-              placeholder="Pose une question sur tes sources..."
-              maxLength={MAX_MESSAGE_LENGTH}
-              disabled={isLoading}
-              className="w-full bg-accent/30 border border-border/30 rounded-xl px-4 py-3 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/30 transition-all disabled:opacity-50"
-            />
-          </div>
+      <div className="p-3 border-t border-border/20 shrink-0">
+        <div className="flex gap-1.5 items-end">
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
+            placeholder="Demande au coach..."
+            maxLength={MAX_MESSAGE_LENGTH}
+            disabled={isLoading}
+            className="flex-1 bg-accent/30 border border-border/30 rounded-lg px-3 py-2 text-xs placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:opacity-50"
+          />
           <Button
             size="icon"
             onClick={() => sendMessage()}
             disabled={!input.trim() || isLoading}
-            className="shrink-0 h-[46px] w-[46px] rounded-xl glow-sm disabled:opacity-30"
+            className="shrink-0 h-[34px] w-[34px] rounded-lg glow-sm disabled:opacity-30"
           >
-            {isLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Send className="w-4 h-4" />
-            )}
+            {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
           </Button>
         </div>
-        <p className="text-[10px] text-muted-foreground/40 text-center mt-2">
-          L'IA peut faire des erreurs. Vérifie les informations importantes.
-        </p>
       </div>
     </div>
   );
