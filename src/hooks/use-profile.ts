@@ -66,29 +66,22 @@ export function useProfile() {
       if (!user) return { success: false, error: "Non connecté" };
 
       try {
-        // Utiliser la ref pour avoir la valeur actuelle (pas de stale closure)
-        if (profileRef.current) {
-          const { data, error } = await supabase
-            .from("user_profiles")
-            .update(updates)
-            .eq("user_id", user.id)
-            .select()
-            .single();
+        // Upsert — fonctionne que le profil existe ou non
+        const { data, error } = await supabase
+          .from("user_profiles")
+          .upsert({ user_id: user.id, ...updates }, { onConflict: "user_id" })
+          .select()
+          .single();
 
-          if (error) return { success: false, error: error.message };
-          if (data) setProfile(data as UserProfile);
-          return { success: true, error: null };
-        } else {
-          const { data, error } = await supabase
-            .from("user_profiles")
-            .insert({ user_id: user.id, ...updates })
-            .select()
-            .single();
-
-          if (error) return { success: false, error: error.message };
-          if (data) setProfile(data as UserProfile);
-          return { success: true, error: null };
+        if (error) {
+          console.warn("useProfile upsert error:", error.message);
+          return { success: false, error: error.message };
         }
+        if (data) {
+          console.log("useProfile: profil sauvegardé", data.onboarding_completed);
+          setProfile(data as UserProfile);
+        }
+        return { success: true, error: null };
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Erreur réseau";
         return { success: false, error: msg };

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { getCache, setCache } from "@/lib/cache";
 
 export interface GeneratedItem {
   id: string;
@@ -52,21 +53,26 @@ export function useHistory() {
   const [loading, setLoading] = useState(true);
 
   const fetchHistory = useCallback(async () => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
+    if (!user) { setLoading(false); return; }
 
-    const { data, error } = await supabase
-      .from("generated_content")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(200);
+    const cacheKey = `history:${user.id}`;
+    const cached = getCache<GeneratedItem[]>(cacheKey);
+    if (cached) { setItems(cached); setLoading(false); return; }
 
-    if (!error && data) {
-      setItems(data as GeneratedItem[]);
-    }
+    try {
+      const { data, error } = await supabase
+        .from("generated_content")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(200);
+
+      if (!error && data) {
+        const typed = data as GeneratedItem[];
+        setItems(typed);
+        setCache(cacheKey, typed);
+      }
+    } catch { /* réseau */ }
     setLoading(false);
   }, [user]);
 

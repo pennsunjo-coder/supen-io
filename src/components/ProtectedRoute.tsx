@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/use-profile";
@@ -11,9 +12,19 @@ export default function ProtectedRoute({ children, skipOnboardingCheck = false }
   const { user, loading: authLoading } = useAuth();
   const { onboardingCompleted, loading: profileLoading } = useProfile();
   const location = useLocation();
+  const [timedOut, setTimedOut] = useState(false);
 
-  // Toujours attendre la fin du chargement
-  if (authLoading || profileLoading) {
+  // Timeout de 5 secondes : si le profil ne charge pas, laisser l'accès
+  useEffect(() => {
+    if (profileLoading) {
+      const timer = setTimeout(() => setTimedOut(true), 5000);
+      return () => clearTimeout(timer);
+    }
+    setTimedOut(false);
+  }, [profileLoading]);
+
+  // Attendre l'auth
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -25,13 +36,21 @@ export default function ProtectedRoute({ children, skipOnboardingCheck = false }
     return <Navigate to="/login" replace />;
   }
 
-  // Skip la vérification onboarding pour la page /onboarding elle-même
+  // Attendre le profil (sauf timeout)
+  if (profileLoading && !timedOut) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   if (skipOnboardingCheck) {
     return <>{children}</>;
   }
 
-  // Redirige vers onboarding seulement si loading=false ET pas complété
-  if (!onboardingCompleted && location.pathname !== "/onboarding") {
+  // Redirige vers onboarding seulement si loading terminé, pas timeout, et pas complété
+  if (!timedOut && !onboardingCompleted && location.pathname !== "/onboarding") {
     return <Navigate to="/onboarding" replace />;
   }
 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { getCache, setCache, invalidateCache } from "@/lib/cache";
 import type { Source } from "@/types/database";
 
 const TAVILY_API_KEY = import.meta.env.VITE_TAVILY_API_KEY;
@@ -61,19 +62,25 @@ export function useSources() {
   const [loading, setLoading] = useState(true);
 
   const fetchSources = useCallback(async () => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
-    const { data, error } = await supabase
-      .from("sources")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
+    if (!user) { setLoading(false); return; }
 
-    if (!error && data) {
-      setSources(data as Source[]);
-    }
+    const cacheKey = `sources:${user.id}`;
+    const cached = getCache<Source[]>(cacheKey);
+    if (cached) { setSources(cached); setLoading(false); return; }
+
+    try {
+      const { data, error } = await supabase
+        .from("sources")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (!error && data) {
+        const typed = data as Source[];
+        setSources(typed);
+        setCache(cacheKey, typed);
+      }
+    } catch { /* réseau */ }
     setLoading(false);
   }, [user]);
 
@@ -280,10 +287,11 @@ export function useSources() {
         .eq("id", source.id);
 
       if (error) return { error: error.message };
+      if (user) invalidateCache(`sources:${user.id}`);
       setSources((prev) => prev.filter((s) => s.id !== source.id));
       return { error: null };
     },
-    []
+    [user]
   );
 
   return { sources, loading, addUrl, addNote, addPdf, searchWeb, removeSource };
