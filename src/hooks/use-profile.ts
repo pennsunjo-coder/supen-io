@@ -28,11 +28,12 @@ export function useProfile() {
       .from("user_profiles")
       .select("*")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
     if (!error && data) {
       setProfile(data as UserProfile);
     } else {
+      // Pas de profil = onboarding pas fait
       setProfile(null);
     }
     setLoading(false);
@@ -43,24 +44,34 @@ export function useProfile() {
   }, [fetchProfile]);
 
   const updateProfile = useCallback(
-    async (updates: Partial<Omit<UserProfile, "id" | "user_id" | "created_at">>) => {
-      if (!user) return;
+    async (
+      updates: Partial<Omit<UserProfile, "id" | "user_id" | "created_at">>
+    ): Promise<{ success: boolean; error: string | null }> => {
+      if (!user) return { success: false, error: "Non connecté" };
 
       if (profile) {
+        // Update existant
         const { data, error } = await supabase
           .from("user_profiles")
           .update(updates)
           .eq("user_id", user.id)
           .select()
           .single();
-        if (!error && data) setProfile(data as UserProfile);
+
+        if (error) return { success: false, error: error.message };
+        if (data) setProfile(data as UserProfile);
+        return { success: true, error: null };
       } else {
+        // Insert nouveau profil
         const { data, error } = await supabase
           .from("user_profiles")
           .insert({ user_id: user.id, ...updates })
           .select()
           .single();
-        if (!error && data) setProfile(data as UserProfile);
+
+        if (error) return { success: false, error: error.message };
+        if (data) setProfile(data as UserProfile);
+        return { success: true, error: null };
       }
     },
     [user, profile]

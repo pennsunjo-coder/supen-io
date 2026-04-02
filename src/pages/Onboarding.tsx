@@ -43,17 +43,46 @@ const NICHE_OPTIONS = [
   { id: "Immobilier", emoji: "🏠" },
 ];
 
+const CONFETTI_COLORS = ["#818cf8", "#34d399", "#f472b6", "#fbbf24", "#60a5fa", "#a78bfa", "#fb923c", "#e879f9"];
+
 const stepAnim = {
   initial: { opacity: 0, x: 40 },
   animate: { opacity: 1, x: 0 },
   exit: { opacity: 0, x: -40 },
 };
 
+/* ─── Confetti keyframes (inline style) ─── */
+
+function ConfettiPiece({ index }: { index: number }) {
+  const color = CONFETTI_COLORS[index % CONFETTI_COLORS.length];
+  const left = 10 + (index * 17) % 80;
+  const delay = index * 0.12;
+  const duration = 1.8 + (index % 3) * 0.4;
+  const size = 4 + (index % 3) * 2;
+  const rotation = index * 45;
+
+  return (
+    <motion.div
+      initial={{ y: -20, opacity: 1, rotate: 0 }}
+      animate={{ y: 400, opacity: 0, rotate: rotation + 360 }}
+      transition={{ duration, delay, ease: "easeIn" }}
+      className="absolute rounded-sm"
+      style={{
+        left: `${left}%`,
+        top: -10,
+        width: size,
+        height: size,
+        backgroundColor: color,
+      }}
+    />
+  );
+}
+
 /* ─── Composant ─── */
 
 const Onboarding = () => {
   const navigate = useNavigate();
-  const { updateProfile } = useProfile();
+  const { updateProfile, onboardingCompleted } = useProfile();
 
   const [step, setStep] = useState(0);
   const [firstName, setFirstName] = useState("");
@@ -62,6 +91,14 @@ const Onboarding = () => {
   const [niche, setNiche] = useState("");
   const [customNiche, setCustomNiche] = useState("");
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [showButton, setShowButton] = useState(false);
+
+  // Si onboarding déjà complété, redirect direct
+  if (onboardingCompleted && step !== 4) {
+    navigate("/dashboard", { replace: true });
+    return null;
+  }
 
   function togglePlatform(id: string) {
     setSelectedPlatforms((prev) =>
@@ -71,16 +108,29 @@ const Onboarding = () => {
 
   async function handleComplete() {
     setSaving(true);
+    setSaveError(null);
+
     const finalNiche = niche === "Autre" ? customNiche || "Autre" : niche;
-    await updateProfile({
+
+    const result = await updateProfile({
       first_name: firstName.trim(),
       platforms: selectedPlatforms,
       source_platform: sourcePlatform,
       niche: finalNiche,
       onboarding_completed: true,
     });
+
     setSaving(false);
+
+    if (!result.success) {
+      setSaveError(result.error || "Erreur lors de la sauvegarde. Réessaie.");
+      return;
+    }
+
+    // Profil sauvegardé avec succès — afficher l'écran de bienvenue
     setStep(4);
+    // Bouton apparaît après 2 secondes (le temps de voir les confetti)
+    setTimeout(() => setShowButton(true), 2000);
   }
 
   const progress = Math.min(((step + 1) / 5) * 100, 100);
@@ -227,7 +277,7 @@ const Onboarding = () => {
                         : "border-border/30 text-muted-foreground hover:text-foreground hover:bg-accent/30",
                     )}
                   >
-                    <span>➕</span> Autre
+                    ➕ Autre
                   </button>
                 </div>
                 {niche === "Autre" && (
@@ -239,59 +289,70 @@ const Onboarding = () => {
                     autoFocus
                   />
                 )}
+
+                {/* Erreur de sauvegarde */}
+                {saveError && (
+                  <div className="mt-4 px-3 py-2 rounded-lg bg-destructive/10 border border-destructive/20 text-xs text-destructive">
+                    {saveError}
+                  </div>
+                )}
+
                 <Button
                   onClick={handleComplete}
                   disabled={!niche || (niche === "Autre" && !customNiche.trim()) || saving}
-                  className="w-full h-12 mt-8 gap-2 font-semibold glow-sm"
+                  className="w-full h-12 mt-6 gap-2 font-semibold glow-sm"
                 >
                   {saving ? "Enregistrement..." : <>Terminer <Sparkles className="w-4 h-4" /></>}
                 </Button>
               </motion.div>
             )}
 
-            {/* ÉTAPE FINALE — Bienvenue */}
+            {/* ÉTAPE FINALE — Bienvenue + Confetti */}
             {step === 4 && (
               <motion.div
                 key="welcome"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.4, ease: "easeOut" }}
-                className="text-center"
+                className="text-center relative"
               >
-                {/* Confetti CSS */}
-                <div className="relative mb-6">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    {[...Array(12)].map((_, i) => (
-                      <div
-                        key={i}
-                        className="absolute w-2 h-2 rounded-full animate-ping"
-                        style={{
-                          backgroundColor: ["#818cf8", "#34d399", "#f472b6", "#fbbf24", "#60a5fa", "#a78bfa"][i % 6],
-                          top: `${20 + Math.sin(i * 0.52) * 30}%`,
-                          left: `${20 + Math.cos(i * 0.52) * 30}%`,
-                          animationDelay: `${i * 0.15}s`,
-                          animationDuration: "1.5s",
-                        }}
-                      />
-                    ))}
-                  </div>
-                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto relative z-10">
-                    <Sparkles className="w-7 h-7 text-primary" />
-                  </div>
+                {/* Confetti animation */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none -top-20" style={{ height: 500 }}>
+                  {[...Array(20)].map((_, i) => (
+                    <ConfettiPiece key={i} index={i} />
+                  ))}
                 </div>
 
-                <h1 className="text-2xl font-bold text-foreground mb-2">
-                  Bienvenue sur Supen.io, {firstName} !
-                </h1>
-                <p className="text-sm text-muted-foreground leading-relaxed mb-8">
-                  Ton espace est prêt. Commençons à créer du contenu viral.
-                </p>
-                <Button
-                  onClick={() => navigate("/dashboard")}
-                  className="h-12 px-8 text-sm font-semibold glow-sm gap-2.5"
-                >
-                  <Sparkles className="w-4 h-4" /> Accéder au Studio
-                </Button>
+                <div className="relative z-10">
+                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
+                    <Sparkles className="w-7 h-7 text-primary" />
+                  </div>
+
+                  <h1 className="text-2xl font-bold text-foreground mb-2">
+                    Bienvenue sur Supen.io, {firstName} !
+                  </h1>
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-8">
+                    Ton espace est prêt. Commençons à créer du contenu viral.
+                  </p>
+
+                  {/* Bouton apparaît après les confetti */}
+                  <AnimatePresence>
+                    {showButton && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <Button
+                          onClick={() => navigate("/dashboard", { replace: true })}
+                          className="h-12 px-8 text-sm font-semibold glow-sm gap-2.5"
+                        >
+                          <Sparkles className="w-4 h-4" /> Accéder au Studio
+                        </Button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

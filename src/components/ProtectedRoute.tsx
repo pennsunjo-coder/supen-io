@@ -2,11 +2,17 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/use-profile";
 
-export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  skipOnboardingCheck?: boolean;
+}
+
+export default function ProtectedRoute({ children, skipOnboardingCheck = false }: ProtectedRouteProps) {
   const { user, loading: authLoading } = useAuth();
   const { onboardingCompleted, loading: profileLoading } = useProfile();
   const location = useLocation();
 
+  // Toujours attendre la fin du chargement
   if (authLoading || profileLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -19,7 +25,12 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     return <Navigate to="/login" replace />;
   }
 
-  // Redirige vers onboarding si pas complété (sauf si on est déjà sur /onboarding)
+  // Skip la vérification onboarding pour la page /onboarding elle-même
+  if (skipOnboardingCheck) {
+    return <>{children}</>;
+  }
+
+  // Redirige vers onboarding seulement si loading=false ET pas complété
   if (!onboardingCompleted && location.pathname !== "/onboarding") {
     return <Navigate to="/onboarding" replace />;
   }
