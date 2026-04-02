@@ -10,6 +10,7 @@ import Index from "./pages/Index.tsx";
 import Login from "./pages/Login.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
 import Tools from "./pages/Tools.tsx";
+import History from "./pages/History.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/dashboard/studio" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
             <Route path="/dashboard/tools" element={<ProtectedRoute><Tools /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -1,9 +1,11 @@
 import { ReactNode } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Zap, Settings, LogOut } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Zap, Settings, LogOut, Clock } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 
 const DashboardLayout = ({ children }: { children: ReactNode }) => {
+  const location = useLocation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
 
@@ -27,6 +29,18 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
         </Link>
 
         <div className="ml-auto flex items-center gap-1">
+          <Link
+            to="/dashboard/history"
+            className={cn(
+              "w-8 h-8 rounded-lg flex items-center justify-center transition-all",
+              location.pathname === "/dashboard/history"
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
+            )}
+            title="Historique"
+          >
+            <Clock className="w-4 h-4" />
+          </Link>
           <button
             className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all"
             title="Paramètres"
