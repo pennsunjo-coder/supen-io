@@ -3,9 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import {
-  Sparkles, Copy, Check, RefreshCw, ChevronLeft,
+  Sparkles, Copy, Check, RefreshCw, ChevronLeft, ArrowRight,
   FileText, Lightbulb, Hash, ImagePlus, Wand2,
-  Shield, Layers, Globe,
+  Shield, Layers, Globe, ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -301,6 +301,7 @@ Règles strictes :
           }));
           await supabase.from("generated_content").insert(inserts);
           if (onGenerationComplete) onGenerationComplete();
+          toast.success(`${parsed.length} variations sauvegardées automatiquement`);
         }
       } catch { /* Sauvegarde silencieuse */ }
     } catch (err: unknown) {
@@ -616,11 +617,10 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                   <span className="text-xs font-semibold">{variations.length} variations</span>
                   <span className="text-[11px] text-muted-foreground ml-2">{breadcrumb}</span>
                 </div>
-                <span className="text-[9px] text-emerald-400/60 flex items-center gap-1"><Check className="w-2.5 h-2.5" /> Auto-sauvegardé</span>
               </div>
             </div>
 
-            {/* Cards */}
+            {/* Cards — scrollable */}
             <div className="flex-1 overflow-y-auto px-5 py-4">
               <div className="max-w-lg mx-auto space-y-3">
                 {variations.map((v, idx) => {
@@ -635,8 +635,10 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                         onClick={() => { setSelectedVariation(isSelected ? null : idx); setImagePanel(null); setInfraPanel(null); }}
                         className={cn("rounded-xl border p-4 cursor-pointer transition-all", isSelected ? "border-primary/40 bg-primary/[0.03] ring-1 ring-primary/15" : "border-border/20 hover:border-border/40")}
                       >
+                        {/* Header */}
                         <div className="flex items-center gap-2 mb-2.5">
                           <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded-full", angleColor)}>{v.angle}</span>
+                          {isSelected && <span className="text-[9px] text-primary/70 flex items-center gap-0.5"><Check className="w-2.5 h-2.5" /> Sélectionnée</span>}
                           <span className="text-[10px] text-muted-foreground/50 ml-auto">{v.words} mots</span>
                           <div className="flex items-center gap-1">
                             <div className="w-10 h-1.5 rounded-full bg-accent/30 overflow-hidden">
@@ -647,6 +649,7 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                         </div>
                         <p className="text-[13px] leading-relaxed whitespace-pre-wrap text-foreground/85">{v.content}</p>
 
+                        {/* Actions inline */}
                         {isSelected && (
                           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-wrap items-center gap-1.5 mt-3 pt-3 border-t border-border/15">
                             <Button variant="ghost" size="sm" className="h-7 text-[11px] gap-1.5 px-2.5 text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); handleCopy(idx); }}>
@@ -667,7 +670,7 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                         )}
                       </motion.div>
 
-                      {/* Panel image inline */}
+                      {/* Panel image */}
                       <AnimatePresence>
                         {imagePanel === idx && isSelected && (
                           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.15 }}>
@@ -684,6 +687,7 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                                       {promptCopied ? "Copié" : "Copier le prompt"}
                                     </Button>
                                   </div>
+                                  <p className="text-[9px] text-muted-foreground/40 mt-1">Colle ce prompt dans Midjourney, DALL-E ou Nano Banana</p>
                                 </>
                               )}
                             </div>
@@ -691,7 +695,7 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                         )}
                       </AnimatePresence>
 
-                      {/* Panel infographie inline */}
+                      {/* Panel infographie */}
                       <AnimatePresence>
                         {infraPanel === idx && isSelected && (
                           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.15 }}>
@@ -706,6 +710,7 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                                     {infraCopied ? <Check className="w-2.5 h-2.5 text-emerald-400" /> : <Copy className="w-2.5 h-2.5" />}
                                     {infraCopied ? "Copié" : "Copier la structure"}
                                   </Button>
+                                  <p className="text-[9px] text-muted-foreground/40 mt-1">Utilise cette structure dans Canva ou Nano Banana</p>
                                 </>
                               )}
                             </div>
@@ -715,19 +720,37 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                     </div>
                   );
                 })}
+                {/* Spacer pour la barre fixe */}
+                <div className="h-14" />
+              </div>
+            </div>
 
-                {/* Actions en bas */}
-                <div className="flex items-center justify-between pt-3 border-t border-border/10">
-                  <button onClick={reset} className="text-[11px] text-muted-foreground/60 hover:text-foreground transition-colors">Recommencer</button>
-                  <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" onClick={handleGenerate} disabled={isGenerating} className="h-7 text-[11px] gap-1.5 text-muted-foreground">
-                      <RefreshCw className={cn("w-3 h-3", isGenerating && "animate-spin")} /> Regénérer
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={reset} className="h-7 text-[11px] gap-1.5 border-primary/30 text-primary">
-                      <Sparkles className="w-3 h-3" /> Nouveau contenu
-                    </Button>
-                  </div>
-                </div>
+            {/* ═══ BARRE D'ACTIONS FIXE EN BAS ═══ */}
+            <div className="shrink-0 px-4 py-2.5 border-t border-border/20 bg-background/95 backdrop-blur-sm">
+              <div className="max-w-lg mx-auto flex items-center gap-2">
+                {/* Gauche */}
+                <span className="text-[9px] text-emerald-400/60 flex items-center gap-1 shrink-0">
+                  <Check className="w-2.5 h-2.5" /> Sauvegardé
+                </span>
+                <button onClick={reset} className="text-[10px] text-muted-foreground/50 hover:text-foreground transition-colors shrink-0 ml-1">
+                  Recommencer
+                </button>
+
+                <div className="flex-1" />
+
+                {/* Droite */}
+                <Button variant="ghost" size="sm" onClick={handleGenerate} disabled={isGenerating} className="h-7 text-[10px] gap-1 px-2 text-muted-foreground shrink-0">
+                  <RefreshCw className={cn("w-3 h-3", isGenerating && "animate-spin")} />
+                </Button>
+                <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-1 px-2 text-muted-foreground shrink-0" onClick={() => { const idx = selectedVariation ?? 0; handleCopy(idx); }}>
+                  <ClipboardList className="w-3 h-3" /> Copier
+                </Button>
+                <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-1 px-2 text-muted-foreground shrink-0" onClick={() => { handleImagePrompt(selectedVariation ?? 0); if (selectedVariation === null) setSelectedVariation(0); }}>
+                  <ImagePlus className="w-3 h-3" /> Image
+                </Button>
+                <Button size="sm" onClick={reset} className="h-7 text-[10px] gap-1 px-3 glow-sm shrink-0">
+                  <Sparkles className="w-3 h-3" /> Nouveau
+                </Button>
               </div>
             </div>
           </motion.div>
