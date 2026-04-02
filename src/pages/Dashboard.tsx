@@ -3,11 +3,13 @@ import DashboardLayout from "@/components/DashboardLayout";
 import SourcePanel from "@/components/SourcePanel";
 import ChatPanel from "@/components/ChatPanel";
 import StudioWizard from "@/components/StudioWizard";
-import { WeeklyWidget, TopContentWidget } from "@/components/DashboardWidgets";
+import { TopContentWidget } from "@/components/DashboardWidgets";
+import { ActivityWidget } from "@/components/ActivityWidget";
 import { useSources } from "@/hooks/use-sources";
 import { useConversation } from "@/hooks/use-conversation";
 import { useProfile } from "@/hooks/use-profile";
 import { useDashboard } from "@/hooks/use-dashboard";
+import { useActivity } from "@/hooks/use-activity";
 
 const Dashboard = () => {
   const { profile } = useProfile();
@@ -28,7 +30,8 @@ const Dashboard = () => {
     clearConversation,
   } = useConversation();
 
-  const { weeklyStats, topContent, refetch: refetchDashboard, updateImagePrompt } = useDashboard();
+  const { topContent, refetch: refetchDashboard, updateImagePrompt } = useDashboard();
+  const activity = useActivity();
 
   const [activeSourceIds, setActiveSourceIds] = useState<Set<string>>(new Set());
   const [lastGeneratedContent, setLastGeneratedContent] = useState<string>("");
@@ -41,6 +44,11 @@ const Dashboard = () => {
       return next;
     });
   }, []);
+
+  const handleGenerationComplete = useCallback(() => {
+    refetchDashboard();
+    activity.refetch();
+  }, [refetchDashboard, activity]);
 
   return (
     <DashboardLayout>
@@ -58,8 +66,10 @@ const Dashboard = () => {
         />
 
         <div className="flex-1 flex flex-col min-w-0 border-r border-border/20">
-          {/* Widgets au-dessus du Studio */}
-          <WeeklyWidget stats={weeklyStats} />
+          {/* Widget activité */}
+          <ActivityWidget data={activity} daysLabels={activity.DAYS_FR} />
+
+          {/* Top contenus */}
           {topContent.length > 0 && (
             <TopContentWidget items={topContent} onUpdateImagePrompt={updateImagePrompt} />
           )}
@@ -70,7 +80,7 @@ const Dashboard = () => {
             sources={sources}
             profile={profile}
             onContentGenerated={setLastGeneratedContent}
-            onGenerationComplete={refetchDashboard}
+            onGenerationComplete={handleGenerationComplete}
           />
         </div>
 
