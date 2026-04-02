@@ -14,6 +14,7 @@ import { sanitizeInput } from "@/lib/security";
 import { searchViralReferences, ViralReference, searchUserSources } from "@/lib/embeddings";
 import { supabase } from "@/lib/supabase";
 import type { Source } from "@/types/database";
+import type { UserProfile } from "@/hooks/use-profile";
 import { StickyNote, Globe as GlobeIcon } from "lucide-react";
 
 /* ─── Icônes plateformes ─── */
@@ -122,10 +123,11 @@ const sourceTypeIcons: Record<string, React.FC<{ className?: string }>> = {
 interface StudioWizardProps {
   activeSourceIds?: string[];
   sources?: Source[];
+  profile?: UserProfile | null;
   onContentGenerated?: (content: string) => void;
 }
 
-const StudioWizard = ({ activeSourceIds = [], sources = [], onContentGenerated }: StudioWizardProps) => {
+const StudioWizard = ({ activeSourceIds = [], sources = [], profile, onContentGenerated }: StudioWizardProps) => {
   const [started, setStarted] = useState(false);
   const [step, setStep] = useState(0);
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(null);
@@ -329,6 +331,22 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
 
   const breadcrumb = [selectedPlatform?.name, selectedFormat].filter(Boolean).join(" / ");
 
+  // Trier les plateformes : favorites (de l'onboarding) en premier
+  const favPlatformNames = profile?.platforms || [];
+  const sortedPlatforms = [...platforms].sort((a, b) => {
+    const aFav = favPlatformNames.includes(a.name) ? 0 : 1;
+    const bFav = favPlatformNames.includes(b.name) ? 0 : 1;
+    return aFav - bFav;
+  });
+
+  const greeting = profile?.first_name
+    ? `Bonjour ${profile.first_name}`
+    : "Prêt à créer du contenu viral ?";
+
+  const subtitle = profile?.niche
+    ? `Crée du contenu ${profile.niche} qui convertit.`
+    : "Choisis un réseau, décris ton sujet, et laisse l'IA générer 5 variations prêtes à publier.";
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <AnimatePresence mode="wait">
@@ -340,8 +358,8 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
               <div className="w-12 h-12 rounded-2xl bg-primary/8 flex items-center justify-center mx-auto mb-5">
                 <Sparkles className="w-5 h-5 text-primary/80" />
               </div>
-              <h2 className="text-lg font-semibold text-foreground mb-1.5">Prêt à créer du contenu viral ?</h2>
-              <p className="text-sm text-muted-foreground leading-relaxed mb-8">Choisis un réseau, décris ton sujet, et laisse l'IA générer 5 variations prêtes à publier.</p>
+              <h2 className="text-lg font-semibold text-foreground mb-1.5">{greeting}</h2>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-8">{subtitle}</p>
               <Button onClick={() => setStarted(true)} className="h-12 px-8 text-sm font-semibold glow-sm gap-2.5">
                 <Sparkles className="w-4 h-4" /> Créer du contenu
               </Button>
@@ -387,11 +405,14 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                     <motion.div key="s0" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
                       <p className="text-xs text-muted-foreground mb-3">Choisis le réseau</p>
                       <div className="flex flex-wrap gap-2">
-                        {platforms.map((p) => (
-                          <button key={p.id} onClick={() => { setSelectedPlatform(p); setStep(1); }} className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-border/30 text-muted-foreground hover:text-foreground hover:bg-accent/40 hover:border-border/50 active:scale-[0.97] transition-all">
-                            <p.icon className="w-4 h-4" /><span className="text-xs font-medium">{p.name}</span>
-                          </button>
-                        ))}
+                        {sortedPlatforms.map((p) => {
+                          const isFav = favPlatformNames.includes(p.name);
+                          return (
+                            <button key={p.id} onClick={() => { setSelectedPlatform(p); setStep(1); }} className={cn("flex items-center gap-2 px-3.5 py-2.5 rounded-xl border text-muted-foreground hover:text-foreground hover:bg-accent/40 hover:border-border/50 active:scale-[0.97] transition-all", isFav ? "border-primary/20 bg-primary/[0.03]" : "border-border/30")}>
+                              <p.icon className="w-4 h-4" /><span className="text-xs font-medium">{p.name}</span>
+                            </button>
+                          );
+                        })}
                       </div>
                     </motion.div>
                   )}

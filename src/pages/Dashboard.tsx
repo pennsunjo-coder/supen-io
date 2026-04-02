@@ -5,8 +5,10 @@ import ChatPanel from "@/components/ChatPanel";
 import StudioWizard from "@/components/StudioWizard";
 import { useSources } from "@/hooks/use-sources";
 import { useConversation } from "@/hooks/use-conversation";
+import { useProfile } from "@/hooks/use-profile";
 
 const Dashboard = () => {
+  const { profile } = useProfile();
   const {
     sources,
     loading: sourcesLoading,
@@ -55,6 +57,7 @@ const Dashboard = () => {
           <StudioWizard
             activeSourceIds={Array.from(activeSourceIds)}
             sources={sources}
+            profile={profile}
             onContentGenerated={setLastGeneratedContent}
           />
         </div>
