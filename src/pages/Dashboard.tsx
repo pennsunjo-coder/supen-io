@@ -3,9 +3,11 @@ import DashboardLayout from "@/components/DashboardLayout";
 import SourcePanel from "@/components/SourcePanel";
 import ChatPanel from "@/components/ChatPanel";
 import StudioWizard from "@/components/StudioWizard";
+import { WeeklyWidget, TopContentWidget } from "@/components/DashboardWidgets";
 import { useSources } from "@/hooks/use-sources";
 import { useConversation } from "@/hooks/use-conversation";
 import { useProfile } from "@/hooks/use-profile";
+import { useDashboard } from "@/hooks/use-dashboard";
 
 const Dashboard = () => {
   const { profile } = useProfile();
@@ -25,6 +27,8 @@ const Dashboard = () => {
     loading: conversationLoading,
     clearConversation,
   } = useConversation();
+
+  const { weeklyStats, topContent, refetch: refetchDashboard, updateImagePrompt } = useDashboard();
 
   const [activeSourceIds, setActiveSourceIds] = useState<Set<string>>(new Set());
   const [lastGeneratedContent, setLastGeneratedContent] = useState<string>("");
@@ -54,11 +58,19 @@ const Dashboard = () => {
         />
 
         <div className="flex-1 flex flex-col min-w-0 border-r border-border/20">
+          {/* Widgets au-dessus du Studio */}
+          <WeeklyWidget stats={weeklyStats} />
+          {topContent.length > 0 && (
+            <TopContentWidget items={topContent} onUpdateImagePrompt={updateImagePrompt} />
+          )}
+
+          {/* Studio Wizard */}
           <StudioWizard
             activeSourceIds={Array.from(activeSourceIds)}
             sources={sources}
             profile={profile}
             onContentGenerated={setLastGeneratedContent}
+            onGenerationComplete={refetchDashboard}
           />
         </div>
 

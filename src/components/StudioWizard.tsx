@@ -125,9 +125,10 @@ interface StudioWizardProps {
   sources?: Source[];
   profile?: UserProfile | null;
   onContentGenerated?: (content: string) => void;
+  onGenerationComplete?: () => void;
 }
 
-const StudioWizard = ({ activeSourceIds = [], sources = [], profile, onContentGenerated }: StudioWizardProps) => {
+const StudioWizard = ({ activeSourceIds = [], sources = [], profile, onContentGenerated, onGenerationComplete }: StudioWizardProps) => {
   const [started, setStarted] = useState(false);
   const [step, setStep] = useState(0);
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(null);
@@ -287,9 +288,11 @@ Règles strictes :
             platform: selectedPlatform.name,
             format: selectedFormat,
             content: v.content,
+            viral_score: v.score,
             source_ids: allSourceIds,
           }));
           await supabase.from("generated_content").insert(inserts);
+          if (onGenerationComplete) onGenerationComplete();
         }
       } catch { /* Sauvegarde silencieuse */ }
     } catch (err: unknown) {
