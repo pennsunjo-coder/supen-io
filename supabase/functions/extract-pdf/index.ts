@@ -13,7 +13,6 @@ function jsonResponse(body: Record<string, unknown>, status = 200) {
 }
 
 Deno.serve(async (req) => {
-  // Preflight — Safari exige status 200 avec tous les headers
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
   }
@@ -21,26 +20,15 @@ Deno.serve(async (req) => {
   try {
     const formData = await req.formData();
     const file = formData.get("file") as File;
-
     if (!file) return jsonResponse({ error: "No file provided" }, 400);
 
     const data = new Uint8Array(await file.arrayBuffer());
-    const text = extractPdfText(data);
+    const text = await extractPdfText(data);
     const pages = countPages(data);
 
     if (!text || text.length < 30) {
-      // Vérifier si c'est un PDF compressé
-      const pdfStr = new TextDecoder("latin1").decode(data);
-      const hasCompressed = /\/Filter\s*\/FlateDecode/i.test(pdfStr);
-
-      if (hasCompressed) {
-        return jsonResponse({
-          error: "Ce PDF utilise une compression (FlateDecode). Copie le texte manuellement ou convertis en PDF/A.",
-        }, 422);
-      }
-
       return jsonResponse({
-        error: "Ce PDF ne contient pas de texte extractible. Il est peut-être scanné.",
+        error: "Ce PDF ne contient pas de texte extractible. Il est peut-être scanné ou protégé.",
       }, 422);
     }
 
@@ -56,54 +44,101 @@ function countPages(data: Uint8Array): number {
   return (str.match(/\/Type\s*\/Page[^s]/g) || []).length || 1;
 }
 
-function extractPdfText(data: Uint8Array): string {
+async function decompressStream(data: Uint8Array): Promise<string> {
+  try {
+    const ds = new DecompressionStream("deflate-raw");
+    const writer = ds.writable.getWriter();
+    const reader = ds.readable.getReader();
+
+    writer.write(data);
+    writer.close();
+
+    const chunks: Uint8Array[] = [];
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+    }
+
+    const total = chunks.reduce((acc, c) => acc + c.length, 0);
+    const result = new Uint8Array(total);
+    let offset = 0;
+    for (const chunk of chunks) {
+      result.set(chunk, offset);
+      offset += chunk.length;
+    }
+
+    return new TextDecoder("latin1").decode(result);
+  } catch {
+    return "";
+  }
+}
+
+async function extractPdfText(data: Uint8Array): Promise<string> {
   const pdfStr = new TextDecoder("latin1").decode(data);
   const texts: string[] = [];
 
-  const streamRegex = /stream\r?\n([\s\S]*?)\r?\nendstream/g;
-  let sm;
-  while ((sm = streamRegex.exec(pdfStr)) !== null) {
-    const stream = sm[1];
+  const objRegex = /(\d+\s+\d+\s+obj[\s\S]*?)\bstream\r?\n([\s\S]*?)\r?\nendstream/g;
+  let objMatch;
 
-    // Skip streams compressés (premiers bytes non-ASCII)
-    if (stream.charCodeAt(0) > 127) continue;
+  while ((objMatch = objRegex.exec(pdfStr)) !== null) {
+    const header = objMatch[1];
+    const streamData = objMatch[2];
 
-    // Blocs BT...ET
-    const btRegex = /BT([\s\S]*?)ET/g;
-    let bt;
-    while ((bt = btRegex.exec(stream)) !== null) {
-      const block = bt[1];
+    let content = "";
 
-      // (text) Tj
-      const tjR = /\(([^)\\]*(?:\\.[^)\\]*)*)\)\s*Tj/g;
-      let tj;
-      while ((tj = tjR.exec(block)) !== null) {
-        const t = decode(tj[1]);
-        if (t.trim()) texts.push(t);
+    if (/\/Filter\s*\/FlateDecode/i.test(header) || /\/Filter\s*\[.*?FlateDecode.*?\]/i.test(header)) {
+      const bytes = new Uint8Array(streamData.length);
+      for (let i = 0; i < streamData.length; i++) {
+        bytes[i] = streamData.charCodeAt(i) & 0xff;
       }
-
-      // [(text) num] TJ
-      const tjAR = /\[([\s\S]*?)\]\s*TJ/g;
-      let tja;
-      while ((tja = tjAR.exec(block)) !== null) {
-        const inner = tja[1].matchAll(/\(([^)\\]*(?:\\.[^)\\]*)*)\)/g);
-        for (const s of inner) {
-          const t = decode(s[1]);
-          if (t.trim()) texts.push(t);
-        }
-      }
+      content = await decompressStream(bytes);
+    } else if (!/\/Filter/i.test(header)) {
+      content = streamData;
     }
 
-    // Standalone Tj hors BT/ET
-    const stR = /\(([^)\\]{2,}(?:\\.[^)\\]*)*)\)\s*Tj/g;
-    let st;
-    while ((st = stR.exec(stream)) !== null) {
-      const t = decode(st[1]);
-      if (t.trim().length > 1 && /[a-zA-ZÀ-ÿ]/.test(t)) texts.push(t);
+    if (content) extractTextOps(content, texts);
+  }
+
+  // Fallback : texte brut du PDF
+  extractTextOps(pdfStr, texts);
+
+  return [...new Set(texts)]
+    .filter((t) => t.trim().length > 1)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function extractTextOps(content: string, texts: string[]) {
+  const btRegex = /BT([\s\S]*?)ET/g;
+  let bt;
+  while ((bt = btRegex.exec(content)) !== null) {
+    const block = bt[1];
+
+    const tjR = /\(([^)\\]*(?:\\.[^)\\]*)*)\)\s*Tj/g;
+    let tj;
+    while ((tj = tjR.exec(block)) !== null) {
+      const t = decode(tj[1]);
+      if (t.trim()) texts.push(t);
+    }
+
+    const tjAR = /\[([\s\S]*?)\]\s*TJ/g;
+    let tja;
+    while ((tja = tjAR.exec(block)) !== null) {
+      for (const s of tja[1].matchAll(/\(([^)\\]*(?:\\.[^)\\]*)*)\)/g)) {
+        const t = decode(s[1]);
+        if (t.trim()) texts.push(t);
+      }
     }
   }
 
-  return [...new Set(texts)].join(" ").replace(/\s+/g, " ").trim();
+  const stR = /\(([^)\\]{2,}(?:\\.[^)\\]*)*)\)\s*Tj/g;
+  let st;
+  while ((st = stR.exec(content)) !== null) {
+    const t = decode(st[1]);
+    if (t.trim().length > 1 && /[a-zA-ZÀ-ÿ]/.test(t)) texts.push(t);
+  }
 }
 
 function decode(s: string): string {
