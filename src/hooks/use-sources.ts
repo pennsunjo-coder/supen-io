@@ -58,20 +58,21 @@ function extractTextFromHtml(html: string): string {
 
 /**
  * Extrait le texte d'un fichier PDF côté client via pdf.js.
- * Utilise le mode sans worker (plus lent mais fiable sur tous les hébergeurs).
+ * Worker bundlé localement par Vite (pas de CDN externe).
  */
 async function extractTextFromPdf(file: File): Promise<{ text: string; pages: number }> {
   try {
     const pdfjsLib = await import("pdfjs-dist");
 
-    // Désactiver le worker — fonctionne partout sans problème CORS/CDN
-    pdfjsLib.GlobalWorkerOptions.workerSrc = "";
+    // Worker bundlé par Vite — pas de CDN externe
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+      "pdfjs-dist/build/pdf.worker.mjs",
+      import.meta.url
+    ).toString();
 
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({
       data: arrayBuffer,
-      useWorkerFetch: false,
-      isEvalSupported: false,
       useSystemFonts: true,
     }).promise;
 
