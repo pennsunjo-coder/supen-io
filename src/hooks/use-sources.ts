@@ -110,7 +110,10 @@ async function extractTextFromPdf(file: File): Promise<{ text: string; pages: nu
     `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-pdf`,
     {
       method: "POST",
-      headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+      headers: {
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+      },
       body: formData,
     }
   );

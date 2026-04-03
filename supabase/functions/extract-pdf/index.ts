@@ -10,6 +10,15 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Vérification basique du token (pas de JWT strict)
+    const authHeader = req.headers.get("authorization") || req.headers.get("apikey");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Missing authorization" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     const formData = await req.formData();
     const file = formData.get("file") as File;
 
@@ -66,8 +75,9 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (err) {
+    console.error("extract-pdf error:", err);
     return new Response(
-      JSON.stringify({ error: err instanceof Error ? err.message : "Erreur serveur" }),
+      JSON.stringify({ error: err instanceof Error ? err.message : "Internal error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
