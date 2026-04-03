@@ -151,7 +151,7 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, topContent 
   const [selectedVariation, setSelectedVariation] = useState<number | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isHumanizing, setIsHumanizing] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saved" | "failed">("idle");
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "failed">("idle");
   const [error, setError] = useState<string | null>(null);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
 
@@ -299,39 +299,57 @@ Règles strictes :
     }
   }
 
-  async function saveVariations(parsed: ParsedVariation[]) {
-    if (!selectedPlatform || !selectedFormat) return;
-    setSaveStatus("idle");
+  async function saveVariations(parsed: ParsedVariation[]): Promise<boolean> {
+    if (!selectedPlatform || !selectedFormat) return false;
+    setSaveStatus("saving");
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const allSourceIds = [...new Set([...activeSourceIds, ...selectedDocumentIds])];
-        const inserts = parsed.map((v) => ({
-          user_id: user.id,
-          platform: selectedPlatform.name,
-          format: selectedFormat,
-          content: v.content,
-          viral_score: v.score,
-          source_ids: allSourceIds,
-        }));
-        const { error: saveErr } = await supabase.from("generated_content").insert(inserts);
-        if (saveErr) {
-          setSaveStatus("failed");
-          console.warn("Save failed:", saveErr.message);
-        } else {
-          setSaveStatus("saved");
-          if (onGenerationComplete) onGenerationComplete();
-          toast.success(`${parsed.length} variations sauvegardées`);
-        }
+      if (!user) { setSaveStatus("failed"); return false; }
+
+      const allSourceIds = [...new Set([...activeSourceIds, ...selectedDocumentIds])];
+      const inserts = parsed.map((v) => ({
+        user_id: user.id,
+        platform: selectedPlatform.name,
+        format: selectedFormat,
+        content: v.content,
+        viral_score: v.score,
+        source_ids: allSourceIds,
+      }));
+      const { error: saveErr } = await supabase.from("generated_content").insert(inserts);
+      if (saveErr) {
+        setSaveStatus("failed");
+        console.warn("Save failed:", saveErr.message);
+        return false;
       }
+      setSaveStatus("saved");
+      if (onGenerationComplete) onGenerationComplete();
+      toast.success(`${parsed.length} variations sauvegardées`);
+      return true;
     } catch (err) {
       setSaveStatus("failed");
       console.warn("Save error:", err);
+      return false;
     }
   }
 
   async function retrySave() {
-    if (variations.length > 0) await saveVariations(variations);
+    if (variations.length > 0) {
+      const ok = await saveVariations(variations);
+      if (ok) toast.success("Sauvegarde réussie !");
+    }
+  }
+
+  async function handleViewContents() {
+    // Sauvegarder d'abord si pas encore fait
+    if (saveStatus !== "saved") {
+      const ok = await saveVariations(variations);
+      if (!ok) {
+        toast.error("La sauvegarde a échoué. Réessaie.");
+        return;
+      }
+    }
+    toast.success("Contenu sauvegardé ! Retrouve-le dans ton tableau de bord.");
+    reset();
   }
 
   /* ── Humaniser ── */
@@ -752,6 +770,11 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
             <div className="shrink-0 px-4 py-2.5 border-t border-border/20 bg-background/95 backdrop-blur-sm">
               <div className="max-w-lg mx-auto flex items-center gap-2">
                 {/* Gauche — statut sauvegarde */}
+                {saveStatus === "saving" && (
+                  <span className="text-[9px] text-muted-foreground flex items-center gap-1 shrink-0">
+                    <RefreshCw className="w-2.5 h-2.5 animate-spin" /> Sauvegarde...
+                  </span>
+                )}
                 {saveStatus === "saved" && (
                   <span className="text-[9px] text-emerald-400/70 flex items-center gap-1 shrink-0">
                     <Check className="w-2.5 h-2.5" /> Sauvegardé
@@ -775,11 +798,17 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                 <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-1 px-2 text-muted-foreground shrink-0" onClick={() => { handleCopy(selectedVariation ?? 0); }}>
                   <ClipboardList className="w-3 h-3" /> Copier
                 </Button>
-                <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-1 px-2 text-muted-foreground shrink-0" onClick={() => { handleImagePrompt(selectedVariation ?? 0); if (selectedVariation === null) setSelectedVariation(0); }}>
-                  <ImagePlus className="w-3 h-3" />
-                </Button>
-                <Button size="sm" onClick={() => { toast.success("Contenu sauvegardé ! Retrouve-le dans ton tableau de bord."); reset(); }} className="h-7 text-[10px] gap-1 px-3 glow-sm shrink-0">
-                  <Sparkles className="w-3 h-3" /> Nouveau
+                <Button
+                  size="sm"
+                  onClick={handleViewContents}
+                  disabled={saveStatus === "saving"}
+                  className="h-7 text-[10px] gap-1 px-3 glow-sm shrink-0"
+                >
+                  {saveStatus === "saving" ? (
+                    <><RefreshCw className="w-3 h-3 animate-spin" /> Sauvegarde...</>
+                  ) : (
+                    <><Sparkles className="w-3 h-3" /> Nouveau contenu</>
+                  )}
                 </Button>
               </div>
             </div>
