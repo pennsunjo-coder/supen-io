@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
 import { useTheme } from "@/contexts/ThemeContext";
 
 const ROTATING_WORDS = ["Viral", "Compelling", "Human", "Irresistible"];
