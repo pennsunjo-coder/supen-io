@@ -1,13 +1,15 @@
 import { ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Zap, Settings, LogOut, Clock } from "lucide-react";
+import { Zap, Settings, LogOut, Clock, Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const DashboardLayout = ({ children }: { children: ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   const handleLogout = async () => {
     await signOut();
@@ -41,6 +43,15 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
           >
             <Clock className="w-4 h-4" />
           </Link>
+          <button
+            onClick={toggleTheme}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all"
+            title={theme === "dark" ? "Mode clair" : "Mode sombre"}
+          >
+            <div className="transition-transform duration-300 hover:rotate-[360deg]">
+              {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </div>
+          </button>
           <button
             className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all"
             title="Paramètres"

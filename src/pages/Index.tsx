@@ -5,10 +5,11 @@ import {
   Zap, ArrowRight, Sparkles, BookOpen, Wand2, Shield,
   Youtube, FileText, Globe, MessageSquare, Check, Star,
   ChevronDown, Twitter, Instagram, Linkedin, Mail,
-  Layers, Target, PenTool, BarChart3, Users
+  Layers, Target, PenTool, BarChart3, Users, Sun, Moon
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -120,6 +121,7 @@ const platforms = [
 
 const Index = () => {
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   return (
@@ -140,6 +142,13 @@ const Index = () => {
             <a href="#faq" className="hover:text-foreground transition-colors">FAQ</a>
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={toggleTheme}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all"
+              title={theme === "dark" ? "Mode clair" : "Mode sombre"}
+            >
+              {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
             <Button variant="ghost" size="sm" onClick={() => navigate("/login")}>Log In</Button>
             <Button size="sm" onClick={() => navigate("/login")} className="glow-sm">Get Started</Button>
           </div>

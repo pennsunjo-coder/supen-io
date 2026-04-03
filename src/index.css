@@ -5,7 +5,9 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
+  /* ═══ DARK THEME (default) ═══ */
+  :root,
+  .dark {
     --background: 220 20% 7%;
     --foreground: 210 20% 92%;
 
@@ -15,7 +17,7 @@
     --popover: 220 18% 10%;
     --popover-foreground: 210 20% 92%;
 
-    --primary: 190 95% 55%;
+    --primary: 174 100% 45%;
     --primary-foreground: 220 20% 7%;
 
     --secondary: 220 16% 14%;
@@ -32,23 +34,68 @@
 
     --border: 220 14% 18%;
     --input: 220 14% 18%;
-    --ring: 190 95% 55%;
+    --ring: 174 100% 45%;
 
     --radius: 0.5rem;
 
     --sidebar-background: 220 20% 8%;
     --sidebar-foreground: 210 15% 75%;
-    --sidebar-primary: 190 95% 55%;
+    --sidebar-primary: 174 100% 45%;
     --sidebar-primary-foreground: 220 20% 7%;
     --sidebar-accent: 220 16% 14%;
     --sidebar-accent-foreground: 210 20% 92%;
     --sidebar-border: 220 14% 15%;
-    --sidebar-ring: 190 95% 55%;
+    --sidebar-ring: 174 100% 45%;
 
-    /* Custom tokens */
-    --glow: 190 95% 55%;
+    --glow: 174 100% 45%;
     --surface: 220 18% 11%;
     --surface-hover: 220 16% 14%;
+  }
+
+  /* ═══ LIGHT THEME ═══ */
+  .light {
+    --background: 0 0% 98%;
+    --foreground: 220 20% 8%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 20% 8%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 20% 8%;
+
+    --primary: 174 80% 35%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 15% 94%;
+    --secondary-foreground: 220 15% 40%;
+
+    --muted: 220 15% 94%;
+    --muted-foreground: 220 10% 45%;
+
+    --accent: 220 15% 94%;
+    --accent-foreground: 220 20% 8%;
+
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 88%;
+    --input: 220 13% 88%;
+    --ring: 174 80% 35%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 220 15% 96%;
+    --sidebar-foreground: 220 10% 40%;
+    --sidebar-primary: 174 80% 35%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 15% 94%;
+    --sidebar-accent-foreground: 220 20% 8%;
+    --sidebar-border: 220 13% 90%;
+    --sidebar-ring: 174 80% 35%;
+
+    --glow: 174 80% 35%;
+    --surface: 220 15% 96%;
+    --surface-hover: 220 15% 92%;
   }
 }
 
@@ -66,13 +113,22 @@
   .glow-sm {
     box-shadow: 0 0 15px -3px hsl(var(--glow) / 0.15);
   }
+  .light .glow-sm {
+    box-shadow: 0 0 12px -3px hsl(var(--glow) / 0.1);
+  }
   .glow-md {
     box-shadow: 0 0 30px -5px hsl(var(--glow) / 0.2);
+  }
+  .light .glow-md {
+    box-shadow: 0 0 20px -5px hsl(var(--glow) / 0.12);
   }
   .glass {
     @apply bg-surface/80 backdrop-blur-xl border border-border/50;
   }
   .text-gradient {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-cyan-300;
+  }
+  .light .text-gradient {
+    @apply bg-gradient-to-r from-primary to-cyan-600;
   }
 }
