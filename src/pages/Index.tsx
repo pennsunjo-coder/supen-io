@@ -38,9 +38,15 @@ const steps = [
 ];
 
 const testimonials = [
-  { name: "Sarah K.", role: "Content Creator", avatar: "SK", text: "I went from spending 4 hours on content to 30 minutes. Supen.io literally changed my workflow.", stars: 5 },
-  { name: "Marc D.", role: "YouTube Creator", avatar: "MD", text: "The YouTube transcriber alone is worth it. I repurpose every video into 5+ posts now.", stars: 5 },
-  { name: "Lina R.", role: "Freelance Writer", avatar: "LR", text: "Finally, AI content that doesn't sound like AI. My engagement doubled since switching.", stars: 5 },
+  { name: "Aminata Diallo", role: "Content Creator · Dakar", image: "https://randomuser.me/api/portraits/women/44.jpg", text: "In 3 weeks I doubled my Facebook engagement. My posts finally sound like something I would have written myself." },
+  { name: "Kwame Asante", role: "Entrepreneur · Accra", image: "https://randomuser.me/api/portraits/men/32.jpg", text: "I generate 5 variations in 30 seconds. Before, I used to spend 2 hours on a single LinkedIn post." },
+  { name: "Chloé Mbeki", role: "Business Coach · Paris", image: "https://randomuser.me/api/portraits/women/68.jpg", text: "The Anti-AI mode is mind-blowing. Even my most demanding audience detects nothing." },
+  { name: "Patrick Nkomo", role: "YouTube Creator · Douala", image: "https://randomuser.me/api/portraits/men/75.jpg", text: "I finally have a tool that understands my niche. The generated content speaks directly to my Cameroonian audience." },
+  { name: "Fatou Sarr", role: "Influencer · Abidjan", image: "https://randomuser.me/api/portraits/women/12.jpg", text: "The AI Coach helped me find angles I would never have thought of. My click-through rate increased by 40%." },
+  { name: "David Kouassi", role: "Digital Marketer · Lyon", image: "https://randomuser.me/api/portraits/men/54.jpg", text: "I post on 4 different platforms with the same adapted content. An incredible time saver." },
+  { name: "Nadia Okonkwo", role: "Consultant · London", image: "https://randomuser.me/api/portraits/women/23.jpg", text: "Supen.io transformed the way I create. I focus on ideas, the AI handles the rest." },
+  { name: "Théo Mensah", role: "Creator Economy · Brussels", image: "https://randomuser.me/api/portraits/men/18.jpg", text: "The Facebook threads generated are exactly in my style. My followers think I have a whole team." },
+  { name: "Grace Adeyemi", role: "Online Educator · Lagos", image: "https://randomuser.me/api/portraits/women/91.jpg", text: "The RAG feature is revolutionary. I upload my notes and the AI creates content based on MY own ideas." },
 ];
 
 const plans = [
@@ -313,27 +319,26 @@ const Index = () => {
             viewport={{ once: true }} transition={{ duration: 0.5 }}
           >
             <span className="text-xs text-primary font-semibold uppercase tracking-widest">Testimonials</span>
-            <h2 className="text-3xl md:text-4xl font-bold mt-3 mb-4">Loved by <span className="text-gradient">creators</span></h2>
+            <h2 className="text-3xl md:text-4xl font-bold mt-3 mb-4">What our <span className="text-gradient">creators</span> say</h2>
+            <p className="text-muted-foreground">Thousands of content creators trust Supen.io to create viral content every day.</p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="columns-1 md:columns-2 lg:columns-3 gap-4 space-y-4">
             {testimonials.map((t, i) => (
               <motion.div
                 key={t.name}
                 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.4 }}
-                className="rounded-xl border border-border/50 bg-card p-6"
+                viewport={{ once: true }} transition={{ delay: (i % 3) * 0.1, duration: 0.4 }}
+                className="break-inside-avoid rounded-xl border border-border/50 bg-card p-5"
               >
-                <div className="flex gap-1 mb-4">
-                  {Array.from({ length: t.stars }).map((_, j) => (
-                    <Star key={j} className="w-4 h-4 text-primary fill-primary" />
+                <div className="flex gap-1 mb-3">
+                  {Array.from({ length: 5 }).map((_, j) => (
+                    <Star key={j} className="w-3.5 h-3.5 text-primary fill-primary" />
                   ))}
                 </div>
-                <p className="text-sm text-foreground/90 leading-relaxed mb-5">"{t.text}"</p>
+                <p className="text-sm text-foreground/90 leading-relaxed mb-4">"{t.text}"</p>
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center text-xs font-bold text-primary">
-                    {t.avatar}
-                  </div>
+                  <img src={t.image} alt={t.name} className="w-9 h-9 rounded-full object-cover" />
                   <div>
                     <p className="text-sm font-semibold">{t.name}</p>
                     <p className="text-xs text-muted-foreground">{t.role}</p>
