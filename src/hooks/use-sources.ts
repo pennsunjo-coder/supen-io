@@ -2,11 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { getCache, setCache, invalidateCache } from "@/lib/cache";
-import * as pdfjsLib from "pdfjs-dist";
 import type { Source } from "@/types/database";
-
-// PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs";
 
 const TAVILY_API_KEY = import.meta.env.VITE_TAVILY_API_KEY;
 
@@ -61,9 +57,13 @@ function extractTextFromHtml(html: string): string {
 }
 
 /**
- * Extrait le texte d'un fichier PDF côté client via pdf.js.
+ * Extrait le texte d'un fichier PDF côté client via pdf.js (chargé à la demande).
  */
 async function extractTextFromPdf(file: File): Promise<{ text: string; pages: number }> {
+  // Import dynamique pour ne pas charger 452KB sur toutes les pages
+  const pdfjsLib = await import("pdfjs-dist");
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+
   const arrayBuffer = await file.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
   let fullText = "";
@@ -212,15 +212,17 @@ export function useSources() {
         return { error: "Le fichier ne doit pas dépasser 10 Mo." };
       }
 
-      // 1. Extraire le texte côté client
+      // 1. Extraire le texte côté client avec pdf.js
       let pdfText: string;
       let pageCount: number;
       try {
+        console.log("🔵 PDF: extracting text from", file.name, `(${(file.size / 1024).toFixed(0)}KB)`);
         const result = await extractTextFromPdf(file);
         pdfText = result.text;
         pageCount = result.pages;
+        console.log("🟢 PDF: extracted", pageCount, "pages,", pdfText.split(/\s+/).length, "words");
       } catch (err) {
-        console.warn("PDF extraction failed:", err);
+        console.error("🔴 PDF extraction failed:", err);
         return { error: "Impossible de lire ce PDF. Le fichier est peut-être protégé ou corrompu." };
       }
 
@@ -269,7 +271,7 @@ export function useSources() {
         if (error) return { error: error.message };
       }
 
-      console.log(`PDF "${title}": ${pageCount} pages, ${chunks.length} chunks, ${pdfText.split(/\s+/).length} mots`);
+      console.log(`🟢 PDF "${title}": ${pageCount} pages, ${chunks.length} chunks, ${pdfText.split(/\s+/).length} mots — saved to sources`);
       await fetchSources();
       return { error: null };
     },
