@@ -292,9 +292,10 @@ const SourcePanel = ({
         ) : sources.length === 0 ? (
           <div
             className={cn(
-              "flex flex-col items-center justify-center py-12 px-4 text-center mx-3 my-3 rounded-xl border-2 border-dashed transition-colors",
+              "flex flex-col items-center justify-center py-12 px-4 text-center mx-3 my-3 rounded-xl border-2 border-dashed transition-colors cursor-pointer hover:border-primary/50 hover:bg-primary/[0.02]",
               dragOver ? "border-primary bg-primary/5" : "border-border/30",
             )}
+            onClick={() => fileRef.current?.click()}
             onDrop={handleDrop}
             onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
@@ -303,7 +304,7 @@ const SourcePanel = ({
               <Upload className="w-5 h-5 text-muted-foreground" />
             </div>
             <p className="text-sm font-medium text-muted-foreground">Aucune source</p>
-            <p className="text-xs text-muted-foreground/60 mt-1 leading-relaxed">Glisse un PDF ici ou utilise les boutons ci-dessus</p>
+            <p className="text-xs text-muted-foreground/60 mt-1 leading-relaxed">Clique ou glisse un PDF ici</p>
             <p className="text-[10px] text-muted-foreground/40 mt-2">Max 10 MB</p>
           </div>
         ) : (
