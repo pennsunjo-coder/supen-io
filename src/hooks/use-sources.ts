@@ -58,68 +58,70 @@ function extractTextFromHtml(html: string): string {
 
 /**
  * Extrait le texte d'un PDF.
- * 1. Essaie côté client avec pdf.js (rapide, pas de réseau).
- * 2. Si ça échoue (Safari/worker error), envoie à la Edge Function.
+ * Chrome/Firefox : pdf.js côté client (rapide).
+ * Safari : Edge Function directement (pas de tentative pdf.js).
  */
 async function extractTextFromPdf(file: File): Promise<{ text: string; pages: number }> {
-  // Méthode 1 : pdf.js côté client
-  try {
-    const pdfjsLib = await import("pdfjs-dist");
-    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-      "pdfjs-dist/build/pdf.worker.mjs",
-      import.meta.url
-    ).toString();
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
-    const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({
-      data: new Uint8Array(arrayBuffer),
-      useSystemFonts: true,
-      disableFontFace: true,
-      verbosity: 0,
-    }).promise;
+  if (!isSafari) {
+    try {
+      const pdfjsLib = await import("pdfjs-dist");
+      pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+        "pdfjs-dist/build/pdf.worker.mjs",
+        import.meta.url
+      ).toString();
 
-    let fullText = "";
-    for (let i = 1; i <= pdf.numPages; i++) {
-      try {
-        const page = await pdf.getPage(i);
-        const tc = await page.getTextContent({ includeMarkedContent: false });
-        const pageText = tc.items
-          .map((item) => ("str" in item ? (item.str as string) : ""))
-          .filter((s) => s.trim().length > 0)
-          .join(" ");
-        fullText += pageText + "\n";
-      } catch { /* skip page */ }
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({
+        data: new Uint8Array(arrayBuffer),
+        useSystemFonts: true,
+        disableFontFace: true,
+        verbosity: 0,
+      }).promise;
+
+      let fullText = "";
+      for (let i = 1; i <= pdf.numPages; i++) {
+        try {
+          const page = await pdf.getPage(i);
+          const tc = await page.getTextContent({ includeMarkedContent: false });
+          fullText += tc.items
+            .map((item) => ("str" in item ? (item.str as string) : ""))
+            .filter((s) => s.trim().length > 0)
+            .join(" ") + "\n";
+        } catch { /* skip page */ }
+      }
+
+      if (fullText.trim().length > 20) {
+        console.log("🟢 PDF.js:", pdf.numPages, "pages");
+        return { text: fullText.trim(), pages: pdf.numPages };
+      }
+    } catch (err) {
+      console.warn("🟡 PDF.js failed:", err);
     }
-
-    if (fullText.trim().length > 20) {
-      console.log("🟢 PDF: extracted client-side,", pdf.numPages, "pages");
-      return { text: fullText.trim(), pages: pdf.numPages };
-    }
-  } catch (err) {
-    console.warn("🟡 PDF.js client failed:", err);
   }
 
-  // Méthode 2 : Edge Function serveur
-  console.log("🔵 PDF: sending to Edge Function");
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
+  // Safari ou fallback : Edge Function
+  console.log("🔵 Edge Function (Safari compatible)");
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await fetch(`${supabaseUrl}/functions/v1/extract-pdf`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${supabaseKey}` },
-    body: formData,
-  });
+  const response = await fetch(
+    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-pdf`,
+    {
+      method: "POST",
+      headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+      body: formData,
+    }
+  );
 
   if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: "Extraction failed" }));
-    throw new Error(err.error || "Extraction failed");
+    const err = await response.json().catch(() => ({ error: "Erreur serveur" }));
+    throw new Error(err.error || "Edge Function failed");
   }
 
   const result = await response.json();
-  console.log("🟢 PDF: extracted via Edge Function,", result.pages, "pages");
+  console.log("🟢 Edge Function:", result.pages, "pages");
   return { text: result.text, pages: result.pages };
 }
 
