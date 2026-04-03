@@ -194,10 +194,10 @@ const SourcePanel = ({
   };
 
   return (
-    <div className="w-[250px] flex flex-col border-r border-border/20">
+    <div className="w-[250px] flex flex-col border-r border-border/40 bg-accent/[0.03]">
       {/* Header */}
-      <div className="px-5 py-4 shrink-0">
-        <h2 className="text-sm font-semibold text-foreground">Sources</h2>
+      <div className="px-5 pt-5 pb-3 border-b border-border/20 shrink-0">
+        <h2 className="text-base font-semibold text-foreground">Sources</h2>
         <p className="text-xs text-muted-foreground mt-0.5">
           {groupedSources.length} source{groupedSources.length !== 1 ? "s" : ""}
           {activeCount > 0 && (
@@ -341,10 +341,10 @@ const SourcePanel = ({
                   <Icon className="w-3 h-3" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <span className={cn("block truncate text-xs", isActive ? "text-foreground" : "text-muted-foreground")}>
+                  <span className={cn("block truncate text-[13px]", isActive ? "text-foreground" : "text-muted-foreground")}>
                     {group.title}
                   </span>
-                  <span className="block text-[10px] text-muted-foreground/50">
+                  <span className="block text-[11px] text-muted-foreground/50">
                     {typeLabels[group.type] || "Note"}
                     {group.chunkCount > 1 && <span> · {group.chunkCount} parts</span>}
                     {group.wordCount > 0 && <span> · {group.wordCount} mots</span>}

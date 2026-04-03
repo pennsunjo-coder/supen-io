@@ -544,7 +544,7 @@ export function ContentSessionGrid({
                 {/* Top */}
                 <div className="flex items-center gap-1.5">
                   {Icon && <Icon className="w-3.5 h-3.5 text-muted-foreground/60" />}
-                  <span className="text-[10px] text-muted-foreground/70">{session.platform}</span>
+                  <span className="text-[11px] text-muted-foreground/70">{session.platform}</span>
                   <span className="text-[9px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">{session.format}</span>
                   <div className="ml-auto mr-4">
                     {session.bestScore > 0 && (
@@ -554,10 +554,10 @@ export function ContentSessionGrid({
                 </div>
 
                 {/* Preview */}
-                <p className="text-sm leading-snug text-foreground/90 line-clamp-2 my-1.5">{session.preview}...</p>
+                <p className="text-[13px] leading-snug text-foreground/90 line-clamp-2 my-1.5">{session.preview}...</p>
 
                 {/* Bottom */}
-                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/50">
+                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/50">
                   <Layers className="w-2.5 h-2.5" />
                   <span>{session.variations.length} variation{session.variations.length > 1 ? "s" : ""}</span>
                   <span>·</span>

@@ -94,7 +94,7 @@ const Dashboard = () => {
           onRemoveGroup={removeGrouped}
         />
 
-        <div className="flex-1 flex flex-col min-w-0 border-r border-border/20">
+        <div className="flex-1 flex flex-col min-w-0">
           <StudioWizard
             activeSourceIds={Array.from(activeSourceIds)}
             sources={sources}
@@ -107,7 +107,7 @@ const Dashboard = () => {
           />
         </div>
 
-        <div className="w-[300px] shrink-0">
+        <div className="w-[300px] shrink-0 border-l border-border/40 bg-accent/[0.03]">
           <ChatPanel
             sources={sources}
             messages={messages}

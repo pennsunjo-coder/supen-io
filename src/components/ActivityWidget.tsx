@@ -14,7 +14,7 @@ export function ActivityWidget({ data }: { data: ActivityData; daysLabels?: stri
   return (
     <div className="px-5 py-2.5 border-b border-border/10">
       {/* Stats line */}
-      <div className="flex items-center gap-1 text-[10px] text-muted-foreground/60 mb-2">
+      <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground/60 mb-2">
         <span>Semaine : <span className="text-foreground/80 font-medium">{data.thisWeek}</span></span>
         <span className="text-border/30">·</span>
         <span>Mois : <span className="text-foreground/80 font-medium">{data.thisMonth}</span></span>

@@ -124,7 +124,7 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
         <div className="w-5 h-5 rounded-md bg-primary/10 flex items-center justify-center">
           <Sparkles className="w-3 h-3 text-primary" />
         </div>
-        <h2 className="text-xs font-semibold">Coach IA</h2>
+        <h2 className="text-base font-semibold">Coach IA</h2>
         <div className="ml-auto flex items-center gap-2">
           {messages.length > 0 && (
             <button onClick={onClearConversation} className="text-[10px] text-muted-foreground/50 hover:text-destructive transition-colors flex items-center gap-1">
@@ -178,7 +178,7 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
                   </div>
                 )}
                 <div className={cn(
-                  "max-w-[85%] rounded-xl px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap",
+                  "max-w-[85%] rounded-xl px-3 py-2 text-[13px] leading-relaxed whitespace-pre-wrap",
                   msg.role === "user" ? "bg-primary text-primary-foreground rounded-br-sm" : "bg-accent/50 text-foreground rounded-bl-sm",
                 )}>
                   {msg.content}
@@ -195,7 +195,7 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
                 <div className="w-5 h-5 rounded-md bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
                   <Bot className="w-3 h-3 text-primary" />
                 </div>
-                <div className="max-w-[85%] rounded-xl rounded-bl-sm px-3 py-2 bg-accent/50 text-foreground text-xs leading-relaxed whitespace-pre-wrap">
+                <div className="max-w-[85%] rounded-xl rounded-bl-sm px-3 py-2 bg-accent/50 text-foreground text-[13px] leading-relaxed whitespace-pre-wrap">
                   {streamingContent || (
                     <div className="flex items-center gap-1.5 text-muted-foreground">
                       <Loader2 className="w-3 h-3 animate-spin" />
@@ -226,7 +226,7 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
             placeholder="Demande au coach..."
             maxLength={MAX_MESSAGE_LENGTH}
             disabled={isLoading}
-            className="flex-1 bg-accent/30 border border-border/30 rounded-lg px-3 py-2 text-xs placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:opacity-50"
+            className="flex-1 bg-accent/30 border border-border/30 rounded-lg px-3 py-2 text-[13px] placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:opacity-50"
           />
           <Button
             size="icon"

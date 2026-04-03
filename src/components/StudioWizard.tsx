@@ -470,9 +470,9 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
 
             {/* 1. BIENVENUE + CTA */}
             <div className={cn("px-6 text-center", sessions.length > 0 ? "pt-6 pb-5" : "pb-0")}>
-              <h2 className="text-lg font-semibold text-foreground mb-1">{greeting}</h2>
-              <p className="text-sm text-muted-foreground leading-relaxed mb-5">{subtitle}</p>
-              <Button onClick={() => setStarted(true)} className="h-11 px-7 text-sm font-semibold glow-sm gap-2">
+              <h2 className="text-2xl font-bold text-foreground mb-1.5">{greeting}</h2>
+              <p className="text-base text-muted-foreground leading-relaxed mb-6">{subtitle}</p>
+              <Button onClick={() => setStarted(true)} className="h-12 px-8 text-base font-semibold glow-sm gap-2.5">
                 <Sparkles className="w-4 h-4" /> Créer du contenu
               </Button>
               <div className="flex items-center justify-center gap-5 mt-4">
@@ -491,14 +491,23 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
 
             {/* 2. DERNIÈRES CRÉATIONS (si > 0) */}
             {sessions.length > 0 && onUpdateImagePrompt && (
-              <ContentSessionGrid sessions={sessions} onUpdateImagePrompt={onUpdateImagePrompt} onDelete={onGenerationComplete} />
+              <>
+                <div className="flex items-center gap-3 px-5 py-2">
+                  <div className="flex-1 h-px bg-border/20" />
+                  <span className="text-[11px] text-muted-foreground/40">Tes dernières créations</span>
+                  <div className="flex-1 h-px bg-border/20" />
+                </div>
+                <ContentSessionGrid sessions={sessions} onUpdateImagePrompt={onUpdateImagePrompt} onDelete={onGenerationComplete} />
+              </>
             )}
 
             {/* 3. STATS D'ACTIVITÉ (si > 0) */}
             {activityData && activityData.total > 0 && (
               <>
-                <div className="px-5 pt-3 pb-1">
-                  <p className="text-[10px] font-medium text-muted-foreground/50">Ton activité</p>
+                <div className="flex items-center gap-3 px-5 py-2">
+                  <div className="flex-1 h-px bg-border/20" />
+                  <span className="text-[11px] text-muted-foreground/40">Ton activité</span>
+                  <div className="flex-1 h-px bg-border/20" />
                 </div>
                 <ActivityWidget data={activityData} daysLabels={activityData.DAYS_FR} />
               </>
