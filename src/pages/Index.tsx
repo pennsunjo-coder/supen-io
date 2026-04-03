@@ -5,7 +5,7 @@ import {
   Zap, ArrowRight, Sparkles, BookOpen, Wand2, Shield,
   Youtube, FileText, Globe, MessageSquare, Check, Star,
   ChevronDown, Twitter, Instagram, Linkedin, Mail,
-  Layers, Target, PenTool, BarChart3, Users, Sun, Moon
+  Layers, Target, PenTool, BarChart3, Users, Sun, Moon, Gift
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
@@ -56,12 +56,12 @@ const thirdColumn = testimonials.slice(6, 9);
 const plans = [
   {
     name: "Free",
-    icon: Zap,
+    icon: Gift,
     price: "$0",
     period: "/month",
-    desc: "Try Supen.io with limited features",
-    features: ["10 generations per month", "2 platforms", "5 variations per generation", "7-day history"],
-    cta: "Get started for free",
+    desc: "Try Supen.io risk-free",
+    features: ["YouTube Transcriber (1 video/day)", "Platform preview", "No credit card required"],
+    cta: "Get started free",
     highlighted: false,
     rotation: "rotate-[-1deg]",
   },
@@ -70,20 +70,31 @@ const plans = [
     icon: Sparkles,
     price: "$10",
     period: "/month",
-    desc: "Everything you need to go viral",
-    features: ["Unlimited generations", "All 6 platforms", "5 variations + Anti-AI humanization", "Unlimited history", "Image & infographic prompts", "Unlimited AI Coach", "RAG on your documents"],
-    cta: "Go Pro",
+    desc: "For solo creators who want to grow fast",
+    features: [
+      "100 generations per month",
+      "All 6 platforms (IG, TikTok, FB, LinkedIn, YT, X)",
+      "5 viral variations per generation",
+      "Anti-AI humanization — undetectable content",
+      "Unlimited content history",
+      "Upload your documents (PDF, URL, notes)",
+      "RAG — AI trained on YOUR content",
+      "Image & infographic prompt generator",
+      "Unlimited AI Coach",
+      "Priority support",
+    ],
+    cta: "Start for $10/month →",
     highlighted: true,
     rotation: "rotate-[1deg]",
   },
   {
-    name: "Team",
+    name: "Business",
     icon: Users,
     price: "$29",
     period: "/month",
     desc: "For agencies and content teams",
-    features: ["Everything in Pro", "3 team members", "Shared workspaces", "Priority generation", "Priority support"],
-    cta: "Contact us",
+    features: ["Everything in Pro", "Unlimited generations", "3 team members", "Shared workspaces", "Advanced analytics", "Dedicated onboarding", "Dedicated support"],
+    cta: "Get Business →",
     highlighted: false,
     rotation: "rotate-[-2deg]",
   },
@@ -370,9 +381,9 @@ const Index = () => {
             initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }} transition={{ duration: 0.5 }}
           >
-            <span className="text-xs text-primary font-semibold uppercase tracking-widest">Simple Pricing</span>
-            <h2 className="text-3xl md:text-4xl font-bold mt-3 mb-4">One tool. <span className="text-gradient">All your content.</span></h2>
-            <p className="text-muted-foreground">Start for free. Upgrade when you're ready.</p>
+            <span className="text-xs text-primary font-semibold uppercase tracking-widest">Simple & Transparent</span>
+            <h2 className="text-3xl md:text-4xl font-bold mt-3 mb-4">Start free. <span className="text-gradient">Scale when ready.</span></h2>
+            <p className="text-muted-foreground">No hidden fees. Cancel anytime.</p>
           </motion.div>
 
           <div className="grid md:grid-cols-3 gap-8 items-start">
