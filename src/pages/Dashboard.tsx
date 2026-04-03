@@ -99,7 +99,7 @@ const Dashboard = () => {
             activeSourceIds={Array.from(activeSourceIds)}
             sources={sources}
             profile={profile}
-            topContent={dashboard.topContent}
+            sessions={dashboard.sessions}
             onUpdateImagePrompt={dashboard.updateImagePrompt}
             activityData={activity}
             onContentGenerated={setLastGeneratedContent}

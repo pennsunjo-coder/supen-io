@@ -17,9 +17,9 @@ import { searchViralReferences, ViralReference, searchUserSources } from "@/lib/
 import { supabase } from "@/lib/supabase";
 import type { Source } from "@/types/database";
 import type { UserProfile } from "@/hooks/use-profile";
-import type { DashboardContent } from "@/hooks/use-dashboard";
+import type { ContentSession } from "@/hooks/use-dashboard";
 import type { ActivityData } from "@/hooks/use-activity";
-import { TopContentWidget } from "@/components/DashboardWidgets";
+import { ContentSessionGrid } from "@/components/DashboardWidgets";
 import { ActivityWidget } from "@/components/ActivityWidget";
 import { StickyNote, Globe as GlobeIcon } from "lucide-react";
 
@@ -130,14 +130,14 @@ interface StudioWizardProps {
   activeSourceIds?: string[];
   sources?: Source[];
   profile?: UserProfile | null;
-  topContent?: DashboardContent[];
+  sessions?: ContentSession[];
   onUpdateImagePrompt?: (id: string, prompt: string) => void;
   activityData?: ActivityData & { DAYS_FR: string[]; refetch: () => void };
   onContentGenerated?: (content: string) => void;
   onGenerationComplete?: () => void;
 }
 
-const StudioWizard = ({ activeSourceIds = [], sources = [], profile, topContent = [], onUpdateImagePrompt, activityData, onContentGenerated, onGenerationComplete }: StudioWizardProps) => {
+const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = [], onUpdateImagePrompt, activityData, onContentGenerated, onGenerationComplete }: StudioWizardProps) => {
   const navigate = useNavigate();
   const [started, setStarted] = useState(false);
   const [step, setStep] = useState(0);
@@ -466,10 +466,10 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
 
         {/* ═══════ ACCUEIL ═══════ */}
         {!started && variations.length === 0 && (
-          <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }} className={cn("flex-1 flex flex-col", topContent.length > 0 ? "overflow-y-auto" : "items-center justify-center")}>
+          <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }} className={cn("flex-1 flex flex-col", sessions.length > 0 ? "overflow-y-auto" : "items-center justify-center")}>
 
             {/* 1. BIENVENUE + CTA */}
-            <div className={cn("px-6 text-center", topContent.length > 0 ? "pt-6 pb-5" : "pb-0")}>
+            <div className={cn("px-6 text-center", sessions.length > 0 ? "pt-6 pb-5" : "pb-0")}>
               <h2 className="text-lg font-semibold text-foreground mb-1">{greeting}</h2>
               <p className="text-sm text-muted-foreground leading-relaxed mb-5">{subtitle}</p>
               <Button onClick={() => setStarted(true)} className="h-11 px-7 text-sm font-semibold glow-sm gap-2">
@@ -489,9 +489,9 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
               </div>
             </div>
 
-            {/* 2. DERNIERS CONTENUS (si > 0) */}
-            {topContent.length > 0 && onUpdateImagePrompt && (
-              <TopContentWidget items={topContent} onUpdateImagePrompt={onUpdateImagePrompt} />
+            {/* 2. DERNIÈRES CRÉATIONS (si > 0) */}
+            {sessions.length > 0 && onUpdateImagePrompt && (
+              <ContentSessionGrid sessions={sessions} onUpdateImagePrompt={onUpdateImagePrompt} />
             )}
 
             {/* 3. STATS D'ACTIVITÉ (si > 0) */}

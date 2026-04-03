@@ -14,8 +14,7 @@ export class AnthropicService {
     }
   }
 
-  async sendMessage(messages: AnthropicMessage[]): Promise<string> {
-    if (!this.apiKey) {
+  async sendMessage(messages: AnthropicMessage[]): Promise<string> { if (!this.apiKey) {
       throw new Error("Clé API Anthropic manquante. Configurez VITE_ANTHROPIC_API_KEY dans .env");
     }
 

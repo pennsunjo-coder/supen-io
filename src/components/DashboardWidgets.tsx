@@ -3,12 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Copy, Check, ImagePlus, RefreshCw, ChevronDown,
-  LayoutGrid, X,
+  LayoutGrid, X, Layers, ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic";
-import type { DashboardContent } from "@/hooks/use-dashboard";
+import { toast } from "sonner";
+import type { DashboardContent, ContentSession } from "@/hooks/use-dashboard";
 
 /* ─── Icônes plateformes ─── */
 
@@ -253,6 +254,142 @@ export function TopContentWidget({
         {items.map((item) => (
           <TopContentCard key={item.id} item={item} onUpdateImagePrompt={onUpdateImagePrompt} />
         ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Relative time ─── */
+
+function relativeTime(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "À l'instant";
+  if (mins < 60) return `Il y a ${mins}min`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `Il y a ${hours}h`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `Il y a ${days}j`;
+  return new Date(dateStr).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+}
+
+/* ─── Angle colors ─── */
+
+const angleColors: Record<string, string> = {
+  "Éducatif": "bg-blue-500/15 text-blue-400",
+  "Storytelling": "bg-purple-500/15 text-purple-400",
+  "Provocation": "bg-red-500/15 text-red-400",
+  "Pratique": "bg-emerald-500/15 text-emerald-400",
+  "Débat": "bg-amber-500/15 text-amber-400",
+};
+const angleLabels = ["Éducatif", "Storytelling", "Provocation", "Pratique", "Débat"];
+
+/* ─── Content Session Grid ─── */
+
+export function ContentSessionGrid({
+  sessions,
+  onUpdateImagePrompt,
+}: {
+  sessions: ContentSession[];
+  onUpdateImagePrompt: (id: string, prompt: string) => void;
+}) {
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
+
+  if (sessions.length === 0) return null;
+
+  function handleCopy(text: string, id: string) {
+    navigator.clipboard.writeText(text);
+    setCopied(id);
+    toast.success("Contenu copié !");
+    setTimeout(() => setCopied(null), 2000);
+  }
+
+  return (
+    <div className="px-5 py-3 border-b border-border/10">
+      <p className="text-[10px] font-medium text-muted-foreground/60 mb-3">Tes dernières créations</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        {sessions.map((session, si) => {
+          const Icon = platformIcons[session.platform];
+          const isExpanded = expanded === session.id;
+          return (
+            <motion.div
+              key={session.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: si * 0.08 }}
+            >
+              {/* Card */}
+              <div
+                onClick={() => setExpanded(isExpanded ? null : session.id)}
+                className={cn(
+                  "h-[130px] rounded-xl border p-3.5 cursor-pointer transition-all flex flex-col justify-between",
+                  isExpanded
+                    ? "border-primary/40 bg-primary/[0.03]"
+                    : "border-border/20 hover:border-primary/30 hover:translate-y-[-2px] hover:shadow-[2px_2px_0px_0px] hover:shadow-primary/10",
+                )}
+              >
+                {/* Top */}
+                <div className="flex items-center gap-1.5">
+                  {Icon && <Icon className="w-3.5 h-3.5 text-muted-foreground/60" />}
+                  <span className="text-[10px] text-muted-foreground/70">{session.platform}</span>
+                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">{session.format}</span>
+                  <div className="ml-auto">
+                    {session.bestScore > 0 && (
+                      <span className="text-[10px] font-bold bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded">{session.bestScore}%</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Preview */}
+                <p className="text-sm leading-snug text-foreground/90 line-clamp-2 my-1.5">{session.preview}...</p>
+
+                {/* Bottom */}
+                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/50">
+                  <Layers className="w-2.5 h-2.5" />
+                  <span>{session.variations.length} variation{session.variations.length > 1 ? "s" : ""}</span>
+                  <span>·</span>
+                  <span>{relativeTime(session.createdAt)}</span>
+                  <span className="ml-auto text-primary/60 flex items-center gap-0.5">Voir <ArrowRight className="w-2.5 h-2.5" /></span>
+                </div>
+              </div>
+
+              {/* Expanded panel */}
+              <AnimatePresence>
+                {isExpanded && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <div className="mt-1 rounded-xl border border-border/20 bg-card p-3 space-y-2 max-h-[300px] overflow-y-auto">
+                      {session.variations.map((v, vi) => {
+                        const angle = angleLabels[vi % angleLabels.length];
+                        const color = angleColors[angle] || "bg-accent/40 text-muted-foreground";
+                        return (
+                          <div key={v.id} className="rounded-lg border border-border/15 p-3">
+                            <div className="flex items-center gap-1.5 mb-2">
+                              <span className={cn("text-[9px] font-medium px-1.5 py-0.5 rounded-full", color)}>{angle}</span>
+                              {(v.viral_score || 0) > 0 && (
+                                <span className="text-[9px] text-emerald-400/70 ml-auto">{v.viral_score}%</span>
+                              )}
+                            </div>
+                            <p className="text-xs leading-relaxed text-foreground/85 whitespace-pre-wrap mb-2">{v.content}</p>
+                            <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 px-2 text-muted-foreground" onClick={(e) => { e.stopPropagation(); handleCopy(v.content, v.id); }}>
+                              {copied === v.id ? <Check className="w-2.5 h-2.5 text-emerald-400" /> : <Copy className="w-2.5 h-2.5" />}
+                              {copied === v.id ? "Copié" : "Copier"}
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          );
+        })}
       </div>
     </div>
   );
