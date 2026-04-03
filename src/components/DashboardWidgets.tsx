@@ -3,11 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Copy, Check, ImagePlus, RefreshCw, ChevronDown,
-  LayoutGrid, X, Layers, ArrowRight,
+  LayoutGrid, X, Layers, ArrowRight, Trash2, Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic";
+import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import type { DashboardContent, ContentSession } from "@/hooks/use-dashboard";
 
@@ -454,44 +455,98 @@ function SessionVariationCard({
 export function ContentSessionGrid({
   sessions,
   onUpdateImagePrompt,
+  onDelete,
 }: {
   sessions: ContentSession[];
   onUpdateImagePrompt: (id: string, prompt: string) => void;
+  onDelete?: () => void;
 }) {
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [localSessions, setLocalSessions] = useState(sessions);
 
-  if (sessions.length === 0) return null;
+  // Sync with parent
+  if (sessions !== localSessions && !deleting) setLocalSessions(sessions);
+
+  if (localSessions.length === 0) return null;
+
+  async function handleDelete(session: ContentSession) {
+    setDeleting(session.id);
+    setConfirming(null);
+    try {
+      const ids = session.variations.map((v) => v.id);
+      await supabase.from("generated_content").delete().in("id", ids);
+      setLocalSessions((prev) => prev.filter((s) => s.id !== session.id));
+      toast.success("Contenu supprimé");
+      if (onDelete) onDelete();
+    } catch {
+      toast.error("Erreur lors de la suppression");
+    }
+    setDeleting(null);
+  }
 
   return (
     <div className="px-5 py-3 border-b border-border/10">
       <p className="text-[10px] font-medium text-muted-foreground/60 mb-3">Tes dernières créations</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-        {sessions.map((session, si) => {
+        <AnimatePresence>
+        {localSessions.map((session, si) => {
           const Icon = platformIcons[session.platform];
           const isExpanded = expanded === session.id;
+          const isConfirming = confirming === session.id;
+          const isDeleting = deleting === session.id;
           return (
             <motion.div
               key={session.id}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95 }}
               transition={{ delay: si * 0.08 }}
+              layout
             >
               {/* Card */}
               <div
-                onClick={() => setExpanded(isExpanded ? null : session.id)}
+                onClick={() => { if (!isConfirming) setExpanded(isExpanded ? null : session.id); }}
                 className={cn(
-                  "h-[130px] rounded-xl border p-3.5 cursor-pointer transition-all flex flex-col justify-between",
+                  "group relative h-[130px] rounded-xl border p-3.5 cursor-pointer transition-all flex flex-col justify-between overflow-hidden",
                   isExpanded
                     ? "border-primary/40 bg-primary/[0.03]"
                     : "border-border/20 hover:border-primary/30 hover:translate-y-[-2px] hover:shadow-[2px_2px_0px_0px] hover:shadow-primary/10",
                 )}
               >
+                {/* Delete overlay */}
+                {isConfirming && (
+                  <div className="absolute inset-0 z-10 bg-background/90 backdrop-blur-sm flex flex-col items-center justify-center gap-2 rounded-xl">
+                    <p className="text-[11px] text-foreground/80">Supprimer {session.variations.length} variation{session.variations.length > 1 ? "s" : ""} ?</p>
+                    <div className="flex gap-2">
+                      <Button variant="ghost" size="sm" className="h-7 text-[10px] px-3" onClick={(e) => { e.stopPropagation(); setConfirming(null); }}>Annuler</Button>
+                      <Button variant="destructive" size="sm" className="h-7 text-[10px] px-3" onClick={(e) => { e.stopPropagation(); handleDelete(session); }}>Supprimer</Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Deleting spinner */}
+                {isDeleting && (
+                  <div className="absolute inset-0 z-10 bg-background/90 flex items-center justify-center rounded-xl">
+                    <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                  </div>
+                )}
+
+                {/* Trash button — top right, visible on hover */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); setConfirming(session.id); }}
+                  className="absolute top-2.5 right-2.5 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground/40 hover:text-destructive z-10"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+
                 {/* Top */}
                 <div className="flex items-center gap-1.5">
                   {Icon && <Icon className="w-3.5 h-3.5 text-muted-foreground/60" />}
                   <span className="text-[10px] text-muted-foreground/70">{session.platform}</span>
                   <span className="text-[9px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">{session.format}</span>
-                  <div className="ml-auto">
+                  <div className="ml-auto mr-4">
                     {session.bestScore > 0 && (
                       <span className="text-[10px] font-bold bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded">{session.bestScore}%</span>
                     )}
@@ -537,6 +592,7 @@ export function ContentSessionGrid({
             </motion.div>
           );
         })}
+        </AnimatePresence>
       </div>
     </div>
   );

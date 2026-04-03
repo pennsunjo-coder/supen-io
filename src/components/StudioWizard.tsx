@@ -491,7 +491,7 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
 
             {/* 2. DERNIÈRES CRÉATIONS (si > 0) */}
             {sessions.length > 0 && onUpdateImagePrompt && (
-              <ContentSessionGrid sessions={sessions} onUpdateImagePrompt={onUpdateImagePrompt} />
+              <ContentSessionGrid sessions={sessions} onUpdateImagePrompt={onUpdateImagePrompt} onDelete={onGenerationComplete} />
             )}
 
             {/* 3. STATS D'ACTIVITÉ (si > 0) */}
