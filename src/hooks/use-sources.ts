@@ -57,46 +57,70 @@ function extractTextFromHtml(html: string): string {
 }
 
 /**
- * Extrait le texte d'un fichier PDF côté client via pdf.js.
- * Worker bundlé par Vite. Pas de fallback FileReader.
+ * Extrait le texte d'un PDF.
+ * 1. Essaie côté client avec pdf.js (rapide, pas de réseau).
+ * 2. Si ça échoue (Safari/worker error), envoie à la Edge Function.
  */
 async function extractTextFromPdf(file: File): Promise<{ text: string; pages: number }> {
-  const pdfjsLib = await import("pdfjs-dist");
+  // Méthode 1 : pdf.js côté client
+  try {
+    const pdfjsLib = await import("pdfjs-dist");
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+      "pdfjs-dist/build/pdf.worker.mjs",
+      import.meta.url
+    ).toString();
 
-  pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-    "pdfjs-dist/build/pdf.worker.mjs",
-    import.meta.url
-  ).toString();
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({
+      data: new Uint8Array(arrayBuffer),
+      useSystemFonts: true,
+      disableFontFace: true,
+      verbosity: 0,
+    }).promise;
 
-  const arrayBuffer = await file.arrayBuffer();
-
-  const pdf = await pdfjsLib.getDocument({
-    data: new Uint8Array(arrayBuffer),
-    useSystemFonts: true,
-    disableFontFace: true,
-    verbosity: 0,
-  }).promise;
-
-  let fullText = "";
-  for (let i = 1; i <= pdf.numPages; i++) {
-    try {
-      const page = await pdf.getPage(i);
-      const textContent = await page.getTextContent({ includeMarkedContent: false });
-      const pageText = textContent.items
-        .map((item) => ("str" in item ? (item.str as string) : ""))
-        .filter((s) => s.trim().length > 0)
-        .join(" ");
-      fullText += pageText + "\n";
-    } catch (pageErr) {
-      console.warn(`Page ${i} failed:`, pageErr);
+    let fullText = "";
+    for (let i = 1; i <= pdf.numPages; i++) {
+      try {
+        const page = await pdf.getPage(i);
+        const tc = await page.getTextContent({ includeMarkedContent: false });
+        const pageText = tc.items
+          .map((item) => ("str" in item ? (item.str as string) : ""))
+          .filter((s) => s.trim().length > 0)
+          .join(" ");
+        fullText += pageText + "\n";
+      } catch { /* skip page */ }
     }
+
+    if (fullText.trim().length > 20) {
+      console.log("🟢 PDF: extracted client-side,", pdf.numPages, "pages");
+      return { text: fullText.trim(), pages: pdf.numPages };
+    }
+  } catch (err) {
+    console.warn("🟡 PDF.js client failed:", err);
   }
 
-  if (!fullText.trim()) {
-    throw new Error("Ce PDF ne contient pas de texte extractible. Il est peut-être scanné ou protégé.");
+  // Méthode 2 : Edge Function serveur
+  console.log("🔵 PDF: sending to Edge Function");
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`${supabaseUrl}/functions/v1/extract-pdf`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${supabaseKey}` },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: "Extraction failed" }));
+    throw new Error(err.error || "Extraction failed");
   }
 
-  return { text: fullText.trim(), pages: pdf.numPages };
+  const result = await response.json();
+  console.log("🟢 PDF: extracted via Edge Function,", result.pages, "pages");
+  return { text: result.text, pages: result.pages };
 }
 
 export function useSources() {

@@ -1,123 +1,74 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import pdfParse from "npm:pdf-parse@1.1.1";
-
-const CHUNK_WORD_LIMIT = 500;
-
-function chunkText(text: string, maxWords: number): string[] {
-  const words = text.split(/\s+/).filter((w) => w.length > 0);
-  const chunks: string[] = [];
-  for (let i = 0; i < words.length; i += maxWords) {
-    chunks.push(words.slice(i, i + maxWords).join(" "));
-  }
-  return chunks;
-}
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, {
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-      },
-    });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { file_path, source_id } = await req.json();
+    const formData = await req.formData();
+    const file = formData.get("file") as File;
 
-    if (!file_path || !source_id) {
+    if (!file) {
       return new Response(
-        JSON.stringify({ error: "file_path et source_id requis" }),
-        { status: 400, headers: { "Content-Type": "application/json" } },
+        JSON.stringify({ error: "No file provided" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    // Créer un client Supabase avec le token de l'utilisateur
-    const authHeader = req.headers.get("Authorization");
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader! } } },
-    );
+    const arrayBuffer = await file.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
+    const decoder = new TextDecoder("latin1");
+    const pdfString = decoder.decode(uint8Array);
 
-    // Obtenir l'utilisateur
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Non authentifié" }),
-        { status: 401, headers: { "Content-Type": "application/json" } },
-      );
+    const textParts: string[] = [];
+
+    // Extraire les strings Tj (opérateur texte PDF)
+    const tjMatches = pdfString.matchAll(/\(([^)\\]*(?:\\.[^)\\]*)*)\)\s*Tj/g);
+    for (const match of tjMatches) {
+      const text = match[1]
+        .replace(/\\n/g, " ")
+        .replace(/\\r/g, " ")
+        .replace(/\\t/g, " ")
+        .replace(/\\\(/g, "(")
+        .replace(/\\\)/g, ")")
+        .replace(/\\\\/g, "\\")
+        .trim();
+      if (text.length > 1) textParts.push(text);
     }
 
-    // Télécharger le PDF depuis Storage
-    const { data: fileData, error: downloadError } = await supabase.storage
-      .from("sources")
-      .download(file_path);
-
-    if (downloadError || !fileData) {
-      return new Response(
-        JSON.stringify({ error: `Échec du téléchargement : ${downloadError?.message}` }),
-        { status: 400, headers: { "Content-Type": "application/json" } },
-      );
+    // Extraire les arrays TJ
+    const tjArrayMatches = pdfString.matchAll(/\[([^\]]+)\]\s*TJ/gi);
+    for (const match of tjArrayMatches) {
+      const stringMatches = match[1].matchAll(/\(([^)\\]*(?:\\.[^)\\]*)*)\)/g);
+      for (const sm of stringMatches) {
+        const text = sm[1].trim();
+        if (text.length > 1) textParts.push(text);
+      }
     }
 
-    // Extraire le texte avec pdf-parse
-    const buffer = await fileData.arrayBuffer();
-    const pdf = await pdfParse(Buffer.from(buffer));
-    const fullText = pdf.text.trim();
+    const extractedText = textParts.join(" ").trim();
+    const pageCount = (pdfString.match(/\/Type\s*\/Page[^s]/g) || []).length || 1;
 
-    if (!fullText) {
-      // Mettre à jour la source avec un message vide
-      await supabase
-        .from("sources")
-        .update({ content: "(PDF sans texte extractible)" })
-        .eq("id", source_id);
-
+    if (!extractedText || extractedText.length < 20) {
       return new Response(
-        JSON.stringify({ chunks: 0, message: "Aucun texte extrait du PDF" }),
-        { headers: { "Content-Type": "application/json" } },
+        JSON.stringify({ error: "Ce PDF ne contient pas de texte extractible." }),
+        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
-    }
-
-    // Découper en chunks de 500 mots
-    const chunks = chunkText(fullText, CHUNK_WORD_LIMIT);
-
-    // Mettre à jour la source principale avec le texte complet (tronqué à 50000 chars)
-    await supabase
-      .from("sources")
-      .update({ content: fullText.slice(0, 50000) })
-      .eq("id", source_id);
-
-    // Si plus d'un chunk, insérer les chunks supplémentaires comme sources séparées
-    if (chunks.length > 1) {
-      const { data: sourceData } = await supabase
-        .from("sources")
-        .select("title")
-        .eq("id", source_id)
-        .single();
-
-      const baseTitle = sourceData?.title || "PDF";
-
-      const extraChunks = chunks.slice(1).map((chunk, i) => ({
-        user_id: user.id,
-        type: "pdf" as const,
-        title: `${baseTitle} (partie ${i + 2}/${chunks.length})`,
-        content: chunk,
-        file_path: null,
-      }));
-
-      await supabase.from("sources").insert(extraChunks);
     }
 
     return new Response(
-      JSON.stringify({ chunks: chunks.length, message: `${chunks.length} chunk(s) extrait(s)` }),
-      { headers: { "Content-Type": "application/json" } },
+      JSON.stringify({ text: extractedText, pages: pageCount }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (err) {
     return new Response(
-      JSON.stringify({ error: err instanceof Error ? err.message : "Erreur interne" }),
-      { status: 500, headers: { "Content-Type": "application/json" } },
+      JSON.stringify({ error: err instanceof Error ? err.message : "Erreur serveur" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });
