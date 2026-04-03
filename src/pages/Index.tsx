@@ -5,7 +5,7 @@ import {
   Zap, ArrowRight, Sparkles, BookOpen, Wand2, Shield,
   Youtube, FileText, Globe, MessageSquare, Check, Star,
   ChevronDown, Twitter, Instagram, Linkedin, Mail,
-  Layers, Target, PenTool, BarChart3
+  Layers, Target, PenTool, BarChart3, Users
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
@@ -42,31 +42,37 @@ const testimonials = [
 
 const plans = [
   {
-    name: "Free",
-    price: "$0",
-    period: "forever",
-    desc: "Try Supen.io with limited features",
-    features: ["3 sources per notebook", "5 AI generations/day", "Basic templates", "1 platform export"],
-    cta: "Start Free",
+    name: "Gratuit",
+    icon: Zap,
+    price: "0€",
+    period: "pour toujours",
+    desc: "Pour tester Supen.io",
+    features: ["10 générations par mois", "2 plateformes au choix", "5 variations par génération", "Historique 7 jours"],
+    cta: "Commencer gratuitement",
     highlighted: false,
+    rotation: "rotate-[-1deg]",
   },
   {
     name: "Pro",
-    price: "$10",
-    period: "/month",
-    desc: "Everything you need to create viral content",
-    features: ["Unlimited sources", "Unlimited AI generations", "All platform templates", "Anti-AI protocol", "YouTube transcriber", "Priority support"],
-    cta: "Go Pro",
+    icon: Sparkles,
+    price: "10€",
+    period: "/mois",
+    desc: "Tout pour créer du contenu viral",
+    features: ["Générations illimitées", "Toutes les plateformes (6)", "Humanisation Anti-IA", "Historique illimité", "Prompts image & infographie", "Coach IA illimité", "RAG sur tes documents"],
+    cta: "Passer au Pro",
     highlighted: true,
+    rotation: "rotate-[1deg]",
   },
   {
-    name: "Team",
-    price: "$29",
-    period: "/month",
-    desc: "For agencies and content teams",
-    features: ["Everything in Pro", "5 team members", "Shared notebooks", "Brand voice presets", "API access", "Dedicated support"],
-    cta: "Contact Us",
+    name: "Équipe",
+    icon: Users,
+    price: "29€",
+    period: "/mois",
+    desc: "Pour les agences et équipes",
+    features: ["Tout ce qui est dans Pro", "3 membres de l'équipe", "Espaces de travail partagés", "Priorité de génération", "Support prioritaire"],
+    cta: "Contacter l'équipe",
     highlighted: false,
+    rotation: "rotate-[-2deg]",
   },
 ];
 
@@ -312,51 +318,75 @@ const Index = () => {
             initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }} transition={{ duration: 0.5 }}
           >
-            <span className="text-xs text-primary font-semibold uppercase tracking-widest">Pricing</span>
-            <h2 className="text-3xl md:text-4xl font-bold mt-3 mb-4">Simple, <span className="text-gradient">transparent</span> pricing</h2>
-            <p className="text-muted-foreground">Start free. Upgrade when you're ready.</p>
+            <span className="text-xs text-primary font-semibold uppercase tracking-widest">Tarification simple</span>
+            <h2 className="text-3xl md:text-4xl font-bold mt-3 mb-4">Un seul outil. <span className="text-gradient">Tout votre contenu.</span></h2>
+            <p className="text-muted-foreground">Commencez gratuitement. Passez au Pro quand vous êtes prêt.</p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-6 items-start">
-            {plans.map((plan, i) => (
+          <div className="grid md:grid-cols-3 gap-8 items-start">
+            {plans.map((plan, i) => {
+              const PlanIcon = plan.icon;
+              return (
               <motion.div
                 key={plan.name}
-                initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.4 }}
-                className={`rounded-xl border p-7 relative ${
-                  plan.highlighted
-                    ? "border-primary/50 bg-card glow-md scale-[1.03]"
-                    : "border-border/50 bg-card"
-                }`}
+                initial={{ opacity: 0, y: 30, rotate: 0 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.12, duration: 0.5 }}
+                className={`group relative ${plan.rotation}`}
               >
                 {plan.highlighted && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs font-bold">
-                    Most Popular
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10 px-4 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-bold border-2 border-border shadow-[3px_3px_0px_0px] shadow-border">
+                    Populaire !
                   </div>
                 )}
-                <h3 className="text-lg font-bold mb-1">{plan.name}</h3>
-                <p className="text-xs text-muted-foreground mb-4">{plan.desc}</p>
-                <div className="flex items-baseline gap-1 mb-6">
-                  <span className="text-4xl font-black">{plan.price}</span>
-                  <span className="text-sm text-muted-foreground">{plan.period}</span>
+                <div className={`rounded-2xl border-2 p-7 transition-all duration-300 ${
+                  plan.highlighted
+                    ? "border-primary bg-card shadow-[4px_4px_0px_0px] shadow-primary/30 group-hover:shadow-[8px_8px_0px_0px] group-hover:shadow-primary/30 group-hover:translate-x-[-4px] group-hover:translate-y-[-4px]"
+                    : "border-border bg-card shadow-[4px_4px_0px_0px] shadow-border/50 group-hover:shadow-[8px_8px_0px_0px] group-hover:shadow-border/50 group-hover:translate-x-[-4px] group-hover:translate-y-[-4px]"
+                }`}>
+                  {/* Icon */}
+                  <div className={`w-12 h-12 rounded-xl border-2 flex items-center justify-center mb-5 ${
+                    plan.highlighted ? "border-primary bg-primary/10" : "border-border bg-accent/30"
+                  }`}>
+                    <PlanIcon className={`w-5 h-5 ${plan.highlighted ? "text-primary" : "text-foreground/70"}`} />
+                  </div>
+
+                  <h3 className="text-xl font-bold mb-1">{plan.name}</h3>
+                  <p className="text-xs text-muted-foreground mb-5">{plan.desc}</p>
+
+                  <div className="flex items-baseline gap-1 mb-7">
+                    <span className="text-5xl font-black tracking-tight">{plan.price}</span>
+                    <span className="text-sm text-muted-foreground">{plan.period}</span>
+                  </div>
+
+                  <ul className="space-y-3 mb-8">
+                    {plan.features.map((feat) => (
+                      <li key={feat} className="flex items-center gap-3 text-sm">
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                          plan.highlighted ? "border-primary bg-primary/10" : "border-border bg-accent/20"
+                        }`}>
+                          <Check className={`w-3 h-3 ${plan.highlighted ? "text-primary" : "text-foreground/60"}`} />
+                        </div>
+                        <span className="text-foreground/80">{feat}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <Button
+                    className={`w-full h-12 font-bold text-sm border-2 transition-all duration-300 ${
+                      plan.highlighted
+                        ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90 glow-sm shadow-[3px_3px_0px_0px] shadow-primary/30 hover:shadow-[5px_5px_0px_0px] hover:translate-x-[-2px] hover:translate-y-[-2px]"
+                        : "bg-background text-foreground border-border hover:bg-accent shadow-[3px_3px_0px_0px] shadow-border/50 hover:shadow-[5px_5px_0px_0px] hover:translate-x-[-2px] hover:translate-y-[-2px]"
+                    }`}
+                    onClick={() => navigate("/login")}
+                  >
+                    {plan.cta} <ArrowRight className="w-4 h-4 ml-1" />
+                  </Button>
                 </div>
-                <ul className="space-y-3 mb-7">
-                  {plan.features.map((feat) => (
-                    <li key={feat} className="flex items-center gap-2 text-sm">
-                      <Check className="w-4 h-4 text-primary shrink-0" />
-                      <span className="text-foreground/80">{feat}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Button
-                  className={`w-full font-semibold ${plan.highlighted ? "glow-sm" : ""}`}
-                  variant={plan.highlighted ? "default" : "outline"}
-                  onClick={() => navigate("/login")}
-                >
-                  {plan.cta}
-                </Button>
               </motion.div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
