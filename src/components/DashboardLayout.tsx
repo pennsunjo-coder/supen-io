@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Zap, Settings, LogOut, Clock, Sun, Moon } from "lucide-react";
+import { Settings, LogOut, Clock, Sun, Moon } from "lucide-react";
+import { LogoFull } from "@/components/Logo";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -20,14 +21,8 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
     <div className="h-screen flex flex-col bg-background">
       {/* Top bar */}
       <header className="h-12 border-b border-border/20 flex items-center px-4 shrink-0">
-        <Link
-          to="/dashboard"
-          className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-        >
-          <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-            <Zap className="w-3.5 h-3.5 text-primary" />
-          </div>
-          <span className="text-sm font-bold tracking-tight">Supen.io</span>
+        <Link to="/dashboard" className="hover:opacity-80 transition-opacity">
+          <LogoFull size="sm" />
         </Link>
 
         <div className="ml-auto flex items-center gap-1">

@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/contexts/ThemeContext";
+import { LogoFull } from "@/components/Logo";
 
 const ROTATING_WORDS = ["Viral", "Compelling", "Human", "Irresistible"];
 
@@ -176,12 +177,7 @@ const Index = () => {
       {/* ═══════════ NAVBAR ═══════════ */}
       <nav className="sticky top-0 z-50 backdrop-blur-xl bg-background/80 border-b border-border/30">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center glow-sm">
-              <Zap className="w-4 h-4 text-primary" />
-            </div>
-            <span className="text-lg font-bold tracking-tight">Supen.io</span>
-          </div>
+          <LogoFull size="sm" />
           <div className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
             <a href="#features" className="hover:text-foreground transition-colors">Features</a>
             <a href="#how-it-works" className="hover:text-foreground transition-colors">How it works</a>
@@ -566,11 +562,8 @@ const Index = () => {
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
             <div className="col-span-2 md:col-span-1">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-7 h-7 rounded-lg bg-primary/20 flex items-center justify-center">
-                  <Zap className="w-3.5 h-3.5 text-primary" />
-                </div>
-                <span className="font-bold">Supen.io</span>
+              <div className="mb-4">
+                <LogoFull size="sm" />
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 AI-powered content creation platform for creators who want to sound human.

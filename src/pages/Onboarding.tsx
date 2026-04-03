@@ -11,6 +11,7 @@ import {
   PenTool, Camera, UtensilsCrossed, Home,
 } from "lucide-react";
 import { useProfile } from "@/hooks/use-profile";
+import { LogoFull } from "@/components/Logo";
 
 /* ─── Icônes SVG plateformes ─── */
 
@@ -164,11 +165,8 @@ const Onboarding = () => {
         <motion.div className="h-full bg-primary rounded-r-full" initial={false} animate={{ width: `${progress}%` }} transition={{ duration: 0.4 }} />
       </div>
 
-      <div className="flex items-center gap-2 px-6 pt-5">
-        <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-          <Zap className="w-3.5 h-3.5 text-primary" />
-        </div>
-        <span className="text-sm font-bold">Supen.io</span>
+      <div className="px-6 pt-5">
+        <LogoFull size="sm" />
       </div>
 
       <div className="flex-1 flex items-center justify-center px-6">
