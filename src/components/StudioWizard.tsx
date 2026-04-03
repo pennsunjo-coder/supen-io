@@ -1,11 +1,12 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import {
   Sparkles, Copy, Check, RefreshCw, ChevronLeft, ArrowRight,
   FileText, Lightbulb, Hash, ImagePlus, Wand2,
-  Shield, Layers, Globe, ClipboardList,
+  Shield, Layers, Globe, ClipboardList, Save, ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -137,6 +138,7 @@ interface StudioWizardProps {
 }
 
 const StudioWizard = ({ activeSourceIds = [], sources = [], profile, topContent = [], onUpdateImagePrompt, activityData, onContentGenerated, onGenerationComplete }: StudioWizardProps) => {
+  const navigate = useNavigate();
   const [started, setStarted] = useState(false);
   const [step, setStep] = useState(0);
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(null);
@@ -149,6 +151,7 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, topContent 
   const [selectedVariation, setSelectedVariation] = useState<number | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isHumanizing, setIsHumanizing] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saved" | "failed">("idle");
   const [error, setError] = useState<string | null>(null);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
 
@@ -162,6 +165,7 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, topContent 
     setSelectedDocumentIds([]);
     setVariations([]);
     setSelectedVariation(null);
+    setSaveStatus("idle");
     setError(null);
   }
 
@@ -287,28 +291,47 @@ Règles strictes :
       }
 
       // Sauvegarder dans generated_content
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const allSourceIds = [...new Set([...activeSourceIds, ...selectedDocumentIds])];
-          const inserts = parsed.map((v) => ({
-            user_id: user.id,
-            platform: selectedPlatform.name,
-            format: selectedFormat,
-            content: v.content,
-            viral_score: v.score,
-            source_ids: allSourceIds,
-          }));
-          await supabase.from("generated_content").insert(inserts);
-          if (onGenerationComplete) onGenerationComplete();
-          toast.success(`${parsed.length} variations sauvegardées automatiquement`);
-        }
-      } catch { /* Sauvegarde silencieuse */ }
+      await saveVariations(parsed);
     } catch (err: unknown) {
       setError(`Erreur de génération : ${err instanceof Error ? err.message : "Erreur inconnue"}`);
     } finally {
       setIsGenerating(false);
     }
+  }
+
+  async function saveVariations(parsed: ParsedVariation[]) {
+    if (!selectedPlatform || !selectedFormat) return;
+    setSaveStatus("idle");
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const allSourceIds = [...new Set([...activeSourceIds, ...selectedDocumentIds])];
+        const inserts = parsed.map((v) => ({
+          user_id: user.id,
+          platform: selectedPlatform.name,
+          format: selectedFormat,
+          content: v.content,
+          viral_score: v.score,
+          source_ids: allSourceIds,
+        }));
+        const { error: saveErr } = await supabase.from("generated_content").insert(inserts);
+        if (saveErr) {
+          setSaveStatus("failed");
+          console.warn("Save failed:", saveErr.message);
+        } else {
+          setSaveStatus("saved");
+          if (onGenerationComplete) onGenerationComplete();
+          toast.success(`${parsed.length} variations sauvegardées`);
+        }
+      }
+    } catch (err) {
+      setSaveStatus("failed");
+      console.warn("Save error:", err);
+    }
+  }
+
+  async function retrySave() {
+    if (variations.length > 0) await saveVariations(variations);
   }
 
   /* ── Humaniser ── */
@@ -728,27 +751,34 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
             {/* ═══ BARRE D'ACTIONS FIXE EN BAS ═══ */}
             <div className="shrink-0 px-4 py-2.5 border-t border-border/20 bg-background/95 backdrop-blur-sm">
               <div className="max-w-lg mx-auto flex items-center gap-2">
-                {/* Gauche */}
-                <span className="text-[9px] text-emerald-400/60 flex items-center gap-1 shrink-0">
-                  <Check className="w-2.5 h-2.5" /> Sauvegardé
-                </span>
-                <button onClick={reset} className="text-[10px] text-muted-foreground/50 hover:text-foreground transition-colors shrink-0 ml-1">
+                {/* Gauche — statut sauvegarde */}
+                {saveStatus === "saved" && (
+                  <span className="text-[9px] text-emerald-400/70 flex items-center gap-1 shrink-0">
+                    <Check className="w-2.5 h-2.5" /> Sauvegardé
+                  </span>
+                )}
+                {saveStatus === "failed" && (
+                  <Button variant="ghost" size="sm" onClick={retrySave} className="h-6 text-[9px] gap-1 px-2 text-red-400 hover:text-red-300 shrink-0">
+                    <Save className="w-2.5 h-2.5" /> Sauvegarder
+                  </Button>
+                )}
+                <button onClick={reset} className="text-[10px] text-muted-foreground/50 hover:text-foreground transition-colors shrink-0">
                   Recommencer
                 </button>
 
                 <div className="flex-1" />
 
-                {/* Droite */}
+                {/* Droite — actions */}
                 <Button variant="ghost" size="sm" onClick={handleGenerate} disabled={isGenerating} className="h-7 text-[10px] gap-1 px-2 text-muted-foreground shrink-0">
                   <RefreshCw className={cn("w-3 h-3", isGenerating && "animate-spin")} />
                 </Button>
-                <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-1 px-2 text-muted-foreground shrink-0" onClick={() => { const idx = selectedVariation ?? 0; handleCopy(idx); }}>
+                <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-1 px-2 text-muted-foreground shrink-0" onClick={() => { handleCopy(selectedVariation ?? 0); }}>
                   <ClipboardList className="w-3 h-3" /> Copier
                 </Button>
                 <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-1 px-2 text-muted-foreground shrink-0" onClick={() => { handleImagePrompt(selectedVariation ?? 0); if (selectedVariation === null) setSelectedVariation(0); }}>
-                  <ImagePlus className="w-3 h-3" /> Image
+                  <ImagePlus className="w-3 h-3" />
                 </Button>
-                <Button size="sm" onClick={reset} className="h-7 text-[10px] gap-1 px-3 glow-sm shrink-0">
+                <Button size="sm" onClick={() => { toast.success("Contenu sauvegardé ! Retrouve-le dans ton tableau de bord."); reset(); }} className="h-7 text-[10px] gap-1 px-3 glow-sm shrink-0">
                   <Sparkles className="w-3 h-3" /> Nouveau
                 </Button>
               </div>
