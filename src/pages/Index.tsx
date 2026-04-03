@@ -7,9 +7,11 @@ import {
   ChevronDown, Twitter, Instagram, Linkedin, Mail,
   Layers, Target, PenTool, BarChart3, Users, Sun, Moon
 } from "lucide-react";
-import { motion } from "framer-motion";
-import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
+
+const ROTATING_WORDS = ["Viral", "Compelling", "Human", "Irresistible"];
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -123,6 +125,14 @@ const Index = () => {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [wordIdx, setWordIdx] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setWordIdx((i) => (i + 1) % ROTATING_WORDS.length);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -178,7 +188,22 @@ const Index = () => {
           >
             Research. Create.
             <br />
-            <span className="text-gradient">Go Viral.</span>
+            Go{" "}
+            <span className="inline-block overflow-hidden align-bottom" style={{ minWidth: "6.5ch", height: "1.15em" }}>
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={ROTATING_WORDS[wordIdx]}
+                  initial={{ y: "100%", opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: "-100%", opacity: 0 }}
+                  transition={{ duration: 0.4, ease: "easeInOut" }}
+                  className="text-gradient inline-block"
+                >
+                  {ROTATING_WORDS[wordIdx]}
+                </motion.span>
+              </AnimatePresence>
+            </span>
+            <span className="text-gradient">.</span>
           </motion.h1>
 
           <motion.p variants={fadeUp} custom={2}
