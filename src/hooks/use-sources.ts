@@ -101,32 +101,20 @@ async function extractTextFromPdf(file: File): Promise<{ text: string; pages: nu
     }
   }
 
-  // Safari ou fallback : Edge Function
+  // Safari ou fallback : Edge Function via supabase.functions.invoke
   console.log("🔵 Edge Function (Safari compatible)");
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await fetch(
-    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-pdf`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-        Accept: "application/json",
-      },
-      body: formData,
-    }
-  );
+  const { data, error } = await supabase.functions.invoke("extract-pdf", {
+    body: formData,
+  });
 
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: "Erreur serveur" }));
-    throw new Error(err.error || "Edge Function failed");
-  }
+  if (error) throw new Error(error.message || "Edge Function failed");
+  if (!data?.text) throw new Error("Aucun texte extrait par le serveur");
 
-  const result = await response.json();
-  console.log("🟢 Edge Function:", result.pages, "pages");
-  return { text: result.text, pages: result.pages };
+  console.log("🟢 Edge Function:", data.pages, "pages");
+  return { text: data.text, pages: data.pages };
 }
 
 export interface GroupedSource {
