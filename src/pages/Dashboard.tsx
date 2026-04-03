@@ -14,12 +14,13 @@ const Dashboard = () => {
   const { profile } = useProfile();
   const {
     sources,
+    grouped,
     loading: sourcesLoading,
     addUrl,
     addNote,
     addPdf,
     searchWeb,
-    removeSource,
+    removeGrouped,
   } = useSources();
 
   const {
@@ -38,11 +39,15 @@ const Dashboard = () => {
   // Compteur de générations pour forcer le refetch
   const [genCount, setGenCount] = useState(0);
 
-  const handleToggleSource = useCallback((id: string) => {
+  const handleToggleGroup = useCallback((ids: string[]) => {
     setActiveSourceIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      const allActive = ids.every((id) => next.has(id));
+      if (allActive) {
+        ids.forEach((id) => next.delete(id));
+      } else {
+        ids.forEach((id) => next.add(id));
+      }
       return next;
     });
   }, []);
@@ -78,15 +83,15 @@ const Dashboard = () => {
     <DashboardLayout>
       <div className="flex-1 flex min-h-0">
         <SourcePanel
-          sources={sources}
+          groupedSources={grouped}
           loading={sourcesLoading}
           activeSourceIds={activeSourceIds}
-          onToggleSource={handleToggleSource}
+          onToggleGroup={handleToggleGroup}
           onAddUrl={addUrl}
           onAddNote={addNote}
           onAddPdf={addPdf}
           onSearchWeb={searchWeb}
-          onRemove={removeSource}
+          onRemoveGroup={removeGrouped}
         />
 
         <div className="flex-1 flex flex-col min-w-0 border-r border-border/20">

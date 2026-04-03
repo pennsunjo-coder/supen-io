@@ -14,18 +14,18 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { sanitizeInput } from "@/lib/security";
-import type { Source } from "@/types/database";
+import type { GroupedSource } from "@/hooks/use-sources";
 
 interface SourcePanelProps {
-  sources: Source[];
+  groupedSources: GroupedSource[];
   loading: boolean;
   activeSourceIds: Set<string>;
-  onToggleSource: (id: string) => void;
+  onToggleGroup: (ids: string[]) => void;
   onAddUrl: (url: string) => Promise<{ error: string | null }>;
   onAddNote: (title: string, content: string) => Promise<{ error: string | null }>;
   onAddPdf: (file: File) => Promise<{ error: string | null }>;
   onSearchWeb: (query: string) => Promise<{ error: string | null }>;
-  onRemove: (source: Source) => Promise<{ error: string | null }>;
+  onRemoveGroup: (group: GroupedSource) => Promise<{ error: string | null }>;
 }
 
 const typeIcons: Record<string, typeof FileText> = {
@@ -43,15 +43,15 @@ const typeLabels: Record<string, string> = {
 type FormMode = "url" | "note" | "search";
 
 const SourcePanel = ({
-  sources,
+  groupedSources,
   loading,
   activeSourceIds,
-  onToggleSource,
+  onToggleGroup,
   onAddUrl,
   onAddNote,
   onAddPdf,
   onSearchWeb,
-  onRemove,
+  onRemoveGroup,
 }: SourcePanelProps) => {
   const [showForm, setShowForm] = useState(false);
   const [formMode, setFormMode] = useState<FormMode>("url");
@@ -178,10 +178,7 @@ const SourcePanel = ({
     }
   };
 
-  const handleRemove = async (source: Source) => {
-    setDeletingId(source.id);
-    try { await onRemove(source); } finally { setDeletingId(null); }
-  };
+  // handleRemove supprimé — on utilise onRemoveGroup directement dans le JSX
 
   const actions: { mode: FormMode | "pdf"; icon: typeof Globe; label: string }[] = [
     { mode: "pdf", icon: Upload, label: "PDF" },
@@ -202,7 +199,7 @@ const SourcePanel = ({
       <div className="px-5 py-4 shrink-0">
         <h2 className="text-sm font-semibold text-foreground">Sources</h2>
         <p className="text-xs text-muted-foreground mt-0.5">
-          {sources.length} élément{sources.length !== 1 ? "s" : ""}
+          {groupedSources.length} source{groupedSources.length !== 1 ? "s" : ""}
           {activeCount > 0 && (
             <span className="text-primary"> · {activeCount} active{activeCount > 1 ? "s" : ""}</span>
           )}
@@ -289,7 +286,7 @@ const SourcePanel = ({
           <div className="flex items-center justify-center py-16">
             <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
           </div>
-        ) : sources.length === 0 ? (
+        ) : groupedSources.length === 0 ? (
           <div
             className={cn(
               "flex flex-col items-center justify-center py-12 px-4 text-center mx-3 my-3 rounded-xl border-2 border-dashed transition-colors cursor-pointer hover:border-primary/50 hover:bg-primary/[0.02]",
@@ -308,13 +305,13 @@ const SourcePanel = ({
             <p className="text-[10px] text-muted-foreground/40 mt-2">Max 10 MB</p>
           </div>
         ) : (
-          sources.map((source) => {
-            const Icon = typeIcons[source.type] || StickyNote;
-            const isDeleting = deletingId === source.id;
-            const isActive = activeSourceIds.has(source.id);
+          groupedSources.map((group) => {
+            const Icon = typeIcons[group.type] || StickyNote;
+            const isDeleting = deletingId === group.id;
+            const isActive = group.ids.every((gid) => activeSourceIds.has(gid));
             return (
               <div
-                key={source.id}
+                key={group.id}
                 className={cn(
                   "group flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-all",
                   isActive
@@ -322,10 +319,9 @@ const SourcePanel = ({
                     : "hover:bg-accent/40 border border-transparent",
                 )}
               >
-                {/* Toggle */}
                 <button
                   type="button"
-                  onClick={() => onToggleSource(source.id)}
+                  onClick={() => onToggleGroup(group.ids)}
                   className={cn(
                     "w-8 h-4.5 rounded-full p-0.5 transition-colors shrink-0 flex items-center",
                     isActive ? "bg-primary" : "bg-accent/60",
@@ -346,18 +342,17 @@ const SourcePanel = ({
                 </div>
                 <div className="flex-1 min-w-0">
                   <span className={cn("block truncate text-xs", isActive ? "text-foreground" : "text-muted-foreground")}>
-                    {source.title}
+                    {group.title}
                   </span>
                   <span className="block text-[10px] text-muted-foreground/50">
-                    {typeLabels[source.type] || "Note"}
-                    {source.content && source.content.length > 0 && (
-                      <span> · {Math.ceil(source.content.split(/\s+/).length)} mots</span>
-                    )}
+                    {typeLabels[group.type] || "Note"}
+                    {group.chunkCount > 1 && <span> · {group.chunkCount} parts</span>}
+                    {group.wordCount > 0 && <span> · {group.wordCount} mots</span>}
                   </span>
                 </div>
                 <button
                   type="button"
-                  onClick={() => handleRemove(source)}
+                  onClick={() => { setDeletingId(group.id); onRemoveGroup(group).finally(() => setDeletingId(null)); }}
                   disabled={isDeleting}
                   className="opacity-0 group-hover:opacity-100 shrink-0 p-1 rounded text-muted-foreground/50 hover:text-destructive transition-all"
                   title="Supprimer"

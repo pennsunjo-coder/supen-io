@@ -123,6 +123,50 @@ async function extractTextFromPdf(file: File): Promise<{ text: string; pages: nu
   return { text: result.text, pages: result.pages };
 }
 
+export interface GroupedSource {
+  id: string;          // premier chunk ID (pour key)
+  ids: string[];       // tous les chunk IDs
+  type: "url" | "note" | "pdf";
+  title: string;       // nom sans suffixe chunk
+  chunkCount: number;
+  wordCount: number;
+  content: string;     // premier chunk pour preview
+  file_path: string | null;
+}
+
+/**
+ * Groupe les sources par fichier (même PDF = 1 entrée).
+ * URLs/Notes avec suffixe (1/3) sont aussi groupées.
+ */
+function groupSources(sources: Source[]): GroupedSource[] {
+  const groups = new Map<string, Source[]>();
+
+  for (const s of sources) {
+    // Extraire le titre de base (sans " (1/3)")
+    const baseTitle = s.title.replace(/\s*\(\d+\/\d+\)$/, "");
+    const key = `${s.type}:${baseTitle}`;
+
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(s);
+  }
+
+  return [...groups.entries()].map(([, chunks]) => {
+    const first = chunks[0];
+    const baseTitle = first.title.replace(/\s*\(\d+\/\d+\)$/, "");
+    const totalWords = chunks.reduce((sum, c) => sum + (c.content ? c.content.split(/\s+/).length : 0), 0);
+    return {
+      id: first.id,
+      ids: chunks.map((c) => c.id),
+      type: first.type,
+      title: baseTitle,
+      chunkCount: chunks.length,
+      wordCount: totalWords,
+      content: first.content,
+      file_path: chunks.find((c) => c.file_path)?.file_path ?? null,
+    };
+  });
+}
+
 export function useSources() {
   const { user } = useAuth();
   const [sources, setSources] = useState<Source[]>([]);
@@ -391,5 +435,25 @@ export function useSources() {
     [user]
   );
 
-  return { sources, loading, addUrl, addNote, addPdf, searchWeb, removeSource };
+  const removeGrouped = useCallback(
+    async (group: GroupedSource): Promise<{ error: string | null }> => {
+      if (group.file_path) {
+        await supabase.storage.from("sources").remove([group.file_path]);
+      }
+      const { error } = await supabase
+        .from("sources")
+        .delete()
+        .in("id", group.ids);
+
+      if (error) return { error: error.message };
+      if (user) invalidateCache(`sources:${user.id}`);
+      setSources((prev) => prev.filter((s) => !group.ids.includes(s.id)));
+      return { error: null };
+    },
+    [user]
+  );
+
+  const grouped = groupSources(sources);
+
+  return { sources, grouped, loading, addUrl, addNote, addPdf, searchWeb, removeSource, removeGrouped };
 }
