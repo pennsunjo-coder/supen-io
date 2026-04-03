@@ -57,25 +57,39 @@ function extractTextFromHtml(html: string): string {
 }
 
 /**
- * Extrait le texte d'un fichier PDF côté client via pdf.js (chargé à la demande).
+ * Extrait le texte d'un fichier PDF côté client via pdf.js.
+ * Utilise le mode sans worker (plus lent mais fiable sur tous les hébergeurs).
  */
 async function extractTextFromPdf(file: File): Promise<{ text: string; pages: number }> {
-  // Import dynamique pour ne pas charger 452KB sur toutes les pages
-  const pdfjsLib = await import("pdfjs-dist");
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+  try {
+    const pdfjsLib = await import("pdfjs-dist");
 
-  const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-  let fullText = "";
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const textContent = await page.getTextContent();
-    const pageText = textContent.items
-      .map((item) => ("str" in item ? item.str : ""))
-      .join(" ");
-    fullText += pageText + "\n";
+    // Désactiver le worker — fonctionne partout sans problème CORS/CDN
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "";
+
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({
+      data: arrayBuffer,
+      useWorkerFetch: false,
+      isEvalSupported: false,
+      useSystemFonts: true,
+    }).promise;
+
+    let fullText = "";
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items
+        .map((item) => ("str" in item ? item.str : ""))
+        .filter(Boolean)
+        .join(" ");
+      fullText += pageText + " ";
+    }
+    return { text: fullText.trim(), pages: pdf.numPages };
+  } catch (err) {
+    console.error("🔴 PDF extraction error:", err);
+    throw new Error(err instanceof Error ? err.message : "PDF extraction failed");
   }
-  return { text: fullText.trim(), pages: pdf.numPages };
 }
 
 export function useSources() {
