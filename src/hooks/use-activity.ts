@@ -44,51 +44,57 @@ export function useActivity() {
 
       const now = new Date();
 
-      // Monday UTC
+      // Monday 00:00:00 UTC
+      const daysFromMonday = (now.getUTCDay() + 6) % 7;
       const monday = new Date(now);
+      monday.setUTCDate(now.getUTCDate() - daysFromMonday);
       monday.setUTCHours(0, 0, 0, 0);
-      monday.setUTCDate(monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7));
 
-      // First of month UTC
+      // First of month 00:00:00 UTC
       const firstOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 
-      const thisWeek = all.filter((c) => new Date(c.created_at) >= monday).length;
-      const thisMonth = all.filter((c) => new Date(c.created_at) >= firstOfMonth).length;
+      // Compare ISO strings (Supabase returns ISO timestamps)
+      const mondayISO = monday.toISOString();
+      const firstOfMonthISO = firstOfMonth.toISOString();
 
-      console.log("🔵 Activity:", { total, thisWeek, thisMonth, monday: monday.toISOString(), firstOfMonth: firstOfMonth.toISOString() });
+      const thisWeek = all.filter((c) => c.created_at >= mondayISO).length;
+      const thisMonth = all.filter((c) => c.created_at >= firstOfMonthISO).length;
 
-      // Heatmap 28 days UTC
+      console.log("🔵 Activity:", { total, thisWeek, thisMonth, mondayISO, firstOfMonthISO, sample: all[0]?.created_at });
+
+      // Heatmap 28 days
       const heatmap: HeatmapDay[] = Array.from({ length: 28 }, (_, i) => {
-        const d = new Date(now);
-        d.setUTCHours(0, 0, 0, 0);
-        d.setUTCDate(d.getUTCDate() - (27 - i));
-        const next = new Date(d);
-        next.setUTCDate(d.getUTCDate() + 1);
-        const count = all.filter((c) => {
-          const cd = new Date(c.created_at);
-          return cd >= d && cd < next;
-        }).length;
+        const dayStart = new Date(now);
+        dayStart.setUTCDate(now.getUTCDate() - (27 - i));
+        dayStart.setUTCHours(0, 0, 0, 0);
+        const dayEnd = new Date(dayStart);
+        dayEnd.setUTCDate(dayStart.getUTCDate() + 1);
+
+        const startISO = dayStart.toISOString();
+        const endISO = dayEnd.toISOString();
+
+        const count = all.filter((c) => c.created_at >= startISO && c.created_at < endISO).length;
+
         return {
-          date: d.toISOString().split("T")[0],
-          label: d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" }),
+          date: startISO.split("T")[0],
+          label: dayStart.toLocaleDateString("fr-FR", { day: "numeric", month: "short" }),
           count,
         };
       });
 
-      // Streak UTC
+      // Streak
       let streak = 0;
-      const today = new Date(now);
-      today.setUTCHours(0, 0, 0, 0);
       for (let i = 0; i < 365; i++) {
-        const day = new Date(today);
-        day.setUTCDate(today.getUTCDate() - i);
-        const next = new Date(day);
-        next.setUTCDate(day.getUTCDate() + 1);
-        const has = all.some((c) => {
-          const cd = new Date(c.created_at);
-          return cd >= day && cd < next;
-        });
-        if (has) streak++;
+        const dayStart = new Date(now);
+        dayStart.setUTCDate(now.getUTCDate() - i);
+        dayStart.setUTCHours(0, 0, 0, 0);
+        const dayEnd = new Date(dayStart);
+        dayEnd.setUTCDate(dayStart.getUTCDate() + 1);
+
+        const startISO = dayStart.toISOString();
+        const endISO = dayEnd.toISOString();
+
+        if (all.some((c) => c.created_at >= startISO && c.created_at < endISO)) streak++;
         else break;
       }
 
