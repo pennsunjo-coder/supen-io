@@ -49,37 +49,41 @@ const testimonials = [
   { name: "Grace Adeyemi", role: "Online Educator · Lagos", image: "https://randomuser.me/api/portraits/women/91.jpg", text: "The RAG feature is revolutionary. I upload my notes and the AI creates content based on MY own ideas." },
 ];
 
+const firstColumn = testimonials.slice(0, 3);
+const secondColumn = testimonials.slice(3, 6);
+const thirdColumn = testimonials.slice(6, 9);
+
 const plans = [
   {
-    name: "Gratuit",
+    name: "Free",
     icon: Zap,
-    price: "0€",
-    period: "pour toujours",
-    desc: "Pour tester Supen.io",
-    features: ["10 générations par mois", "2 plateformes au choix", "5 variations par génération", "Historique 7 jours"],
-    cta: "Commencer gratuitement",
+    price: "$0",
+    period: "/month",
+    desc: "Try Supen.io with limited features",
+    features: ["10 generations per month", "2 platforms", "5 variations per generation", "7-day history"],
+    cta: "Get started for free",
     highlighted: false,
     rotation: "rotate-[-1deg]",
   },
   {
     name: "Pro",
     icon: Sparkles,
-    price: "10€",
-    period: "/mois",
-    desc: "Tout pour créer du contenu viral",
-    features: ["Générations illimitées", "Toutes les plateformes (6)", "Humanisation Anti-IA", "Historique illimité", "Prompts image & infographie", "Coach IA illimité", "RAG sur tes documents"],
-    cta: "Passer au Pro",
+    price: "$10",
+    period: "/month",
+    desc: "Everything you need to go viral",
+    features: ["Unlimited generations", "All 6 platforms", "5 variations + Anti-AI humanization", "Unlimited history", "Image & infographic prompts", "Unlimited AI Coach", "RAG on your documents"],
+    cta: "Go Pro",
     highlighted: true,
     rotation: "rotate-[1deg]",
   },
   {
-    name: "Équipe",
+    name: "Team",
     icon: Users,
-    price: "29€",
-    period: "/mois",
-    desc: "Pour les agences et équipes",
-    features: ["Tout ce qui est dans Pro", "3 membres de l'équipe", "Espaces de travail partagés", "Priorité de génération", "Support prioritaire"],
-    cta: "Contacter l'équipe",
+    price: "$29",
+    period: "/month",
+    desc: "For agencies and content teams",
+    features: ["Everything in Pro", "3 team members", "Shared workspaces", "Priority generation", "Priority support"],
+    cta: "Contact us",
     highlighted: false,
     rotation: "rotate-[-2deg]",
   },
@@ -314,7 +318,7 @@ const Index = () => {
       {/* ═══════════ TESTIMONIALS ═══════════ */}
       <section className="py-24 px-6">
         <div className="max-w-5xl mx-auto">
-          <motion.div className="text-center mb-16"
+          <motion.div className="text-center mb-10"
             initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }} transition={{ duration: 0.5 }}
           >
@@ -323,28 +327,37 @@ const Index = () => {
             <p className="text-muted-foreground">Thousands of content creators trust Supen.io to create viral content every day.</p>
           </motion.div>
 
-          <div className="columns-1 md:columns-2 lg:columns-3 gap-4 space-y-4">
-            {testimonials.map((t, i) => (
-              <motion.div
-                key={t.name}
-                initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }} transition={{ delay: (i % 3) * 0.1, duration: 0.4 }}
-                className="break-inside-avoid rounded-xl border border-border/50 bg-card p-5"
-              >
-                <div className="flex gap-1 mb-3">
-                  {Array.from({ length: 5 }).map((_, j) => (
-                    <Star key={j} className="w-3.5 h-3.5 text-primary fill-primary" />
+          {/* Infinite scroll columns */}
+          <div className="flex justify-center gap-6 max-h-[740px] overflow-hidden [mask-image:linear-gradient(to_bottom,transparent,black_25%,black_75%,transparent)]">
+            {[
+              { items: firstColumn, dur: 15 },
+              { items: secondColumn, dur: 19, hide: "hidden md:flex" },
+              { items: thirdColumn, dur: 17, hide: "hidden lg:flex" },
+            ].map((col, ci) => (
+              <div key={ci} className={col.hide || "flex flex-col"}>
+                <motion.div
+                  animate={{ translateY: "-50%" }}
+                  transition={{ duration: col.dur, repeat: Infinity, ease: "linear", repeatType: "loop" }}
+                  className="flex flex-col gap-6 pb-6"
+                >
+                  {[0, 1].map((dup) => (
+                    <div key={dup} className="flex flex-col gap-6">
+                      {col.items.map((t) => (
+                        <div key={`${dup}-${t.name}`} className="p-5 rounded-xl border border-border/50 bg-card shadow-lg shadow-primary/5 max-w-xs w-full">
+                          <p className="text-sm text-foreground/80 leading-relaxed">{t.text}</p>
+                          <div className="flex items-center gap-3 mt-4">
+                            <img src={t.image} alt={t.name} width={40} height={40} className="w-10 h-10 rounded-full object-cover" />
+                            <div>
+                              <p className="text-sm font-medium text-foreground">{t.name}</p>
+                              <p className="text-xs text-muted-foreground">{t.role}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   ))}
-                </div>
-                <p className="text-sm text-foreground/90 leading-relaxed mb-4">"{t.text}"</p>
-                <div className="flex items-center gap-3">
-                  <img src={t.image} alt={t.name} className="w-9 h-9 rounded-full object-cover" />
-                  <div>
-                    <p className="text-sm font-semibold">{t.name}</p>
-                    <p className="text-xs text-muted-foreground">{t.role}</p>
-                  </div>
-                </div>
-              </motion.div>
+                </motion.div>
+              </div>
             ))}
           </div>
         </div>
@@ -357,9 +370,9 @@ const Index = () => {
             initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }} transition={{ duration: 0.5 }}
           >
-            <span className="text-xs text-primary font-semibold uppercase tracking-widest">Tarification simple</span>
-            <h2 className="text-3xl md:text-4xl font-bold mt-3 mb-4">Un seul outil. <span className="text-gradient">Tout votre contenu.</span></h2>
-            <p className="text-muted-foreground">Commencez gratuitement. Passez au Pro quand vous êtes prêt.</p>
+            <span className="text-xs text-primary font-semibold uppercase tracking-widest">Simple Pricing</span>
+            <h2 className="text-3xl md:text-4xl font-bold mt-3 mb-4">One tool. <span className="text-gradient">All your content.</span></h2>
+            <p className="text-muted-foreground">Start for free. Upgrade when you're ready.</p>
           </motion.div>
 
           <div className="grid md:grid-cols-3 gap-8 items-start">
