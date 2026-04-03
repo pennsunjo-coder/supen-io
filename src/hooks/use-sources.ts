@@ -57,75 +57,46 @@ function extractTextFromHtml(html: string): string {
 }
 
 /**
- * Extrait le texte d'un fichier PDF côté client.
- * Méthode 1 : pdf.js avec worker bundlé (Chrome, Firefox, Edge).
- * Méthode 2 : FileReader fallback (Safari, navigateurs restreints).
+ * Extrait le texte d'un fichier PDF côté client via pdf.js.
+ * Worker bundlé par Vite. Pas de fallback FileReader.
  */
 async function extractTextFromPdf(file: File): Promise<{ text: string; pages: number }> {
-  // Méthode 1 : PDF.js
-  try {
-    const pdfjsLib = await import("pdfjs-dist");
+  const pdfjsLib = await import("pdfjs-dist");
 
-    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+    "pdfjs-dist/build/pdf.worker.mjs",
+    import.meta.url
+  ).toString();
 
-    if (isSafari) {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-        "pdfjs-dist/legacy/build/pdf.worker.mjs",
-        import.meta.url
-      ).toString();
-    } else {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-        "pdfjs-dist/build/pdf.worker.mjs",
-        import.meta.url
-      ).toString();
-    }
+  const arrayBuffer = await file.arrayBuffer();
 
-    const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({
-      data: arrayBuffer,
-      useSystemFonts: true,
-      disableFontFace: true,
-    }).promise;
+  const pdf = await pdfjsLib.getDocument({
+    data: new Uint8Array(arrayBuffer),
+    useSystemFonts: true,
+    disableFontFace: true,
+    verbosity: 0,
+  }).promise;
 
-    let fullText = "";
-    for (let i = 1; i <= pdf.numPages; i++) {
+  let fullText = "";
+  for (let i = 1; i <= pdf.numPages; i++) {
+    try {
       const page = await pdf.getPage(i);
-      const textContent = await page.getTextContent();
+      const textContent = await page.getTextContent({ includeMarkedContent: false });
       const pageText = textContent.items
-        .map((item) => ("str" in item ? item.str : ""))
-        .filter(Boolean)
+        .map((item) => ("str" in item ? (item.str as string) : ""))
+        .filter((s) => s.trim().length > 0)
         .join(" ");
-      fullText += pageText + " ";
+      fullText += pageText + "\n";
+    } catch (pageErr) {
+      console.warn(`Page ${i} failed:`, pageErr);
     }
-
-    if (!fullText.trim()) throw new Error("No text extracted");
-    return { text: fullText.trim(), pages: pdf.numPages };
-  } catch (err) {
-    console.warn("🟡 PDF.js failed, trying fallback:", err);
   }
 
-  // Méthode 2 : FileReader — extrait le texte brut du PDF
-  try {
-    const text = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const content = e.target?.result as string;
-        const textMatches = content.match(/\(([^)]+)\)/g) || [];
-        const extracted = textMatches
-          .map((m) => m.slice(1, -1))
-          .filter((t) => t.length > 2 && /[a-zA-ZÀ-ÿ]/.test(t))
-          .join(" ");
-        if (extracted.length > 50) resolve(extracted);
-        else reject(new Error("Not enough text"));
-      };
-      reader.onerror = reject;
-      reader.readAsBinaryString(file);
-    });
-    console.log("🟢 PDF fallback: extracted", text.length, "chars");
-    return { text, pages: 1 };
-  } catch {
-    throw new Error("Impossible de lire ce PDF. Essaie Chrome ou Firefox.");
+  if (!fullText.trim()) {
+    throw new Error("Ce PDF ne contient pas de texte extractible. Il est peut-être scanné ou protégé.");
   }
+
+  return { text: fullText.trim(), pages: pdf.numPages };
 }
 
 export function useSources() {
