@@ -284,6 +284,171 @@ const angleColors: Record<string, string> = {
 };
 const angleLabels = ["Éducatif", "Storytelling", "Provocation", "Pratique", "Débat"];
 
+/* ─── Session Variation Card (with Image + Infographic panels) ─── */
+
+function SessionVariationCard({
+  item,
+  angle,
+  platform,
+  onUpdateImagePrompt,
+}: {
+  item: DashboardContent;
+  angle: string;
+  platform: string;
+  onUpdateImagePrompt: (id: string, prompt: string) => void;
+}) {
+  const [copiedV, setCopiedV] = useState(false);
+  const [panel, setPanel] = useState<"image" | "infographic" | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const [imagePrompt, setImagePrompt] = useState(item.image_prompt || "");
+  const [infographic, setInfographic] = useState("");
+  const [promptCopied, setPromptCopied] = useState(false);
+  const [infraCopied, setInfraCopied] = useState(false);
+
+  const color = angleColors[angle] || "bg-accent/40 text-muted-foreground";
+
+  function copy(text: string, setter: (v: boolean) => void) {
+    navigator.clipboard.writeText(text);
+    setter(true);
+    setTimeout(() => setter(false), 2000);
+  }
+
+  async function genImage() {
+    setPanel("image");
+    if (imagePrompt) return;
+    setGenerating(true);
+    try {
+      const r = await anthropic.messages.create({
+        model: CLAUDE_MODEL,
+        max_tokens: 300,
+        system: `Tu es expert en prompts pour générateurs d'images. Génère un prompt en anglais, optimisé pour ${platform}, qui illustre visuellement ce contenu. Format : style photographique + sujet + ambiance + couleurs + composition. Max 100 mots. Réponds UNIQUEMENT avec le prompt.`,
+        messages: [{ role: "user", content: item.content.slice(0, 600) }],
+      });
+      const t = r.content.filter((b) => b.type === "text").map((b) => b.text).join("");
+      setImagePrompt(t);
+      onUpdateImagePrompt(item.id, t);
+    } catch { /* silent */ }
+    setGenerating(false);
+  }
+
+  async function regenImage() {
+    setImagePrompt("");
+    setGenerating(true);
+    try {
+      const r = await anthropic.messages.create({
+        model: CLAUDE_MODEL,
+        max_tokens: 300,
+        system: `Tu es expert en prompts pour générateurs d'images. Génère un prompt en anglais, optimisé pour ${platform}, qui illustre visuellement ce contenu. Format : style photographique + sujet + ambiance + couleurs + composition. Max 100 mots. Réponds UNIQUEMENT avec le prompt.`,
+        messages: [{ role: "user", content: item.content.slice(0, 600) }],
+      });
+      const t = r.content.filter((b) => b.type === "text").map((b) => b.text).join("");
+      setImagePrompt(t);
+      onUpdateImagePrompt(item.id, t);
+    } catch { /* silent */ }
+    setGenerating(false);
+  }
+
+  async function genInfra() {
+    setPanel("infographic");
+    if (infographic) return;
+    setGenerating(true);
+    try {
+      const r = await anthropic.messages.create({
+        model: CLAUDE_MODEL,
+        max_tokens: 400,
+        system: `Tu es expert en design d'infographies virales. Crée une structure d'infographie pour ce contenu ${platform}. Format exact :\nTITRE: [titre accrocheur, max 8 mots]\nPOINT 1: [texte court]\nPOINT 2: [texte court]\nPOINT 3: [texte court]\nCTA: [appel à l'action]\nEn français. Réponds UNIQUEMENT avec la structure.`,
+        messages: [{ role: "user", content: item.content.slice(0, 600) }],
+      });
+      setInfographic(r.content.filter((b) => b.type === "text").map((b) => b.text).join(""));
+    } catch { /* silent */ }
+    setGenerating(false);
+  }
+
+  return (
+    <div className="rounded-lg border border-border/15 p-3">
+      {/* Header */}
+      <div className="flex items-center gap-1.5 mb-2">
+        <span className={cn("text-[9px] font-medium px-1.5 py-0.5 rounded-full", color)}>{angle}</span>
+        {(item.viral_score || 0) > 0 && (
+          <span className="text-[9px] text-emerald-400/70 ml-auto">{item.viral_score}%</span>
+        )}
+      </div>
+
+      {/* Content */}
+      <p className="text-xs leading-relaxed text-foreground/85 whitespace-pre-wrap mb-2">{item.content}</p>
+
+      {/* Actions */}
+      <div className="flex flex-wrap items-center gap-1">
+        <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 px-2 text-muted-foreground" onClick={(e) => { e.stopPropagation(); copy(item.content, setCopiedV); toast.success("Copié !"); }}>
+          {copiedV ? <Check className="w-2.5 h-2.5 text-emerald-400" /> : <Copy className="w-2.5 h-2.5" />}
+          {copiedV ? "Copié" : "Copier"}
+        </Button>
+        <Button variant="ghost" size="sm" className={cn("h-6 text-[10px] gap-1 px-2", panel === "image" ? "text-primary" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); genImage(); }}>
+          <ImagePlus className="w-2.5 h-2.5" /> {imagePrompt ? "Image" : "Image"}
+        </Button>
+        <Button variant="ghost" size="sm" className={cn("h-6 text-[10px] gap-1 px-2", panel === "infographic" ? "text-primary" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); genInfra(); }}>
+          <LayoutGrid className="w-2.5 h-2.5" /> Infographie
+        </Button>
+      </div>
+
+      {/* Image panel */}
+      <AnimatePresence>
+        {panel === "image" && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.15 }}>
+            <div className="mt-2 p-2.5 rounded-lg bg-accent/20 border border-border/15">
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="text-[9px] font-medium text-muted-foreground/70">Prompt image</p>
+                <button onClick={(e) => { e.stopPropagation(); setPanel(null); }} className="text-muted-foreground/40 hover:text-foreground"><X className="w-3 h-3" /></button>
+              </div>
+              {generating ? (
+                <div className="flex items-center gap-2 py-2"><RefreshCw className="w-3 h-3 animate-spin text-muted-foreground" /><span className="text-[9px] text-muted-foreground">Génération...</span></div>
+              ) : (
+                <>
+                  <Textarea value={imagePrompt} onChange={(e) => setImagePrompt(e.target.value)} onClick={(e) => e.stopPropagation()} className="bg-background/50 border-border/20 text-[10px] min-h-[45px] resize-none mb-1.5" />
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="sm" className="h-5 text-[9px] gap-1 px-1.5 text-muted-foreground" onClick={(e) => { e.stopPropagation(); copy(imagePrompt, setPromptCopied); toast.success("Prompt copié !"); }}>
+                      {promptCopied ? <Check className="w-2 h-2 text-emerald-400" /> : <Copy className="w-2 h-2" />} Copier
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-5 text-[9px] gap-1 px-1.5 text-muted-foreground" onClick={(e) => { e.stopPropagation(); regenImage(); }}>
+                      <RefreshCw className="w-2 h-2" /> Regénérer
+                    </Button>
+                  </div>
+                  <p className="text-[8px] text-muted-foreground/40 mt-1">Colle dans Midjourney, DALL-E ou Nano Banana</p>
+                </>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Infographic panel */}
+      <AnimatePresence>
+        {panel === "infographic" && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.15 }}>
+            <div className="mt-2 p-2.5 rounded-lg bg-accent/20 border border-border/15">
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="text-[9px] font-medium text-muted-foreground/70">Structure infographie</p>
+                <button onClick={(e) => { e.stopPropagation(); setPanel(null); }} className="text-muted-foreground/40 hover:text-foreground"><X className="w-3 h-3" /></button>
+              </div>
+              {generating ? (
+                <div className="flex items-center gap-2 py-2"><RefreshCw className="w-3 h-3 animate-spin text-muted-foreground" /><span className="text-[9px] text-muted-foreground">Génération...</span></div>
+              ) : (
+                <>
+                  <div className="text-[10px] leading-relaxed whitespace-pre-wrap text-foreground/80 mb-1.5">{infographic}</div>
+                  <Button variant="ghost" size="sm" className="h-5 text-[9px] gap-1 px-1.5 text-muted-foreground" onClick={(e) => { e.stopPropagation(); copy(infographic, setInfraCopied); toast.success("Structure copiée !"); }}>
+                    {infraCopied ? <Check className="w-2 h-2 text-emerald-400" /> : <Copy className="w-2 h-2" />} Copier
+                  </Button>
+                  <p className="text-[8px] text-muted-foreground/40 mt-1">Utilise dans Canva ou Nano Banana</p>
+                </>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 /* ─── Content Session Grid ─── */
 
 export function ContentSessionGrid({
@@ -294,16 +459,8 @@ export function ContentSessionGrid({
   onUpdateImagePrompt: (id: string, prompt: string) => void;
 }) {
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [copied, setCopied] = useState<string | null>(null);
 
   if (sessions.length === 0) return null;
-
-  function handleCopy(text: string, id: string) {
-    navigator.clipboard.writeText(text);
-    setCopied(id);
-    toast.success("Contenu copié !");
-    setTimeout(() => setCopied(null), 2000);
-  }
 
   return (
     <div className="px-5 py-3 border-b border-border/10">
@@ -363,26 +520,16 @@ export function ContentSessionGrid({
                     exit={{ opacity: 0, height: 0 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <div className="mt-1 rounded-xl border border-border/20 bg-card p-3 space-y-2 max-h-[300px] overflow-y-auto">
-                      {session.variations.map((v, vi) => {
-                        const angle = angleLabels[vi % angleLabels.length];
-                        const color = angleColors[angle] || "bg-accent/40 text-muted-foreground";
-                        return (
-                          <div key={v.id} className="rounded-lg border border-border/15 p-3">
-                            <div className="flex items-center gap-1.5 mb-2">
-                              <span className={cn("text-[9px] font-medium px-1.5 py-0.5 rounded-full", color)}>{angle}</span>
-                              {(v.viral_score || 0) > 0 && (
-                                <span className="text-[9px] text-emerald-400/70 ml-auto">{v.viral_score}%</span>
-                              )}
-                            </div>
-                            <p className="text-xs leading-relaxed text-foreground/85 whitespace-pre-wrap mb-2">{v.content}</p>
-                            <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 px-2 text-muted-foreground" onClick={(e) => { e.stopPropagation(); handleCopy(v.content, v.id); }}>
-                              {copied === v.id ? <Check className="w-2.5 h-2.5 text-emerald-400" /> : <Copy className="w-2.5 h-2.5" />}
-                              {copied === v.id ? "Copié" : "Copier"}
-                            </Button>
-                          </div>
-                        );
-                      })}
+                    <div className="mt-1 rounded-xl border border-border/20 bg-card p-3 space-y-2 max-h-[400px] overflow-y-auto">
+                      {session.variations.map((v, vi) => (
+                        <SessionVariationCard
+                          key={v.id}
+                          item={v}
+                          angle={angleLabels[vi % angleLabels.length]}
+                          platform={session.platform}
+                          onUpdateImagePrompt={onUpdateImagePrompt}
+                        />
+                      ))}
                     </div>
                   </motion.div>
                 )}
