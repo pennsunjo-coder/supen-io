@@ -8,17 +8,12 @@ function heatColor(count: number): string {
   return "bg-primary";
 }
 
-export function ActivityWidget({
-  data,
-}: {
-  data: ActivityData;
-  daysLabels?: string[];
-}) {
+export function ActivityWidget({ data }: { data: ActivityData; daysLabels?: string[] }) {
   if (data.loading || data.total === 0) return null;
 
   return (
     <div className="px-5 py-2.5 border-b border-border/10">
-      {/* Stats + streak — une ligne */}
+      {/* Stats line */}
       <div className="flex items-center gap-1 text-[10px] text-muted-foreground/60 mb-2">
         <span>Semaine : <span className="text-foreground/80 font-medium">{data.thisWeek}</span></span>
         <span className="text-border/30">·</span>
@@ -33,7 +28,7 @@ export function ActivityWidget({
         )}
       </div>
 
-      {/* Heatmap — 28 cases en ligne */}
+      {/* Heatmap 28 days */}
       <div className="flex gap-[2px]">
         {data.heatmap.map((day) => (
           <div
