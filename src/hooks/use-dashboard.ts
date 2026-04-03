@@ -96,19 +96,38 @@ export function useDashboard() {
       setWeeklyStats({ contentCount, platforms, streak, creatorScore });
 
       // Top 5 contenus les plus récents
-      const { data: topData, error: topErr } = await supabase
+      // Essayer avec toutes les colonnes, fallback si viral_score/image_prompt n'existent pas
+      let topData: DashboardContent[] | null = null;
+      const { data: td1, error: topErr1 } = await supabase
         .from("generated_content")
         .select("id, platform, format, content, viral_score, image_prompt, created_at")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(5);
 
-      if (topErr) {
-        console.warn("useDashboard topContent error:", topErr.message);
-      } else if (topData && topData.length > 0) {
-        console.log("useDashboard: fetched", topData.length, "top contents");
-        setTopContent(topData as DashboardContent[]);
+      if (topErr1) {
+        console.warn("🔴 useDashboard topContent full query error:", topErr1.message);
+        // Fallback : essayer sans viral_score et image_prompt (colonnes peut-être absentes)
+        const { data: td2, error: topErr2 } = await supabase
+          .from("generated_content")
+          .select("id, platform, format, content, created_at")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(5);
+        if (topErr2) {
+          console.warn("🔴 useDashboard fallback query error:", topErr2.message);
+        } else if (td2) {
+          topData = td2.map((r) => ({ ...r, viral_score: 0, image_prompt: "" })) as DashboardContent[];
+        }
       } else {
+        topData = td1 as DashboardContent[];
+      }
+
+      if (topData && topData.length > 0) {
+        console.log("🟢 useDashboard: fetched", topData.length, "top contents");
+        setTopContent(topData);
+      } else {
+        console.log("🟡 useDashboard: no content found for user", user.id);
         setTopContent([]);
       }
     } catch (err) {

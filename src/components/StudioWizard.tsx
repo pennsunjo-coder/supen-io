@@ -304,7 +304,9 @@ Règles strictes :
     setSaveStatus("saving");
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setSaveStatus("failed"); return false; }
+      if (!user) { console.warn("🔴 saveVariations: no user"); setSaveStatus("failed"); return false; }
+
+      console.log("🔵 saveVariations:", { userId: user.id, platform: selectedPlatform.name, format: selectedFormat, count: parsed.length });
 
       const allSourceIds = [...new Set([...activeSourceIds, ...selectedDocumentIds])];
       const inserts = parsed.map((v) => ({
@@ -315,19 +317,20 @@ Règles strictes :
         viral_score: v.score,
         source_ids: allSourceIds,
       }));
-      const { error: saveErr } = await supabase.from("generated_content").insert(inserts);
+      const { data: insertData, error: saveErr } = await supabase.from("generated_content").insert(inserts).select();
       if (saveErr) {
+        console.warn("🔴 Insert failed:", saveErr.message, saveErr.details, saveErr.hint);
         setSaveStatus("failed");
-        console.warn("Save failed:", saveErr.message);
         return false;
       }
+      console.log("🟢 Insert OK:", insertData?.length, "rows");
       setSaveStatus("saved");
       if (onGenerationComplete) onGenerationComplete();
       toast.success(`${parsed.length} variations sauvegardées`);
       return true;
     } catch (err) {
+      console.warn("🔴 Save exception:", err);
       setSaveStatus("failed");
-      console.warn("Save error:", err);
       return false;
     }
   }

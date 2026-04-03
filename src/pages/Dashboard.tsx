@@ -59,10 +59,20 @@ const Dashboard = () => {
   // Refetch quand genCount change (après reset du wizard qui revient à l'accueil)
   useEffect(() => {
     if (genCount > 0) {
+      console.log("🔄 Dashboard: refetching after generation", genCount);
       dashboard.refetch();
       activity.refetch();
     }
   }, [genCount]);
+
+  // Debug logs
+  useEffect(() => {
+    console.log("📊 Dashboard state:", {
+      topContent: dashboard.topContent.length,
+      activityTotal: activity.total,
+      dashboardLoading: dashboard.loading,
+    });
+  }, [dashboard.topContent, activity.total, dashboard.loading]);
 
   return (
     <DashboardLayout>
