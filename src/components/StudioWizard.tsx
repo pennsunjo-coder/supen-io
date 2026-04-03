@@ -798,6 +798,9 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                 <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-1 px-2 text-muted-foreground shrink-0" onClick={() => { handleCopy(selectedVariation ?? 0); }}>
                   <ClipboardList className="w-3 h-3" /> Copier
                 </Button>
+                <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-1 px-2 text-muted-foreground shrink-0" onClick={() => { toast("Retrouve ton contenu dans le tableau de bord"); navigate("/dashboard"); }}>
+                  <ChevronLeft className="w-3 h-3" /> Dashboard
+                </Button>
                 <Button
                   size="sm"
                   onClick={handleViewContents}
