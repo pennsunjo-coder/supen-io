@@ -207,20 +207,21 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, topContent 
         ? [...new Set([...selectedDocumentIds, ...activeSourceIds])]
         : activeSourceIds;
 
-      try {
-        if (ragIds.length > 0) {
-          const userRefs = await searchUserSources(sanitized, ragIds, 8);
-          if (userRefs.length > 0) {
-            userSection = "\n\n## CONTEXTE UTILISATEUR (sources sélectionnées)\n" +
-              userRefs.map((r) => `### [${r.type.toUpperCase()}] ${r.title}\n${r.content}`).join("\n\n");
-          }
+      if (ragIds.length > 0) {
+        // searchUserSources a son propre fallback interne
+        const userRefs = await searchUserSources(sanitized, ragIds, 8);
+        if (userRefs.length > 0) {
+          console.log("📄 RAG: injecting", userRefs.length, "source chunks into prompt");
+          userSection = "\n\n## CONTEXTE UTILISATEUR (sources sélectionnées)\n" +
+            userRefs.map((r) => `### [${r.type.toUpperCase()}] ${r.title}\n${r.content.slice(0, 3000)}`).join("\n\n");
         }
-      } catch { /* Sources indisponibles */ }
+      }
 
-      // Si mode document et pas de résultats RAG, injecter directement le contenu des sources sélectionnées
-      if (isDocMode && !userSection) {
-        const selected = sources.filter((s) => selectedDocumentIds.includes(s.id));
+      // Fallback ultime si RAG n'a rien retourné : injecter le contenu brut des sources sélectionnées
+      if (ragIds.length > 0 && !userSection) {
+        const selected = sources.filter((s) => ragIds.includes(s.id));
         if (selected.length > 0) {
+          console.log("📄 RAG fallback: injecting", selected.length, "sources directly");
           userSection = "\n\n## CONTEXTE UTILISATEUR (sources sélectionnées)\n" +
             selected.map((s) => `### [${s.type.toUpperCase()}] ${s.title}\n${s.content.slice(0, 3000)}`).join("\n\n");
         }
