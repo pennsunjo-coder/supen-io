@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, DragEvent } from "react";
 import {
   FileText,
   Globe,
@@ -10,6 +10,7 @@ import {
   Loader2,
   X,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { sanitizeInput } from "@/lib/security";
@@ -61,6 +62,8 @@ const SourcePanel = ({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const urlRef = useRef<HTMLInputElement>(null);
   const noteTitleRef = useRef<HTMLInputElement>(null);
@@ -131,29 +134,47 @@ const SourcePanel = ({
     }
   };
 
-  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const importPdf = async (file: File) => {
     if (file.type !== "application/pdf") {
-      setError("Seuls les fichiers PDF sont acceptés.");
+      toast.error("Seuls les fichiers PDF sont acceptés.");
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      setError("Le fichier ne doit pas dépasser 10 Mo.");
+      toast.error("Le fichier ne doit pas dépasser 10 Mo.");
       return;
     }
 
-    setSaving(true);
-    setError(null);
+    setPdfLoading(true);
+    toast("Extraction du PDF en cours...");
     try {
       const result = await onAddPdf(file);
-      if (result.error) setError(result.error);
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success("PDF importé avec succès !");
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur inattendue");
+      toast.error(err instanceof Error ? err.message : "Erreur inattendue");
     } finally {
-      setSaving(false);
+      setPdfLoading(false);
       if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) importPdf(file);
+    e.target.value = "";
+  };
+
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file && file.type === "application/pdf") {
+      importPdf(file);
+    } else if (file) {
+      toast.error("Seuls les fichiers PDF sont acceptés.");
     }
   };
 
@@ -193,6 +214,7 @@ const SourcePanel = ({
         {actions.map(({ mode, icon: Icon, label }) => {
           const isActive = showForm && formMode === mode;
           const isPdf = mode === "pdf";
+          const isPdfBusy = isPdf && pdfLoading;
           return (
             <button
               key={mode}
@@ -205,16 +227,18 @@ const SourcePanel = ({
                   else openForm(mode as FormMode);
                 }
               }}
-              disabled={saving}
+              disabled={saving || pdfLoading}
               className={cn(
                 "flex flex-col items-center gap-1 px-1 py-2 rounded-lg border text-[11px] font-medium transition-all disabled:opacity-50",
-                isActive
+                isPdfBusy
                   ? "border-primary/40 bg-primary/10 text-primary"
-                  : "border-border/40 text-muted-foreground hover:text-foreground hover:bg-accent/50 hover:border-border/60"
+                  : isActive
+                    ? "border-primary/40 bg-primary/10 text-primary"
+                    : "border-border/40 text-muted-foreground hover:text-foreground hover:bg-accent/50 hover:border-border/60"
               )}
             >
-              <Icon className="w-4 h-4" />
-              {label}
+              {isPdfBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Icon className="w-4 h-4" />}
+              {isPdfBusy ? "Import..." : label}
             </button>
           );
         })}
@@ -266,12 +290,21 @@ const SourcePanel = ({
             <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
           </div>
         ) : sources.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+          <div
+            className={cn(
+              "flex flex-col items-center justify-center py-12 px-4 text-center mx-3 my-3 rounded-xl border-2 border-dashed transition-colors",
+              dragOver ? "border-primary bg-primary/5" : "border-border/30",
+            )}
+            onDrop={handleDrop}
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+          >
             <div className="w-12 h-12 rounded-xl bg-accent/50 flex items-center justify-center mb-3">
-              <StickyNote className="w-5 h-5 text-muted-foreground" />
+              <Upload className="w-5 h-5 text-muted-foreground" />
             </div>
             <p className="text-sm font-medium text-muted-foreground">Aucune source</p>
-            <p className="text-xs text-muted-foreground/60 mt-1 leading-relaxed">Ajoute des fichiers, liens ou notes pour commencer</p>
+            <p className="text-xs text-muted-foreground/60 mt-1 leading-relaxed">Glisse un PDF ici ou utilise les boutons ci-dessus</p>
+            <p className="text-[10px] text-muted-foreground/40 mt-2">Max 10 MB</p>
           </div>
         ) : (
           sources.map((source) => {
