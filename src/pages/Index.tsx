@@ -49,6 +49,21 @@ const testimonials = [
   { name: "Grace Adeyemi", role: "Online Educator · Lagos", image: "https://randomuser.me/api/portraits/women/91.jpg", text: "The RAG feature is revolutionary. I upload my notes and the AI creates content based on MY own ideas." },
 ];
 
+const resultsData = [
+  { src: "/results/Screenshot_2026-04-02_003014.png", stat: "2.7K likes · 649 shares" },
+  { src: "/results/Screenshot_2026-04-02_003201.png", stat: "3.2K likes · 5K shares" },
+  { src: "/results/Screenshot_2026-04-02_003257.png", stat: "26K likes · 23K shares" },
+  { src: "/results/Screenshot_2026-04-02_003356.png", stat: "7.2K likes · 7.1K shares" },
+  { src: "/results/Screenshot_2026-04-02_003931.png", stat: "1.1K likes · 230 shares" },
+  { src: "/results/Screenshot_2026-04-02_004452.png", stat: "630 reactions · 44 reposts" },
+  { src: "/results/Screenshot_2026-04-02_004606.png", stat: "624 reactions · 63 reposts" },
+  { src: "/results/Screenshot_2026-04-02_004655.png", stat: "697 reactions · 93 reposts" },
+  { src: "/results/Screenshot_2026-04-02_004737.png", stat: "881 reactions · 135 reposts" },
+  { src: "/results/Screenshot_2026-04-02_005007.png", stat: "1.7M views · 3K likes" },
+  { src: "/results/Screenshot_2026-04-02_005138.png", stat: "1.6M views · 9.8K likes" },
+  { src: "/results/Screenshot_2026-04-02_005256.png", stat: "257K views · 2.2K likes" },
+];
+
 const firstColumn = testimonials.slice(0, 3);
 const secondColumn = testimonials.slice(3, 6);
 const thirdColumn = testimonials.slice(6, 9);
@@ -371,6 +386,41 @@ const Index = () => {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ═══════════ REAL RESULTS ═══════════ */}
+      <section className="py-20 overflow-hidden">
+        <motion.div className="text-center mb-12 px-6"
+          initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }} transition={{ duration: 0.5 }}
+        >
+          <div className="inline-flex items-center gap-2 border border-border/30 rounded-full px-4 py-1.5 text-sm text-muted-foreground mb-6">
+            Real Results
+          </div>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            Content that actually <span className="text-primary">performs</span>
+          </h2>
+          <p className="text-muted-foreground">Real posts. Real numbers. Generated with Supen.io.</p>
+        </motion.div>
+
+        <div className="[mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
+          <motion.div
+            animate={{ translateX: "-50%" }}
+            transition={{ duration: 30, repeat: Infinity, ease: "linear", repeatType: "loop" }}
+            className="flex gap-4 w-max"
+          >
+            {[...resultsData, ...resultsData].map((r, i) => (
+              <div key={i} className={cn("w-[280px] shrink-0 rounded-xl overflow-hidden border border-border/20 shadow-lg shadow-black/10", i % 2 === 0 ? "rotate-1" : "-rotate-1")}>
+                <div className="w-full h-[200px] bg-accent/30 flex items-center justify-center">
+                  <img src={r.src} alt="Result" className="w-full h-full object-cover object-top" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                </div>
+                <div className="bg-card/90 backdrop-blur px-3 py-2 border-t border-border/20">
+                  <p className="text-[11px] text-muted-foreground font-medium">{r.stat}</p>
+                </div>
+              </div>
+            ))}
+          </motion.div>
         </div>
       </section>
 
