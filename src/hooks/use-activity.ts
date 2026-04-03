@@ -44,24 +44,26 @@ export function useActivity() {
 
       const now = new Date();
 
-      // Monday of current week
+      // Monday UTC
       const monday = new Date(now);
-      monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
-      monday.setHours(0, 0, 0, 0);
+      monday.setUTCHours(0, 0, 0, 0);
+      monday.setUTCDate(monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7));
 
-      // First of month
-      const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      // First of month UTC
+      const firstOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 
       const thisWeek = all.filter((c) => new Date(c.created_at) >= monday).length;
       const thisMonth = all.filter((c) => new Date(c.created_at) >= firstOfMonth).length;
 
-      // Heatmap 28 days
+      console.log("🔵 Activity:", { total, thisWeek, thisMonth, monday: monday.toISOString(), firstOfMonth: firstOfMonth.toISOString() });
+
+      // Heatmap 28 days UTC
       const heatmap: HeatmapDay[] = Array.from({ length: 28 }, (_, i) => {
         const d = new Date(now);
-        d.setDate(d.getDate() - (27 - i));
-        d.setHours(0, 0, 0, 0);
+        d.setUTCHours(0, 0, 0, 0);
+        d.setUTCDate(d.getUTCDate() - (27 - i));
         const next = new Date(d);
-        next.setDate(d.getDate() + 1);
+        next.setUTCDate(d.getUTCDate() + 1);
         const count = all.filter((c) => {
           const cd = new Date(c.created_at);
           return cd >= d && cd < next;
@@ -73,15 +75,15 @@ export function useActivity() {
         };
       });
 
-      // Streak
+      // Streak UTC
       let streak = 0;
       const today = new Date(now);
-      today.setHours(0, 0, 0, 0);
+      today.setUTCHours(0, 0, 0, 0);
       for (let i = 0; i < 365; i++) {
         const day = new Date(today);
-        day.setDate(today.getDate() - i);
+        day.setUTCDate(today.getUTCDate() - i);
         const next = new Date(day);
-        next.setDate(day.getDate() + 1);
+        next.setUTCDate(day.getUTCDate() + 1);
         const has = all.some((c) => {
           const cd = new Date(c.created_at);
           return cd >= day && cd < next;

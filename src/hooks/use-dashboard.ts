@@ -171,7 +171,7 @@ export function useDashboard() {
       if (topData && topData.length > 0) {
         console.log("🟢 useDashboard: fetched", topData.length, "top contents");
         setTopContent(topData);
-        setSessions(groupIntoSessions(topData).slice(0, 4));
+        setSessions(groupIntoSessions(topData).slice(0, 10));
       } else {
         console.log("🟡 useDashboard: no content found for user", user.id);
         setTopContent([]);
