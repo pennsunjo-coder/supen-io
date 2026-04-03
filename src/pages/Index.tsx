@@ -52,19 +52,20 @@ const testimonials = [
 ];
 
 const resultsData = [
-  { src: "/results/Screenshot_2026-04-02_003014.png", stat: "2.7K likes · 649 shares" },
-  { src: "/results/Screenshot_2026-04-02_003201.png", stat: "3.2K likes · 5K shares" },
-  { src: "/results/Screenshot_2026-04-02_003257.png", stat: "26K likes · 23K shares" },
-  { src: "/results/Screenshot_2026-04-02_003356.png", stat: "7.2K likes · 7.1K shares" },
-  { src: "/results/Screenshot_2026-04-02_003931.png", stat: "1.1K likes · 230 shares" },
-  { src: "/results/Screenshot_2026-04-02_004452.png", stat: "630 reactions · 44 reposts" },
-  { src: "/results/Screenshot_2026-04-02_004606.png", stat: "624 reactions · 63 reposts" },
-  { src: "/results/Screenshot_2026-04-02_004655.png", stat: "697 reactions · 93 reposts" },
-  { src: "/results/Screenshot_2026-04-02_004737.png", stat: "881 reactions · 135 reposts" },
-  { src: "/results/Screenshot_2026-04-02_005007.png", stat: "1.7M views · 3K likes" },
-  { src: "/results/Screenshot_2026-04-02_005138.png", stat: "1.6M views · 9.8K likes" },
-  { src: "/results/Screenshot_2026-04-02_005256.png", stat: "257K views · 2.2K likes" },
+  { src: "/results/Screenshot_2026-04-02_003014.png", stat: "2.7K likes · 649 shares", platform: "Facebook", tier: "green" },
+  { src: "/results/Screenshot_2026-04-02_003201.png", stat: "3.2K likes · 5K shares", platform: "Facebook", tier: "green" },
+  { src: "/results/Screenshot_2026-04-02_003257.png", stat: "26K likes · 23K shares", platform: "Facebook", tier: "gold" },
+  { src: "/results/Screenshot_2026-04-02_003356.png", stat: "7.2K likes · 7.1K shares", platform: "Facebook", tier: "green" },
+  { src: "/results/Screenshot_2026-04-02_003931.png", stat: "1.1K likes · 230 shares", platform: "Facebook", tier: "cyan" },
+  { src: "/results/Screenshot_2026-04-02_004452.png", stat: "630 reactions · 44 reposts", platform: "LinkedIn", tier: "cyan" },
+  { src: "/results/Screenshot_2026-04-02_004606.png", stat: "624 reactions · 63 reposts", platform: "LinkedIn", tier: "cyan" },
+  { src: "/results/Screenshot_2026-04-02_004655.png", stat: "697 reactions · 93 reposts", platform: "LinkedIn", tier: "cyan" },
+  { src: "/results/Screenshot_2026-04-02_004737.png", stat: "881 reactions · 135 reposts", platform: "LinkedIn", tier: "cyan" },
+  { src: "/results/Screenshot_2026-04-02_005007.png", stat: "1.7M views · 3K likes", platform: "X (Twitter)", tier: "gold" },
+  { src: "/results/Screenshot_2026-04-02_005138.png", stat: "1.6M views · 9.8K likes", platform: "X (Twitter)", tier: "gold" },
+  { src: "/results/Screenshot_2026-04-02_005256.png", stat: "257K views · 2.2K likes", platform: "X (Twitter)", tier: "green" },
 ];
+const tierColors = { gold: "bg-amber-500/90", green: "bg-emerald-500/90", cyan: "bg-primary/90" };
 
 const firstColumn = testimonials.slice(0, 3);
 const secondColumn = testimonials.slice(3, 6);
@@ -401,19 +402,24 @@ const Index = () => {
           <p className="text-muted-foreground">Real posts. Real numbers. Generated with Supen.io.</p>
         </motion.div>
 
-        <div className="[mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
+        <div className="[mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)] group/scroll">
           <motion.div
             animate={{ translateX: "-50%" }}
-            transition={{ duration: 30, repeat: Infinity, ease: "linear", repeatType: "loop" }}
-            className="flex gap-4 w-max"
+            transition={{ duration: 60, repeat: Infinity, ease: "linear", repeatType: "loop" }}
+            className="flex gap-6 w-max group-hover/scroll:[animation-play-state:paused]"
+            style={{ animationPlayState: "running" }}
           >
             {[...resultsData, ...resultsData].map((r, i) => (
-              <div key={i} className={cn("w-[280px] shrink-0 rounded-xl overflow-hidden border border-border/20 shadow-lg shadow-black/10", i % 2 === 0 ? "rotate-1" : "-rotate-1")}>
-                <div className="w-full h-[200px] bg-accent/30 flex items-center justify-center">
-                  <img src={r.src} alt="Result" className="w-full h-full object-cover object-top" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+              <div key={i} className={cn("w-[320px] shrink-0 rounded-xl overflow-hidden border border-border/20 shadow-lg shadow-black/10 transition-transform duration-300 hover:scale-105 hover:shadow-xl relative", i % 2 === 0 ? "rotate-[0.5deg]" : "-rotate-[0.5deg]")}>
+                {/* Platform badge */}
+                <div className="absolute top-3 left-3 z-10">
+                  <span className="bg-primary/90 text-white text-[10px] font-medium px-2 py-1 rounded-full">{r.platform}</span>
                 </div>
-                <div className="bg-card/90 backdrop-blur px-3 py-2 border-t border-border/20">
-                  <p className="text-[11px] text-muted-foreground font-medium">{r.stat}</p>
+                <div className="w-full h-[260px] bg-accent/30">
+                  <img src={r.src} alt="Result" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                </div>
+                <div className={cn("px-4 py-3 border-t border-border/20 text-white text-sm font-bold flex items-center gap-2", tierColors[r.tier as keyof typeof tierColors] || "bg-primary/90")}>
+                  <span>⚡</span> {r.stat}
                 </div>
               </div>
             ))}
