@@ -340,7 +340,6 @@ Règles strictes :
   }
 
   async function handleViewContents() {
-    // Sauvegarder d'abord si pas encore fait
     if (saveStatus !== "saved") {
       const ok = await saveVariations(variations);
       if (!ok) {
@@ -349,6 +348,16 @@ Règles strictes :
       }
     }
     toast.success("Contenu sauvegardé ! Retrouve-le dans ton tableau de bord.");
+    reset();
+    // Le reset remet le wizard à l'accueil qui affiche les derniers contenus
+  }
+
+  async function handleGoToDashboard() {
+    // Sauvegarder si pas encore fait
+    if (saveStatus !== "saved" && variations.length > 0) {
+      await saveVariations(variations);
+    }
+    toast("Retrouve ton contenu dans le tableau de bord");
     reset();
   }
 
@@ -453,10 +462,10 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
 
         {/* ═══════ ACCUEIL ═══════ */}
         {!started && variations.length === 0 && (
-          <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }} className="flex-1 flex flex-col overflow-y-auto">
+          <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }} className={cn("flex-1 flex flex-col", topContent.length > 0 ? "overflow-y-auto" : "items-center justify-center")}>
 
             {/* 1. BIENVENUE + CTA */}
-            <div className="px-6 pt-6 pb-5 text-center">
+            <div className={cn("px-6 text-center", topContent.length > 0 ? "pt-6 pb-5" : "pb-0")}>
               <h2 className="text-lg font-semibold text-foreground mb-1">{greeting}</h2>
               <p className="text-sm text-muted-foreground leading-relaxed mb-5">{subtitle}</p>
               <Button onClick={() => setStarted(true)} className="h-11 px-7 text-sm font-semibold glow-sm gap-2">
@@ -798,7 +807,7 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                 <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-1 px-2 text-muted-foreground shrink-0" onClick={() => { handleCopy(selectedVariation ?? 0); }}>
                   <ClipboardList className="w-3 h-3" /> Copier
                 </Button>
-                <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-1 px-2 text-muted-foreground shrink-0" onClick={() => { toast("Retrouve ton contenu dans le tableau de bord"); navigate("/dashboard"); }}>
+                <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-1 px-2 text-muted-foreground shrink-0" onClick={handleGoToDashboard}>
                   <ChevronLeft className="w-3 h-3" /> Dashboard
                 </Button>
                 <Button

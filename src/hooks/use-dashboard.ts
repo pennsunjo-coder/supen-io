@@ -95,18 +95,21 @@ export function useDashboard() {
 
       setWeeklyStats({ contentCount, platforms, streak, creatorScore });
 
-      // Top 5 contenus (les plus récents avec score > 0, ou les 5 derniers)
-      const { data: topData } = await supabase
+      // Top 5 contenus les plus récents
+      const { data: topData, error: topErr } = await supabase
         .from("generated_content")
         .select("id, platform, format, content, viral_score, image_prompt, created_at")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
-        .limit(20);
+        .limit(5);
 
-      if (topData) {
-        // Trier par score viral puis prendre les 5 meilleurs
-        const sorted = (topData as DashboardContent[]).sort((a, b) => (b.viral_score || 0) - (a.viral_score || 0));
-        setTopContent(sorted.slice(0, 5));
+      if (topErr) {
+        console.warn("useDashboard topContent error:", topErr.message);
+      } else if (topData && topData.length > 0) {
+        console.log("useDashboard: fetched", topData.length, "top contents");
+        setTopContent(topData as DashboardContent[]);
+      } else {
+        setTopContent([]);
       }
     } catch (err) {
       console.warn("useDashboard error:", err);

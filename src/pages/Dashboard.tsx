@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import SourcePanel from "@/components/SourcePanel";
 import ChatPanel from "@/components/ChatPanel";
@@ -8,6 +8,7 @@ import { useConversation } from "@/hooks/use-conversation";
 import { useProfile } from "@/hooks/use-profile";
 import { useDashboard } from "@/hooks/use-dashboard";
 import { useActivity } from "@/hooks/use-activity";
+import { invalidateCache } from "@/lib/cache";
 
 const Dashboard = () => {
   const { profile } = useProfile();
@@ -34,6 +35,9 @@ const Dashboard = () => {
   const [activeSourceIds, setActiveSourceIds] = useState<Set<string>>(new Set());
   const [lastGeneratedContent, setLastGeneratedContent] = useState<string>("");
 
+  // Compteur de générations pour forcer le refetch
+  const [genCount, setGenCount] = useState(0);
+
   const handleToggleSource = useCallback((id: string) => {
     setActiveSourceIds((prev) => {
       const next = new Set(prev);
@@ -44,9 +48,21 @@ const Dashboard = () => {
   }, []);
 
   const handleGenerationComplete = useCallback(() => {
+    // Invalider le cache pour forcer un vrai refetch
+    invalidateCache("history:");
+    invalidateCache("dashboard:");
     dashboard.refetch();
     activity.refetch();
+    setGenCount((c) => c + 1);
   }, [dashboard, activity]);
+
+  // Refetch quand genCount change (après reset du wizard qui revient à l'accueil)
+  useEffect(() => {
+    if (genCount > 0) {
+      dashboard.refetch();
+      activity.refetch();
+    }
+  }, [genCount]);
 
   return (
     <DashboardLayout>
