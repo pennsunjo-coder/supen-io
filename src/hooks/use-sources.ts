@@ -113,6 +113,7 @@ async function extractTextFromPdf(file: File): Promise<{ text: string; pages: nu
       headers: {
         Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
         apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+        Accept: "application/json",
       },
       body: formData,
     }
