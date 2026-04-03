@@ -10,15 +10,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Vérification basique du token (pas de JWT strict)
-    const authHeader = req.headers.get("authorization") || req.headers.get("apikey");
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: "Missing authorization" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
-
     const formData = await req.formData();
     const file = formData.get("file") as File;
 
@@ -30,48 +21,20 @@ Deno.serve(async (req) => {
     }
 
     const arrayBuffer = await file.arrayBuffer();
-    const uint8Array = new Uint8Array(arrayBuffer);
-    const decoder = new TextDecoder("latin1");
-    const pdfString = decoder.decode(uint8Array);
+    const data = new Uint8Array(arrayBuffer);
 
-    const textParts: string[] = [];
+    const text = extractPdfText(data);
+    const pageCount = countPages(data);
 
-    // Extraire les strings Tj (opérateur texte PDF)
-    const tjMatches = pdfString.matchAll(/\(([^)\\]*(?:\\.[^)\\]*)*)\)\s*Tj/g);
-    for (const match of tjMatches) {
-      const text = match[1]
-        .replace(/\\n/g, " ")
-        .replace(/\\r/g, " ")
-        .replace(/\\t/g, " ")
-        .replace(/\\\(/g, "(")
-        .replace(/\\\)/g, ")")
-        .replace(/\\\\/g, "\\")
-        .trim();
-      if (text.length > 1) textParts.push(text);
-    }
-
-    // Extraire les arrays TJ
-    const tjArrayMatches = pdfString.matchAll(/\[([^\]]+)\]\s*TJ/gi);
-    for (const match of tjArrayMatches) {
-      const stringMatches = match[1].matchAll(/\(([^)\\]*(?:\\.[^)\\]*)*)\)/g);
-      for (const sm of stringMatches) {
-        const text = sm[1].trim();
-        if (text.length > 1) textParts.push(text);
-      }
-    }
-
-    const extractedText = textParts.join(" ").trim();
-    const pageCount = (pdfString.match(/\/Type\s*\/Page[^s]/g) || []).length || 1;
-
-    if (!extractedText || extractedText.length < 20) {
+    if (!text || text.length < 30) {
       return new Response(
-        JSON.stringify({ error: "Ce PDF ne contient pas de texte extractible." }),
+        JSON.stringify({ error: "Ce PDF ne contient pas de texte extractible. Il est peut-��tre scanné ou protégé." }),
         { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
     return new Response(
-      JSON.stringify({ text: extractedText, pages: pageCount }),
+      JSON.stringify({ text, pages: pageCount }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (err) {
@@ -82,3 +45,82 @@ Deno.serve(async (req) => {
     );
   }
 });
+
+function countPages(data: Uint8Array): number {
+  const str = new TextDecoder("latin1").decode(data);
+  return (str.match(/\/Type\s*\/Page[^s]/g) || []).length || 1;
+}
+
+function extractPdfText(data: Uint8Array): string {
+  const pdfStr = new TextDecoder("latin1").decode(data);
+  const texts: string[] = [];
+
+  // Trouver tous les streams de contenu
+  const streamRegex = /stream\r?\n([\s\S]*?)\r?\nendstream/g;
+  let streamMatch;
+
+  while ((streamMatch = streamRegex.exec(pdfStr)) !== null) {
+    const streamContent = streamMatch[1];
+
+    // Blocs BT...ET (blocs de texte PDF)
+    const btEtRegex = /BT([\s\S]*?)ET/g;
+    let btMatch;
+
+    while ((btMatch = btEtRegex.exec(streamContent)) !== null) {
+      const block = btMatch[1];
+
+      // Tj operator : (text) Tj
+      const tjRegex = /\(([^)\\]*(?:\\.[^)\\]*)*)\)\s*Tj/g;
+      let tjMatch;
+      while ((tjMatch = tjRegex.exec(block)) !== null) {
+        const t = decodePdfString(tjMatch[1]);
+        if (t.trim().length > 0) texts.push(t);
+      }
+
+      // TJ operator : [(text) num (text)] TJ
+      const tjArrayRegex = /\[([\s\S]*?)\]\s*TJ/g;
+      let tjArrayMatch;
+      while ((tjArrayMatch = tjArrayRegex.exec(block)) !== null) {
+        const innerStrings = tjArrayMatch[1].matchAll(/\(([^)\\]*(?:\\.[^)\\]*)*)\)/g);
+        for (const s of innerStrings) {
+          const t = decodePdfString(s[1]);
+          if (t.trim().length > 0) texts.push(t);
+        }
+      }
+
+      // Td + Tj pattern
+      const tdTjRegex = /Td\s+\(([^)]+)\)\s*Tj/g;
+      let tdTjMatch;
+      while ((tdTjMatch = tdTjRegex.exec(block)) !== null) {
+        const t = decodePdfString(tdTjMatch[1]);
+        if (t.trim().length > 0) texts.push(t);
+      }
+    }
+
+    // Textes en dehors des BT/ET
+    const standaloneTj = /\(([^)\\]{2,}(?:\\.[^)\\]*)*)\)\s*Tj/g;
+    let stMatch;
+    while ((stMatch = standaloneTj.exec(streamContent)) !== null) {
+      const t = decodePdfString(stMatch[1]);
+      if (t.trim().length > 1 && /[a-zA-ZÀ-ÿ]/.test(t)) {
+        texts.push(t);
+      }
+    }
+  }
+
+  return [...new Set(texts)].join(" ").replace(/\s+/g, " ").trim();
+}
+
+function decodePdfString(s: string): string {
+  return s
+    .replace(/\\n/g, " ")
+    .replace(/\\r/g, " ")
+    .replace(/\\t/g, " ")
+    .replace(/\\\(/g, "(")
+    .replace(/\\\)/g, ")")
+    .replace(/\\\\/g, "\\")
+    .replace(/\\(\d{3})/g, (_, oct) => {
+      const code = parseInt(oct, 8);
+      return code > 31 && code < 128 ? String.fromCharCode(code) : " ";
+    });
+}
