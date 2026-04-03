@@ -196,6 +196,7 @@ export function useSources() {
   const addUrl = useCallback(
     async (url: string): Promise<{ error: string | null }> => {
       if (!user) return { error: "Non connecté" };
+      console.log("🔵 addUrl:", url);
 
       let title: string;
       try {
@@ -238,7 +239,7 @@ export function useSources() {
           title,
           content: chunks[0],
         });
-        if (error) return { error: error.message };
+        if (error) { console.warn("🔴 addUrl insert error:", error.message); return { error: error.message }; }
       } else {
         const inserts = chunks.map((chunk, i) => ({
           user_id: user.id,
@@ -247,9 +248,11 @@ export function useSources() {
           content: chunk,
         }));
         const { error } = await supabase.from("sources").insert(inserts);
-        if (error) return { error: error.message };
+        if (error) { console.warn("🔴 addUrl insert error:", error.message); return { error: error.message }; }
       }
 
+      console.log("🟢 addUrl: success");
+      invalidateCache(`sources:${user.id}`);
       await fetchSources();
       return { error: null };
     },
@@ -259,6 +262,7 @@ export function useSources() {
   const addNote = useCallback(
     async (title: string, content: string): Promise<{ error: string | null }> => {
       if (!user) return { error: "Non connecté" };
+      console.log("🔵 addNote:", title);
 
       const chunks = chunkText(content);
 
@@ -269,7 +273,7 @@ export function useSources() {
           title: title.slice(0, 200),
           content: chunks[0],
         });
-        if (error) return { error: error.message };
+        if (error) { console.warn("🔴 addNote error:", error.message); return { error: error.message }; }
       } else {
         const inserts = chunks.map((chunk, i) => ({
           user_id: user.id,
@@ -278,9 +282,11 @@ export function useSources() {
           content: chunk,
         }));
         const { error } = await supabase.from("sources").insert(inserts);
-        if (error) return { error: error.message };
+        if (error) { console.warn("🔴 addNote error:", error.message); return { error: error.message }; }
       }
 
+      console.log("🟢 addNote: success");
+      invalidateCache(`sources:${user.id}`);
       await fetchSources();
       return { error: null };
     },
@@ -404,6 +410,7 @@ export function useSources() {
       });
 
       if (error) return { error: error.message };
+      invalidateCache(`sources:${user.id}`);
       await fetchSources();
       return { error: null };
     },
