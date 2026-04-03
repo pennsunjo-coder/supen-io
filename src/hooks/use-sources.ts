@@ -57,23 +57,34 @@ function extractTextFromHtml(html: string): string {
 }
 
 /**
- * Extrait le texte d'un fichier PDF côté client via pdf.js.
- * Worker bundlé localement par Vite (pas de CDN externe).
+ * Extrait le texte d'un fichier PDF côté client.
+ * Méthode 1 : pdf.js avec worker bundlé (Chrome, Firefox, Edge).
+ * Méthode 2 : FileReader fallback (Safari, navigateurs restreints).
  */
 async function extractTextFromPdf(file: File): Promise<{ text: string; pages: number }> {
+  // Méthode 1 : PDF.js
   try {
     const pdfjsLib = await import("pdfjs-dist");
 
-    // Worker bundlé par Vite — pas de CDN externe
-    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-      "pdfjs-dist/build/pdf.worker.mjs",
-      import.meta.url
-    ).toString();
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+    if (isSafari) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+        "pdfjs-dist/legacy/build/pdf.worker.mjs",
+        import.meta.url
+      ).toString();
+    } else {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+        "pdfjs-dist/build/pdf.worker.mjs",
+        import.meta.url
+      ).toString();
+    }
 
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({
       data: arrayBuffer,
       useSystemFonts: true,
+      disableFontFace: true,
     }).promise;
 
     let fullText = "";
@@ -86,10 +97,34 @@ async function extractTextFromPdf(file: File): Promise<{ text: string; pages: nu
         .join(" ");
       fullText += pageText + " ";
     }
+
+    if (!fullText.trim()) throw new Error("No text extracted");
     return { text: fullText.trim(), pages: pdf.numPages };
   } catch (err) {
-    console.error("🔴 PDF extraction error:", err);
-    throw new Error(err instanceof Error ? err.message : "PDF extraction failed");
+    console.warn("🟡 PDF.js failed, trying fallback:", err);
+  }
+
+  // Méthode 2 : FileReader — extrait le texte brut du PDF
+  try {
+    const text = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target?.result as string;
+        const textMatches = content.match(/\(([^)]+)\)/g) || [];
+        const extracted = textMatches
+          .map((m) => m.slice(1, -1))
+          .filter((t) => t.length > 2 && /[a-zA-ZÀ-ÿ]/.test(t))
+          .join(" ");
+        if (extracted.length > 50) resolve(extracted);
+        else reject(new Error("Not enough text"));
+      };
+      reader.onerror = reject;
+      reader.readAsBinaryString(file);
+    });
+    console.log("🟢 PDF fallback: extracted", text.length, "chars");
+    return { text, pages: 1 };
+  } catch {
+    throw new Error("Impossible de lire ce PDF. Essaie Chrome ou Firefox.");
   }
 }
 
