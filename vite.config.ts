@@ -24,6 +24,7 @@ export default defineConfig(({ mode }) => ({
           "vendor-supabase": ["@supabase/supabase-js"],
           "vendor-anthropic": ["@anthropic-ai/sdk"],
           "vendor-query": ["@tanstack/react-query"],
+          "vendor-pdf": ["pdfjs-dist"],
         },
       },
     },

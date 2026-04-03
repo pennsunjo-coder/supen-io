@@ -2,7 +2,11 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { getCache, setCache, invalidateCache } from "@/lib/cache";
+import * as pdfjsLib from "pdfjs-dist";
 import type { Source } from "@/types/database";
+
+// PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs";
 
 const TAVILY_API_KEY = import.meta.env.VITE_TAVILY_API_KEY;
 
@@ -54,6 +58,24 @@ function extractTextFromHtml(html: string): string {
     .trim();
 
   return text.slice(0, 30000);
+}
+
+/**
+ * Extrait le texte d'un fichier PDF côté client via pdf.js.
+ */
+async function extractTextFromPdf(file: File): Promise<{ text: string; pages: number }> {
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  let fullText = "";
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const textContent = await page.getTextContent();
+    const pageText = textContent.items
+      .map((item) => ("str" in item ? item.str : ""))
+      .join(" ");
+    fullText += pageText + "\n";
+  }
+  return { text: fullText.trim(), pages: pdf.numPages };
 }
 
 export function useSources() {
@@ -186,40 +208,68 @@ export function useSources() {
     async (file: File): Promise<{ error: string | null }> => {
       if (!user) return { error: "Non connecté" };
 
-      const filePath = `${user.id}/${Date.now()}_${file.name}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("sources")
-        .upload(filePath, file, { contentType: "application/pdf" });
-
-      if (uploadError) return { error: uploadError.message };
-
-      const { data: insertData, error: insertError } = await supabase
-        .from("sources")
-        .insert({
-          user_id: user.id,
-          type: "pdf",
-          title: file.name.replace(/\.pdf$/i, ""),
-          content: "",
-          file_path: filePath,
-        })
-        .select("id")
-        .single();
-
-      if (insertError) return { error: insertError.message };
-
-      // Appeler la Edge Function pour extraire le texte du PDF
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.access_token && insertData?.id) {
-          await supabase.functions.invoke("extract-pdf", {
-            body: { file_path: filePath, source_id: insertData.id },
-          });
-        }
-      } catch {
-        // Si l'extraction échoue, la source reste avec content vide
+      if (file.size > 10 * 1024 * 1024) {
+        return { error: "Le fichier ne doit pas dépasser 10 Mo." };
       }
 
+      // 1. Extraire le texte côté client
+      let pdfText: string;
+      let pageCount: number;
+      try {
+        const result = await extractTextFromPdf(file);
+        pdfText = result.text;
+        pageCount = result.pages;
+      } catch (err) {
+        console.warn("PDF extraction failed:", err);
+        return { error: "Impossible de lire ce PDF. Le fichier est peut-être protégé ou corrompu." };
+      }
+
+      if (!pdfText || pdfText.length < 10) {
+        return { error: "Aucun texte extractible dans ce PDF." };
+      }
+
+      // 2. Uploader dans Storage
+      const filePath = `${user.id}/${Date.now()}_${file.name}`;
+      try {
+        const { error: uploadError } = await supabase.storage
+          .from("sources")
+          .upload(filePath, file, { contentType: "application/pdf" });
+
+        if (uploadError) {
+          console.warn("Storage upload failed:", uploadError.message);
+          // On continue même si le storage échoue — le texte est extrait
+        }
+      } catch {
+        // Storage pas configuré — on continue avec le texte
+      }
+
+      // 3. Découper en chunks et insérer
+      const title = file.name.replace(/\.pdf$/i, "");
+      const chunks = chunkText(pdfText);
+      invalidateCache(`sources:${user.id}`);
+
+      if (chunks.length === 1) {
+        const { error } = await supabase.from("sources").insert({
+          user_id: user.id,
+          type: "pdf",
+          title,
+          content: chunks[0],
+          file_path: filePath,
+        });
+        if (error) return { error: error.message };
+      } else {
+        const inserts = chunks.map((chunk, i) => ({
+          user_id: user.id,
+          type: "pdf" as const,
+          title: `${title} (${i + 1}/${chunks.length})`,
+          content: chunk,
+          file_path: i === 0 ? filePath : null,
+        }));
+        const { error } = await supabase.from("sources").insert(inserts);
+        if (error) return { error: error.message };
+      }
+
+      console.log(`PDF "${title}": ${pageCount} pages, ${chunks.length} chunks, ${pdfText.split(/\s+/).length} mots`);
       await fetchSources();
       return { error: null };
     },
