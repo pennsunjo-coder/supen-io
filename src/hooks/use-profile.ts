@@ -17,7 +17,6 @@ export function useProfile() {
   const { user } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [fetched, setFetched] = useState(false);
   const profileRef = useRef<UserProfile | null>(null);
 
   // Garder la ref à jour
@@ -41,16 +40,12 @@ export function useProfile() {
       if (error) {
         console.warn("useProfile fetch:", error.message);
         setProfile(null);
-        setFetched(true); // DB responded — profile doesn't exist or table error
       } else if (data) {
         setProfile(data as UserProfile);
-        setFetched(true);
       } else {
         setProfile(null);
-        setFetched(true); // DB responded — no profile row
       }
     } catch (err) {
-      // Erreur réseau — don't set fetched so ProtectedRoute won't redirect
       console.warn("useProfile fetch error:", err);
       setProfile(null);
     }
@@ -58,9 +53,16 @@ export function useProfile() {
     setLoading(false);
   }, [user]);
 
+  // UNIQUEMENT quand user.id change — PAS quand fetchProfile est recréé
   useEffect(() => {
-    fetchProfile();
-  }, [fetchProfile]);
+    if (user?.id) {
+      setLoading(true);
+      fetchProfile();
+    } else {
+      setProfile(null);
+      setLoading(false);
+    }
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const updateProfile = useCallback(
     async (
@@ -69,7 +71,6 @@ export function useProfile() {
       if (!user) return { success: false, error: "Non connecté" };
 
       try {
-        // Upsert — fonctionne que le profil existe ou non
         const { data, error } = await supabase
           .from("user_profiles")
           .upsert({ user_id: user.id, ...updates }, { onConflict: "user_id" })
@@ -83,7 +84,6 @@ export function useProfile() {
         if (data) {
           console.log("🟢 useProfile: profil sauvegardé", data.onboarding_completed);
           setProfile(data as UserProfile);
-          setFetched(true);
         }
         return { success: true, error: null };
       } catch (err) {
@@ -96,5 +96,5 @@ export function useProfile() {
 
   const onboardingCompleted = profile?.onboarding_completed ?? false;
 
-  return { profile, loading, fetched, onboardingCompleted, updateProfile, refetch: fetchProfile };
+  return { profile, loading, onboardingCompleted, updateProfile, refetch: fetchProfile };
 }

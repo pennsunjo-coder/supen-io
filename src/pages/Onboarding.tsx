@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -106,7 +105,6 @@ function ConfettiPiece({ index }: { index: number }) {
 /* ─── Composant ─── */
 
 const Onboarding = () => {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const { updateProfile, onboardingCompleted } = useProfile();
 
@@ -121,14 +119,12 @@ const Onboarding = () => {
   const [showButton, setShowButton] = useState(false);
   const [completed, setCompleted] = useState(false);
 
-  // Redirect si onboarding déjà fait AVANT que l'utilisateur commence
-  // (ex: retour sur /onboarding alors que c'est déjà complété)
-  // Ne pas rediriger si on vient de terminer dans cette session (completed = true)
+  // Si l'utilisateur revient sur /onboarding alors qu'il a déjà terminé → hard redirect
   useEffect(() => {
-    if (onboardingCompleted && !completed && step === 0) {
-      navigate("/dashboard", { replace: true });
+    if (onboardingCompleted && !completed) {
+      window.location.href = "/dashboard";
     }
-  }, [onboardingCompleted, completed, step, navigate]);
+  }, [onboardingCompleted, completed]);
 
   function togglePlatform(id: string) {
     setSelectedPlatforms((prev) =>
@@ -353,7 +349,7 @@ const Onboarding = () => {
                   <AnimatePresence>
                     {showButton && (
                       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-                        <Button onClick={() => navigate("/dashboard", { replace: true })} className="h-12 px-8 text-sm font-semibold glow-sm gap-2.5">
+                        <Button onClick={() => { window.location.href = "/dashboard"; }} className="h-12 px-8 text-sm font-semibold glow-sm gap-2.5">
                           <Sparkles className="w-4 h-4" /> Accéder au Studio
                         </Button>
                       </motion.div>
