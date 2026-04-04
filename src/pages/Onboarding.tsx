@@ -119,13 +119,16 @@ const Onboarding = () => {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [showButton, setShowButton] = useState(false);
+  const [completed, setCompleted] = useState(false);
 
-  // Redirect si onboarding déjà fait (dans un useEffect, pas pendant le render)
+  // Redirect si onboarding déjà fait AVANT que l'utilisateur commence
+  // (ex: retour sur /onboarding alors que c'est déjà complété)
+  // Ne pas rediriger si on vient de terminer dans cette session (completed = true)
   useEffect(() => {
-    if (onboardingCompleted && step !== 4) {
+    if (onboardingCompleted && !completed && step === 0) {
       navigate("/dashboard", { replace: true });
     }
-  }, [onboardingCompleted, step, navigate]);
+  }, [onboardingCompleted, completed, step, navigate]);
 
   function togglePlatform(id: string) {
     setSelectedPlatforms((prev) =>
@@ -182,6 +185,7 @@ const Onboarding = () => {
       return;
     }
 
+    setCompleted(true);
     setStep(4);
     setTimeout(() => setShowButton(true), 2000);
   }

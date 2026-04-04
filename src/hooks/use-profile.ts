@@ -17,6 +17,7 @@ export function useProfile() {
   const { user } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [fetched, setFetched] = useState(false);
   const profileRef = useRef<UserProfile | null>(null);
 
   // Garder la ref à jour
@@ -38,16 +39,18 @@ export function useProfile() {
         .maybeSingle();
 
       if (error) {
-        // Table n'existe peut-être pas encore — on traite comme "pas de profil"
         console.warn("useProfile fetch:", error.message);
         setProfile(null);
+        setFetched(true); // DB responded — profile doesn't exist or table error
       } else if (data) {
         setProfile(data as UserProfile);
+        setFetched(true);
       } else {
         setProfile(null);
+        setFetched(true); // DB responded — no profile row
       }
     } catch (err) {
-      // Erreur réseau (TypeError: Load failed, etc.)
+      // Erreur réseau — don't set fetched so ProtectedRoute won't redirect
       console.warn("useProfile fetch error:", err);
       setProfile(null);
     }
@@ -78,8 +81,9 @@ export function useProfile() {
           return { success: false, error: error.message };
         }
         if (data) {
-          console.log("useProfile: profil sauvegardé", data.onboarding_completed);
+          console.log("🟢 useProfile: profil sauvegardé", data.onboarding_completed);
           setProfile(data as UserProfile);
+          setFetched(true);
         }
         return { success: true, error: null };
       } catch (err) {
@@ -92,5 +96,5 @@ export function useProfile() {
 
   const onboardingCompleted = profile?.onboarding_completed ?? false;
 
-  return { profile, loading, onboardingCompleted, updateProfile, refetch: fetchProfile };
+  return { profile, loading, fetched, onboardingCompleted, updateProfile, refetch: fetchProfile };
 }

@@ -10,7 +10,7 @@ interface ProtectedRouteProps {
 
 export default function ProtectedRoute({ children, skipOnboardingCheck = false }: ProtectedRouteProps) {
   const { user, loading: authLoading } = useAuth();
-  const { onboardingCompleted, loading: profileLoading } = useProfile();
+  const { onboardingCompleted, loading: profileLoading, fetched } = useProfile();
   const location = useLocation();
   const [timedOut, setTimedOut] = useState(false);
 
@@ -49,8 +49,10 @@ export default function ProtectedRoute({ children, skipOnboardingCheck = false }
     return <>{children}</>;
   }
 
-  // Redirige vers onboarding seulement si loading terminé, pas timeout, et pas complété
-  if (!timedOut && !onboardingCompleted && location.pathname !== "/onboarding") {
+  // Redirige vers onboarding SEULEMENT si le profil a été récupéré depuis Supabase
+  // et que onboarding_completed est explicitement false.
+  // Si fetch a échoué (réseau) ou pas encore terminé → on laisse passer (pas de boucle)
+  if (!timedOut && fetched && !onboardingCompleted && location.pathname !== "/onboarding") {
     return <Navigate to="/onboarding" replace />;
   }
 
