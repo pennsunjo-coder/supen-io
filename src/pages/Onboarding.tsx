@@ -11,6 +11,7 @@ import {
   PenTool, Camera, UtensilsCrossed, Home,
 } from "lucide-react";
 import { useProfile } from "@/hooks/use-profile";
+import { useAuth } from "@/contexts/AuthContext";
 import { LogoFull } from "@/components/Logo";
 
 /* ─── Icônes SVG plateformes ─── */
@@ -106,6 +107,7 @@ function ConfettiPiece({ index }: { index: number }) {
 
 const Onboarding = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { updateProfile, onboardingCompleted } = useProfile();
 
   const [step, setStep] = useState(0);
@@ -131,20 +133,47 @@ const Onboarding = () => {
     );
   }
 
-  // UN SEUL upsert à la fin — pas d'appel Supabase pendant les étapes intermédiaires
+  // UN SEUL upsert à la fin — avec retry si user pas encore disponible après OAuth
   async function handleComplete() {
     setSaving(true);
     setSaveError(null);
 
     const finalNiche = niche === "Autre" ? customNiche || "Autre" : niche;
-
-    const result = await updateProfile({
+    const payload = {
       first_name: firstName.trim(),
       platforms: selectedPlatforms,
       source_platform: sourcePlatform,
       niche: finalNiche,
       onboarding_completed: true,
-    });
+    };
+
+    console.log("🔵 Onboarding: saving", { niche: finalNiche, user: user?.id });
+
+    // Retry up to 3 times — user session may still be initializing after OAuth
+    let result = { success: false, error: "Non connecté" as string | null };
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (!user && attempt < 2) {
+        console.log(`🟡 Onboarding: user null, waiting 1s (attempt ${attempt + 1}/3)`);
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        continue;
+      }
+
+      result = await updateProfile(payload);
+
+      if (result.success) {
+        console.log("🟢 Onboarding: saved successfully");
+        break;
+      }
+
+      console.log(`🔴 Onboarding: error (attempt ${attempt + 1}/3)`, result.error);
+
+      // Retry on network errors (Load failed, fetch error)
+      if (attempt < 2 && result.error && /load failed|fetch|network/i.test(result.error)) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        continue;
+      }
+      break;
+    }
 
     setSaving(false);
 
