@@ -15,6 +15,7 @@ const Dashboard = lazy(() => import("./pages/Dashboard.tsx"));
 const Tools = lazy(() => import("./pages/Tools.tsx"));
 const History = lazy(() => import("./pages/History.tsx"));
 const Onboarding = lazy(() => import("./pages/Onboarding.tsx"));
+const Settings = lazy(() => import("./pages/Settings.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 
 const queryClient = new QueryClient();
@@ -44,6 +45,7 @@ const App = () => (
               <Route path="/dashboard/studio" element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
               <Route path="/dashboard/tools" element={<ProtectedRoute><Tools /></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>

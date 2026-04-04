@@ -48,7 +48,13 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
             </div>
           </button>
           <button
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all"
+            onClick={() => navigate("/settings")}
+            className={cn(
+              "w-8 h-8 rounded-lg flex items-center justify-center transition-all",
+              location.pathname === "/settings"
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
+            )}
             title="Paramètres"
           >
             <Settings className="w-4 h-4" />
