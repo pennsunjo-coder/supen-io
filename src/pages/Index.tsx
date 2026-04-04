@@ -40,15 +40,15 @@ const steps = [
 ];
 
 const testimonials = [
-  { name: "Aminata Diallo", role: "Content Creator · Dakar", image: "https://randomuser.me/api/portraits/women/44.jpg", text: "In 3 weeks I doubled my Facebook engagement. My posts finally sound like something I would have written myself." },
-  { name: "Kwame Asante", role: "Entrepreneur · Accra", image: "https://randomuser.me/api/portraits/men/32.jpg", text: "I generate 5 variations in 30 seconds. Before, I used to spend 2 hours on a single LinkedIn post." },
-  { name: "Chloé Mbeki", role: "Business Coach · Paris", image: "https://randomuser.me/api/portraits/women/68.jpg", text: "The Anti-AI mode is mind-blowing. Even my most demanding audience detects nothing." },
-  { name: "Patrick Nkomo", role: "YouTube Creator · Douala", image: "https://randomuser.me/api/portraits/men/75.jpg", text: "I finally have a tool that understands my niche. The generated content speaks directly to my Cameroonian audience." },
-  { name: "Fatou Sarr", role: "Influencer · Abidjan", image: "https://randomuser.me/api/portraits/women/12.jpg", text: "The AI Coach helped me find angles I would never have thought of. My click-through rate increased by 40%." },
-  { name: "David Kouassi", role: "Digital Marketer · Lyon", image: "https://randomuser.me/api/portraits/men/54.jpg", text: "I post on 4 different platforms with the same adapted content. An incredible time saver." },
-  { name: "Nadia Okonkwo", role: "Consultant · London", image: "https://randomuser.me/api/portraits/women/23.jpg", text: "Supen.io transformed the way I create. I focus on ideas, the AI handles the rest." },
-  { name: "Théo Mensah", role: "Creator Economy · Brussels", image: "https://randomuser.me/api/portraits/men/18.jpg", text: "The Facebook threads generated are exactly in my style. My followers think I have a whole team." },
-  { name: "Grace Adeyemi", role: "Online Educator · Lagos", image: "https://randomuser.me/api/portraits/women/91.jpg", text: "The RAG feature is revolutionary. I upload my notes and the AI creates content based on MY own ideas." },
+  { name: "Aminata Diallo", role: "Content Creator · Dakar, Sénégal", image: "https://randomuser.me/api/portraits/women/44.jpg", text: "In 3 weeks I doubled my Facebook engagement. My posts finally sound like something I would have written myself." },
+  { name: "Kwame Asante", role: "Entrepreneur · Accra, Ghana", image: "https://randomuser.me/api/portraits/men/32.jpg", text: "I generate 5 variations in 30 seconds. Before, I used to spend 2 hours on a single LinkedIn post." },
+  { name: "Chloé Mbeki", role: "Business Coach · Paris, France", image: "https://randomuser.me/api/portraits/women/68.jpg", text: "The Anti-AI mode is mind-blowing. Even my most demanding audience detects nothing." },
+  { name: "Patrick Nkomo", role: "YouTube Creator · Douala, Cameroun", image: "https://randomuser.me/api/portraits/men/75.jpg", text: "I finally have a tool that understands my niche. The generated content speaks directly to my Cameroonian audience." },
+  { name: "Fatou Sarr", role: "Influencer · Abidjan, Côte d'Ivoire", image: "https://randomuser.me/api/portraits/women/12.jpg", text: "The AI Coach helped me find angles I would never have thought of. My click-through rate increased by 40%." },
+  { name: "David Kouassi", role: "Digital Marketer · Lyon, France", image: "https://randomuser.me/api/portraits/men/54.jpg", text: "I post on 4 different platforms with the same adapted content. An incredible time saver." },
+  { name: "Nadia Okonkwo", role: "Consultant · London, UK", image: "https://randomuser.me/api/portraits/women/23.jpg", text: "Supen.io transformed the way I create. I focus on ideas, the AI handles the rest." },
+  { name: "Théo Mensah", role: "Creator Economy · Brussels, Belgium", image: "https://randomuser.me/api/portraits/men/18.jpg", text: "The Facebook threads generated are exactly in my style. My followers think I have a whole team." },
+  { name: "Grace Adeyemi", role: "Online Educator · Lagos, Nigeria", image: "https://randomuser.me/api/portraits/women/91.jpg", text: "The RAG feature is revolutionary. I upload my notes and the AI creates content based on MY own ideas." },
 ];
 
 const resultsData = [
