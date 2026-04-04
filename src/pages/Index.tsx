@@ -396,42 +396,68 @@ const Index = () => {
         </div>
       </section>
 
-      {/* ═══════════ REAL RESULTS ═══════════ */}
-      <section className="py-20 overflow-hidden">
-        <motion.div className="text-center mb-12 px-6"
-          initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }} transition={{ duration: 0.5 }}
-        >
-          <div className="inline-flex items-center gap-2 border border-border/30 rounded-full px-4 py-1.5 text-sm text-muted-foreground mb-6">
-            Real Results
-          </div>
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Content that actually <span className="text-primary">performs</span>
-          </h2>
-          <p className="text-muted-foreground">Real posts. Real numbers. Generated with Supen.io.</p>
-        </motion.div>
-
-        <div className="[mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)] group/scroll">
-          <motion.div
-            animate={{ translateX: "-50%" }}
-            transition={{ duration: 60, repeat: Infinity, ease: "linear", repeatType: "loop" }}
-            className="flex gap-6 w-max group-hover/scroll:[animation-play-state:paused]"
-            style={{ animationPlayState: "running" }}
+      {/* ═══════════ SOCIAL PROOF ═══════════ */}
+      <section id="results" className="py-24 px-6">
+        <div className="max-w-5xl mx-auto">
+          <motion.div className="text-center mb-14"
+            initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }} transition={{ duration: 0.5 }}
           >
-            {[...resultsData, ...resultsData].map((r, i) => (
-              <div key={i} className={cn("w-[320px] shrink-0 rounded-xl overflow-hidden border border-border/20 shadow-lg shadow-black/10 transition-transform duration-300 hover:scale-105 hover:shadow-xl relative", i % 2 === 0 ? "rotate-[0.5deg]" : "-rotate-[0.5deg]")}>
-                {/* Platform badge */}
-                <div className="absolute top-3 left-3 z-10">
-                  <span className="bg-primary/90 text-white text-[10px] font-medium px-2 py-1 rounded-full">{r.platform}</span>
-                </div>
-                <div className="w-full h-[260px] bg-accent/30">
-                  <img src={r.src} alt="Result" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                </div>
-                <div className={cn("px-4 py-3 border-t border-border/20 text-white text-sm font-bold flex items-center gap-2", tierColors[r.tier as keyof typeof tierColors] || "bg-primary/90")}>
-                  <span>⚡</span> {r.stat}
-                </div>
-              </div>
+            <div className="inline-flex items-center bg-primary/[0.06] border border-primary/15 rounded-full px-4 py-1.5 text-xs text-muted-foreground mb-6">Social Proof</div>
+            <h2 className="text-3xl md:text-4xl font-bold mb-3 tracking-display">Real posts. <span className="text-gradient">Real numbers.</span></h2>
+            <p className="text-sm text-muted-foreground font-light">Created by @AwakPenn — 1M+ followers across platforms.</p>
+          </motion.div>
+
+          {/* Stats headline */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">
+            {[
+              { num: "26K+", label: "Likes", platform: "Facebook" },
+              { num: "1.7M", label: "Views", platform: "X (Twitter)" },
+              { num: "5K", label: "Shares", platform: "Facebook" },
+              { num: "881", label: "Reactions", platform: "LinkedIn" },
+            ].map((s, i) => (
+              <motion.div key={i} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }}
+                className="bg-foreground/[0.03] border border-foreground/[0.06] rounded-xl p-5 hover:border-primary/30 transition-colors relative"
+              >
+                <span className="absolute top-3 right-3 text-[9px] text-muted-foreground/40">{s.platform}</span>
+                <p className="text-3xl font-bold text-primary tracking-tight">{s.num}</p>
+                <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
+              </motion.div>
             ))}
+          </div>
+
+          {/* Masonry grid */}
+          <div className="relative">
+            <div className="columns-2 md:columns-3 gap-3 space-y-3">
+              {resultsData.map((r, i) => (
+                <motion.div key={i} initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: (i % 3) * 0.08 }}
+                  className="break-inside-avoid rounded-xl overflow-hidden border border-foreground/[0.06] hover:border-primary/40 transition-all cursor-pointer group relative"
+                >
+                  <div className="bg-accent/20 aspect-[4/5]">
+                    <img src={r.src} alt={r.stat} className="w-full h-full object-cover object-top" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                  </div>
+                  {/* Hover overlay */}
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center">
+                    <span className="text-[10px] text-white/60 mb-1">{r.platform}</span>
+                    <span className="text-lg font-bold text-white">{r.stat}</span>
+                  </div>
+                  {/* Platform tag */}
+                  <div className="absolute top-2 left-2">
+                    <span className="bg-black/50 backdrop-blur text-white text-[9px] px-2 py-0.5 rounded-full">{r.platform}</span>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+            {/* Fade bottom */}
+            <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent pointer-events-none" />
+          </div>
+
+          {/* Social proof footer */}
+          <motion.div className="mt-10 text-center" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}>
+            <div className="flex items-center justify-center gap-1 mb-2">
+              {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 text-primary fill-primary" />)}
+            </div>
+            <p className="text-sm text-muted-foreground">Join <span className="text-foreground font-medium">10,000+</span> creators already generating viral content</p>
           </motion.div>
         </div>
       </section>
