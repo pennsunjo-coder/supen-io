@@ -426,39 +426,34 @@ const Index = () => {
             ))}
           </div>
 
-          {/* Masonry grid */}
-          <div className="relative">
-            <div className="columns-2 md:columns-3 gap-3 space-y-3">
-              {resultsData.map((r, i) => {
-                const borderColor = r.tier === "gold" ? "border-amber-400" : r.tier === "green" ? "border-emerald-400" : "border-primary";
-                const bgColor = r.tier === "gold" ? "bg-amber-400/10" : r.tier === "green" ? "bg-emerald-400/10" : "bg-primary/10";
-                const textColor = r.tier === "gold" ? "text-amber-400" : r.tier === "green" ? "text-emerald-400" : "text-primary";
-                const isHighlight = r.tier === "gold";
-                return (
-                <motion.div key={i} initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: (i % 3) * 0.08 }}
-                  className={cn("break-inside-avoid rounded-xl overflow-hidden border transition-all cursor-pointer group relative", isHighlight ? "border-foreground/10 ring-2 ring-amber-400/30 ring-offset-2 ring-offset-background" : "border-foreground/[0.06] hover:border-primary/40")}
-                >
-                  <img src={r.src} alt={r.stat} className="w-full h-[220px] object-cover object-bottom bg-accent/20" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                  {/* Gradient overlay bottom */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                  {/* Stat badge bottom */}
-                  <div className="absolute bottom-3 left-3 right-3">
-                    <div className={cn("flex items-center gap-2 px-3 py-2 rounded-lg border-2", borderColor, bgColor)}>
-                      <span className="text-[10px] font-medium text-white/60">{r.platform}</span>
-                      <span className={cn("ml-auto text-sm font-bold", textColor)}>⚡ {r.stat}</span>
-                    </div>
+          {/* Animated columns */}
+          <div className="h-[600px] overflow-hidden relative [mask-image:linear-gradient(to_bottom,transparent,black_12%,black_88%,transparent)]">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {/* Column 1 — moves up */}
+              <motion.div animate={{ y: "-25%" }} transition={{ duration: 30, repeat: Infinity, ease: "linear", repeatType: "reverse" }} className="flex flex-col gap-4">
+                {resultsData.slice(0, 4).map((r, i) => (
+                  <div key={i} className="rounded-xl overflow-hidden border border-foreground/[0.08] hover:border-primary/30 transition-all">
+                    <img src={r.src} alt={r.stat} className="w-full h-[200px] object-cover object-bottom bg-accent/20" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                   </div>
-                  {/* Platform tag top */}
-                  <div className="absolute top-2 left-2">
-                    <span className="bg-black/60 backdrop-blur text-white text-[9px] px-2 py-0.5 rounded-full border border-white/20">{r.platform}</span>
+                ))}
+              </motion.div>
+              {/* Column 2 — moves down */}
+              <motion.div animate={{ y: "25%" }} transition={{ duration: 35, repeat: Infinity, ease: "linear", repeatType: "reverse" }} className="flex flex-col gap-4 -mt-16">
+                {resultsData.slice(4, 8).map((r, i) => (
+                  <div key={i} className="rounded-xl overflow-hidden border border-foreground/[0.08] hover:border-primary/30 transition-all">
+                    <img src={r.src} alt={r.stat} className="w-full h-[200px] object-cover object-bottom bg-accent/20" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                   </div>
-                  {/* Hover glow */}
-                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity border-2 border-primary/40 rounded-xl pointer-events-none" />
-                </motion.div>
-                );
-              })}
+                ))}
+              </motion.div>
+              {/* Column 3 — moves up (hidden mobile) */}
+              <motion.div animate={{ y: "-25%" }} transition={{ duration: 28, repeat: Infinity, ease: "linear", repeatType: "reverse" }} className="hidden md:flex flex-col gap-4 -mt-8">
+                {resultsData.slice(8, 12).map((r, i) => (
+                  <div key={i} className="rounded-xl overflow-hidden border border-foreground/[0.08] hover:border-primary/30 transition-all">
+                    <img src={r.src} alt={r.stat} className="w-full h-[200px] object-cover object-bottom bg-accent/20" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                  </div>
+                ))}
+              </motion.div>
             </div>
-            <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent pointer-events-none" />
           </div>
 
           {/* Social proof footer */}
