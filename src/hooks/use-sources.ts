@@ -4,8 +4,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getCache, setCache, invalidateCache } from "@/lib/cache";
 import type { Source } from "@/types/database";
 
-const TAVILY_API_KEY = import.meta.env.VITE_TAVILY_API_KEY;
-
 const CHUNK_SIZE = 400; // mots par chunk (cible 300-500)
 const CHUNK_OVERLAP = 50; // mots de chevauchement
 
@@ -198,60 +196,62 @@ export function useSources() {
       if (!user) return { error: "Non connecté" };
       console.log("🔵 addUrl:", url);
 
-      let title: string;
-      try {
-        const parsed = new URL(url);
-        const path = parsed.pathname === "/" ? "" : parsed.pathname;
-        title = `${parsed.hostname}${path}`.slice(0, 120);
-      } catch {
-        title = url.slice(0, 120);
-      }
-
-      // Fetch le contenu de la page
+      // Fetch via Edge Function (pas de CORS)
+      let title = url.slice(0, 120);
       let pageContent = "";
-      try {
-        const response = await fetch(url, {
-          headers: { "Accept": "text/html" },
-          signal: AbortSignal.timeout(10000),
-        });
-        if (response.ok) {
-          const html = await response.text();
-          pageContent = extractTextFromHtml(html);
 
-          // Extraire un meilleur titre depuis la page
-          const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-          if (titleMatch?.[1]) {
-            title = titleMatch[1].trim().slice(0, 120);
-          }
+      try {
+        const { data, error: fnErr } = await supabase.functions.invoke("fetch-url", {
+          body: { url },
+        });
+        if (!fnErr && data?.text) {
+          pageContent = data.text;
+          title = data.title?.slice(0, 120) || title;
+          console.log("🟢 addUrl: fetched via Edge Function,", pageContent.length, "chars");
+        } else {
+          console.warn("🟡 addUrl: Edge Function failed, storing URL only");
         }
       } catch {
-        // Si le fetch échoue (CORS, timeout…), on stocke juste l'URL
-        pageContent = url;
+        console.warn("🟡 addUrl: Edge Function unavailable");
       }
 
-      const finalContent = pageContent || url;
-      const chunks = chunkText(finalContent);
+      // Fallback : si Edge Function échoue, essayer côté client
+      if (!pageContent) {
+        try {
+          const response = await fetch(url, {
+            headers: { "Accept": "text/html" },
+            signal: AbortSignal.timeout(8000),
+          });
+          if (response.ok) {
+            const html = await response.text();
+            pageContent = extractTextFromHtml(html);
+            const m = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+            if (m?.[1]) title = m[1].trim().slice(0, 120);
+          }
+        } catch { /* CORS / timeout */ }
+      }
+
+      if (!pageContent || pageContent.length < 50) {
+        return { error: "Impossible d'accéder à cette page. Colle le texte manuellement dans une Note." };
+      }
+
+      const chunks = chunkText(pageContent);
 
       if (chunks.length === 1) {
         const { error } = await supabase.from("sources").insert({
-          user_id: user.id,
-          type: "url",
-          title,
-          content: chunks[0],
+          user_id: user.id, type: "url", title, content: chunks[0],
         });
-        if (error) { console.warn("🔴 addUrl insert error:", error.message); return { error: error.message }; }
+        if (error) return { error: error.message };
       } else {
         const inserts = chunks.map((chunk, i) => ({
-          user_id: user.id,
-          type: "url" as const,
-          title: `${title} (${i + 1}/${chunks.length})`,
-          content: chunk,
+          user_id: user.id, type: "url" as const,
+          title: `${title} (${i + 1}/${chunks.length})`, content: chunk,
         }));
         const { error } = await supabase.from("sources").insert(inserts);
-        if (error) { console.warn("🔴 addUrl insert error:", error.message); return { error: error.message }; }
+        if (error) return { error: error.message };
       }
 
-      console.log("🟢 addUrl: success");
+      console.log("🟢 addUrl: success,", chunks.length, "chunks");
       invalidateCache(`sources:${user.id}`);
       await fetchSources();
       return { error: null };
@@ -370,46 +370,67 @@ export function useSources() {
   const searchWeb = useCallback(
     async (query: string): Promise<{ error: string | null }> => {
       if (!user) return { error: "Non connecté" };
+      console.log("🔵 searchWeb:", query);
 
-      if (!TAVILY_API_KEY || TAVILY_API_KEY === "your-tavily-api-key") {
-        return { error: "Clé API Tavily non configurée dans .env" };
-      }
-
-      const response = await fetch("https://api.tavily.com/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          api_key: TAVILY_API_KEY,
-          query,
-          max_results: 3,
-          include_answer: true,
-        }),
-      });
-
-      if (!response.ok) {
-        return { error: `Erreur Tavily : ${response.status}` };
-      }
-
-      const data = await response.json();
-
+      // Essayer via Edge Function (clé Tavily côté serveur)
+      let title = "";
       let content = "";
-      if (data.answer) {
-        content += `${data.answer}\n\n`;
+
+      try {
+        const { data, error: fnErr } = await supabase.functions.invoke("search-web", {
+          body: { query },
+        });
+        if (!fnErr && data?.content) {
+          title = data.title || `Recherche : ${query.slice(0, 100)}`;
+          content = data.content;
+          console.log("🟢 searchWeb: via Edge Function");
+        }
+      } catch {
+        console.warn("🟡 searchWeb: Edge Function unavailable, trying client-side");
       }
-      if (data.results) {
-        for (const result of data.results) {
-          content += `— ${result.title}\n${result.url}\n${result.content?.slice(0, 500) ?? ""}\n\n`;
+
+      // Fallback client-side si Edge Function échoue
+      if (!content) {
+        const TAVILY_KEY = import.meta.env.VITE_TAVILY_API_KEY;
+        if (!TAVILY_KEY || TAVILY_KEY === "your-tavily-api-key") {
+          return { error: "Recherche web non disponible. Déployez la Edge Function search-web." };
+        }
+        try {
+          const response = await fetch("https://api.tavily.com/search", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ api_key: TAVILY_KEY, query, max_results: 3, include_answer: true }),
+          });
+          if (!response.ok) return { error: `Erreur Tavily : ${response.status}` };
+          const data = await response.json();
+          if (data.answer) content += `${data.answer}\n\n`;
+          if (data.results) {
+            for (const r of data.results) content += `— ${r.title}\n${r.url}\n${r.content?.slice(0, 500) ?? ""}\n\n`;
+          }
+          title = `Recherche : ${query.slice(0, 100)}`;
+        } catch (err) {
+          return { error: err instanceof Error ? err.message : "Erreur recherche" };
         }
       }
 
-      const { error } = await supabase.from("sources").insert({
-        user_id: user.id,
-        type: "url",
-        title: `Recherche : ${query.slice(0, 100)}`,
-        content: content.trim(),
-      });
+      if (!content.trim()) return { error: "Aucun résultat trouvé." };
 
-      if (error) return { error: error.message };
+      const chunks = chunkText(content.trim());
+      if (chunks.length === 1) {
+        const { error } = await supabase.from("sources").insert({
+          user_id: user.id, type: "url", title, content: chunks[0],
+        });
+        if (error) return { error: error.message };
+      } else {
+        const inserts = chunks.map((chunk, i) => ({
+          user_id: user.id, type: "url" as const,
+          title: `${title} (${i + 1}/${chunks.length})`, content: chunk,
+        }));
+        const { error } = await supabase.from("sources").insert(inserts);
+        if (error) return { error: error.message };
+      }
+
+      console.log("🟢 searchWeb: saved,", chunks.length, "chunks");
       invalidateCache(`sources:${user.id}`);
       await fetchSources();
       return { error: null };
