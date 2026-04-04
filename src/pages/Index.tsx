@@ -199,7 +199,7 @@ const Index = () => {
       <section className="relative pt-20 pb-28 md:pt-28 md:pb-36 px-6 overflow-hidden">
         {/* Glow */}
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-gradient-to-t from-primary/15 via-primary/5 to-transparent rounded-t-full opacity-60 blur-[80px] pointer-events-none" />
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-gradient-to-t from-primary/12 via-primary/4 to-transparent rounded-t-full opacity-50 blur-[80px] pointer-events-none" />
 
         <motion.div
           className="relative z-10 max-w-3xl mx-auto text-center"
