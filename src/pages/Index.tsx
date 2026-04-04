@@ -427,29 +427,29 @@ const Index = () => {
           </div>
 
           {/* Animated columns */}
-          <div className="h-[600px] overflow-hidden relative [mask-image:linear-gradient(to_bottom,transparent,black_12%,black_88%,transparent)]">
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="h-[700px] overflow-hidden relative [mask-image:linear-gradient(to_bottom,transparent_0%,black_20%,black_80%,transparent_100%)]">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {/* Column 1 — moves up */}
-              <motion.div animate={{ y: "-25%" }} transition={{ duration: 30, repeat: Infinity, ease: "linear", repeatType: "reverse" }} className="flex flex-col gap-4">
-                {resultsData.slice(0, 4).map((r, i) => (
-                  <div key={i} className="rounded-xl overflow-hidden border border-foreground/[0.08] hover:border-primary/30 transition-all">
-                    <img src={r.src} alt={r.stat} className="w-full h-[200px] object-cover object-bottom bg-accent/20" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+              <motion.div animate={{ y: "-20%" }} transition={{ duration: 30, repeat: Infinity, ease: "linear", repeatType: "reverse" }} className="flex flex-col gap-3">
+                {[...resultsData.slice(0, 4), ...resultsData.slice(0, 2)].map((r, i) => (
+                  <div key={i} className="rounded-xl overflow-hidden border border-white/[0.06] hover:border-primary/20 transition-all">
+                    <img src={r.src} alt={r.stat} className="w-full object-cover object-bottom bg-accent/20" style={{ height: 280 }} onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                   </div>
                 ))}
               </motion.div>
               {/* Column 2 — moves down */}
-              <motion.div animate={{ y: "25%" }} transition={{ duration: 35, repeat: Infinity, ease: "linear", repeatType: "reverse" }} className="flex flex-col gap-4 -mt-16">
-                {resultsData.slice(4, 8).map((r, i) => (
-                  <div key={i} className="rounded-xl overflow-hidden border border-foreground/[0.08] hover:border-primary/30 transition-all">
-                    <img src={r.src} alt={r.stat} className="w-full h-[200px] object-cover object-bottom bg-accent/20" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+              <motion.div animate={{ y: "20%" }} transition={{ duration: 35, repeat: Infinity, ease: "linear", repeatType: "reverse" }} className="flex flex-col gap-3 -mt-20">
+                {[...resultsData.slice(4, 8), ...resultsData.slice(4, 6)].map((r, i) => (
+                  <div key={i} className="rounded-xl overflow-hidden border border-white/[0.06] hover:border-primary/20 transition-all">
+                    <img src={r.src} alt={r.stat} className="w-full object-cover object-bottom bg-accent/20" style={{ height: 280 }} onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                   </div>
                 ))}
               </motion.div>
-              {/* Column 3 — moves up (hidden mobile) */}
-              <motion.div animate={{ y: "-25%" }} transition={{ duration: 28, repeat: Infinity, ease: "linear", repeatType: "reverse" }} className="hidden md:flex flex-col gap-4 -mt-8">
-                {resultsData.slice(8, 12).map((r, i) => (
-                  <div key={i} className="rounded-xl overflow-hidden border border-foreground/[0.08] hover:border-primary/30 transition-all">
-                    <img src={r.src} alt={r.stat} className="w-full h-[200px] object-cover object-bottom bg-accent/20" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+              {/* Column 3 — moves up */}
+              <motion.div animate={{ y: "-20%" }} transition={{ duration: 28, repeat: Infinity, ease: "linear", repeatType: "reverse" }} className="hidden md:flex flex-col gap-3 -mt-10">
+                {[...resultsData.slice(8, 12), ...resultsData.slice(8, 10)].map((r, i) => (
+                  <div key={i} className="rounded-xl overflow-hidden border border-white/[0.06] hover:border-primary/20 transition-all">
+                    <img src={r.src} alt={r.stat} className="w-full object-cover object-bottom bg-accent/20" style={{ height: 280 }} onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                   </div>
                 ))}
               </motion.div>
