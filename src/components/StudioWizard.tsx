@@ -21,6 +21,7 @@ import type { ContentSession } from "@/hooks/use-dashboard";
 import type { ActivityData } from "@/hooks/use-activity";
 import { ContentSessionGrid } from "@/components/DashboardWidgets";
 import { ActivityWidget } from "@/components/ActivityWidget";
+import InfographicModal from "@/components/InfographicModal";
 import { StickyNote, Globe as GlobeIcon } from "lucide-react";
 
 /* ─── Icônes plateformes ─── */
@@ -153,6 +154,7 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
   const [isHumanizing, setIsHumanizing] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "failed">("idle");
   const [error, setError] = useState<string | null>(null);
+  const [showInfographic, setShowInfographic] = useState(false);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
 
   function reset() {
@@ -328,6 +330,8 @@ Règles strictes :
       setSaveStatus("saved");
       if (onGenerationComplete) onGenerationComplete();
       toast.success(`${parsed.length} variations sauvegardées`);
+      // Proposer de créer un visuel après 2s
+      setTimeout(() => setShowInfographic(true), 2000);
       return true;
     } catch (err) {
       console.warn("🔴 Save exception:", err);
@@ -844,6 +848,13 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
       {error && (
         <div className="mx-5 mb-3 px-3 py-2 rounded-lg bg-destructive/10 border border-destructive/20 text-[11px] text-destructive shrink-0">{error}</div>
       )}
+
+      <InfographicModal
+        open={showInfographic}
+        onClose={() => setShowInfographic(false)}
+        content={variations[selectedVariation ?? 0]?.content || ""}
+        platform={selectedPlatform?.name || ""}
+      />
     </div>
   );
 };
