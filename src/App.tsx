@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import AdminRoute from "@/components/AdminRoute";
 
 // Lazy-loaded pages
 const Index = lazy(() => import("./pages/Index.tsx"));
@@ -16,6 +17,7 @@ const Tools = lazy(() => import("./pages/Tools.tsx"));
 const History = lazy(() => import("./pages/History.tsx"));
 const Onboarding = lazy(() => import("./pages/Onboarding.tsx"));
 const Settings = lazy(() => import("./pages/Settings.tsx"));
+const Admin = lazy(() => import("./pages/Admin.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 
 const queryClient = new QueryClient();
@@ -46,6 +48,7 @@ const App = () => (
               <Route path="/dashboard/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
               <Route path="/dashboard/tools" element={<ProtectedRoute><Tools /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>

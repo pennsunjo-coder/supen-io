@@ -1,16 +1,18 @@
 import { ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Settings, LogOut, Clock, Sun, Moon } from "lucide-react";
+import { Settings, LogOut, Clock, Sun, Moon, Shield } from "lucide-react";
 import { LogoFull } from "@/components/Logo";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useAdmin } from "@/hooks/use-admin";
 
 const DashboardLayout = ({ children }: { children: ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { isAdmin } = useAdmin();
 
   const handleLogout = async () => {
     await signOut();
@@ -26,6 +28,21 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
         </Link>
 
         <div className="ml-auto flex items-center gap-1">
+          {isAdmin && (
+            <Link
+              to="/admin"
+              className={cn(
+                "flex items-center gap-1.5 px-2 h-7 rounded-lg text-[10px] font-medium transition-all mr-1",
+                location.pathname === "/admin"
+                  ? "bg-red-500/15 text-red-400"
+                  : "bg-red-500/10 text-red-400/70 hover:bg-red-500/15 hover:text-red-400",
+              )}
+              title="Admin"
+            >
+              <Shield className="w-3 h-3" />
+              Admin
+            </Link>
+          )}
           <Link
             to="/dashboard/history"
             className={cn(
