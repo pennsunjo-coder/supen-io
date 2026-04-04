@@ -106,7 +106,7 @@ function ConfettiPiece({ index }: { index: number }) {
 
 const Onboarding = () => {
   const { user } = useAuth();
-  const { updateProfile, onboardingCompleted } = useProfile();
+  const { updateProfile, onboardingCompleted, loading: profileLoading } = useProfile();
 
   const [step, setStep] = useState(0);
   const [firstName, setFirstName] = useState("");
@@ -120,11 +120,12 @@ const Onboarding = () => {
   const [completed, setCompleted] = useState(false);
 
   // Si l'utilisateur revient sur /onboarding alors qu'il a déjà terminé → hard redirect
+  // Attendre que profileLoading=false pour ne pas rediriger sur un état stale
   useEffect(() => {
-    if (onboardingCompleted && !completed) {
+    if (!profileLoading && onboardingCompleted && !completed) {
       window.location.href = "/dashboard";
     }
-  }, [onboardingCompleted, completed]);
+  }, [profileLoading, onboardingCompleted, completed]);
 
   function togglePlatform(id: string) {
     setSelectedPlatforms((prev) =>

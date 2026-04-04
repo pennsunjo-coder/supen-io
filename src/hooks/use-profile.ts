@@ -60,13 +60,14 @@ export function useProfile() {
   }, [user]);
 
   // UNIQUEMENT quand user.id change — PAS quand fetchProfile est recréé
+  // IMPORTANT : ne PAS mettre loading=false quand user est null.
+  // ProtectedRoute gère le cas !user avec authLoading — si on met
+  // loading=false ici, il y a un render où profileLoading=false
+  // alors que le profil n'a pas été fetché → redirect vers /onboarding.
   useEffect(() => {
     if (user?.id) {
       setLoading(true);
       fetchProfile();
-    } else {
-      setProfile(null);
-      setLoading(false);
     }
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
