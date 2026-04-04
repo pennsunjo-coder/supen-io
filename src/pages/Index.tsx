@@ -176,33 +176,30 @@ const Index = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* ═══════════ NAVBAR ═══════════ */}
-      <nav className="sticky top-0 z-50 backdrop-blur-xl bg-background/80 border-b border-border/30">
-        <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
+      <nav className="sticky top-0 z-50 backdrop-blur-xl bg-background/80">
+        <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-3">
           <LogoFull size="sm" />
-          <div className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
-            <a href="#features" className="hover:text-foreground transition-colors">Features</a>
-            <a href="#how-it-works" className="hover:text-foreground transition-colors">How it works</a>
-            <a href="#pricing" className="hover:text-foreground transition-colors">Pricing</a>
-            <a href="#faq" className="hover:text-foreground transition-colors">FAQ</a>
+          <div className="hidden md:flex items-center bg-primary/[0.06] border border-primary/15 rounded-full px-1 py-1">
+            {["Features", "Results", "Pricing", "FAQ"].map((item) => (
+              <a key={item} href={`#${item.toLowerCase()}`} className="px-4 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-all">{item}</a>
+            ))}
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={toggleTheme}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all"
-              title={theme === "dark" ? "Mode clair" : "Mode sombre"}
-            >
+          <div className="flex items-center gap-2">
+            <button onClick={toggleTheme} className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground transition-all" title={theme === "dark" ? "Mode clair" : "Mode sombre"}>
               {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
-            <Button variant="ghost" size="sm" onClick={() => navigate("/login")}>Log In</Button>
-            <Button size="sm" onClick={() => navigate("/login")} className="glow-sm">Get Started</Button>
+            <Button size="sm" onClick={() => navigate("/login")} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-5 h-9 text-sm font-medium">
+              Get Started
+            </Button>
           </div>
         </div>
       </nav>
 
       {/* ═══════════ HERO ═══════════ */}
-      <section className="relative py-24 md:py-32 px-6 overflow-hidden">
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-0 right-1/4 w-[400px] h-[300px] bg-primary/3 rounded-full blur-[100px] pointer-events-none" />
+      <section className="relative pt-20 pb-28 md:pt-28 md:pb-36 px-6 overflow-hidden">
+        {/* Glow */}
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-gradient-to-t from-primary/15 via-primary/5 to-transparent rounded-t-full opacity-60 blur-[80px] pointer-events-none" />
 
         <motion.div
           className="relative z-10 max-w-3xl mx-auto text-center"
@@ -210,20 +207,20 @@ const Index = () => {
           animate="visible"
           variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
         >
+          {/* Badge pill */}
           <motion.div variants={fadeUp} custom={0}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-medium mb-8"
+            className="inline-flex items-center bg-primary/[0.08] border border-primary/15 rounded-full pl-1.5 pr-4 py-1 text-primary text-xs mb-10"
           >
-            <Sparkles className="w-3.5 h-3.5" />
-            AI-Powered Content Creation Platform
+            <span className="bg-primary text-primary-foreground px-2.5 py-0.5 rounded-full mr-2 text-[11px] font-semibold">2026</span>
+            Next-Gen Content Studio
           </motion.div>
 
           <motion.h1 variants={fadeUp} custom={1}
-            className="text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1] mb-6 tracking-tight"
+            className="text-5xl md:text-6xl lg:text-7xl leading-[1.05] mb-6 tracking-display"
           >
-            Research. Create.
+            <span className="font-light">Create Content That Goes</span>
             <br />
-            Go{" "}
-            <span className="inline-block overflow-hidden align-bottom" style={{ minWidth: "6.5ch", height: "1.15em" }}>
+            <span className="inline-block overflow-hidden align-bottom font-bold" style={{ minWidth: "6ch", height: "1.15em" }}>
               <AnimatePresence mode="wait">
                 <motion.span
                   key={ROTATING_WORDS[wordIdx]}
@@ -237,28 +234,40 @@ const Index = () => {
                 </motion.span>
               </AnimatePresence>
             </span>
-            <span className="text-gradient">.</span>
+            <span className="text-gradient font-bold">.</span>
           </motion.h1>
 
           <motion.p variants={fadeUp} custom={2}
-            className="text-lg md:text-xl text-muted-foreground mb-10 max-w-xl mx-auto leading-relaxed"
+            className="text-sm md:text-base text-muted-foreground mb-10 max-w-lg mx-auto leading-relaxed font-light"
           >
             The all-in-one workspace for content creators. Centralize your research, generate platform-ready posts that actually sound human.
           </motion.p>
 
-          <motion.div variants={fadeUp} custom={3} className="flex gap-4 justify-center flex-wrap">
-            <Button size="lg" onClick={() => navigate("/login")} className="glow-sm font-semibold group h-12 px-8 text-base">
-              Start Creating — It's Free
-              <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+          <motion.div variants={fadeUp} custom={3} className="flex gap-3 justify-center flex-wrap">
+            <Button size="lg" onClick={() => navigate("/login")} className="bg-foreground text-background hover:bg-foreground/90 h-11 px-7 text-sm font-medium rounded-lg group">
+              Start for free
+              <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-0.5 transition-transform" />
             </Button>
-            <Button size="lg" variant="outline" onClick={() => navigate("/login")} className="h-12 px-8 text-base">
-              Watch Demo
+            <Button size="lg" variant="outline" onClick={() => navigate("/login")} className="bg-foreground/[0.06] border-foreground/10 hover:bg-foreground/10 text-foreground h-11 px-7 text-sm rounded-lg">
+              See how it works
             </Button>
           </motion.div>
 
-          <motion.p variants={fadeUp} custom={4} className="mt-5 text-xs text-muted-foreground">
-            No credit card required · Free plan available · Set up in 30 seconds
-          </motion.p>
+          {/* Marquee */}
+          <motion.div variants={fadeUp} custom={4} className="mt-16 overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_20%,black_80%,transparent)]">
+            <div className="animate-marquee flex gap-8 w-max text-muted-foreground/30 text-xs tracking-[0.2em] uppercase font-medium">
+              {[...Array(2)].map((_, k) => (
+                <div key={k} className="flex gap-8 items-center">
+                  <span>Viral Content</span><span className="text-primary/30">∞</span>
+                  <span>Anti-AI</span><span className="text-primary/30">∞</span>
+                  <span>6 Platforms</span><span className="text-primary/30">∞</span>
+                  <span>RAG Powered</span><span className="text-primary/30">∞</span>
+                  <span>Human Voice</span><span className="text-primary/30">∞</span>
+                  <span>5 Variations</span><span className="text-primary/30">∞</span>
+                </div>
+              ))}
+            </div>
+          </motion.div>
         </motion.div>
       </section>
 
