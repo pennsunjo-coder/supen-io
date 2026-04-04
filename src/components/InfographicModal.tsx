@@ -8,6 +8,8 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic";
 
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+
 const TYPES = [
   { id: "infographic", label: "Infographie pédagogique", desc: "Style sketchnote, parfait pour LinkedIn et Facebook", icon: LayoutGrid, recommended: true },
   { id: "visual", label: "Post visuel", desc: "Design moderne et épuré pour Instagram et TikTok", icon: ImagePlus, recommended: false },
@@ -26,11 +28,15 @@ interface Props {
   platform: string;
 }
 
+type ResultMode = "gemini" | "claude" | null;
+
 export default function InfographicModal({ open, onClose, content, platform }: Props) {
   const [step, setStep] = useState<"type" | "style" | "result">("type");
   const [selectedType, setSelectedType] = useState("");
   const [selectedStyle, setSelectedStyle] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [resultMode, setResultMode] = useState<ResultMode>(null);
+  const [imageBase64, setImageBase64] = useState("");
   const [htmlCode, setHtmlCode] = useState("");
   const [customPrompt, setCustomPrompt] = useState("");
   const [showPrompt, setShowPrompt] = useState(false);
@@ -46,20 +52,69 @@ export default function InfographicModal({ open, onClose, content, platform }: P
     handleGenerate(id);
   }
 
-  async function handleGenerate(style?: string) {
-    const s = style || selectedStyle;
-    setGenerating(true);
-    setStep("result");
-    setHtmlCode("");
+  function buildGeminiPrompt(styleId: string): string {
+    const styleLabel = STYLES.find((x) => x.id === styleId)?.label || "Moderne";
+    const extra = customPrompt ? `\n\nAdditional instructions: ${customPrompt}` : "";
 
-    const styleLabel = STYLES.find((x) => x.id === s)?.label || "Moderne";
-    const extra = customPrompt ? `\n\nInstructions supplémentaires : ${customPrompt}` : "";
+    return `Create a professional infographic in the style of a handwritten sketchnote/whiteboard.
+Style: ${styleLabel}
+Platform: ${platform}
+Content to visualize:
+${content.slice(0, 2000)}
+
+Requirements:
+- White/cream background
+- Bold title at top
+- Numbered sections with circle numbers
+- Hand-drawn style icons
+- Red/orange accent colors for key stats
+- Black handwriting-style font
+- 'Follow @author for more | Repost 🔄' at bottom
+- Square format 1080x1080${extra}`;
+  }
+
+  async function generateWithGemini(styleId: string): Promise<string | null> {
+    if (!GEMINI_API_KEY) return null;
 
     try {
-      const response = await anthropic.messages.create({
-        model: CLAUDE_MODEL,
-        max_tokens: 4096,
-        system: `Tu es un expert en design d'infographies pour les réseaux sociaux. Génère du HTML/CSS COMPLET et autonome pour une infographie 1080x1080px.
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{ text: buildGeminiPrompt(styleId) }],
+            }],
+            generationConfig: {
+              responseModalities: ["IMAGE", "TEXT"],
+              responseMimeType: "image/png",
+            },
+          }),
+        },
+      );
+
+      if (!response.ok) return null;
+
+      const data = await response.json();
+      const base64 = data.candidates?.[0]?.content?.parts
+        ?.find((p: { inlineData?: { data: string } }) => p.inlineData)
+        ?.inlineData?.data;
+
+      return base64 || null;
+    } catch {
+      return null;
+    }
+  }
+
+  async function generateWithClaude(styleId: string): Promise<string> {
+    const styleLabel = STYLES.find((x) => x.id === styleId)?.label || "Moderne";
+    const extra = customPrompt ? `\n\nInstructions supplémentaires : ${customPrompt}` : "";
+
+    const response = await anthropic.messages.create({
+      model: CLAUDE_MODEL,
+      max_tokens: 4096,
+      system: `Tu es un expert en design d'infographies pour les réseaux sociaux. Génère du HTML/CSS COMPLET et autonome pour une infographie 1080x1080px.
 
 RÈGLES :
 - Un seul fichier HTML auto-suffisant avec <style> inline
@@ -73,20 +128,54 @@ RÈGLES :
 - UNIQUEMENT le code HTML complet. Pas de markdown, pas d'explication.
 
 Plateforme cible : ${platform}${extra}`,
-        messages: [{ role: "user", content: `Transforme ce contenu en infographie :\n\n${content.slice(0, 2000)}` }],
-      });
+      messages: [{ role: "user", content: `Transforme ce contenu en infographie :\n\n${content.slice(0, 2000)}` }],
+    });
 
-      const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
-      // Extraire le HTML entre les balises
-      const htmlMatch = text.match(/<!DOCTYPE html>[\s\S]*<\/html>/i) || text.match(/<html[\s\S]*<\/html>/i) || text.match(/<div[\s\S]*<\/div>/);
-      setHtmlCode(htmlMatch ? htmlMatch[0] : text);
+    const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
+    const htmlMatch = text.match(/<!DOCTYPE html>[\s\S]*<\/html>/i)
+      || text.match(/<html[\s\S]*<\/html>/i)
+      || text.match(/<div[\s\S]*<\/div>/);
+    return htmlMatch ? htmlMatch[0] : text;
+  }
+
+  async function handleGenerate(style?: string) {
+    const s = style || selectedStyle;
+    setGenerating(true);
+    setStep("result");
+    setImageBase64("");
+    setHtmlCode("");
+    setResultMode(null);
+
+    try {
+      // 1) Gemini Flash Image
+      const base64 = await generateWithGemini(s);
+      if (base64) {
+        setImageBase64(base64);
+        setResultMode("gemini");
+        setGenerating(false);
+        return;
+      }
+
+      // 2) Fallback Claude HTML/CSS
+      const html = await generateWithClaude(s);
+      setHtmlCode(html);
+      setResultMode("claude");
     } catch {
       setHtmlCode("<div style='padding:40px;color:#999;font-family:sans-serif;text-align:center'>Erreur de génération. Réessaie.</div>");
+      setResultMode("claude");
     }
     setGenerating(false);
   }
 
   async function handleDownload() {
+    if (resultMode === "gemini" && imageBase64) {
+      const link = document.createElement("a");
+      link.download = `supen-infographic-${Date.now()}.png`;
+      link.href = `data:image/png;base64,${imageBase64}`;
+      link.click();
+      return;
+    }
+
     if (!iframeRef.current) return;
     try {
       const html2canvas = (await import("html2canvas")).default;
@@ -98,7 +187,6 @@ Plateforme cible : ${platform}${extra}`,
       link.href = canvas.toDataURL("image/png");
       link.click();
     } catch {
-      // Fallback : copier le HTML
       navigator.clipboard.writeText(htmlCode);
       alert("Le téléchargement PNG n'est pas disponible. Le code HTML a été copié.");
     }
@@ -108,7 +196,9 @@ Plateforme cible : ${platform}${extra}`,
     setStep("type");
     setSelectedType("");
     setSelectedStyle("");
+    setImageBase64("");
     setHtmlCode("");
+    setResultMode(null);
     setCustomPrompt("");
     setShowPrompt(false);
   }
@@ -141,7 +231,13 @@ Plateforme cible : ${platform}${extra}`,
               <p className="text-xs text-muted-foreground mt-0.5">
                 {step === "type" && "Choisis le type de visuel"}
                 {step === "style" && "Choisis un style"}
-                {step === "result" && platform}
+                {step === "result" && (
+                  <>
+                    {platform}
+                    {resultMode === "gemini" && <span className="ml-2 text-[9px] bg-primary/15 text-primary px-1.5 py-0.5 rounded-full">Gemini Image</span>}
+                    {resultMode === "claude" && <span className="ml-2 text-[9px] bg-orange-500/15 text-orange-400 px-1.5 py-0.5 rounded-full">Claude HTML</span>}
+                  </>
+                )}
               </p>
             </div>
             <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all">
@@ -209,14 +305,22 @@ Plateforme cible : ${platform}${extra}`,
                   <>
                     {/* Preview */}
                     <div className="rounded-xl overflow-hidden border border-border/30 bg-white mb-4">
-                      <iframe
-                        ref={iframeRef}
-                        srcDoc={htmlCode}
-                        className="w-full"
-                        style={{ height: 400, border: "none" }}
-                        sandbox="allow-same-origin"
-                        title="Infographic preview"
-                      />
+                      {resultMode === "gemini" && imageBase64 ? (
+                        <img
+                          src={`data:image/png;base64,${imageBase64}`}
+                          alt="Infographie générée"
+                          className="w-full h-auto"
+                        />
+                      ) : (
+                        <iframe
+                          ref={iframeRef}
+                          srcDoc={htmlCode}
+                          className="w-full"
+                          style={{ height: 400, border: "none" }}
+                          sandbox="allow-same-origin"
+                          title="Infographic preview"
+                        />
+                      )}
                     </div>
 
                     {/* Actions */}
@@ -227,9 +331,11 @@ Plateforme cible : ${platform}${extra}`,
                       <Button variant="outline" size="sm" className="h-9 gap-2 text-xs" onClick={() => handleGenerate()}>
                         <RefreshCw className="w-3.5 h-3.5" /> Regénérer
                       </Button>
-                      <Button variant="ghost" size="sm" className="h-9 gap-2 text-xs" onClick={() => { navigator.clipboard.writeText(htmlCode); }}>
-                        <Check className="w-3.5 h-3.5" /> Copier HTML
-                      </Button>
+                      {resultMode === "claude" && (
+                        <Button variant="ghost" size="sm" className="h-9 gap-2 text-xs" onClick={() => { navigator.clipboard.writeText(htmlCode); }}>
+                          <Check className="w-3.5 h-3.5" /> Copier HTML
+                        </Button>
+                      )}
                     </div>
 
                     {/* Custom prompt */}
