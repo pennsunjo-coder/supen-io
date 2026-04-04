@@ -404,8 +404,8 @@ const Index = () => {
             viewport={{ once: true }} transition={{ duration: 0.5 }}
           >
             <div className="inline-flex items-center bg-primary/[0.06] border border-primary/15 rounded-full px-4 py-1.5 text-xs text-muted-foreground mb-6">Social Proof</div>
-            <h2 className="text-3xl md:text-4xl font-bold mb-3 tracking-display">Real posts. <span className="text-gradient">Real numbers.</span></h2>
-            <p className="text-sm text-muted-foreground font-light">Created by @AwakPenn — 1M+ followers across platforms.</p>
+            <h2 className="text-3xl md:text-4xl font-bold mb-3 tracking-display">The numbers speak <span className="text-gradient">for themselves.</span></h2>
+            <p className="text-sm text-muted-foreground font-light">Real engagement from real posts. Created by @AwakPenn.</p>
           </motion.div>
 
           {/* Stats headline */}
@@ -429,26 +429,35 @@ const Index = () => {
           {/* Masonry grid */}
           <div className="relative">
             <div className="columns-2 md:columns-3 gap-3 space-y-3">
-              {resultsData.map((r, i) => (
+              {resultsData.map((r, i) => {
+                const borderColor = r.tier === "gold" ? "border-amber-400" : r.tier === "green" ? "border-emerald-400" : "border-primary";
+                const bgColor = r.tier === "gold" ? "bg-amber-400/10" : r.tier === "green" ? "bg-emerald-400/10" : "bg-primary/10";
+                const textColor = r.tier === "gold" ? "text-amber-400" : r.tier === "green" ? "text-emerald-400" : "text-primary";
+                const isHighlight = r.tier === "gold";
+                return (
                 <motion.div key={i} initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: (i % 3) * 0.08 }}
-                  className="break-inside-avoid rounded-xl overflow-hidden border border-foreground/[0.06] hover:border-primary/40 transition-all cursor-pointer group relative"
+                  className={cn("break-inside-avoid rounded-xl overflow-hidden border transition-all cursor-pointer group relative", isHighlight ? "border-foreground/10 ring-2 ring-amber-400/30 ring-offset-2 ring-offset-background" : "border-foreground/[0.06] hover:border-primary/40")}
                 >
-                  <div className="bg-accent/20 aspect-[4/5]">
-                    <img src={r.src} alt={r.stat} className="w-full h-full object-cover object-top" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                  <img src={r.src} alt={r.stat} className="w-full h-[220px] object-cover object-bottom bg-accent/20" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                  {/* Gradient overlay bottom */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                  {/* Stat badge bottom */}
+                  <div className="absolute bottom-3 left-3 right-3">
+                    <div className={cn("flex items-center gap-2 px-3 py-2 rounded-lg border-2", borderColor, bgColor)}>
+                      <span className="text-[10px] font-medium text-white/60">{r.platform}</span>
+                      <span className={cn("ml-auto text-sm font-bold", textColor)}>⚡ {r.stat}</span>
+                    </div>
                   </div>
-                  {/* Hover overlay */}
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center">
-                    <span className="text-[10px] text-white/60 mb-1">{r.platform}</span>
-                    <span className="text-lg font-bold text-white">{r.stat}</span>
-                  </div>
-                  {/* Platform tag */}
+                  {/* Platform tag top */}
                   <div className="absolute top-2 left-2">
-                    <span className="bg-black/50 backdrop-blur text-white text-[9px] px-2 py-0.5 rounded-full">{r.platform}</span>
+                    <span className="bg-black/60 backdrop-blur text-white text-[9px] px-2 py-0.5 rounded-full border border-white/20">{r.platform}</span>
                   </div>
+                  {/* Hover glow */}
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity border-2 border-primary/40 rounded-xl pointer-events-none" />
                 </motion.div>
-              ))}
+                );
+              })}
             </div>
-            {/* Fade bottom */}
             <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent pointer-events-none" />
           </div>
 
