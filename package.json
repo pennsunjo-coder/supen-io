@@ -1,5 +1,6 @@
 {
   "name": "supen-io",
+  "description": "AI-powered viral content creation platform",
   "private": true,
   "version": "0.0.0",
   "type": "module",

@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import threadsLogo from "@/assets/threads-logo.png";
 import { Button } from "@/components/ui/button";
 import {
@@ -178,7 +178,7 @@ const Index = () => {
       {/* ═══════════ NAVBAR ═══════════ */}
       <nav className="sticky top-0 z-50 backdrop-blur-xl bg-background/80">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-3">
-          <LogoFull size="sm" />
+          <Link to="/" className="hover:opacity-80 transition-opacity"><LogoFull size="sm" /></Link>
           <div className="hidden md:flex items-center bg-primary/[0.06] border border-primary/15 rounded-full px-1 py-1">
             {["Features", "Results", "Pricing", "FAQ"].map((item) => (
               <a key={item} href={`#${item.toLowerCase()}`} className="px-4 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-all">{item}</a>
@@ -606,7 +606,7 @@ const Index = () => {
             {/* Brand */}
             <div className="col-span-2 md:col-span-1">
               <div className="mb-4">
-                <LogoFull size="sm" />
+                <Link to="/" className="hover:opacity-80 transition-opacity"><LogoFull size="sm" /></Link>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed mb-4">
                 AI-powered content creation platform for creators who want to sound human.

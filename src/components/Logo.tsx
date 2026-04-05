@@ -12,8 +12,8 @@ function LogoSvg({ className }: { className?: string }) {
       <rect width="40" height="40" rx="10" fill="url(#supen-grad)" />
       <defs>
         <linearGradient id="supen-grad" x1="0" y1="0" x2="40" y2="40">
-          <stop offset="0%" stopColor="#00E5CC" />
-          <stop offset="100%" stopColor="#00B4D8" />
+          <stop offset="0%" stopColor="#00C9B1" />
+          <stop offset="100%" stopColor="#0099A8" />
         </linearGradient>
       </defs>
       <path
@@ -22,7 +22,6 @@ function LogoSvg({ className }: { className?: string }) {
         strokeWidth="2.5"
         strokeLinecap="round"
       />
-      <path d="M28 8L29.5 11L28 10L26.5 11L28 8Z" fill="white" opacity="0.8" />
     </svg>
   );
 }
