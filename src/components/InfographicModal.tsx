@@ -3,10 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
   X, LayoutGrid, ImagePlus, RefreshCw, Download, Sparkles, Check,
+  ExternalLink, Save, Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
@@ -16,10 +20,46 @@ const TYPES = [
 ];
 
 const STYLES = [
-  { id: "sketchnote", label: "Sketchnote", desc: "White background, vivid colors", colors: ["#FFF", "#FF6B6B", "#4ECDC4", "#2C3E50"] },
+  { id: "sketchnote", label: "Sketchnote", desc: "Warm cream, hand-drawn feel", colors: ["#FFF8F0", "#E53E3E", "#38A169", "#3182CE"] },
   { id: "modern", label: "Modern", desc: "Dark background, cyan accents", colors: ["#0F172A", "#249D8B", "#1E293B", "#F1F5F9"] },
   { id: "colorful", label: "Colorful", desc: "Energetic and contrasting", colors: ["#6366F1", "#EC4899", "#F59E0B", "#FFF"] },
 ];
+
+const STYLE_PROMPTS: Record<string, string> = {
+  sketchnote: `MANDATORY STYLE — Sketchnote/Whiteboard (like viral LinkedIn infographics):
+- Background: #FFF8F0 (warm cream)
+- Outer border: 8px solid #5D3A1A (wood/brown frame)
+- Title: 52px, font-weight 900, color #1A1A1A, font-family 'Patrick Hand'
+- Section numbers: colored circles (red #E53E3E, blue #3182CE, green #38A169, orange #DD6B20) — 36px diameter, white text centered
+- Section titles: 20px bold, matching circle color
+- Body text: 15px, font-family 'Patrick Hand', color #2D3748
+- Use large emoji icons (24-32px) before each section title
+- Use → arrows for sub-points
+- Subtle inner shadow: box-shadow inset 0 0 40px rgba(0,0,0,0.03)
+- Footer: "Follow @author for more | Repost 🔄" — 14px bold, centered
+- Google Font: <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">`,
+
+  modern: `MANDATORY STYLE — Modern/Dark:
+- Background: linear-gradient(135deg, #0F172A, #1E293B)
+- No outer border
+- Title: 48px, font-weight 800, color #F1F5F9, font-family 'Inter'
+- Accent color: #249D8B (teal/cyan)
+- Section numbers: teal rounded squares with white text
+- Body text: 14px, color #94A3B8, font-family 'Inter'
+- Subtle glow effects on headings
+- Cards with background rgba(255,255,255,0.05) and border 1px solid rgba(255,255,255,0.1)
+- Google Font: <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">`,
+
+  colorful: `MANDATORY STYLE — Colorful/Bold:
+- Background: #FFFFFF
+- Title: 52px, font-weight 900, color #1A1A1A, font-family 'Poppins'
+- Primary colors: #6366F1 (indigo), #EC4899 (pink), #F59E0B (amber)
+- Section numbers: alternating colored circles with white numbers
+- Body text: 14px, color #374151, font-family 'Poppins'
+- Gradient accents on section headers
+- Rounded corners (12px) on cards
+- Google Font: <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;900&display=swap" rel="stylesheet">`,
+};
 
 interface Props {
   open: boolean;
@@ -31,6 +71,7 @@ interface Props {
 type ResultMode = "gemini" | "claude" | null;
 
 export default function InfographicModal({ open, onClose, content, platform }: Props) {
+  const { user } = useAuth();
   const [step, setStep] = useState<"type" | "style" | "result">("type");
   const [selectedType, setSelectedType] = useState("");
   const [selectedStyle, setSelectedStyle] = useState("");
@@ -40,6 +81,8 @@ export default function InfographicModal({ open, onClose, content, platform }: P
   const [htmlCode, setHtmlCode] = useState("");
   const [customPrompt, setCustomPrompt] = useState("");
   const [showPrompt, setShowPrompt] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   function handleSelectType(id: string) {
@@ -53,7 +96,7 @@ export default function InfographicModal({ open, onClose, content, platform }: P
   }
 
   function buildGeminiPrompt(styleId: string): string {
-    const styleLabel = STYLES.find((x) => x.id === styleId)?.label || "Moderne";
+    const styleLabel = STYLES.find((x) => x.id === styleId)?.label || "Modern";
     const extra = customPrompt ? `\n\nAdditional instructions: ${customPrompt}` : "";
 
     return `Create a professional infographic in the style of a handwritten sketchnote/whiteboard.
@@ -63,14 +106,37 @@ Content to visualize:
 ${content.slice(0, 2000)}
 
 Requirements:
-- White/cream background
-- Bold title at top
-- Numbered sections with circle numbers
-- Hand-drawn style icons
+- White/cream background (#FFF8F0)
+- Bold title at top (52px, heavy weight)
+- Wood-colored border frame (#5D3A1A)
+- Numbered sections with colored circle numbers (red, blue, green, orange)
+- Hand-drawn style icons and large emojis
 - Red/orange accent colors for key stats
-- Black handwriting-style font
+- Handwriting-style font (Patrick Hand / Caveat style)
+- Arrow symbols (→) for sub-points
 - 'Follow @author for more | Repost 🔄' at bottom
 - Square format 1080x1080${extra}`;
+  }
+
+  function buildClaudeSystemPrompt(styleId: string): string {
+    const stylePrompt = STYLE_PROMPTS[styleId] || STYLE_PROMPTS.sketchnote;
+    const extra = customPrompt ? `\n\nAdditional user instructions: ${customPrompt}` : "";
+
+    return `You are an expert infographic designer for social media.
+Generate COMPLETE standalone HTML/CSS code for a 1080x1080px infographic.
+
+${stylePrompt}
+
+STRUCTURE RULES:
+- Single self-contained HTML file with inline <style>
+- Body must be exactly 1080x1080px with overflow:hidden
+- Numbered sections (4-6) with colored circle badges
+- Large title at top, readable body text (15px min)
+- CTA footer at bottom
+- ONLY output the HTML code. No markdown. No explanation.
+- Start with <!DOCTYPE html>
+
+Target platform: ${platform}${extra}`;
   }
 
   async function generateWithGemini(styleId: string): Promise<string | null> {
@@ -108,27 +174,11 @@ Requirements:
   }
 
   async function generateWithClaude(styleId: string): Promise<string> {
-    const styleLabel = STYLES.find((x) => x.id === styleId)?.label || "Moderne";
-    const extra = customPrompt ? `\n\nInstructions supplémentaires : ${customPrompt}` : "";
-
     const response = await anthropic.messages.create({
       model: CLAUDE_MODEL,
       max_tokens: 4096,
-      system: `Tu es un expert en design d'infographies pour les réseaux sociaux. Génère du HTML/CSS COMPLET et autonome pour une infographie 1080x1080px.
-
-RÈGLES :
-- Un seul fichier HTML auto-suffisant avec <style> inline
-- Google Fonts : Poppins + Inter via <link>
-- Palette 3-4 couleurs max
-- Style : ${styleLabel}
-- Format : div de 1080x1080px avec overflow hidden
-- Sections numérotées avec cercles ou badges colorés
-- Titres en gros, corps lisible (16px min)
-- CTA en bas
-- UNIQUEMENT le code HTML complet. Pas de markdown, pas d'explication.
-
-Plateforme cible : ${platform}${extra}`,
-      messages: [{ role: "user", content: `Transforme ce contenu en infographie :\n\n${content.slice(0, 2000)}` }],
+      system: buildClaudeSystemPrompt(styleId),
+      messages: [{ role: "user", content: `Transform this content into a viral infographic:\n\n${content.slice(0, 2000)}` }],
     });
 
     const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
@@ -145,6 +195,7 @@ Plateforme cible : ${platform}${extra}`,
     setImageBase64("");
     setHtmlCode("");
     setResultMode(null);
+    setSaved(false);
 
     try {
       // 1) Gemini Flash Image
@@ -167,29 +218,74 @@ Plateforme cible : ${platform}${extra}`,
     setGenerating(false);
   }
 
-  async function handleDownload() {
+  // ─── Download ───
+
+  function handleDownloadPng() {
     if (resultMode === "gemini" && imageBase64) {
       const link = document.createElement("a");
       link.download = `supen-infographic-${Date.now()}.png`;
       link.href = `data:image/png;base64,${imageBase64}`;
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
+      toast.success("PNG downloaded!");
       return;
     }
+    // For Claude HTML — download as HTML file
+    handleDownloadHtml();
+  }
 
-    if (!iframeRef.current) return;
+  function handleDownloadHtml() {
+    if (!htmlCode) return;
+    const blob = new Blob([htmlCode], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `supen-infographic-${Date.now()}.html`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success("HTML file downloaded!");
+  }
+
+  function handleOpenNewTab() {
+    if (!htmlCode) return;
+    const blob = new Blob([htmlCode], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank");
+  }
+
+  // ─── Save to Supabase ───
+
+  async function handleSave() {
+    if (!user || saved) return;
+    setSaving(true);
+
     try {
-      const html2canvas = (await import("html2canvas")).default;
-      const iframeDoc = iframeRef.current.contentDocument;
-      if (!iframeDoc?.body) return;
-      const canvas = await html2canvas(iframeDoc.body, { width: 1080, height: 1080, scale: 1 });
-      const link = document.createElement("a");
-      link.download = `supen-infographic-${Date.now()}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+      const { error } = await supabase.from("generated_content").insert({
+        user_id: user.id,
+        platform,
+        format: "Infographic",
+        content: resultMode === "gemini"
+          ? `[Gemini Image] ${content.slice(0, 200)}`
+          : htmlCode.slice(0, 5000),
+        viral_score: 85,
+        image_prompt: resultMode === "gemini" ? "Gemini generated image" : "HTML infographic",
+      });
+
+      if (error) {
+        toast.error("Error saving infographic");
+        console.warn("Save infographic error:", error.message);
+      } else {
+        setSaved(true);
+        toast.success("Infographic saved to history!");
+      }
     } catch {
-      navigator.clipboard.writeText(htmlCode);
-      alert("PNG download unavailable. HTML code copied.");
+      toast.error("Network error");
     }
+
+    setSaving(false);
   }
 
   function handleReset() {
@@ -201,6 +297,7 @@ Plateforme cible : ${platform}${extra}`,
     setResultMode(null);
     setCustomPrompt("");
     setShowPrompt(false);
+    setSaved(false);
   }
 
   if (!open) return null;
@@ -316,27 +413,50 @@ Plateforme cible : ${platform}${extra}`,
                           ref={iframeRef}
                           srcDoc={htmlCode}
                           className="w-full"
-                          style={{ height: 400, border: "none" }}
+                          style={{ height: 420, border: "none" }}
                           sandbox="allow-same-origin"
                           title="Infographic preview"
                         />
                       )}
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex items-center gap-2 mb-4">
-                      <Button size="sm" className="h-9 gap-2 text-xs" onClick={handleDownload}>
-                        <Download className="w-3.5 h-3.5" /> Download PNG
+                    {/* Action buttons */}
+                    <div className="flex flex-wrap items-center gap-2 mb-3">
+                      <Button size="sm" className="h-9 gap-2 text-xs" onClick={handleDownloadPng}>
+                        <Download className="w-3.5 h-3.5" />
+                        {resultMode === "gemini" ? "Download PNG" : "Download HTML"}
                       </Button>
+
+                      {resultMode === "claude" && (
+                        <Button variant="outline" size="sm" className="h-9 gap-2 text-xs" onClick={handleOpenNewTab}>
+                          <ExternalLink className="w-3.5 h-3.5" /> Open in new tab
+                        </Button>
+                      )}
+
                       <Button variant="outline" size="sm" className="h-9 gap-2 text-xs" onClick={() => handleGenerate()}>
                         <RefreshCw className="w-3.5 h-3.5" /> Regenerate
                       </Button>
-                      {resultMode === "claude" && (
-                        <Button variant="ghost" size="sm" className="h-9 gap-2 text-xs" onClick={() => { navigator.clipboard.writeText(htmlCode); }}>
-                          <Check className="w-3.5 h-3.5" /> Copy HTML
-                        </Button>
-                      )}
+
+                      <Button
+                        variant={saved ? "ghost" : "outline"}
+                        size="sm"
+                        className={cn("h-9 gap-2 text-xs", saved && "text-green-400")}
+                        onClick={handleSave}
+                        disabled={saved || saving}
+                      >
+                        {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> :
+                         saved ? <Check className="w-3.5 h-3.5" /> :
+                         <Save className="w-3.5 h-3.5" />}
+                        {saved ? "Saved" : "Save to history"}
+                      </Button>
                     </div>
+
+                    {/* Screenshot tip for Claude HTML */}
+                    {resultMode === "claude" && (
+                      <p className="text-[10px] text-muted-foreground/60 mb-3">
+                        Tip: Open in a new tab, then press Cmd+Shift+4 (Mac) or Win+Shift+S (PC) to screenshot as PNG
+                      </p>
+                    )}
 
                     {/* Custom prompt */}
                     <button onClick={() => setShowPrompt(!showPrompt)} className="text-xs text-muted-foreground hover:text-foreground transition-colors mb-2">
