@@ -1,54 +1,48 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
-  ArrowLeft, LayoutDashboard, Users, FileText, Database,
-  BarChart3, Settings, Loader2, TrendingUp, Calendar,
-  ChevronLeft, ChevronRight,
+  ArrowLeft, LayoutDashboard, Users, FileText,
+  BarChart3, CreditCard, Loader2, TrendingUp, Calendar,
+  ChevronLeft, ChevronRight, Zap, DollarSign, Crown,
+  Search, RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/lib/supabase";
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+} from "recharts";
+import { useAdminStats, useAdminContent, useAdminUsers } from "@/hooks/use-admin-stats";
+import type { DistributionItem } from "@/hooks/use-admin-stats";
 
 /* ─── Types ─── */
 
-interface AdminUser {
-  user_id: string;
-  email: string;
-  first_name: string;
-  niche: string;
-  platforms: string[];
-  onboarding_completed: boolean;
-  created_at: string;
-  content_count: number;
-}
-
-interface AdminContent {
-  id: string;
-  user_email: string;
-  platform: string;
-  format: string;
-  viral_score: number | null;
-  content: string;
-  created_at: string;
-}
-
-interface DayCount {
-  date: string;
-  count: number;
-}
-
-interface PlatformCount {
-  platform: string;
-  count: number;
-}
-
-type Section = "overview" | "users" | "contents" | "analytics";
+type Section = "overview" | "users" | "contents" | "analytics" | "revenue";
 
 const NAV_ITEMS: { id: Section; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "overview", label: "Vue d'ensemble", icon: LayoutDashboard },
   { id: "users", label: "Utilisateurs", icon: Users },
   { id: "contents", label: "Contenus générés", icon: FileText },
   { id: "analytics", label: "Analytics", icon: BarChart3 },
+  { id: "revenue", label: "Revenus", icon: CreditCard },
+];
+
+/* ─── Helpers ─── */
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("fr-FR", {
+    day: "2-digit", month: "short", year: "numeric",
+  });
+}
+
+function formatShortDate(iso: string): string {
+  return iso.slice(5); // "MM-DD"
+}
+
+const NICHE_COLORS = [
+  "hsl(174, 65%, 40%)", "hsl(220, 70%, 55%)", "hsl(340, 65%, 55%)",
+  "hsl(45, 80%, 50%)", "hsl(270, 60%, 55%)", "hsl(130, 50%, 45%)",
+  "hsl(15, 70%, 55%)", "hsl(200, 60%, 50%)", "hsl(0, 0%, 50%)",
 ];
 
 /* ─── Component ─── */
@@ -56,203 +50,22 @@ const NAV_ITEMS: { id: Section; label: string; icon: typeof LayoutDashboard }[] 
 export default function Admin() {
   const navigate = useNavigate();
   const [section, setSection] = useState<Section>("overview");
-  const [loading, setLoading] = useState(true);
 
-  // Overview stats
-  const [totalUsers, setTotalUsers] = useState(0);
-  const [contentsToday, setContentsToday] = useState(0);
-  const [contentsMonth, setContentsMonth] = useState(0);
-  const [contentsTotal, setContentsTotal] = useState(0);
+  const { stats, loading: statsLoading, refetch: refetchStats } = useAdminStats();
+  const { users, loading: usersLoading, refetch: refetchUsers } = useAdminUsers();
+  const { contents, loading: contentsLoading, page, hasMore, fetchPage } = useAdminContent();
 
-  // Users
-  const [users, setUsers] = useState<AdminUser[]>([]);
-  const [usersLoading, setUsersLoading] = useState(false);
+  const [userSearch, setUserSearch] = useState("");
 
-  // Contents
-  const [contents, setContents] = useState<AdminContent[]>([]);
-  const [contentsLoading, setContentsLoading] = useState(false);
-  const [contentPage, setContentPage] = useState(0);
-  const [hasMoreContent, setHasMoreContent] = useState(true);
-  const PAGE_SIZE = 25;
-
-  // Analytics
-  const [dailyCounts, setDailyCounts] = useState<DayCount[]>([]);
-  const [topPlatforms, setTopPlatforms] = useState<PlatformCount[]>([]);
-  const [topFormats, setTopFormats] = useState<PlatformCount[]>([]);
-  const [avgViral, setAvgViral] = useState(0);
-
-  // ═══ Fetch overview stats ═══
-  const fetchOverview = useCallback(async () => {
-    setLoading(true);
-
-    // Total users
-    const { count: userCount } = await supabase
-      .from("user_profiles")
-      .select("*", { count: "exact", head: true });
-    setTotalUsers(userCount || 0);
-
-    // Contents total
-    const { count: totalCount } = await supabase
-      .from("generated_content")
-      .select("*", { count: "exact", head: true });
-    setContentsTotal(totalCount || 0);
-
-    // Contents today
-    const todayISO = new Date().toISOString().slice(0, 10);
-    const { count: todayCount } = await supabase
-      .from("generated_content")
-      .select("*", { count: "exact", head: true })
-      .gte("created_at", todayISO);
-    setContentsToday(todayCount || 0);
-
-    // Contents this month
-    const monthISO = new Date().toISOString().slice(0, 7) + "-01";
-    const { count: monthCount } = await supabase
-      .from("generated_content")
-      .select("*", { count: "exact", head: true })
-      .gte("created_at", monthISO);
-    setContentsMonth(monthCount || 0);
-
-    setLoading(false);
-  }, []);
-
-  // ═══ Fetch users ═══
-  const fetchUsers = useCallback(async () => {
-    setUsersLoading(true);
-
-    const { data: profiles } = await supabase
-      .from("user_profiles")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (profiles) {
-      // Count content per user
-      const usersWithCount: AdminUser[] = [];
-      for (const p of profiles) {
-        const { count } = await supabase
-          .from("generated_content")
-          .select("*", { count: "exact", head: true })
-          .eq("user_id", p.user_id);
-
-        usersWithCount.push({
-          user_id: p.user_id,
-          email: "", // filled below
-          first_name: p.first_name || "",
-          niche: p.niche || "",
-          platforms: p.platforms || [],
-          onboarding_completed: p.onboarding_completed,
-          created_at: p.created_at,
-          content_count: count || 0,
-        });
-      }
-      setUsers(usersWithCount);
-    }
-
-    setUsersLoading(false);
-  }, []);
-
-  // ═══ Fetch contents ═══
-  const fetchContents = useCallback(async (page: number) => {
-    setContentsLoading(true);
-
-    const from = page * PAGE_SIZE;
-    const to = from + PAGE_SIZE - 1;
-
-    const { data } = await supabase
-      .from("generated_content")
-      .select("id, user_id, platform, format, viral_score, content, created_at")
-      .order("created_at", { ascending: false })
-      .range(from, to);
-
-    if (data) {
-      const mapped: AdminContent[] = data.map((c) => ({
-        id: c.id,
-        user_email: c.user_id?.slice(0, 8) + "...",
-        platform: c.platform || "",
-        format: c.format || "",
-        viral_score: c.viral_score,
-        content: c.content || "",
-        created_at: c.created_at,
-      }));
-      setContents(mapped);
-      setHasMoreContent(data.length === PAGE_SIZE);
-    }
-
-    setContentsLoading(false);
-  }, []);
-
-  // ═══ Fetch analytics ═══
-  const fetchAnalytics = useCallback(async () => {
-    // Daily counts (last 30 days)
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const fromDate = thirtyDaysAgo.toISOString().slice(0, 10);
-
-    const { data: allContent } = await supabase
-      .from("generated_content")
-      .select("platform, format, viral_score, created_at")
-      .gte("created_at", fromDate)
-      .order("created_at", { ascending: false });
-
-    if (allContent) {
-      // Daily
-      const dayMap = new Map<string, number>();
-      for (let i = 0; i < 30; i++) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        dayMap.set(d.toISOString().slice(0, 10), 0);
-      }
-      allContent.forEach((c) => {
-        const day = c.created_at?.slice(0, 10);
-        if (day && dayMap.has(day)) dayMap.set(day, (dayMap.get(day) || 0) + 1);
-      });
-      setDailyCounts(
-        Array.from(dayMap.entries())
-          .map(([date, count]) => ({ date, count }))
-          .reverse()
-      );
-
-      // Top platforms
-      const platMap = new Map<string, number>();
-      allContent.forEach((c) => {
-        if (c.platform) platMap.set(c.platform, (platMap.get(c.platform) || 0) + 1);
-      });
-      setTopPlatforms(
-        Array.from(platMap.entries())
-          .map(([platform, count]) => ({ platform, count }))
-          .sort((a, b) => b.count - a.count)
-      );
-
-      // Top formats
-      const fmtMap = new Map<string, number>();
-      allContent.forEach((c) => {
-        if (c.format) fmtMap.set(c.format, (fmtMap.get(c.format) || 0) + 1);
-      });
-      setTopFormats(
-        Array.from(fmtMap.entries())
-          .map(([platform, count]) => ({ platform, count }))
-          .sort((a, b) => b.count - a.count)
-      );
-
-      // Avg viral score
-      const scores = allContent.filter((c) => c.viral_score != null).map((c) => c.viral_score as number);
-      setAvgViral(scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0);
-    }
-  }, []);
-
-  // ═══ Load data on section change ═══
-  useEffect(() => {
-    if (section === "overview") fetchOverview();
-    if (section === "users") fetchUsers();
-    if (section === "contents") { setContentPage(0); fetchContents(0); }
-    if (section === "analytics") fetchAnalytics();
-  }, [section, fetchOverview, fetchUsers, fetchContents, fetchAnalytics]);
-
-  function formatDate(iso: string): string {
-    return new Date(iso).toLocaleDateString("fr-FR", {
-      day: "2-digit", month: "short", year: "numeric",
-    });
-  }
+  const filteredUsers = useMemo(() => {
+    if (!userSearch.trim()) return users;
+    const q = userSearch.toLowerCase();
+    return users.filter((u) =>
+      u.first_name.toLowerCase().includes(q) ||
+      u.niche.toLowerCase().includes(q) ||
+      u.user_id.includes(q)
+    );
+  }, [users, userSearch]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -294,90 +107,178 @@ export default function Admin() {
         {/* Content */}
         <div className="flex-1 min-w-0 space-y-6">
 
+          {/* ═══════════════════════════════════════════════ */}
           {/* ═══ OVERVIEW ═══ */}
+          {/* ═══════════════════════════════════════════════ */}
           {section === "overview" && (
             <>
-              <h2 className="text-lg font-bold">Vue d'ensemble</h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-bold">Vue d'ensemble</h2>
+                <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs" onClick={refetchStats} disabled={statsLoading}>
+                  <RefreshCw className={cn("w-3 h-3", statsLoading && "animate-spin")} /> Actualiser
+                </Button>
+              </div>
 
-              {loading ? (
+              {statsLoading && !stats ? (
                 <div className="flex justify-center py-16">
                   <Loader2 className="w-6 h-6 animate-spin text-primary" />
                 </div>
-              ) : (
+              ) : stats && (
                 <>
-                  {/* Stats cards */}
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    <StatCard label="Utilisateurs" value={totalUsers} icon={Users} />
-                    <StatCard label="Contenus aujourd'hui" value={contentsToday} icon={Calendar} />
-                    <StatCard label="Contenus ce mois" value={contentsMonth} icon={TrendingUp} />
-                    <StatCard label="Total contenus" value={contentsTotal} icon={FileText} />
+                  {/* Row 1 — Main stats */}
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    <StatCard icon={Users} label="Inscrits" value={stats.totalUsers} />
+                    <StatCard icon={Zap} label="Actifs (7j)" value={stats.activeUsers} accent />
+                    <StatCard icon={FileText} label="Contenus total" value={stats.totalContent} />
+                    <StatCard icon={Calendar} label="Ce mois" value={stats.monthContent} />
                   </div>
 
-                  {/* Recent users */}
-                  <div className="bg-card border border-border/30 rounded-xl p-5">
-                    <h3 className="text-sm font-semibold mb-3">Derniers utilisateurs</h3>
-                    {users.length === 0 ? (
-                      <button
-                        onClick={fetchUsers}
-                        className="text-xs text-primary hover:underline"
-                      >
-                        Charger les utilisateurs
-                      </button>
-                    ) : (
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-xs">
-                          <thead>
-                            <tr className="text-muted-foreground border-b border-border/20">
-                              <th className="text-left py-2 pr-3 font-medium">Prénom</th>
-                              <th className="text-left py-2 pr-3 font-medium">Niche</th>
-                              <th className="text-left py-2 pr-3 font-medium">Plateformes</th>
-                              <th className="text-left py-2 pr-3 font-medium">Date</th>
-                              <th className="text-left py-2 font-medium">Onboarding</th>
+                  {/* Row 2 — Revenue + extras */}
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    <StatCard icon={DollarSign} label="Revenus total" value={0} suffix="$" muted />
+                    <StatCard icon={Crown} label="Abonnés Premium" value={0} muted />
+                    <StatCard icon={TrendingUp} label="Contenus aujourd'hui" value={stats.todayContent} accent />
+                    <StatCard icon={BarChart3} label="Score viral moy." value={stats.avgViral} suffix="/100" />
+                  </div>
+
+                  {/* 30-day chart */}
+                  <div className="bg-card border border-border/20 rounded-xl p-5">
+                    <h3 className="text-sm font-semibold mb-4">Activité — 30 derniers jours</h3>
+                    <ResponsiveContainer width="100%" height={180}>
+                      <BarChart data={stats.dailyCounts}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 14% 18%)" />
+                        <XAxis
+                          dataKey="date"
+                          tickFormatter={formatShortDate}
+                          tick={{ fontSize: 10, fill: "hsl(215 12% 50%)" }}
+                          interval={4}
+                        />
+                        <YAxis
+                          tick={{ fontSize: 10, fill: "hsl(215 12% 50%)" }}
+                          allowDecimals={false}
+                          width={30}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            background: "hsl(220 18% 10%)",
+                            border: "1px solid hsl(220 14% 18%)",
+                            borderRadius: 8,
+                            fontSize: 11,
+                          }}
+                          labelFormatter={(v) => `Date : ${v}`}
+                        />
+                        <Bar dataKey="count" name="Contenus" fill="hsl(174 65% 40%)" radius={[3, 3, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Niche distribution */}
+                    <div className="bg-card border border-border/20 rounded-xl p-5">
+                      <h3 className="text-sm font-semibold mb-3">Répartition par niche</h3>
+                      <DistributionList items={stats.nicheDistribution} total={stats.totalUsers} colors={NICHE_COLORS} />
+                    </div>
+
+                    {/* Platform distribution */}
+                    <div className="bg-card border border-border/20 rounded-xl p-5">
+                      <h3 className="text-sm font-semibold mb-3">Répartition par plateforme</h3>
+                      <DistributionList items={stats.platformDistribution} total={stats.totalContent} colors={NICHE_COLORS} />
+                    </div>
+                  </div>
+
+                  {/* Recent users table */}
+                  <div className="bg-card border border-border/20 rounded-xl p-5">
+                    <h3 className="text-sm font-semibold mb-3">Derniers inscrits</h3>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="text-muted-foreground border-b border-border/20">
+                            <th className="text-left py-2 pr-3 font-medium">Prénom</th>
+                            <th className="text-left py-2 pr-3 font-medium">Niche</th>
+                            <th className="text-left py-2 pr-3 font-medium">Plateformes</th>
+                            <th className="text-left py-2 pr-3 font-medium">Onboarding</th>
+                            <th className="text-left py-2 font-medium">Date</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {stats.recentUsers.map((u) => (
+                            <tr key={u.user_id} className="border-b border-border/10 hover:bg-accent/20 transition-colors">
+                              <td className="py-2.5 pr-3 font-medium">{u.first_name || "—"}</td>
+                              <td className="py-2.5 pr-3 text-muted-foreground">{u.niche || "—"}</td>
+                              <td className="py-2.5 pr-3 text-muted-foreground">{u.platforms?.join(", ") || "—"}</td>
+                              <td className="py-2.5 pr-3">
+                                <Badge ok={u.onboarding_completed} />
+                              </td>
+                              <td className="py-2.5 text-muted-foreground">{formatDate(u.created_at)}</td>
                             </tr>
-                          </thead>
-                          <tbody>
-                            {users.slice(0, 10).map((u) => (
-                              <tr key={u.user_id} className="border-b border-border/10">
-                                <td className="py-2 pr-3 font-medium">{u.first_name || "—"}</td>
-                                <td className="py-2 pr-3 text-muted-foreground">{u.niche || "—"}</td>
-                                <td className="py-2 pr-3 text-muted-foreground">{u.platforms?.join(", ") || "—"}</td>
-                                <td className="py-2 pr-3 text-muted-foreground">{formatDate(u.created_at)}</td>
-                                <td className="py-2">
-                                  <span className={cn(
-                                    "px-1.5 py-0.5 rounded text-[10px] font-medium",
-                                    u.onboarding_completed ? "bg-green-500/15 text-green-400" : "bg-orange-500/15 text-orange-400",
-                                  )}>
-                                    {u.onboarding_completed ? "Complété" : "En cours"}
-                                  </span>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Recent content table */}
+                  <div className="bg-card border border-border/20 rounded-xl p-5">
+                    <h3 className="text-sm font-semibold mb-3">Derniers contenus</h3>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="text-muted-foreground border-b border-border/20">
+                            <th className="text-left py-2 pr-3 font-medium">Plateforme</th>
+                            <th className="text-left py-2 pr-3 font-medium">Format</th>
+                            <th className="text-left py-2 pr-3 font-medium">Score</th>
+                            <th className="text-left py-2 pr-3 font-medium">Aperçu</th>
+                            <th className="text-left py-2 font-medium">Date</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {stats.recentContent.map((c) => (
+                            <tr key={c.id} className="border-b border-border/10 hover:bg-accent/20 transition-colors">
+                              <td className="py-2.5 pr-3 font-medium">{c.platform}</td>
+                              <td className="py-2.5 pr-3 text-muted-foreground">{c.format}</td>
+                              <td className="py-2.5 pr-3"><ViralBadge score={c.viral_score} /></td>
+                              <td className="py-2.5 pr-3 text-muted-foreground max-w-[250px] truncate">{c.content.slice(0, 50)}</td>
+                              <td className="py-2.5 text-muted-foreground">{formatDate(c.created_at)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </>
               )}
             </>
           )}
 
+          {/* ═══════════════════════════════════════════════ */}
           {/* ═══ USERS ═══ */}
+          {/* ═══════════════════════════════════════════════ */}
           {section === "users" && (
             <>
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold">Utilisateurs ({users.length})</h2>
-                <Button variant="outline" size="sm" className="h-8 text-xs" onClick={fetchUsers} disabled={usersLoading}>
-                  {usersLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : "Rafraîchir"}
-                </Button>
+              <div className="flex items-center justify-between gap-4">
+                <h2 className="text-lg font-bold shrink-0">Utilisateurs ({filteredUsers.length})</h2>
+                <div className="flex items-center gap-2 flex-1 max-w-sm">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                    <Input
+                      value={userSearch}
+                      onChange={(e) => setUserSearch(e.target.value)}
+                      placeholder="Rechercher par prénom, niche, ID..."
+                      className="h-8 text-xs pl-8"
+                    />
+                  </div>
+                  <Button variant="outline" size="sm" className="h-8 text-xs shrink-0" onClick={refetchUsers} disabled={usersLoading}>
+                    {usersLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                  </Button>
+                </div>
               </div>
 
-              {usersLoading ? (
+              {usersLoading && users.length === 0 ? (
                 <div className="flex justify-center py-16">
                   <Loader2 className="w-6 h-6 animate-spin text-primary" />
                 </div>
               ) : (
-                <div className="bg-card border border-border/30 rounded-xl p-5 overflow-x-auto">
+                <div className="bg-card border border-border/20 rounded-xl p-5 overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="text-muted-foreground border-b border-border/20">
@@ -391,35 +292,32 @@ export default function Admin() {
                       </tr>
                     </thead>
                     <tbody>
-                      {users.map((u) => (
-                        <tr key={u.user_id} className="border-b border-border/10">
-                          <td className="py-2 pr-3 font-mono text-muted-foreground">{u.user_id.slice(0, 8)}...</td>
-                          <td className="py-2 pr-3 font-medium">{u.first_name || "—"}</td>
-                          <td className="py-2 pr-3 text-muted-foreground">{u.niche || "—"}</td>
-                          <td className="py-2 pr-3 text-muted-foreground max-w-[200px] truncate">{u.platforms?.join(", ") || "—"}</td>
-                          <td className="py-2 pr-3">
-                            <span className={cn(
-                              "px-1.5 py-0.5 rounded text-[10px] font-medium",
-                              u.onboarding_completed ? "bg-green-500/15 text-green-400" : "bg-orange-500/15 text-orange-400",
-                            )}>
-                              {u.onboarding_completed ? "Oui" : "Non"}
-                            </span>
-                          </td>
-                          <td className="py-2 pr-3 font-medium">{u.content_count}</td>
-                          <td className="py-2 text-muted-foreground">{formatDate(u.created_at)}</td>
+                      {filteredUsers.map((u) => (
+                        <tr key={u.user_id} className="border-b border-border/10 hover:bg-accent/20 transition-colors">
+                          <td className="py-2.5 pr-3 font-mono text-muted-foreground">{u.user_id.slice(0, 8)}...</td>
+                          <td className="py-2.5 pr-3 font-medium">{u.first_name || "—"}</td>
+                          <td className="py-2.5 pr-3 text-muted-foreground">{u.niche || "—"}</td>
+                          <td className="py-2.5 pr-3 text-muted-foreground max-w-[200px] truncate">{u.platforms?.join(", ") || "—"}</td>
+                          <td className="py-2.5 pr-3"><Badge ok={u.onboarding_completed} /></td>
+                          <td className="py-2.5 pr-3 font-medium">{u.content_count}</td>
+                          <td className="py-2.5 text-muted-foreground">{formatDate(u.created_at)}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
-                  {users.length === 0 && (
-                    <p className="text-center text-muted-foreground text-xs py-8">Aucun utilisateur</p>
+                  {filteredUsers.length === 0 && (
+                    <p className="text-center text-muted-foreground text-xs py-8">
+                      {userSearch ? "Aucun résultat" : "Aucun utilisateur"}
+                    </p>
                   )}
                 </div>
               )}
             </>
           )}
 
+          {/* ═══════════════════════════════════════════════ */}
           {/* ═══ CONTENTS ═══ */}
+          {/* ═══════════════════════════════════════════════ */}
           {section === "contents" && (
             <>
               <div className="flex items-center justify-between">
@@ -427,16 +325,16 @@ export default function Admin() {
                 <div className="flex items-center gap-2">
                   <Button
                     variant="outline" size="sm" className="h-8 w-8 p-0"
-                    disabled={contentPage === 0}
-                    onClick={() => { const p = contentPage - 1; setContentPage(p); fetchContents(p); }}
+                    disabled={page === 0}
+                    onClick={() => fetchPage(page - 1)}
                   >
                     <ChevronLeft className="w-3.5 h-3.5" />
                   </Button>
-                  <span className="text-xs text-muted-foreground">Page {contentPage + 1}</span>
+                  <span className="text-xs text-muted-foreground min-w-[60px] text-center">Page {page + 1}</span>
                   <Button
                     variant="outline" size="sm" className="h-8 w-8 p-0"
-                    disabled={!hasMoreContent}
-                    onClick={() => { const p = contentPage + 1; setContentPage(p); fetchContents(p); }}
+                    disabled={!hasMore}
+                    onClick={() => fetchPage(page + 1)}
                   >
                     <ChevronRight className="w-3.5 h-3.5" />
                   </Button>
@@ -448,7 +346,7 @@ export default function Admin() {
                   <Loader2 className="w-6 h-6 animate-spin text-primary" />
                 </div>
               ) : (
-                <div className="bg-card border border-border/30 rounded-xl p-5 overflow-x-auto">
+                <div className="bg-card border border-border/20 rounded-xl p-5 overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="text-muted-foreground border-b border-border/20">
@@ -462,24 +360,13 @@ export default function Admin() {
                     </thead>
                     <tbody>
                       {contents.map((c) => (
-                        <tr key={c.id} className="border-b border-border/10">
-                          <td className="py-2 pr-3 font-mono text-muted-foreground">{c.user_email}</td>
-                          <td className="py-2 pr-3">{c.platform}</td>
-                          <td className="py-2 pr-3 text-muted-foreground">{c.format}</td>
-                          <td className="py-2 pr-3">
-                            {c.viral_score != null ? (
-                              <span className={cn(
-                                "px-1.5 py-0.5 rounded text-[10px] font-medium",
-                                c.viral_score >= 80 ? "bg-green-500/15 text-green-400" :
-                                c.viral_score >= 50 ? "bg-yellow-500/15 text-yellow-400" :
-                                "bg-red-500/15 text-red-400",
-                              )}>
-                                {c.viral_score}
-                              </span>
-                            ) : "—"}
-                          </td>
-                          <td className="py-2 pr-3 text-muted-foreground max-w-[250px] truncate">{c.content.slice(0, 50)}</td>
-                          <td className="py-2 text-muted-foreground">{formatDate(c.created_at)}</td>
+                        <tr key={c.id} className="border-b border-border/10 hover:bg-accent/20 transition-colors">
+                          <td className="py-2.5 pr-3 font-mono text-muted-foreground">{c.user_id.slice(0, 8)}...</td>
+                          <td className="py-2.5 pr-3 font-medium">{c.platform}</td>
+                          <td className="py-2.5 pr-3 text-muted-foreground">{c.format}</td>
+                          <td className="py-2.5 pr-3"><ViralBadge score={c.viral_score} /></td>
+                          <td className="py-2.5 pr-3 text-muted-foreground max-w-[250px] truncate">{c.content.slice(0, 50)}</td>
+                          <td className="py-2.5 text-muted-foreground">{formatDate(c.created_at)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -492,93 +379,215 @@ export default function Admin() {
             </>
           )}
 
+          {/* ═══════════════════════════════════════════════ */}
           {/* ═══ ANALYTICS ═══ */}
+          {/* ═══════════════════════════════════════════════ */}
           {section === "analytics" && (
             <>
               <h2 className="text-lg font-bold">Analytics (30 derniers jours)</h2>
 
-              {/* Daily chart (bar chart with divs) */}
-              <div className="bg-card border border-border/30 rounded-xl p-5">
-                <h3 className="text-sm font-semibold mb-4">Contenus par jour</h3>
-                {dailyCounts.length > 0 ? (
-                  <div className="flex items-end gap-[3px] h-32">
-                    {dailyCounts.map((d) => {
-                      const maxCount = Math.max(...dailyCounts.map((x) => x.count), 1);
-                      const h = Math.max((d.count / maxCount) * 100, 2);
-                      return (
-                        <div key={d.date} className="flex-1 group relative">
-                          <div
-                            className="w-full bg-primary/60 rounded-t-sm hover:bg-primary transition-colors"
-                            style={{ height: `${h}%` }}
-                          />
-                          <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 hidden group-hover:block bg-popover border border-border/30 rounded px-2 py-1 text-[10px] whitespace-nowrap shadow-lg z-10">
-                            {d.date.slice(5)} : {d.count}
-                          </div>
-                        </div>
-                      );
-                    })}
+              {statsLoading && !stats ? (
+                <div className="flex justify-center py-16">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                </div>
+              ) : stats && (
+                <>
+                  {/* BarChart */}
+                  <div className="bg-card border border-border/20 rounded-xl p-5">
+                    <h3 className="text-sm font-semibold mb-4">Contenus par jour</h3>
+                    <ResponsiveContainer width="100%" height={220}>
+                      <BarChart data={stats.dailyCounts}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 14% 18%)" />
+                        <XAxis
+                          dataKey="date"
+                          tickFormatter={formatShortDate}
+                          tick={{ fontSize: 10, fill: "hsl(215 12% 50%)" }}
+                          interval={4}
+                        />
+                        <YAxis tick={{ fontSize: 10, fill: "hsl(215 12% 50%)" }} allowDecimals={false} width={30} />
+                        <Tooltip
+                          contentStyle={{
+                            background: "hsl(220 18% 10%)",
+                            border: "1px solid hsl(220 14% 18%)",
+                            borderRadius: 8,
+                            fontSize: 11,
+                          }}
+                          labelFormatter={(v) => `Date : ${v}`}
+                        />
+                        <Bar dataKey="count" name="Contenus" fill="hsl(174 65% 40%)" radius={[3, 3, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
-                ) : (
-                  <p className="text-xs text-muted-foreground">Chargement...</p>
-                )}
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Top platforms */}
-                <div className="bg-card border border-border/30 rounded-xl p-5">
-                  <h3 className="text-sm font-semibold mb-3">Top plateformes</h3>
-                  <div className="space-y-2">
-                    {topPlatforms.map((p) => (
-                      <div key={p.platform} className="flex items-center justify-between text-xs">
-                        <span>{p.platform}</span>
-                        <span className="font-medium text-primary">{p.count}</span>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Top platforms */}
+                    <div className="bg-card border border-border/20 rounded-xl p-5">
+                      <h3 className="text-sm font-semibold mb-3">Top plateformes</h3>
+                      <DistributionBars items={stats.platformDistribution} />
+                    </div>
+
+                    {/* Top formats */}
+                    <div className="bg-card border border-border/20 rounded-xl p-5">
+                      <h3 className="text-sm font-semibold mb-3">Top formats</h3>
+                      <DistributionBars items={stats.formatDistribution} />
+                    </div>
+
+                    {/* Avg viral score */}
+                    <div className="bg-card border border-border/20 rounded-xl p-5">
+                      <h3 className="text-sm font-semibold mb-3">Score viral moyen</h3>
+                      <div className="flex items-baseline gap-2 mt-4">
+                        <span className="text-4xl font-bold text-primary">{stats.avgViral}</span>
+                        <span className="text-sm text-muted-foreground">/ 100</span>
                       </div>
-                    ))}
-                    {topPlatforms.length === 0 && <p className="text-xs text-muted-foreground">—</p>}
-                  </div>
-                </div>
-
-                {/* Top formats */}
-                <div className="bg-card border border-border/30 rounded-xl p-5">
-                  <h3 className="text-sm font-semibold mb-3">Top formats</h3>
-                  <div className="space-y-2">
-                    {topFormats.map((f) => (
-                      <div key={f.platform} className="flex items-center justify-between text-xs">
-                        <span>{f.platform}</span>
-                        <span className="font-medium text-primary">{f.count}</span>
+                      <div className="mt-3 h-2 bg-accent/30 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary rounded-full transition-all"
+                          style={{ width: `${stats.avgViral}%` }}
+                        />
                       </div>
-                    ))}
-                    {topFormats.length === 0 && <p className="text-xs text-muted-foreground">—</p>}
+                    </div>
                   </div>
-                </div>
+                </>
+              )}
+            </>
+          )}
 
-                {/* Avg viral score */}
-                <div className="bg-card border border-border/30 rounded-xl p-5">
-                  <h3 className="text-sm font-semibold mb-3">Score viral moyen</h3>
-                  <div className="flex items-center gap-3">
-                    <span className="text-3xl font-bold text-primary">{avgViral}</span>
-                    <span className="text-xs text-muted-foreground">/ 100</span>
+          {/* ═══════════════════════════════════════════════ */}
+          {/* ═══ REVENUE ═══ */}
+          {/* ═══════════════════════════════════════════════ */}
+          {section === "revenue" && (
+            <>
+              <h2 className="text-lg font-bold">Revenus</h2>
+
+              <div className="bg-card border border-border/20 rounded-xl p-8 text-center">
+                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
+                  <CreditCard className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="text-lg font-bold mb-2">Intégration Stripe à venir</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed max-w-md mx-auto mb-6">
+                  Connecte Stripe pour voir tes revenus, abonnés Premium et Business en temps réel.
+                  Les plans Free, Pro ($10/mois) et Business ($29/mois) seront trackés ici.
+                </p>
+                <div className="grid grid-cols-3 gap-4 max-w-sm mx-auto mb-6">
+                  <div className="bg-accent/30 rounded-lg p-3">
+                    <p className="text-xl font-bold text-muted-foreground">$0</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">MRR</p>
+                  </div>
+                  <div className="bg-accent/30 rounded-lg p-3">
+                    <p className="text-xl font-bold text-muted-foreground">0</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Abonnés Pro</p>
+                  </div>
+                  <div className="bg-accent/30 rounded-lg p-3">
+                    <p className="text-xl font-bold text-muted-foreground">0</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Abonnés Business</p>
                   </div>
                 </div>
+                <Button className="h-10 gap-2 text-sm" disabled>
+                  <Crown className="w-4 h-4" /> Configurer Stripe
+                </Button>
               </div>
             </>
           )}
+
         </div>
       </div>
     </div>
   );
 }
 
-/* ─── Stat card ─── */
+/* ═══ Sub-components ═══ */
 
-function StatCard({ label, value, icon: Icon }: { label: string; value: number; icon: typeof Users }) {
+function StatCard({ icon: Icon, label, value, suffix, accent, muted }: {
+  icon: typeof Users;
+  label: string;
+  value: number;
+  suffix?: string;
+  accent?: boolean;
+  muted?: boolean;
+}) {
   return (
-    <div className="bg-card border border-border/30 rounded-xl p-4">
+    <div className={cn(
+      "bg-card border rounded-xl p-4",
+      muted ? "border-border/10 opacity-60" : "border-border/20",
+    )}>
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs text-muted-foreground">{label}</span>
-        <Icon className="w-4 h-4 text-muted-foreground" />
+        <span className="text-[11px] text-muted-foreground">{label}</span>
+        <Icon className="w-3.5 h-3.5 text-muted-foreground" />
       </div>
-      <p className="text-2xl font-bold">{value.toLocaleString("fr-FR")}</p>
+      <p className={cn("text-2xl font-bold", accent && "text-primary")}>
+        {suffix === "$" && "$"}{value.toLocaleString("fr-FR")}{suffix && suffix !== "$" && <span className="text-sm font-normal text-muted-foreground ml-1">{suffix}</span>}
+      </p>
+      {muted && <p className="text-[10px] text-muted-foreground mt-1">Bientôt disponible</p>}
+    </div>
+  );
+}
+
+function Badge({ ok }: { ok: boolean }) {
+  return (
+    <span className={cn(
+      "px-1.5 py-0.5 rounded text-[10px] font-medium",
+      ok ? "bg-green-500/15 text-green-400" : "bg-orange-500/15 text-orange-400",
+    )}>
+      {ok ? "Complété" : "En cours"}
+    </span>
+  );
+}
+
+function ViralBadge({ score }: { score: number | null }) {
+  if (score == null) return <span className="text-muted-foreground">—</span>;
+  return (
+    <span className={cn(
+      "px-1.5 py-0.5 rounded text-[10px] font-medium",
+      score >= 80 ? "bg-green-500/15 text-green-400" :
+      score >= 50 ? "bg-yellow-500/15 text-yellow-400" :
+      "bg-red-500/15 text-red-400",
+    )}>
+      {score}
+    </span>
+  );
+}
+
+function DistributionList({ items, total, colors }: { items: DistributionItem[]; total: number; colors: string[] }) {
+  if (items.length === 0) return <p className="text-xs text-muted-foreground">Aucune donnée</p>;
+  return (
+    <div className="space-y-2.5">
+      {items.slice(0, 8).map((item, i) => {
+        const pct = total > 0 ? Math.round((item.count / total) * 100) : 0;
+        return (
+          <div key={item.name}>
+            <div className="flex items-center justify-between text-xs mb-1">
+              <span className="truncate mr-2">{item.name}</span>
+              <span className="text-muted-foreground shrink-0">{item.count} ({pct}%)</span>
+            </div>
+            <div className="h-1.5 bg-accent/30 rounded-full overflow-hidden">
+              <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: colors[i % colors.length] }} />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function DistributionBars({ items }: { items: DistributionItem[] }) {
+  if (items.length === 0) return <p className="text-xs text-muted-foreground">Aucune donnée</p>;
+  const max = Math.max(...items.map((i) => i.count), 1);
+  return (
+    <div className="space-y-2.5">
+      {items.slice(0, 6).map((item) => (
+        <div key={item.name}>
+          <div className="flex items-center justify-between text-xs mb-1">
+            <span>{item.name}</span>
+            <span className="font-medium text-primary">{item.count}</span>
+          </div>
+          <div className="h-1.5 bg-accent/30 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-primary rounded-full transition-all"
+              style={{ width: `${(item.count / max) * 100}%` }}
+            />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
