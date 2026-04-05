@@ -18,6 +18,10 @@ const History = lazy(() => import("./pages/History.tsx"));
 const Onboarding = lazy(() => import("./pages/Onboarding.tsx"));
 const Settings = lazy(() => import("./pages/Settings.tsx"));
 const Admin = lazy(() => import("./pages/Admin.tsx"));
+const Privacy = lazy(() => import("./pages/Privacy.tsx"));
+const Terms = lazy(() => import("./pages/Terms.tsx"));
+const FAQ = lazy(() => import("./pages/FAQ.tsx"));
+const Contact = lazy(() => import("./pages/Contact.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 
 const queryClient = new QueryClient();
@@ -49,6 +53,10 @@ const App = () => (
               <Route path="/dashboard/tools" element={<ProtectedRoute><Tools /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="/contact" element={<Contact />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>

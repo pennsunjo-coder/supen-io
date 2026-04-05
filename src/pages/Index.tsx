@@ -603,48 +603,52 @@ const Index = () => {
       <footer className="border-t border-border/30 py-12 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
+            {/* Brand */}
             <div className="col-span-2 md:col-span-1">
               <div className="mb-4">
                 <LogoFull size="sm" />
               </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">
+              <p className="text-xs text-muted-foreground leading-relaxed mb-4">
                 AI-powered content creation platform for creators who want to sound human.
               </p>
+              <div className="flex gap-3">
+                <a href="https://x.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors"><Twitter className="w-4 h-4" /></a>
+                <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors"><Linkedin className="w-4 h-4" /></a>
+                <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors"><Instagram className="w-4 h-4" /></a>
+              </div>
             </div>
+
+            {/* Product */}
             <div>
               <h4 className="text-sm font-semibold mb-3">Product</h4>
               <ul className="space-y-2 text-xs text-muted-foreground">
                 <li><a href="#features" className="hover:text-foreground transition-colors">Features</a></li>
                 <li><a href="#pricing" className="hover:text-foreground transition-colors">Pricing</a></li>
-                <li><a href="#faq" className="hover:text-foreground transition-colors">FAQ</a></li>
+                <li><a href="/faq" onClick={(e) => { e.preventDefault(); navigate("/faq"); }} className="hover:text-foreground transition-colors">FAQ</a></li>
               </ul>
             </div>
+
+            {/* Resources */}
             <div>
               <h4 className="text-sm font-semibold mb-3">Resources</h4>
               <ul className="space-y-2 text-xs text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground transition-colors">Blog</a></li>
-                <li><a href="#" className="hover:text-foreground transition-colors">Documentation</a></li>
-                <li><a href="#" className="hover:text-foreground transition-colors">Changelog</a></li>
+                <li><a href="/contact" onClick={(e) => { e.preventDefault(); navigate("/contact"); }} className="hover:text-foreground transition-colors">Contact</a></li>
+                <li><a href="mailto:support@supen.io" className="hover:text-foreground transition-colors">Support</a></li>
               </ul>
             </div>
+
+            {/* Legal */}
             <div>
               <h4 className="text-sm font-semibold mb-3">Legal</h4>
               <ul className="space-y-2 text-xs text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground transition-colors">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-foreground transition-colors">Terms of Service</a></li>
-                <li><a href="#" className="hover:text-foreground transition-colors">Contact</a></li>
+                <li><a href="/privacy" onClick={(e) => { e.preventDefault(); navigate("/privacy"); }} className="hover:text-foreground transition-colors">Privacy Policy</a></li>
+                <li><a href="/terms" onClick={(e) => { e.preventDefault(); navigate("/terms"); }} className="hover:text-foreground transition-colors">Terms of Service</a></li>
               </ul>
             </div>
           </div>
 
           <div className="flex flex-col md:flex-row items-center justify-between pt-8 border-t border-border/30 gap-4">
-            <p className="text-xs text-muted-foreground">© 2025 Supen.io. All rights reserved.</p>
-            <div className="flex gap-4">
-              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors"><Twitter className="w-4 h-4" /></a>
-              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors"><Instagram className="w-4 h-4" /></a>
-              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors"><Linkedin className="w-4 h-4" /></a>
-              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors"><Mail className="w-4 h-4" /></a>
-            </div>
+            <p className="text-xs text-muted-foreground">© 2026 Supen.io. All rights reserved.</p>
           </div>
         </div>
       </footer>
