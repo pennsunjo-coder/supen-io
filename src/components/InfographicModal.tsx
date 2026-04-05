@@ -11,14 +11,14 @@ import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic";
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
 const TYPES = [
-  { id: "infographic", label: "Infographie pédagogique", desc: "Style sketchnote, parfait pour LinkedIn et Facebook", icon: LayoutGrid, recommended: true },
-  { id: "visual", label: "Post visuel", desc: "Design moderne et épuré pour Instagram et TikTok", icon: ImagePlus, recommended: false },
+  { id: "infographic", label: "Educational infographic", desc: "Sketchnote style, perfect for LinkedIn and Facebook", icon: LayoutGrid, recommended: true },
+  { id: "visual", label: "Visual post", desc: "Modern clean design for Instagram and TikTok", icon: ImagePlus, recommended: false },
 ];
 
 const STYLES = [
-  { id: "sketchnote", label: "Sketchnote", desc: "Fond blanc, couleurs vives", colors: ["#FFF", "#FF6B6B", "#4ECDC4", "#2C3E50"] },
-  { id: "modern", label: "Moderne", desc: "Fond sombre, accents cyan", colors: ["#0F172A", "#249D8B", "#1E293B", "#F1F5F9"] },
-  { id: "colorful", label: "Coloré", desc: "Énergique et contrasté", colors: ["#6366F1", "#EC4899", "#F59E0B", "#FFF"] },
+  { id: "sketchnote", label: "Sketchnote", desc: "White background, vivid colors", colors: ["#FFF", "#FF6B6B", "#4ECDC4", "#2C3E50"] },
+  { id: "modern", label: "Modern", desc: "Dark background, cyan accents", colors: ["#0F172A", "#249D8B", "#1E293B", "#F1F5F9"] },
+  { id: "colorful", label: "Colorful", desc: "Energetic and contrasting", colors: ["#6366F1", "#EC4899", "#F59E0B", "#FFF"] },
 ];
 
 interface Props {
@@ -161,7 +161,7 @@ Plateforme cible : ${platform}${extra}`,
       setHtmlCode(html);
       setResultMode("claude");
     } catch {
-      setHtmlCode("<div style='padding:40px;color:#999;font-family:sans-serif;text-align:center'>Erreur de génération. Réessaie.</div>");
+      setHtmlCode("<div style='padding:40px;color:#999;font-family:sans-serif;text-align:center'>Generation error. Please try again.</div>");
       setResultMode("claude");
     }
     setGenerating(false);
@@ -188,7 +188,7 @@ Plateforme cible : ${platform}${extra}`,
       link.click();
     } catch {
       navigator.clipboard.writeText(htmlCode);
-      alert("Le téléchargement PNG n'est pas disponible. Le code HTML a été copié.");
+      alert("PNG download unavailable. HTML code copied.");
     }
   }
 
@@ -226,11 +226,11 @@ Plateforme cible : ${platform}${extra}`,
           <div className="flex items-center justify-between px-6 py-4 border-b border-border/20">
             <div>
               <h3 className="text-lg font-bold">
-                {step === "result" ? "Ton visuel" : "Créer un visuel"}
+                {step === "result" ? "Your visual" : "Create a visual"}
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {step === "type" && "Choisis le type de visuel"}
-                {step === "style" && "Choisis un style"}
+                {step === "type" && "Choose the visual type"}
+                {step === "style" && "Choose a style"}
                 {step === "result" && (
                   <>
                     {platform}
@@ -261,7 +261,7 @@ Plateforme cible : ${platform}${extra}`,
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <p className="text-sm font-semibold">{t.label}</p>
-                        {t.recommended && <span className="text-[9px] bg-primary/15 text-primary px-1.5 py-0.5 rounded-full">Recommandé</span>}
+                        {t.recommended && <span className="text-[9px] bg-primary/15 text-primary px-1.5 py-0.5 rounded-full">Recommended</span>}
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5">{t.desc}</p>
                     </div>
@@ -299,7 +299,7 @@ Plateforme cible : ${platform}${extra}`,
                 {generating ? (
                   <div className="flex flex-col items-center justify-center py-16">
                     <RefreshCw className="w-6 h-6 animate-spin text-primary mb-3" />
-                    <p className="text-sm text-muted-foreground">Génération du visuel...</p>
+                    <p className="text-sm text-muted-foreground">Generating visual...</p>
                   </div>
                 ) : (
                   <>
@@ -308,7 +308,7 @@ Plateforme cible : ${platform}${extra}`,
                       {resultMode === "gemini" && imageBase64 ? (
                         <img
                           src={`data:image/png;base64,${imageBase64}`}
-                          alt="Infographie générée"
+                          alt="Generated infographic"
                           className="w-full h-auto"
                         />
                       ) : (
@@ -326,32 +326,32 @@ Plateforme cible : ${platform}${extra}`,
                     {/* Actions */}
                     <div className="flex items-center gap-2 mb-4">
                       <Button size="sm" className="h-9 gap-2 text-xs" onClick={handleDownload}>
-                        <Download className="w-3.5 h-3.5" /> Télécharger PNG
+                        <Download className="w-3.5 h-3.5" /> Download PNG
                       </Button>
                       <Button variant="outline" size="sm" className="h-9 gap-2 text-xs" onClick={() => handleGenerate()}>
-                        <RefreshCw className="w-3.5 h-3.5" /> Regénérer
+                        <RefreshCw className="w-3.5 h-3.5" /> Regenerate
                       </Button>
                       {resultMode === "claude" && (
                         <Button variant="ghost" size="sm" className="h-9 gap-2 text-xs" onClick={() => { navigator.clipboard.writeText(htmlCode); }}>
-                          <Check className="w-3.5 h-3.5" /> Copier HTML
+                          <Check className="w-3.5 h-3.5" /> Copy HTML
                         </Button>
                       )}
                     </div>
 
                     {/* Custom prompt */}
                     <button onClick={() => setShowPrompt(!showPrompt)} className="text-xs text-muted-foreground hover:text-foreground transition-colors mb-2">
-                      {showPrompt ? "Masquer les instructions" : "Modifier les instructions"}
+                      {showPrompt ? "Hide instructions" : "Edit instructions"}
                     </button>
                     {showPrompt && (
                       <div className="space-y-2">
                         <Textarea
                           value={customPrompt}
                           onChange={(e) => setCustomPrompt(e.target.value)}
-                          placeholder="Ex : utilise du rouge, ajoute un QR code, change le titre..."
+                          placeholder="E.g. use red, add a QR code, change the title..."
                           className="text-xs min-h-[60px] resize-none"
                         />
                         <Button size="sm" className="h-8 text-xs gap-1.5" onClick={() => handleGenerate()}>
-                          <Sparkles className="w-3 h-3" /> Regénérer avec instructions
+                          <Sparkles className="w-3 h-3" /> Regenerate with instructions
                         </Button>
                       </div>
                     )}

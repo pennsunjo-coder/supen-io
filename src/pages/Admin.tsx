@@ -193,9 +193,9 @@ export default function Admin() {
                       <table className="w-full text-xs">
                         <thead>
                           <tr className="text-muted-foreground border-b border-border/20">
-                            <th className="text-left py-2 pr-3 font-medium">Prénom</th>
+                            <th className="text-left py-2 pr-3 font-medium">Name</th>
                             <th className="text-left py-2 pr-3 font-medium">Niche</th>
-                            <th className="text-left py-2 pr-3 font-medium">Plateformes</th>
+                            <th className="text-left py-2 pr-3 font-medium">Platforms</th>
                             <th className="text-left py-2 pr-3 font-medium">Onboarding</th>
                             <th className="text-left py-2 font-medium">Date</th>
                           </tr>
@@ -283,9 +283,9 @@ export default function Admin() {
                     <thead>
                       <tr className="text-muted-foreground border-b border-border/20">
                         <th className="text-left py-2 pr-3 font-medium">User ID</th>
-                        <th className="text-left py-2 pr-3 font-medium">Prénom</th>
+                        <th className="text-left py-2 pr-3 font-medium">Name</th>
                         <th className="text-left py-2 pr-3 font-medium">Niche</th>
-                        <th className="text-left py-2 pr-3 font-medium">Plateformes</th>
+                        <th className="text-left py-2 pr-3 font-medium">Platforms</th>
                         <th className="text-left py-2 pr-3 font-medium">Onboarding</th>
                         <th className="text-left py-2 pr-3 font-medium">Contenus</th>
                         <th className="text-left py-2 font-medium">Inscription</th>
@@ -372,7 +372,7 @@ export default function Admin() {
                     </tbody>
                   </table>
                   {contents.length === 0 && (
-                    <p className="text-center text-muted-foreground text-xs py-8">Aucun contenu</p>
+                    <p className="text-center text-muted-foreground text-xs py-8">No content</p>
                   )}
                 </div>
               )}

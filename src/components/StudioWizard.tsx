@@ -24,7 +24,7 @@ import { ActivityWidget } from "@/components/ActivityWidget";
 import InfographicModal from "@/components/InfographicModal";
 import { StickyNote, Globe as GlobeIcon } from "lucide-react";
 
-/* ─── Icônes plateformes ─── */
+/* ─── Platform icons ─── */
 
 const IconX = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" className={className || "w-4 h-4"} fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
@@ -45,7 +45,7 @@ const IconTikTok = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" className={className || "w-4 h-4"} fill="currentColor"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
 );
 
-/* ─── Données ─── */
+/* ─── Data ─── */
 
 interface Platform {
   id: string;
@@ -66,9 +66,9 @@ const platforms: Platform[] = [
 type SourceMode = "document" | "idea" | "keyword";
 
 const sourceModes: { id: SourceMode; label: string; placeholder: string; icon: React.FC<{ className?: string }> }[] = [
-  { id: "document", label: "Document", placeholder: "Colle le texte de ton article, PDF ou page web...", icon: FileText },
-  { id: "idea", label: "Idée", placeholder: "Décris ton idée, ce que tu veux transmettre...", icon: Lightbulb },
-  { id: "keyword", label: "Mot-clé", placeholder: "Ex : productivité, IA, marketing digital...", icon: Hash },
+  { id: "document", label: "Document", placeholder: "Paste the text from your article, PDF or web page...", icon: FileText },
+  { id: "idea", label: "Idea", placeholder: "Describe your idea, what you want to convey...", icon: Lightbulb },
+  { id: "keyword", label: "Keyword", placeholder: "E.g.: productivity, AI, digital marketing...", icon: Hash },
 ];
 
 /* ─── Angles & scores ─── */
@@ -83,7 +83,7 @@ const ANGLE_COLORS: Record<string, string> = {
 };
 
 function viralScore(text: string, idx: number): number {
-  // Score déterministe basé sur longueur + index
+  // Deterministic score based on length + index
   const base = 72 + ((text.length * 7 + idx * 13) % 23);
   return Math.min(base, 94);
 }
@@ -100,15 +100,15 @@ interface ParsedVariation {
 }
 
 function parseVariations(raw: string): ParsedVariation[] {
-  // Split par le séparateur demandé
+  // Split by the requested separator
   let parts = raw.split(/---VARIATION---/).map((s) => s.trim()).filter((s) => s.length > 20);
 
-  // Fallback : split par numérotation si le modèle n'utilise pas le séparateur
+  // Fallback: split by numbering if the model doesn't use the separator
   if (parts.length < 2) {
     parts = raw.split(/\n\s*(?=\d\.\s)/).map((v) => v.replace(/^\d\.\s*/, "").trim()).filter((v) => v.length > 20);
   }
 
-  // Fallback ultime : tout comme une seule variation
+  // Ultimate fallback: everything as a single variation
   if (parts.length === 0) parts = [raw.trim()];
 
   return parts.map((content, idx) => ({
@@ -119,7 +119,7 @@ function parseVariations(raw: string): ParsedVariation[] {
   }));
 }
 
-/* ─── Composant ─── */
+/* ─── Component ─── */
 
 const sourceTypeIcons: Record<string, React.FC<{ className?: string }>> = {
   pdf: FileText,
@@ -185,7 +185,7 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
     if (step === 2) setSourceText("");
   }
 
-  /* ── Génération ── */
+  /* ── Generation ── */
 
   async function handleGenerate() {
     const isDocMode = sourceMode === "document" && selectedDocumentIds.length > 0;
@@ -288,15 +288,15 @@ Règles strictes :
       const parsed = parseVariations(text);
       setVariations(parsed);
 
-      // Notifier le coach IA
+      // Notify the AI coach
       if (parsed.length > 0 && onContentGenerated) {
         onContentGenerated(parsed[0].content);
       }
 
-      // Sauvegarder dans generated_content
+      // Save to generated_content
       await saveVariations(parsed);
     } catch (err: unknown) {
-      setError(`Erreur de génération : ${err instanceof Error ? err.message : "Erreur inconnue"}`);
+      setError(`Generation error: ${err instanceof Error ? err.message : "Unknown error"}`);
     } finally {
       setIsGenerating(false);
     }
@@ -329,8 +329,8 @@ Règles strictes :
       console.log("🟢 Insert OK:", insertData?.length, "rows");
       setSaveStatus("saved");
       if (onGenerationComplete) onGenerationComplete();
-      toast.success(`${parsed.length} variations sauvegardées`);
-      // Proposer de créer un visuel après 2s
+      toast.success(`${parsed.length} variations saved`);
+      // Propose creating a visual after 2s
       setTimeout(() => setShowInfographic(true), 2000);
       return true;
     } catch (err) {
@@ -343,7 +343,7 @@ Règles strictes :
   async function retrySave() {
     if (variations.length > 0) {
       const ok = await saveVariations(variations);
-      if (ok) toast.success("Sauvegarde réussie !");
+      if (ok) toast.success("Save successful!");
     }
   }
 
@@ -351,25 +351,25 @@ Règles strictes :
     if (saveStatus !== "saved") {
       const ok = await saveVariations(variations);
       if (!ok) {
-        toast.error("La sauvegarde a échoué. Réessaie.");
+        toast.error("Save failed. Please try again.");
         return;
       }
     }
-    toast.success("Contenu sauvegardé ! Retrouve-le dans ton tableau de bord.");
+    toast.success("Content saved! Find it in your dashboard.");
     reset();
-    // Le reset remet le wizard à l'accueil qui affiche les derniers contenus
+    // Reset brings the wizard back to home which displays the latest content
   }
 
   async function handleGoToDashboard() {
-    // Sauvegarder si pas encore fait
+    // Save if not done yet
     if (saveStatus !== "saved" && variations.length > 0) {
       await saveVariations(variations);
     }
-    toast("Retrouve ton contenu dans le tableau de bord");
+    toast("Find your content in the dashboard");
     reset();
   }
 
-  /* ── Humaniser ── */
+  /* ── Humanize ── */
 
   async function handleHumanize(idx: number) {
     const original = variations[idx];
@@ -386,9 +386,9 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
       });
       const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
       setVariations((prev) => prev.map((v, i) => i === idx ? { ...v, content: text, words: wordCount(text) } : v));
-      toast.success("Version humanisée. Indétectable par les détecteurs d'IA.");
+      toast.success("Humanized version. Undetectable by AI detectors.");
     } catch (err: unknown) {
-      setError(`Erreur d'humanisation : ${err instanceof Error ? err.message : "Erreur inconnue"}`);
+      setError(`Humanization error: ${err instanceof Error ? err.message : "Unknown error"}`);
     } finally {
       setIsHumanizing(false);
     }
@@ -406,7 +406,7 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
   function handleCopy(idx: number) {
     navigator.clipboard.writeText(variations[idx].content);
     setCopiedIdx(idx);
-    toast.success(`Contenu copié ! Prêt à publier sur ${selectedPlatform?.name || "ta plateforme"}.`);
+    toast.success(`Content copied! Ready to post on ${selectedPlatform?.name || "your platform"}.`);
     setTimeout(() => setCopiedIdx(null), 2000);
   }
 
@@ -424,7 +424,7 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
         messages: [{ role: "user", content: variations[idx].content.slice(0, 600) }],
       });
       setImagePrompt(response.content.filter((b) => b.type === "text").map((b) => b.text).join(""));
-    } catch { /* silencieux */ }
+    } catch { /* silent */ }
     setGenImage(false);
   }
 
@@ -442,13 +442,13 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
         messages: [{ role: "user", content: variations[idx].content.slice(0, 600) }],
       });
       setInfraContent(response.content.filter((b) => b.type === "text").map((b) => b.text).join(""));
-    } catch { /* silencieux */ }
+    } catch { /* silent */ }
     setGenInfra(false);
   }
 
   const breadcrumb = [selectedPlatform?.name, selectedFormat].filter(Boolean).join(" / ");
 
-  // Trier les plateformes : favorites (de l'onboarding) en premier
+  // Sort platforms: favorites (from onboarding) first
   const favPlatformNames = profile?.platforms || [];
   const sortedPlatforms = [...platforms].sort((a, b) => {
     const aFav = favPlatformNames.includes(a.name) ? 0 : 1;
@@ -457,18 +457,18 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
   });
 
   const greeting = profile?.first_name
-    ? `Bonjour ${profile.first_name}`
-    : "Prêt à créer du contenu viral ?";
+    ? `Hello ${profile.first_name}`
+    : "Ready to create viral content?";
 
   const subtitle = profile?.niche
-    ? `Crée du contenu ${profile.niche} qui convertit.`
-    : "Choisis un réseau, décris ton sujet, et laisse l'IA générer 5 variations prêtes à publier.";
+    ? `Create ${profile.niche} content that converts.`
+    : "Pick a network, describe your topic, and let AI generate 5 ready-to-publish variations.";
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <AnimatePresence mode="wait">
 
-        {/* ═══════ ACCUEIL ═══════ */}
+        {/* ═══════ HOME ═══════ */}
         {!started && variations.length === 0 && (
           <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }} className={cn("flex-1 flex flex-col", sessions.length > 0 ? "overflow-y-auto" : "items-center justify-center")}>
 
@@ -477,7 +477,7 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
               <h2 className="text-2xl font-bold text-foreground mb-1.5">{greeting}</h2>
               <p className="text-base text-muted-foreground leading-relaxed mb-6">{subtitle}</p>
               <Button onClick={() => setStarted(true)} className="h-12 px-8 text-base font-semibold glow-sm gap-2.5">
-                <Sparkles className="w-4 h-4" /> Créer du contenu
+                <Sparkles className="w-4 h-4" /> Create content
               </Button>
               <div className="flex items-center justify-center gap-5 mt-4">
                 <div className="flex items-center gap-1.5 text-muted-foreground/40">
@@ -498,7 +498,7 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
               <>
                 <div className="flex items-center gap-3 px-5 py-2">
                   <div className="flex-1 h-px bg-border/20" />
-                  <span className="text-[11px] text-muted-foreground/40">Tes dernières créations</span>
+                  <span className="text-[11px] text-muted-foreground/40">Your latest creations</span>
                   <div className="flex-1 h-px bg-border/20" />
                 </div>
                 <ContentSessionGrid sessions={sessions} onUpdateImagePrompt={onUpdateImagePrompt} onDelete={onGenerationComplete} />
@@ -510,7 +510,7 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
               <>
                 <div className="flex items-center gap-3 px-5 py-2">
                   <div className="flex-1 h-px bg-border/20" />
-                  <span className="text-[11px] text-muted-foreground/40">Ton activité</span>
+                  <span className="text-[11px] text-muted-foreground/40">Your activity</span>
                   <div className="flex-1 h-px bg-border/20" />
                 </div>
                 <ActivityWidget data={activityData} daysLabels={activityData.DAYS_FR} />
@@ -529,7 +529,7 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                 </button>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-semibold text-foreground">Nouveau contenu</span>
+                    <span className="text-xs font-semibold text-foreground">New content</span>
                     {breadcrumb && (<><span className="text-muted-foreground/30 text-[10px]">/</span><span className="text-[11px] text-muted-foreground truncate">{breadcrumb}</span></>)}
                   </div>
                 </div>
@@ -543,7 +543,7 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                 <AnimatePresence mode="wait">
                   {step === 0 && (
                     <motion.div key="s0" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
-                      <p className="text-xs text-muted-foreground mb-3">Choisis le réseau</p>
+                      <p className="text-xs text-muted-foreground mb-3">Choose the network</p>
                       <div className="flex flex-wrap gap-2">
                         {sortedPlatforms.map((p) => {
                           const isFav = favPlatformNames.includes(p.name);
@@ -558,7 +558,7 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                   )}
                   {step === 1 && selectedPlatform && (
                     <motion.div key="s1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
-                      <p className="text-xs text-muted-foreground mb-3">Type de contenu</p>
+                      <p className="text-xs text-muted-foreground mb-3">Content type</p>
                       <div className="flex flex-wrap gap-2">
                         {selectedPlatform.formats.map((f) => (
                           <button key={f} onClick={() => { setSelectedFormat(f); setStep(2); }} className="px-4 py-2 rounded-lg text-xs font-medium border border-border/30 text-muted-foreground hover:text-foreground hover:bg-accent/40 hover:border-border/50 active:scale-[0.97] transition-all">{f}</button>
@@ -568,7 +568,7 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                   )}
                   {step === 2 && selectedPlatform && selectedFormat && (
                     <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
-                      <p className="text-xs text-muted-foreground mb-3">Ta matière source</p>
+                      <p className="text-xs text-muted-foreground mb-3">Your source material</p>
                       <div className="flex gap-1 mb-4 p-0.5 rounded-lg bg-accent/20 border border-border/20">
                         {sourceModes.map((m) => (
                           <button key={m.id} onClick={() => { setSourceMode(m.id); setSourceText(""); setSelectedDocumentIds([]); }} className={cn("flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-[11px] font-medium transition-all", sourceMode === m.id ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
@@ -577,19 +577,19 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                         ))}
                       </div>
 
-                      {/* MODE DOCUMENT — sélection de sources */}
+                      {/* DOCUMENT MODE — source selection */}
                       {sourceMode === "document" && (
                         <div>
                           {sources.length === 0 ? (
                             <div className="rounded-xl border border-dashed border-border/30 p-6 text-center">
                               <FileText className="w-5 h-5 text-muted-foreground/40 mx-auto mb-2" />
-                              <p className="text-xs font-medium text-muted-foreground mb-1">Aucun document disponible</p>
-                              <p className="text-[11px] text-muted-foreground/60">Ajoute des sources (PDF, URL, Notes) dans ton Notebook pour les utiliser ici.</p>
+                              <p className="text-xs font-medium text-muted-foreground mb-1">No documents available</p>
+                              <p className="text-[11px] text-muted-foreground/60">Add sources (PDF, URL, Notes) in your Notebook to use them here.</p>
                             </div>
                           ) : (
                             <>
                               <p className="text-[11px] text-muted-foreground/70 mb-2">
-                                Sélectionne les documents à utiliser comme base ({selectedDocumentIds.length} sélectionné{selectedDocumentIds.length > 1 ? "s" : ""})
+                                Select the documents to use as a base ({selectedDocumentIds.length} selected)
                               </p>
                               <div className="space-y-1.5 max-h-[240px] overflow-y-auto">
                                 {sources.map((s) => {
@@ -626,8 +626,8 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                                       <div className="flex-1 min-w-0">
                                         <p className={cn("text-xs truncate", isChecked ? "text-foreground font-medium" : "text-muted-foreground")}>{s.title}</p>
                                         <p className="text-[10px] text-muted-foreground/50">
-                                          {s.type === "url" ? "Lien" : s.type === "pdf" ? "PDF" : "Note"}
-                                          {words > 0 && ` · ${words} mots`}
+                                          {s.type === "url" ? "Link" : s.type === "pdf" ? "PDF" : "Note"}
+                                          {words > 0 && ` · ${words} words`}
                                         </p>
                                       </div>
                                     </button>
@@ -636,7 +636,7 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                               </div>
                               {selectedDocumentIds.length > 0 && (
                                 <p className="text-[10px] text-primary/70 mt-2">
-                                  L'IA va générer du contenu basé sur ces {selectedDocumentIds.length} document{selectedDocumentIds.length > 1 ? "s" : ""}
+                                  AI will generate content based on these {selectedDocumentIds.length} document{selectedDocumentIds.length > 1 ? "s" : ""}
                                 </p>
                               )}
                             </>
@@ -644,12 +644,12 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                         </div>
                       )}
 
-                      {/* MODE IDÉE — textarea */}
+                      {/* IDEA MODE — textarea */}
                       {sourceMode === "idea" && (
                         <Textarea value={sourceText} onChange={(e) => setSourceText(e.target.value)} placeholder={sourceModes.find((m) => m.id === sourceMode)?.placeholder} maxLength={5000} className="bg-accent/20 border-border/30 min-h-[120px] resize-none text-sm" />
                       )}
 
-                      {/* MODE MOT-CLÉ — input */}
+                      {/* KEYWORD MODE — input */}
                       {sourceMode === "keyword" && (
                         <Input value={sourceText} onChange={(e) => setSourceText(e.target.value)} placeholder={sourceModes.find((m) => m.id === sourceMode)?.placeholder} maxLength={200} className="bg-accent/20 border-border/30 h-11 text-sm" onKeyDown={(e) => e.key === "Enter" && sourceText.trim() && handleGenerate()} />
                       )}
@@ -661,7 +661,7 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                         }
                         className="w-full h-11 mt-4 glow-sm gap-2 font-semibold text-sm"
                       >
-                        {isGenerating ? (<><RefreshCw className="w-4 h-4 animate-spin" /> Génération en cours...</>) : (<><Sparkles className="w-4 h-4" /> Générer 5 variations</>)}
+                        {isGenerating ? (<><RefreshCw className="w-4 h-4 animate-spin" /> Generating...</>) : (<><Sparkles className="w-4 h-4" /> Generate 5 variations</>)}
                       </Button>
                     </motion.div>
                   )}
@@ -671,7 +671,7 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
           </motion.div>
         )}
 
-        {/* ═══════ RÉSULTATS ═══════ */}
+        {/* ═══════ RESULTS ═══════ */}
         {variations.length > 0 && (
           <motion.div key="results" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="flex-1 flex flex-col overflow-hidden">
             {/* Header */}
@@ -705,8 +705,8 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                         {/* Header */}
                         <div className="flex items-center gap-2 mb-2.5">
                           <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded-full", angleColor)}>{v.angle}</span>
-                          {isSelected && <span className="text-[9px] text-primary/70 flex items-center gap-0.5"><Check className="w-2.5 h-2.5" /> Sélectionnée</span>}
-                          <span className="text-[10px] text-muted-foreground/50 ml-auto">{v.words} mots</span>
+                          {isSelected && <span className="text-[9px] text-primary/70 flex items-center gap-0.5"><Check className="w-2.5 h-2.5" /> Selected</span>}
+                          <span className="text-[10px] text-muted-foreground/50 ml-auto">{v.words} words</span>
                           <div className="flex items-center gap-1">
                             <div className="w-10 h-1.5 rounded-full bg-accent/30 overflow-hidden">
                               <div className="h-full rounded-full bg-emerald-500/60" style={{ width: `${v.score}%` }} />
@@ -721,17 +721,17 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-wrap items-center gap-1.5 mt-3 pt-3 border-t border-border/15">
                             <Button variant="ghost" size="sm" className="h-7 text-[11px] gap-1.5 px-2.5 text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); handleCopy(idx); }}>
                               {copiedIdx === idx ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                              {copiedIdx === idx ? "Copié" : "Copier"}
+                              {copiedIdx === idx ? "Copied" : "Copy"}
                             </Button>
                             <Button variant="ghost" size="sm" className="h-7 text-[11px] gap-1.5 px-2.5 text-muted-foreground hover:text-foreground" disabled={isHumanizing} onClick={(e) => { e.stopPropagation(); handleHumanize(idx); }}>
                               {isHumanizing ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
-                              Humaniser
+                              Humanize
                             </Button>
                             <Button variant="ghost" size="sm" className={cn("h-7 text-[11px] gap-1.5 px-2.5", imagePanel === idx ? "text-primary" : "text-muted-foreground hover:text-foreground")} onClick={(e) => { e.stopPropagation(); handleImagePrompt(idx); }}>
                               <ImagePlus className="w-3 h-3" /> Image
                             </Button>
                             <Button variant="ghost" size="sm" className={cn("h-7 text-[11px] gap-1.5 px-2.5", infraPanel === idx ? "text-primary" : "text-muted-foreground hover:text-foreground")} onClick={(e) => { e.stopPropagation(); handleInfraPrompt(idx); }}>
-                              <Layers className="w-3 h-3" /> Infographie
+                              <Layers className="w-3 h-3" /> Infographic
                             </Button>
                           </motion.div>
                         )}
@@ -742,19 +742,19 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                         {imagePanel === idx && isSelected && (
                           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.15 }}>
                             <div className="mt-1 p-3 rounded-lg bg-accent/20 border border-border/15">
-                              <p className="text-[10px] font-medium text-muted-foreground/70 mb-2">Prompt image</p>
+                              <p className="text-[10px] font-medium text-muted-foreground/70 mb-2">Image prompt</p>
                               {genImage ? (
-                                <div className="flex items-center gap-2 py-2"><RefreshCw className="w-3 h-3 animate-spin text-muted-foreground" /><span className="text-[10px] text-muted-foreground">Génération...</span></div>
+                                <div className="flex items-center gap-2 py-2"><RefreshCw className="w-3 h-3 animate-spin text-muted-foreground" /><span className="text-[10px] text-muted-foreground">Generating...</span></div>
                               ) : (
                                 <>
                                   <textarea value={imagePrompt} onChange={(e) => setImagePrompt(e.target.value)} className="w-full bg-background/50 border border-border/20 rounded-md px-2.5 py-2 text-[11px] min-h-[50px] resize-none focus:outline-none focus:ring-1 focus:ring-primary/30 mb-2" />
                                   <div className="flex items-center gap-1.5">
-                                    <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 px-2 text-muted-foreground" onClick={() => { navigator.clipboard.writeText(imagePrompt); setPromptCopied(true); toast.success("Prompt copié. Colle-le dans Midjourney, DALL-E ou Nano Banana."); setTimeout(() => setPromptCopied(false), 2000); }}>
+                                    <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 px-2 text-muted-foreground" onClick={() => { navigator.clipboard.writeText(imagePrompt); setPromptCopied(true); toast.success("Prompt copied. Paste it in Midjourney, DALL-E or Nano Banana."); setTimeout(() => setPromptCopied(false), 2000); }}>
                                       {promptCopied ? <Check className="w-2.5 h-2.5 text-emerald-400" /> : <Copy className="w-2.5 h-2.5" />}
-                                      {promptCopied ? "Copié" : "Copier le prompt"}
+                                      {promptCopied ? "Copied" : "Copy prompt"}
                                     </Button>
                                   </div>
-                                  <p className="text-[9px] text-muted-foreground/40 mt-1">Colle ce prompt dans Midjourney, DALL-E ou Nano Banana</p>
+                                  <p className="text-[9px] text-muted-foreground/40 mt-1">Paste this prompt in Midjourney, DALL-E or Nano Banana</p>
                                 </>
                               )}
                             </div>
@@ -762,22 +762,22 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                         )}
                       </AnimatePresence>
 
-                      {/* Panel infographie */}
+                      {/* Infographic panel */}
                       <AnimatePresence>
                         {infraPanel === idx && isSelected && (
                           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.15 }}>
                             <div className="mt-1 p-3 rounded-lg bg-accent/20 border border-border/15">
-                              <p className="text-[10px] font-medium text-muted-foreground/70 mb-2">Structure d'infographie</p>
+                              <p className="text-[10px] font-medium text-muted-foreground/70 mb-2">Infographic structure</p>
                               {genInfra ? (
-                                <div className="flex items-center gap-2 py-2"><RefreshCw className="w-3 h-3 animate-spin text-muted-foreground" /><span className="text-[10px] text-muted-foreground">Génération...</span></div>
+                                <div className="flex items-center gap-2 py-2"><RefreshCw className="w-3 h-3 animate-spin text-muted-foreground" /><span className="text-[10px] text-muted-foreground">Generating...</span></div>
                               ) : (
                                 <>
                                   <div className="text-[11px] leading-relaxed whitespace-pre-wrap text-foreground/80 mb-2">{infraContent}</div>
-                                  <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 px-2 text-muted-foreground" onClick={() => { navigator.clipboard.writeText(infraContent); setInfraCopied(true); toast.success("Structure copiée. Utilise-la dans Canva ou Nano Banana."); setTimeout(() => setInfraCopied(false), 2000); }}>
+                                  <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 px-2 text-muted-foreground" onClick={() => { navigator.clipboard.writeText(infraContent); setInfraCopied(true); toast.success("Structure copied. Use it in Canva or Nano Banana."); setTimeout(() => setInfraCopied(false), 2000); }}>
                                     {infraCopied ? <Check className="w-2.5 h-2.5 text-emerald-400" /> : <Copy className="w-2.5 h-2.5" />}
-                                    {infraCopied ? "Copié" : "Copier la structure"}
+                                    {infraCopied ? "Copied" : "Copy structure"}
                                   </Button>
-                                  <p className="text-[9px] text-muted-foreground/40 mt-1">Utilise cette structure dans Canva ou Nano Banana</p>
+                                  <p className="text-[9px] text-muted-foreground/40 mt-1">Use this structure in Canva or Nano Banana</p>
                                 </>
                               )}
                             </div>
@@ -787,42 +787,42 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                     </div>
                   );
                 })}
-                {/* Spacer pour la barre fixe */}
+                {/* Spacer for the fixed bar */}
                 <div className="h-14" />
               </div>
             </div>
 
-            {/* ═══ BARRE D'ACTIONS FIXE EN BAS ═══ */}
+            {/* ═══ FIXED ACTION BAR AT BOTTOM ═══ */}
             <div className="shrink-0 px-4 py-2.5 border-t border-border/20 bg-background/95 backdrop-blur-sm">
               <div className="max-w-lg mx-auto flex items-center gap-2">
-                {/* Gauche — statut sauvegarde */}
+                {/* Left — save status */}
                 {saveStatus === "saving" && (
                   <span className="text-[9px] text-muted-foreground flex items-center gap-1 shrink-0">
-                    <RefreshCw className="w-2.5 h-2.5 animate-spin" /> Sauvegarde...
+                    <RefreshCw className="w-2.5 h-2.5 animate-spin" /> Saving...
                   </span>
                 )}
                 {saveStatus === "saved" && (
                   <span className="text-[9px] text-emerald-400/70 flex items-center gap-1 shrink-0">
-                    <Check className="w-2.5 h-2.5" /> Sauvegardé
+                    <Check className="w-2.5 h-2.5" /> Saved
                   </span>
                 )}
                 {saveStatus === "failed" && (
                   <Button variant="ghost" size="sm" onClick={retrySave} className="h-6 text-[9px] gap-1 px-2 text-red-400 hover:text-red-300 shrink-0">
-                    <Save className="w-2.5 h-2.5" /> Sauvegarder
+                    <Save className="w-2.5 h-2.5" /> Save
                   </Button>
                 )}
                 <button onClick={reset} className="text-[10px] text-muted-foreground/50 hover:text-foreground transition-colors shrink-0">
-                  Recommencer
+                  Start over
                 </button>
 
                 <div className="flex-1" />
 
-                {/* Droite — actions */}
+                {/* Right — actions */}
                 <Button variant="ghost" size="sm" onClick={handleGenerate} disabled={isGenerating} className="h-7 text-[10px] gap-1 px-2 text-muted-foreground shrink-0">
                   <RefreshCw className={cn("w-3 h-3", isGenerating && "animate-spin")} />
                 </Button>
                 <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-1 px-2 text-muted-foreground shrink-0" onClick={() => { handleCopy(selectedVariation ?? 0); }}>
-                  <ClipboardList className="w-3 h-3" /> Copier
+                  <ClipboardList className="w-3 h-3" /> Copy
                 </Button>
                 <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-1 px-2 text-muted-foreground shrink-0" onClick={handleGoToDashboard}>
                   <ChevronLeft className="w-3 h-3" /> Dashboard
@@ -834,9 +834,9 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                   className="h-7 text-[10px] gap-1 px-3 glow-sm shrink-0"
                 >
                   {saveStatus === "saving" ? (
-                    <><RefreshCw className="w-3 h-3 animate-spin" /> Sauvegarde...</>
+                    <><RefreshCw className="w-3 h-3 animate-spin" /> Saving...</>
                   ) : (
-                    <><Sparkles className="w-3 h-3" /> Nouveau contenu</>
+                    <><Sparkles className="w-3 h-3" /> New content</>
                   )}
                 </Button>
               </div>

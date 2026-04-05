@@ -51,14 +51,14 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
                 ? "bg-primary/10 text-primary"
                 : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
             )}
-            title="Historique"
+            title="History"
           >
             <Clock className="w-4 h-4" />
           </Link>
           <button
             onClick={toggleTheme}
             className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all"
-            title={theme === "dark" ? "Mode clair" : "Mode sombre"}
+            title={theme === "dark" ? "Light mode" : "Dark mode"}
           >
             <div className="transition-transform duration-300 hover:rotate-[360deg]">
               {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
@@ -72,14 +72,14 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
                 ? "bg-primary/10 text-primary"
                 : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
             )}
-            title="Paramètres"
+            title="Settings"
           >
             <Settings className="w-4 h-4" />
           </button>
           <button
             onClick={handleLogout}
             className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all"
-            title="Déconnexion"
+            title="Sign out"
           >
             <LogOut className="w-4 h-4" />
           </button>

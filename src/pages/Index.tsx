@@ -185,7 +185,7 @@ const Index = () => {
             ))}
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={toggleTheme} className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground transition-all" title={theme === "dark" ? "Mode clair" : "Mode sombre"}>
+            <button onClick={toggleTheme} className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground transition-all" title={theme === "dark" ? "Light mode" : "Dark mode"}>
               {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
             <Button size="sm" onClick={() => navigate("/login")} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-5 h-9 text-sm font-medium">

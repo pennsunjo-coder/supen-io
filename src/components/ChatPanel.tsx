@@ -13,17 +13,17 @@ const RATE_LIMIT_MAX = 10;
 const RATE_LIMIT_WINDOW_MS = 60_000;
 
 const defaultPrompts = [
-  "Résume mes sources",
-  "Trouve les idées clés",
-  "Génère des hooks viraux",
-  "Aide-moi à structurer",
+  "Summarize my sources",
+  "Find key ideas",
+  "Generate viral hooks",
+  "Help me structure",
 ];
 
 const contentPrompts = [
-  "Améliore le hook",
-  "Rends-le plus percutant",
-  "Adapte pour un autre réseau",
-  "Propose un CTA",
+  "Improve the hook",
+  "Make it more impactful",
+  "Adapt for another network",
+  "Suggest a CTA",
 ];
 
 interface ChatPanelProps {
@@ -77,7 +77,7 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
     if (!content) return;
     if (!rateLimiter.canProceed()) {
       const wait = Math.ceil(rateLimiter.getRemainingTime() / 1000);
-      setError(`Limite : ${RATE_LIMIT_MAX} msg/min. Réessaie dans ${wait}s.`);
+      setError(`Limit: ${RATE_LIMIT_MAX} msg/min. Retry in ${wait}s.`);
       return;
     }
 
@@ -106,7 +106,7 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
     } catch (err: unknown) {
       if (err instanceof Error && err.name === "AbortError") return;
       setStreamingContent("");
-      setError(`Erreur : ${err instanceof Error ? err.message : "Inconnue"}`);
+      setError(`Error: ${err instanceof Error ? err.message : "Unknown"}`);
     } finally {
       setIsLoading(false);
       abortRef.current = null;
@@ -124,16 +124,16 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
         <div className="w-5 h-5 rounded-md bg-primary/10 flex items-center justify-center">
           <Sparkles className="w-3 h-3 text-primary" />
         </div>
-        <h2 className="text-base font-semibold">Coach IA</h2>
+        <h2 className="text-base font-semibold">AI Coach</h2>
         <div className="ml-auto flex items-center gap-2">
           {messages.length > 0 && (
             <button onClick={onClearConversation} className="text-[10px] text-muted-foreground/50 hover:text-destructive transition-colors flex items-center gap-1">
-              <Trash2 className="w-2.5 h-2.5" /> Effacer
+              <Trash2 className="w-2.5 h-2.5" /> Clear
             </button>
           )}
           <div className="flex items-center gap-1">
             <div className={cn("w-1.5 h-1.5 rounded-full", isLoading ? "bg-amber-400/80 animate-pulse" : "bg-emerald-400/80")} />
-            <span className="text-[10px] text-muted-foreground">{isLoading ? "Réflexion..." : "En ligne"}</span>
+            <span className="text-[10px] text-muted-foreground">{isLoading ? "Thinking..." : "Online"}</span>
           </div>
         </div>
       </div>
@@ -149,9 +149,9 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
             <div className="w-10 h-10 rounded-xl bg-primary/8 flex items-center justify-center mb-3">
               <Sparkles className="w-4 h-4 text-primary/70" />
             </div>
-            <p className="text-xs font-medium text-foreground mb-1">Coach IA</p>
+            <p className="text-xs font-medium text-foreground mb-1">AI Coach</p>
             <p className="text-[11px] text-muted-foreground text-center mb-4 leading-relaxed">
-              Discute pendant que tu crées. Demande des hooks, des idées, des retours.
+              Chat while you create. Ask for hooks, ideas, feedback.
             </p>
             {sources.length > 0 && (
               <p className="text-[10px] text-primary/70 mb-3">{sources.length} source{sources.length > 1 ? "s" : ""}</p>
@@ -199,7 +199,7 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
                   {streamingContent || (
                     <div className="flex items-center gap-1.5 text-muted-foreground">
                       <Loader2 className="w-3 h-3 animate-spin" />
-                      <span className="text-[10px]">Réflexion...</span>
+                      <span className="text-[10px]">Thinking...</span>
                     </div>
                   )}
                 </div>
@@ -223,7 +223,7 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
-            placeholder="Demande au coach..."
+            placeholder="Ask the coach..."
             maxLength={MAX_MESSAGE_LENGTH}
             disabled={isLoading}
             className="flex-1 bg-accent/30 border border-border/30 rounded-lg px-3 py-2 text-[13px] placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:opacity-50"

@@ -36,7 +36,7 @@ const typeIcons: Record<string, typeof FileText> = {
 
 const typeLabels: Record<string, string> = {
   pdf: "PDF",
-  url: "Lien",
+  url: "Link",
   note: "Note",
 };
 
@@ -102,7 +102,7 @@ const SourcePanel = ({
         const cleaned = urlValue.trim();
         if (!cleaned) { setSaving(false); return; }
         try { new URL(cleaned); } catch {
-          setError("URL invalide (ex: https://exemple.com)");
+          setError("Invalid URL (e.g. https://example.com)");
           setSaving(false);
           return;
         }
@@ -111,7 +111,7 @@ const SourcePanel = ({
         const title = sanitizeInput(noteTitle, 200);
         const content = sanitizeInput(noteContent, 10000);
         if (!title || !content) {
-          setError("Titre et contenu requis.");
+          setError("Title and content required.");
           setSaving(false);
           return;
         }
@@ -128,7 +128,7 @@ const SourcePanel = ({
         closeForm();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur inattendue");
+      setError(err instanceof Error ? err.message : "Unexpected error");
     } finally {
       setSaving(false);
     }
@@ -136,25 +136,25 @@ const SourcePanel = ({
 
   const importPdf = async (file: File) => {
     if (file.type !== "application/pdf") {
-      toast.error("Seuls les fichiers PDF sont acceptés.");
+      toast.error("Only PDF files are accepted.");
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      toast.error("Le fichier ne doit pas dépasser 10 Mo.");
+      toast.error("File must not exceed 10 MB.");
       return;
     }
 
     setPdfLoading(true);
-    toast("Extraction du PDF en cours...");
+    toast("Extracting PDF...");
     try {
       const result = await onAddPdf(file);
       if (result.error) {
         toast.error(result.error);
       } else {
-        toast.success("PDF importé avec succès !");
+        toast.success("PDF imported successfully!");
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erreur inattendue");
+      toast.error(err instanceof Error ? err.message : "Unexpected error");
     } finally {
       setPdfLoading(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -174,11 +174,11 @@ const SourcePanel = ({
     if (file && file.type === "application/pdf") {
       importPdf(file);
     } else if (file) {
-      toast.error("Seuls les fichiers PDF sont acceptés.");
+      toast.error("Only PDF files are accepted.");
     }
   };
 
-  // handleRemove supprimé — on utilise onRemoveGroup directement dans le JSX
+  // handleRemove removed — we use onRemoveGroup directly in the JSX
 
   const actions: { mode: FormMode | "pdf"; icon: typeof Globe; label: string }[] = [
     { mode: "pdf", icon: Upload, label: "PDF" },
@@ -188,9 +188,9 @@ const SourcePanel = ({
   ];
 
   const formLabels: Record<FormMode, string> = {
-    url: "Ajouter un lien",
-    note: "Ajouter une note",
-    search: "Recherche web",
+    url: "Add a link",
+    note: "Add a note",
+    search: "Web search",
   };
 
   return (
@@ -253,28 +253,28 @@ const SourcePanel = ({
         </div>
 
         <div className={formMode === "url" ? "block" : "hidden"}>
-          <input ref={urlRef} value={urlValue} onChange={(e) => setUrlValue(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSubmit()} placeholder="https://exemple.com/article" className="w-full bg-accent/30 border border-border/30 rounded-md px-2.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary/30 mb-2" />
+          <input ref={urlRef} value={urlValue} onChange={(e) => setUrlValue(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSubmit()} placeholder="https://example.com/article" className="w-full bg-accent/30 border border-border/30 rounded-md px-2.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary/30 mb-2" />
         </div>
 
         <div className={formMode === "note" ? "block" : "hidden"}>
-          <input ref={noteTitleRef} value={noteTitle} onChange={(e) => setNoteTitle(e.target.value)} placeholder="Titre de la note" maxLength={200} className="w-full bg-accent/30 border border-border/30 rounded-md px-2.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary/30 mb-2" />
-          <textarea value={noteContent} onChange={(e) => setNoteContent(e.target.value)} placeholder="Contenu..." rows={3} maxLength={10000} className="w-full bg-accent/30 border border-border/30 rounded-md px-2.5 py-2 text-xs resize-none focus:outline-none focus:ring-1 focus:ring-primary/30 mb-2" />
+          <input ref={noteTitleRef} value={noteTitle} onChange={(e) => setNoteTitle(e.target.value)} placeholder="Note title" maxLength={200} className="w-full bg-accent/30 border border-border/30 rounded-md px-2.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary/30 mb-2" />
+          <textarea value={noteContent} onChange={(e) => setNoteContent(e.target.value)} placeholder="Content..." rows={3} maxLength={10000} className="w-full bg-accent/30 border border-border/30 rounded-md px-2.5 py-2 text-xs resize-none focus:outline-none focus:ring-1 focus:ring-primary/30 mb-2" />
         </div>
 
         <div className={formMode === "search" ? "block" : "hidden"}>
-          <input ref={searchRef} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSubmit()} placeholder="Rechercher sur le web..." className="w-full bg-accent/30 border border-border/30 rounded-md px-2.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary/30 mb-2" />
+          <input ref={searchRef} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSubmit()} placeholder="Search the web..." className="w-full bg-accent/30 border border-border/30 rounded-md px-2.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary/30 mb-2" />
         </div>
 
         {error && <p className="text-[11px] text-destructive mb-2">{error}</p>}
 
         <Button type="button" size="sm" className="w-full h-7 text-xs" disabled={saving} onClick={handleSubmit}>
-          {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : formMode === "search" ? "Rechercher" : "Ajouter"}
+          {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : formMode === "search" ? "Search" : "Add"}
         </Button>
       </div>
 
       {saving && !showForm && (
         <div className="mx-4 mb-3 flex items-center gap-2 text-xs text-muted-foreground shrink-0">
-          <Loader2 className="w-3 h-3 animate-spin" /> Upload en cours...
+          <Loader2 className="w-3 h-3 animate-spin" /> Uploading...
         </div>
       )}
 
@@ -300,8 +300,8 @@ const SourcePanel = ({
             <div className="w-12 h-12 rounded-xl bg-accent/50 flex items-center justify-center mb-3">
               <Upload className="w-5 h-5 text-muted-foreground" />
             </div>
-            <p className="text-sm font-medium text-muted-foreground">Aucune source</p>
-            <p className="text-xs text-muted-foreground/60 mt-1 leading-relaxed">Clique ou glisse un PDF ici</p>
+            <p className="text-sm font-medium text-muted-foreground">No sources</p>
+            <p className="text-xs text-muted-foreground/60 mt-1 leading-relaxed">Click or drag a PDF here</p>
             <p className="text-[10px] text-muted-foreground/40 mt-2">Max 10 MB</p>
           </div>
         ) : (
@@ -326,7 +326,7 @@ const SourcePanel = ({
                     "w-8 h-4.5 rounded-full p-0.5 transition-colors shrink-0 flex items-center",
                     isActive ? "bg-primary" : "bg-accent/60",
                   )}
-                  title={isActive ? "Désactiver" : "Activer"}
+                  title={isActive ? "Deactivate" : "Activate"}
                 >
                   <div className={cn(
                     "w-3.5 h-3.5 rounded-full bg-white transition-transform",
@@ -347,7 +347,7 @@ const SourcePanel = ({
                   <span className="block text-[11px] text-muted-foreground/50">
                     {typeLabels[group.type] || "Note"}
                     {group.chunkCount > 1 && <span> · {group.chunkCount} parts</span>}
-                    {group.wordCount > 0 && <span> · {group.wordCount} mots</span>}
+                    {group.wordCount > 0 && <span> · {group.wordCount} words</span>}
                   </span>
                 </div>
                 <button
@@ -355,7 +355,7 @@ const SourcePanel = ({
                   onClick={() => { setDeletingId(group.id); onRemoveGroup(group).finally(() => setDeletingId(null)); }}
                   disabled={isDeleting}
                   className="opacity-0 group-hover:opacity-100 shrink-0 p-1 rounded text-muted-foreground/50 hover:text-destructive transition-all"
-                  title="Supprimer"
+                  title="Delete"
                 >
                   {isDeleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
                 </button>

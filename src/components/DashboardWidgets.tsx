@@ -12,7 +12,7 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import type { DashboardContent, ContentSession } from "@/hooks/use-dashboard";
 
-/* ─── Icônes plateformes ─── */
+/* ─── Platform icons ─── */
 
 const platformIcons: Record<string, React.FC<{ className?: string }>> = {
   "Instagram": ({ className }) => <svg viewBox="0 0 24 24" className={className} fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0z"/></svg>,
@@ -61,7 +61,7 @@ function TopContentCard({
 
   async function handleGenerateImage() {
     setPanel("image");
-    if (imagePrompt) return; // déjà généré
+    if (imagePrompt) return; // already generated
     setGenerating(true);
     try {
       const response = await anthropic.messages.create({
@@ -73,7 +73,7 @@ function TopContentCard({
       const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
       setImagePrompt(text);
       onUpdateImagePrompt(item.id, text);
-    } catch { /* silencieux */ }
+    } catch { /* silent */ }
     setGenerating(false);
   }
 
@@ -98,7 +98,7 @@ En français. Réponds UNIQUEMENT avec la structure.`,
       });
       const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
       setInfographic(text);
-    } catch { /* silencieux */ }
+    } catch { /* silent */ }
     setGenerating(false);
   }
 
@@ -115,7 +115,7 @@ En français. Réponds UNIQUEMENT avec la structure.`,
       const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
       setImagePrompt(text);
       onUpdateImagePrompt(item.id, text);
-    } catch { /* silencieux */ }
+    } catch { /* silent */ }
     setGenerating(false);
   }
 
@@ -145,17 +145,17 @@ En français. Réponds UNIQUEMENT avec la structure.`,
               <div className="pt-2 border-t border-border/15">
                 <p className="text-xs leading-relaxed whitespace-pre-wrap text-foreground/85 mb-3">{item.content}</p>
 
-                {/* 3 boutons */}
+                {/* 3 buttons */}
                 <div className="flex items-center gap-1.5">
                   <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-1.5 px-2.5 text-muted-foreground" onClick={(e) => { e.stopPropagation(); handleCopy(); }}>
                     {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                    {copied ? "Copié" : "Copier"}
+                    {copied ? "Copied" : "Copy"}
                   </Button>
                   <Button variant="ghost" size="sm" className={cn("h-7 text-[10px] gap-1.5 px-2.5", panel === "image" ? "text-primary" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); handleGenerateImage(); }}>
                     <ImagePlus className="w-3 h-3" /> Image
                   </Button>
                   <Button variant="ghost" size="sm" className={cn("h-7 text-[10px] gap-1.5 px-2.5", panel === "infographic" ? "text-primary" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); handleGenerateInfographic(); }}>
-                    <LayoutGrid className="w-3 h-3" /> Infographie
+                    <LayoutGrid className="w-3 h-3" /> Infographic
                   </Button>
                 </div>
               </div>
@@ -168,11 +168,11 @@ En français. Réponds UNIQUEMENT avec la structure.`,
                       <button onClick={(e) => { e.stopPropagation(); setPanel(null); }} className="absolute top-2 right-2 text-muted-foreground/40 hover:text-foreground">
                         <X className="w-3 h-3" />
                       </button>
-                      <p className="text-[10px] font-medium text-muted-foreground/70 mb-2">Prompt image</p>
+                      <p className="text-[10px] font-medium text-muted-foreground/70 mb-2">Image prompt</p>
                       {generating ? (
                         <div className="flex items-center gap-2 py-3">
                           <RefreshCw className="w-3 h-3 animate-spin text-muted-foreground" />
-                          <span className="text-[10px] text-muted-foreground">Génération...</span>
+                          <span className="text-[10px] text-muted-foreground">Generating...</span>
                         </div>
                       ) : (
                         <>
@@ -185,13 +185,13 @@ En français. Réponds UNIQUEMENT avec la structure.`,
                           <div className="flex items-center gap-1.5">
                             <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 px-2 text-muted-foreground" onClick={(e) => { e.stopPropagation(); copyText(imagePrompt, setPromptCopied); }}>
                               {promptCopied ? <Check className="w-2.5 h-2.5 text-emerald-400" /> : <Copy className="w-2.5 h-2.5" />}
-                              {promptCopied ? "Copié" : "Copier le prompt"}
+                              {promptCopied ? "Copied" : "Copy prompt"}
                             </Button>
                             <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 px-2 text-muted-foreground" onClick={(e) => { e.stopPropagation(); handleRegenerateImage(); }}>
-                              <RefreshCw className="w-2.5 h-2.5" /> Regén��rer
+                              <RefreshCw className="w-2.5 h-2.5" /> Regenerate
                             </Button>
                           </div>
-                          <p className="text-[9px] text-muted-foreground/40 mt-1.5">Colle ce prompt dans Midjourney, DALL-E ou Nano Banana</p>
+                          <p className="text-[9px] text-muted-foreground/40 mt-1.5">Paste this prompt in Midjourney, DALL-E or Nano Banana</p>
                         </>
                       )}
                     </div>
@@ -199,7 +199,7 @@ En français. Réponds UNIQUEMENT avec la structure.`,
                 )}
               </AnimatePresence>
 
-              {/* Panel Infographie */}
+              {/* Infographic Panel */}
               <AnimatePresence>
                 {panel === "infographic" && (
                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.15 }}>
@@ -207,11 +207,11 @@ En français. Réponds UNIQUEMENT avec la structure.`,
                       <button onClick={(e) => { e.stopPropagation(); setPanel(null); }} className="absolute top-2 right-2 text-muted-foreground/40 hover:text-foreground">
                         <X className="w-3 h-3" />
                       </button>
-                      <p className="text-[10px] font-medium text-muted-foreground/70 mb-2">Structure d'infographie</p>
+                      <p className="text-[10px] font-medium text-muted-foreground/70 mb-2">Infographic structure</p>
                       {generating ? (
                         <div className="flex items-center gap-2 py-3">
                           <RefreshCw className="w-3 h-3 animate-spin text-muted-foreground" />
-                          <span className="text-[10px] text-muted-foreground">Génération...</span>
+                          <span className="text-[10px] text-muted-foreground">Generating...</span>
                         </div>
                       ) : (
                         <>
@@ -219,10 +219,10 @@ En français. Réponds UNIQUEMENT avec la structure.`,
                           <div className="flex items-center gap-1.5">
                             <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 px-2 text-muted-foreground" onClick={(e) => { e.stopPropagation(); copyText(infographic, setInfraCopied); }}>
                               {infraCopied ? <Check className="w-2.5 h-2.5 text-emerald-400" /> : <Copy className="w-2.5 h-2.5" />}
-                              {infraCopied ? "Copié" : "Copier la structure"}
+                              {infraCopied ? "Copied" : "Copy structure"}
                             </Button>
                           </div>
-                          <p className="text-[9px] text-muted-foreground/40 mt-1.5">Utilise cette structure dans Canva ou Nano Banana</p>
+                          <p className="text-[9px] text-muted-foreground/40 mt-1.5">Use this structure in Canva or Nano Banana</p>
                         </>
                       )}
                     </div>
@@ -250,7 +250,7 @@ export function TopContentWidget({
 
   return (
     <div className="px-5 py-3 border-b border-border/10">
-      <p className="text-[10px] font-medium text-muted-foreground/60 mb-2">Tes derniers contenus</p>
+      <p className="text-[10px] font-medium text-muted-foreground/60 mb-2">Your latest content</p>
       <div className="space-y-1.5">
         {items.map((item) => (
           <TopContentCard key={item.id} item={item} onUpdateImagePrompt={onUpdateImagePrompt} />
@@ -265,13 +265,13 @@ export function TopContentWidget({
 function relativeTime(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "À l'instant";
-  if (mins < 60) return `Il y a ${mins}min`;
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins}min ago`;
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `Il y a ${hours}h`;
+  if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
-  if (days < 7) return `Il y a ${days}j`;
-  return new Date(dateStr).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+  if (days < 7) return `${days}d ago`;
+  return new Date(dateStr).toLocaleDateString("en-US", { day: "numeric", month: "short" });
 }
 
 /* ─── Angle colors ─── */
@@ -380,15 +380,15 @@ function SessionVariationCard({
 
       {/* Actions */}
       <div className="flex flex-wrap items-center gap-1">
-        <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 px-2 text-muted-foreground" onClick={(e) => { e.stopPropagation(); copy(item.content, setCopiedV); toast.success("Copié !"); }}>
+        <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 px-2 text-muted-foreground" onClick={(e) => { e.stopPropagation(); copy(item.content, setCopiedV); toast.success("Copied!"); }}>
           {copiedV ? <Check className="w-2.5 h-2.5 text-emerald-400" /> : <Copy className="w-2.5 h-2.5" />}
-          {copiedV ? "Copié" : "Copier"}
+          {copiedV ? "Copied" : "Copy"}
         </Button>
         <Button variant="ghost" size="sm" className={cn("h-6 text-[10px] gap-1 px-2", panel === "image" ? "text-primary" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); genImage(); }}>
           <ImagePlus className="w-2.5 h-2.5" /> {imagePrompt ? "Image" : "Image"}
         </Button>
         <Button variant="ghost" size="sm" className={cn("h-6 text-[10px] gap-1 px-2", panel === "infographic" ? "text-primary" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); genInfra(); }}>
-          <LayoutGrid className="w-2.5 h-2.5" /> Infographie
+          <LayoutGrid className="w-2.5 h-2.5" /> Infographic
         </Button>
       </div>
 
@@ -398,23 +398,23 @@ function SessionVariationCard({
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.15 }}>
             <div className="mt-2 p-2.5 rounded-lg bg-accent/20 border border-border/15">
               <div className="flex items-center justify-between mb-1.5">
-                <p className="text-[9px] font-medium text-muted-foreground/70">Prompt image</p>
+                <p className="text-[9px] font-medium text-muted-foreground/70">Image prompt</p>
                 <button onClick={(e) => { e.stopPropagation(); setPanel(null); }} className="text-muted-foreground/40 hover:text-foreground"><X className="w-3 h-3" /></button>
               </div>
               {generating ? (
-                <div className="flex items-center gap-2 py-2"><RefreshCw className="w-3 h-3 animate-spin text-muted-foreground" /><span className="text-[9px] text-muted-foreground">Génération...</span></div>
+                <div className="flex items-center gap-2 py-2"><RefreshCw className="w-3 h-3 animate-spin text-muted-foreground" /><span className="text-[9px] text-muted-foreground">Generating...</span></div>
               ) : (
                 <>
                   <Textarea value={imagePrompt} onChange={(e) => setImagePrompt(e.target.value)} onClick={(e) => e.stopPropagation()} className="bg-background/50 border-border/20 text-[10px] min-h-[45px] resize-none mb-1.5" />
                   <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="sm" className="h-5 text-[9px] gap-1 px-1.5 text-muted-foreground" onClick={(e) => { e.stopPropagation(); copy(imagePrompt, setPromptCopied); toast.success("Prompt copié !"); }}>
-                      {promptCopied ? <Check className="w-2 h-2 text-emerald-400" /> : <Copy className="w-2 h-2" />} Copier
+                    <Button variant="ghost" size="sm" className="h-5 text-[9px] gap-1 px-1.5 text-muted-foreground" onClick={(e) => { e.stopPropagation(); copy(imagePrompt, setPromptCopied); toast.success("Prompt copied!"); }}>
+                      {promptCopied ? <Check className="w-2 h-2 text-emerald-400" /> : <Copy className="w-2 h-2" />} Copy
                     </Button>
                     <Button variant="ghost" size="sm" className="h-5 text-[9px] gap-1 px-1.5 text-muted-foreground" onClick={(e) => { e.stopPropagation(); regenImage(); }}>
-                      <RefreshCw className="w-2 h-2" /> Regénérer
+                      <RefreshCw className="w-2 h-2" /> Regenerate
                     </Button>
                   </div>
-                  <p className="text-[8px] text-muted-foreground/40 mt-1">Colle dans Midjourney, DALL-E ou Nano Banana</p>
+                  <p className="text-[8px] text-muted-foreground/40 mt-1">Paste in Midjourney, DALL-E or Nano Banana</p>
                 </>
               )}
             </div>
@@ -428,18 +428,18 @@ function SessionVariationCard({
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.15 }}>
             <div className="mt-2 p-2.5 rounded-lg bg-accent/20 border border-border/15">
               <div className="flex items-center justify-between mb-1.5">
-                <p className="text-[9px] font-medium text-muted-foreground/70">Structure infographie</p>
+                <p className="text-[9px] font-medium text-muted-foreground/70">Infographic structure</p>
                 <button onClick={(e) => { e.stopPropagation(); setPanel(null); }} className="text-muted-foreground/40 hover:text-foreground"><X className="w-3 h-3" /></button>
               </div>
               {generating ? (
-                <div className="flex items-center gap-2 py-2"><RefreshCw className="w-3 h-3 animate-spin text-muted-foreground" /><span className="text-[9px] text-muted-foreground">Génération...</span></div>
+                <div className="flex items-center gap-2 py-2"><RefreshCw className="w-3 h-3 animate-spin text-muted-foreground" /><span className="text-[9px] text-muted-foreground">Generating...</span></div>
               ) : (
                 <>
                   <div className="text-[10px] leading-relaxed whitespace-pre-wrap text-foreground/80 mb-1.5">{infographic}</div>
-                  <Button variant="ghost" size="sm" className="h-5 text-[9px] gap-1 px-1.5 text-muted-foreground" onClick={(e) => { e.stopPropagation(); copy(infographic, setInfraCopied); toast.success("Structure copiée !"); }}>
-                    {infraCopied ? <Check className="w-2 h-2 text-emerald-400" /> : <Copy className="w-2 h-2" />} Copier
+                  <Button variant="ghost" size="sm" className="h-5 text-[9px] gap-1 px-1.5 text-muted-foreground" onClick={(e) => { e.stopPropagation(); copy(infographic, setInfraCopied); toast.success("Structure copied!"); }}>
+                    {infraCopied ? <Check className="w-2 h-2 text-emerald-400" /> : <Copy className="w-2 h-2" />} Copy
                   </Button>
-                  <p className="text-[8px] text-muted-foreground/40 mt-1">Utilise dans Canva ou Nano Banana</p>
+                  <p className="text-[8px] text-muted-foreground/40 mt-1">Use in Canva or Nano Banana</p>
                 </>
               )}
             </div>
@@ -478,17 +478,17 @@ export function ContentSessionGrid({
       const ids = session.variations.map((v) => v.id);
       await supabase.from("generated_content").delete().in("id", ids);
       setLocalSessions((prev) => prev.filter((s) => s.id !== session.id));
-      toast.success("Contenu supprimé");
+      toast.success("Content deleted");
       if (onDelete) onDelete();
     } catch {
-      toast.error("Erreur lors de la suppression");
+      toast.error("Error deleting content");
     }
     setDeleting(null);
   }
 
   return (
     <div className="px-5 py-3 border-b border-border/10">
-      <p className="text-[10px] font-medium text-muted-foreground/60 mb-3">Tes dernières créations</p>
+      <p className="text-[10px] font-medium text-muted-foreground/60 mb-3">Your latest creations</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         <AnimatePresence>
         {localSessions.map((session, si) => {
@@ -518,10 +518,10 @@ export function ContentSessionGrid({
                 {/* Delete overlay */}
                 {isConfirming && (
                   <div className="absolute inset-0 z-10 bg-background/90 backdrop-blur-sm flex flex-col items-center justify-center gap-2 rounded-xl">
-                    <p className="text-[11px] text-foreground/80">Supprimer {session.variations.length} variation{session.variations.length > 1 ? "s" : ""} ?</p>
+                    <p className="text-[11px] text-foreground/80">Delete {session.variations.length} variation{session.variations.length > 1 ? "s" : ""}?</p>
                     <div className="flex gap-2">
-                      <Button variant="ghost" size="sm" className="h-7 text-[10px] px-3" onClick={(e) => { e.stopPropagation(); setConfirming(null); }}>Annuler</Button>
-                      <Button variant="destructive" size="sm" className="h-7 text-[10px] px-3" onClick={(e) => { e.stopPropagation(); handleDelete(session); }}>Supprimer</Button>
+                      <Button variant="ghost" size="sm" className="h-7 text-[10px] px-3" onClick={(e) => { e.stopPropagation(); setConfirming(null); }}>Cancel</Button>
+                      <Button variant="destructive" size="sm" className="h-7 text-[10px] px-3" onClick={(e) => { e.stopPropagation(); handleDelete(session); }}>Delete</Button>
                     </div>
                   </div>
                 )}
@@ -562,7 +562,7 @@ export function ContentSessionGrid({
                   <span>{session.variations.length} variation{session.variations.length > 1 ? "s" : ""}</span>
                   <span>·</span>
                   <span>{relativeTime(session.createdAt)}</span>
-                  <span className="ml-auto text-primary/60 flex items-center gap-0.5">Voir <ArrowRight className="w-2.5 h-2.5" /></span>
+                  <span className="ml-auto text-primary/60 flex items-center gap-0.5">View <ArrowRight className="w-2.5 h-2.5" /></span>
                 </div>
               </div>
 

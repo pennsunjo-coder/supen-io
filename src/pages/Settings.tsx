@@ -25,36 +25,36 @@ const PLATFORMS = [
 ];
 
 const NICHES = [
-  "Marketing", "Tech", "Business", "Finance", "Santé",
-  "Développement personnel", "Éducation", "Design", "Autre",
+  "Marketing", "Tech", "Business", "Finance", "Health",
+  "Personal development", "Education", "Design", "Other",
 ];
 
 const LANGUAGES = [
-  { id: "fr", label: "Français" },
-  { id: "en", label: "Anglais" },
-  { id: "both", label: "Les deux" },
+  { id: "fr", label: "French" },
+  { id: "en", label: "English" },
+  { id: "both", label: "Both" },
 ];
 
 const TONES = [
-  { id: "educatif", label: "Éducatif" },
-  { id: "inspirant", label: "Inspirant" },
-  { id: "pratique", label: "Pratique" },
-  { id: "humoristique", label: "Humoristique" },
+  { id: "educatif", label: "Educational" },
+  { id: "inspirant", label: "Inspiring" },
+  { id: "pratique", label: "Practical" },
+  { id: "humoristique", label: "Humorous" },
 ];
 
 const LENGTHS = [
-  { id: "short", label: "Court" },
-  { id: "medium", label: "Moyen" },
+  { id: "short", label: "Short" },
+  { id: "medium", label: "Medium" },
   { id: "long", label: "Long" },
 ];
 
 type Section = "profil" | "preferences" | "compte" | "about";
 
 const NAV_ITEMS: { id: Section; label: string; icon: typeof User }[] = [
-  { id: "profil", label: "Profil", icon: User },
-  { id: "preferences", label: "Préférences", icon: Sliders },
-  { id: "compte", label: "Compte", icon: CreditCard },
-  { id: "about", label: "À propos", icon: Info },
+  { id: "profil", label: "Profile", icon: User },
+  { id: "preferences", label: "Preferences", icon: Sliders },
+  { id: "compte", label: "Account", icon: CreditCard },
+  { id: "about", label: "About", icon: Info },
 ];
 
 /* ─── Component ─── */
@@ -105,9 +105,9 @@ export default function Settings() {
     });
     setSaving(false);
     if (success) {
-      toast.success("Profil sauvegardé");
+      toast.success("Profile saved");
     } else {
-      toast.error(error || "Erreur lors de la sauvegarde");
+      toast.error(error || "Error saving");
     }
   }
 
@@ -124,10 +124,10 @@ export default function Settings() {
       await supabase.from("generated_content").delete().eq("user_id", user.id);
       await supabase.from("sources").delete().eq("user_id", user.id);
       await signOut();
-      toast.success("Compte supprimé");
+      toast.success("Account deleted");
       navigate("/");
     } catch {
-      toast.error("Erreur lors de la suppression");
+      toast.error("Error deleting account");
     }
   }
 
@@ -148,9 +148,9 @@ export default function Settings() {
           className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          Retour au dashboard
+          Back to dashboard
         </button>
-        <h1 className="ml-auto text-sm font-semibold">Paramètres</h1>
+        <h1 className="ml-auto text-sm font-semibold">Settings</h1>
       </header>
 
       <div className="flex max-w-5xl mx-auto py-8 px-4 gap-8">
@@ -179,18 +179,18 @@ export default function Settings() {
           {activeSection === "profil" && (
             <>
               <div>
-                <h2 className="text-lg font-bold mb-1">Profil</h2>
-                <p className="text-sm text-muted-foreground">Tes informations personnelles</p>
+                <h2 className="text-lg font-bold mb-1">Profile</h2>
+                <p className="text-sm text-muted-foreground">Your personal information</p>
               </div>
 
               <div className="bg-card border border-border/30 rounded-xl p-6 space-y-5">
-                {/* Prénom */}
+                {/* First name */}
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Prénom</label>
+                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">First name</label>
                   <Input
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
-                    placeholder="Ton prénom"
+                    placeholder="Your first name"
                     className="max-w-sm"
                   />
                 </div>
@@ -203,12 +203,12 @@ export default function Settings() {
                     disabled
                     className="max-w-sm bg-muted/50 cursor-not-allowed"
                   />
-                  <p className="text-[11px] text-muted-foreground mt-1">L'email ne peut pas être modifié</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">Email cannot be changed</p>
                 </div>
 
                 {/* Niche */}
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Niche / Domaine</label>
+                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Niche / Field</label>
                   <div className="flex flex-wrap gap-2">
                     {NICHES.map((n) => (
                       <button
@@ -227,9 +227,9 @@ export default function Settings() {
                   </div>
                 </div>
 
-                {/* Plateformes */}
+                {/* Platforms */}
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Plateformes préférées</label>
+                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Preferred platforms</label>
                   <div className="flex flex-wrap gap-2">
                     {PLATFORMS.map((p) => (
                       <button
@@ -253,7 +253,7 @@ export default function Settings() {
                 <div className="pt-2">
                   <Button onClick={handleSaveProfile} disabled={saving} className="h-9 gap-2 text-xs">
                     {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                    Sauvegarder
+                    Save
                   </Button>
                 </div>
               </div>
@@ -264,14 +264,14 @@ export default function Settings() {
           {activeSection === "preferences" && (
             <>
               <div>
-                <h2 className="text-lg font-bold mb-1">Préférences de contenu</h2>
-                <p className="text-sm text-muted-foreground">Personnalise la génération de contenu</p>
+                <h2 className="text-lg font-bold mb-1">Content preferences</h2>
+                <p className="text-sm text-muted-foreground">Customize content generation</p>
               </div>
 
               <div className="bg-card border border-border/30 rounded-xl p-6 space-y-6">
                 {/* Langue */}
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-2 block">Langue de génération</label>
+                  <label className="text-xs font-medium text-muted-foreground mb-2 block">Generation language</label>
                   <div className="flex gap-2">
                     {LANGUAGES.map((l) => (
                       <button
@@ -292,7 +292,7 @@ export default function Settings() {
 
                 {/* Ton */}
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-2 block">Ton par défaut</label>
+                  <label className="text-xs font-medium text-muted-foreground mb-2 block">Default tone</label>
                   <div className="flex flex-wrap gap-2">
                     {TONES.map((t) => (
                       <button
@@ -313,7 +313,7 @@ export default function Settings() {
 
                 {/* Longueur */}
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-2 block">Longueur préférée</label>
+                  <label className="text-xs font-medium text-muted-foreground mb-2 block">Preferred length</label>
                   <div className="flex gap-2">
                     {LENGTHS.map((l) => (
                       <button
@@ -335,9 +335,9 @@ export default function Settings() {
                 {/* Anti-IA */}
                 <div className="flex items-center justify-between py-3 border-t border-border/20">
                   <div>
-                    <p className="text-sm font-medium">Protocole Anti-IA</p>
+                    <p className="text-sm font-medium">Anti-AI Protocol</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Humanise automatiquement le contenu généré
+                      Automatically humanizes generated content
                     </p>
                   </div>
                   <Switch checked={antiAi} onCheckedChange={setAntiAi} />
@@ -345,7 +345,7 @@ export default function Settings() {
               </div>
 
               <p className="text-[11px] text-muted-foreground">
-                Ces préférences seront bientôt prises en compte lors de la génération.
+                These preferences will soon be applied during generation.
               </p>
             </>
           )}
@@ -354,35 +354,35 @@ export default function Settings() {
           {activeSection === "compte" && (
             <>
               <div>
-                <h2 className="text-lg font-bold mb-1">Compte</h2>
-                <p className="text-sm text-muted-foreground">Gère ton abonnement et ton compte</p>
+                <h2 className="text-lg font-bold mb-1">Account</h2>
+                <p className="text-sm text-muted-foreground">Manage your subscription and account</p>
               </div>
 
-              {/* Plan actuel */}
+              {/* Current plan */}
               <div className="bg-card border border-border/30 rounded-xl p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <Crown className="w-4 h-4 text-primary" />
-                      <p className="text-sm font-semibold">Plan actuel</p>
+                      <p className="text-sm font-semibold">Current plan</p>
                     </div>
                     <p className="text-2xl font-bold">Free</p>
-                    <p className="text-xs text-muted-foreground mt-1">5 générations / jour</p>
+                    <p className="text-xs text-muted-foreground mt-1">5 generations / day</p>
                   </div>
                   <Button className="h-9 gap-2 text-xs">
                     <Crown className="w-3.5 h-3.5" />
-                    Upgrader mon plan
+                    Upgrade plan
                   </Button>
                 </div>
               </div>
 
-              {/* Déconnexion */}
+              {/* Sign out */}
               <div className="bg-card border border-border/30 rounded-xl p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-semibold">Se déconnecter</p>
+                    <p className="text-sm font-semibold">Sign out</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Tu pourras te reconnecter à tout moment
+                      You can sign back in anytime
                     </p>
                   </div>
                   <Button
@@ -391,19 +391,19 @@ export default function Settings() {
                     className="h-9 gap-2 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
                   >
                     <LogOut className="w-3.5 h-3.5" />
-                    Déconnexion
+                    Sign out
                   </Button>
                 </div>
               </div>
 
-              {/* Zone danger */}
+              {/* Danger zone */}
               <div className="bg-card border border-destructive/20 rounded-xl p-6">
                 <div className="flex items-center gap-2 mb-3">
                   <Trash2 className="w-4 h-4 text-destructive" />
-                  <p className="text-sm font-semibold text-destructive">Zone danger</p>
+                  <p className="text-sm font-semibold text-destructive">Danger zone</p>
                 </div>
                 <p className="text-xs text-muted-foreground mb-4">
-                  La suppression de ton compte est irréversible. Toutes tes données (sources, contenus, profil) seront définitivement effacées.
+                  Deleting your account is irreversible. All your data (sources, content, profile) will be permanently erased.
                 </p>
                 {!showDeleteConfirm ? (
                   <Button
@@ -411,18 +411,18 @@ export default function Settings() {
                     onClick={() => setShowDeleteConfirm(true)}
                     className="h-9 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
                   >
-                    Supprimer mon compte
+                    Delete my account
                   </Button>
                 ) : (
                   <div className="flex items-center gap-3">
-                    <p className="text-xs text-destructive font-medium">Es-tu sûr ?</p>
+                    <p className="text-xs text-destructive font-medium">Are you sure?</p>
                     <Button
                       variant="destructive"
                       size="sm"
                       onClick={handleDeleteAccount}
                       className="h-8 text-xs"
                     >
-                      Oui, supprimer définitivement
+                      Yes, delete permanently
                     </Button>
                     <Button
                       variant="ghost"
@@ -430,7 +430,7 @@ export default function Settings() {
                       onClick={() => setShowDeleteConfirm(false)}
                       className="h-8 text-xs"
                     >
-                      Annuler
+                      Cancel
                     </Button>
                   </div>
                 )}
@@ -442,8 +442,8 @@ export default function Settings() {
           {activeSection === "about" && (
             <>
               <div>
-                <h2 className="text-lg font-bold mb-1">À propos</h2>
-                <p className="text-sm text-muted-foreground">Informations sur l'application</p>
+                <h2 className="text-lg font-bold mb-1">About</h2>
+                <p className="text-sm text-muted-foreground">Application information</p>
               </div>
 
               <div className="bg-card border border-border/30 rounded-xl p-6 space-y-4">
@@ -453,7 +453,7 @@ export default function Settings() {
                 </div>
                 <div className="border-t border-border/20" />
                 <div className="flex items-center justify-between py-2">
-                  <p className="text-sm text-muted-foreground">Site web</p>
+                  <p className="text-sm text-muted-foreground">Website</p>
                   <Link
                     to="/"
                     className="text-sm text-primary hover:underline flex items-center gap-1"
@@ -473,7 +473,7 @@ export default function Settings() {
                 </div>
                 <div className="border-t border-border/20" />
                 <div className="flex items-center justify-between py-2">
-                  <p className="text-sm text-muted-foreground">Propulsé par</p>
+                  <p className="text-sm text-muted-foreground">Powered by</p>
                   <p className="text-sm font-medium">Claude Sonnet + Gemini Flash</p>
                 </div>
               </div>

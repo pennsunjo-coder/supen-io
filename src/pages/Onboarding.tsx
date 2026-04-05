@@ -150,7 +150,7 @@ const Onboarding = () => {
     console.log("🔵 Onboarding: saving", { niche: finalNiche, user: user?.id });
 
     // Retry up to 3 times — user session may still be initializing after OAuth
-    let result = { success: false, error: "Non connecté" as string | null };
+    let result = { success: false, error: "Not connected" as string | null };
     for (let attempt = 0; attempt < 3; attempt++) {
       if (!user && attempt < 2) {
         console.log(`🟡 Onboarding: user null, waiting 1s (attempt ${attempt + 1}/3)`);
@@ -178,7 +178,7 @@ const Onboarding = () => {
     setSaving(false);
 
     if (!result.success) {
-      setSaveError(result.error || "Erreur lors de la sauvegarde. Réessaie.");
+      setSaveError(result.error || "Error saving. Please try again.");
       return;
     }
 
@@ -203,11 +203,11 @@ const Onboarding = () => {
         <div className="w-full max-w-md">
           <AnimatePresence mode="wait">
 
-            {/* ÉTAPE 1 — Prénom */}
+            {/* Step 1 — Name */}
             {step === 0 && (
               <motion.div key="s0" {...stepAnim} transition={{ duration: 0.25 }}>
                 <h1 className="text-2xl font-bold text-foreground mb-2">Comment tu t'appelles ?</h1>
-                <p className="text-sm text-muted-foreground mb-8">On va personnaliser ton expérience.</p>
+                <p className="text-sm text-muted-foreground mb-8">Let's personalize your experience.</p>
                 <Input
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
@@ -222,11 +222,11 @@ const Onboarding = () => {
               </motion.div>
             )}
 
-            {/* ÉTAPE 2 — Plateformes */}
+            {/* Step 2 — Platforms */}
             {step === 1 && (
               <motion.div key="s1" {...stepAnim} transition={{ duration: 0.25 }}>
                 <h1 className="text-2xl font-bold text-foreground mb-2">Sur quelles plateformes crées-tu du contenu ?</h1>
-                <p className="text-sm text-muted-foreground mb-6">Sélectionne toutes celles que tu utilises.</p>
+                <p className="text-sm text-muted-foreground mb-6">Select all that you use.</p>
                 <div className="flex flex-wrap gap-2">
                   {PLATFORM_OPTIONS.map((p) => {
                     const active = selectedPlatforms.includes(p.id);
@@ -284,7 +284,7 @@ const Onboarding = () => {
             {step === 3 && (
               <motion.div key="s3" {...stepAnim} transition={{ duration: 0.25 }}>
                 <h1 className="text-2xl font-bold text-foreground mb-2">Dans quel domaine évolues-tu ?</h1>
-                <p className="text-sm text-muted-foreground mb-6">On adaptera les suggestions à ta niche.</p>
+                <p className="text-sm text-muted-foreground mb-6">We'll tailor suggestions to your niche.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[360px] overflow-y-auto pr-1">
                   {NICHE_OPTIONS.map((n) => {
                     const active = niche === n.id;
@@ -321,7 +321,7 @@ const Onboarding = () => {
                   <Input
                     value={customNiche}
                     onChange={(e) => setCustomNiche(e.target.value)}
-                    placeholder="Précise ton domaine..."
+                    placeholder="Specify your field..."
                     className="mt-3 h-11 bg-accent/20 border-border/30"
                     autoFocus
                   />
@@ -330,7 +330,7 @@ const Onboarding = () => {
                   <div className="mt-4 px-3 py-2 rounded-lg bg-destructive/10 border border-destructive/20 text-xs text-destructive">{saveError}</div>
                 )}
                 <Button onClick={handleComplete} disabled={!niche || (niche === "Autre" && !customNiche.trim()) || saving} className="w-full h-12 mt-6 gap-2 font-semibold glow-sm">
-                  {saving ? "Enregistrement..." : <>Terminer <Sparkles className="w-4 h-4" /></>}
+                  {saving ? "Saving..." : <>Finish <Sparkles className="w-4 h-4" /></>}
                 </Button>
               </motion.div>
             )}

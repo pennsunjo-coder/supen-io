@@ -19,7 +19,7 @@ export function useProfile() {
   const [loading, setLoading] = useState(true);
   const profileRef = useRef<UserProfile | null>(null);
 
-  // Garder la ref à jour
+  // Keep ref up to date
   useEffect(() => {
     profileRef.current = profile;
   }, [profile]);
@@ -59,11 +59,11 @@ export function useProfile() {
     setLoading(false);
   }, [user]);
 
-  // UNIQUEMENT quand user.id change — PAS quand fetchProfile est recréé
-  // IMPORTANT : ne PAS mettre loading=false quand user est null.
-  // ProtectedRoute gère le cas !user avec authLoading — si on met
-  // loading=false ici, il y a un render où profileLoading=false
-  // alors que le profil n'a pas été fetché → redirect vers /onboarding.
+  // ONLY when user.id changes — NOT when fetchProfile is recreated
+  // IMPORTANT: do NOT set loading=false when user is null.
+  // ProtectedRoute handles the !user case with authLoading — if we set
+  // loading=false here, there's a render where profileLoading=false
+  // even though the profile hasn't been fetched → redirect to /onboarding.
   useEffect(() => {
     if (user?.id) {
       setLoading(true);
@@ -75,7 +75,7 @@ export function useProfile() {
     async (
       updates: Partial<Omit<UserProfile, "id" | "user_id" | "created_at">>
     ): Promise<{ success: boolean; error: string | null }> => {
-      if (!user) return { success: false, error: "Non connecté" };
+      if (!user) return { success: false, error: "Not connected" };
 
       try {
         const { data, error } = await supabase
@@ -98,7 +98,7 @@ export function useProfile() {
         }
         return { success: true, error: null };
       } catch (err) {
-        const msg = err instanceof Error ? err.message : "Erreur réseau";
+        const msg = err instanceof Error ? err.message : "Network error";
         return { success: false, error: msg };
       }
     },

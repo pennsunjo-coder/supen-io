@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
-/* ─── Icônes plateformes ─── */
+/* ─── Platform icons ─── */
 
 const IconX = () => <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>;
 const IconInstagram = () => <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>;
@@ -28,7 +28,7 @@ const platformIcons: Record<string, React.FC> = {
   "YouTube": IconYouTube,
 };
 
-const platformFilters = ["Tous", "Instagram", "TikTok", "LinkedIn", "Facebook", "X (Twitter)", "YouTube"];
+const platformFilters = ["All", "Instagram", "TikTok", "LinkedIn", "Facebook", "X (Twitter)", "YouTube"];
 
 function truncate(text: string, words: number): string {
   const w = text.split(/\s+/);
@@ -38,7 +38,7 @@ function truncate(text: string, words: number): string {
 
 function formatTime(dateStr: string): string {
   const d = new Date(dateStr);
-  return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
 }
 
 /* ─── Card item ─── */
@@ -52,13 +52,13 @@ function HistoryCard({ item }: { item: GeneratedItem }) {
   function handleCopy() {
     navigator.clipboard.writeText(item.content);
     setCopied(true);
-    toast.success(`Contenu copié ! Prêt à publier sur ${item.platform}.`);
+    toast.success(`Content copied! Ready to post on ${item.platform}.`);
     setTimeout(() => setCopied(false), 2000);
   }
 
   function handleReuse() {
     navigate("/dashboard");
-    toast("Contenu chargé dans le Studio. Clique sur Créer du contenu pour le modifier.");
+    toast("Content loaded in Studio. Click Create content to edit.");
   }
 
   return (
@@ -114,7 +114,7 @@ function HistoryCard({ item }: { item: GeneratedItem }) {
                   onClick={(e) => { e.stopPropagation(); handleCopy(); }}
                 >
                   {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                  {copied ? "Copié" : "Copier"}
+                  {copied ? "Copied" : "Copy"}
                 </Button>
                 <Button
                   variant="ghost"
@@ -122,10 +122,10 @@ function HistoryCard({ item }: { item: GeneratedItem }) {
                   className="h-7 text-[11px] gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
                   onClick={(e) => { e.stopPropagation(); handleReuse(); }}
                 >
-                  <RotateCcw className="w-3 h-3" /> Réutiliser
+                  <RotateCcw className="w-3 h-3" /> Reuse
                 </Button>
                 <span className="text-[10px] text-muted-foreground/40 ml-auto">
-                  {item.content.split(/\s+/).length} mots
+                  {item.content.split(/\s+/).length} words
                 </span>
               </div>
             </div>
@@ -140,12 +140,12 @@ function HistoryCard({ item }: { item: GeneratedItem }) {
 
 const History = () => {
   const { grouped, loading } = useHistory();
-  const [filter, setFilter] = useState("Tous");
+  const [filter, setFilter] = useState("All");
 
   const filteredGroups = grouped
     .map((group) => ({
       ...group,
-      items: filter === "Tous" ? group.items : group.items.filter((i) => i.platform === filter),
+      items: filter === "All" ? group.items : group.items.filter((i) => i.platform === filter),
     }))
     .filter((group) => group.items.length > 0);
 
@@ -162,9 +162,9 @@ const History = () => {
               <Clock className="w-4 h-4 text-primary" />
             </div>
             <div>
-              <h1 className="text-lg font-bold">Historique</h1>
+              <h1 className="text-lg font-bold">History</h1>
               <p className="text-xs text-muted-foreground">
-                {loading ? "Chargement..." : `${totalCount} contenu${totalCount > 1 ? "s" : ""} généré${totalCount > 1 ? "s" : ""}`}
+                {loading ? "Loading..." : `${totalCount} generated content${totalCount > 1 ? "s" : ""}`}
               </p>
             </div>
           </div>
@@ -198,11 +198,11 @@ const History = () => {
               <div className="w-14 h-14 rounded-2xl bg-accent/40 flex items-center justify-center mb-4">
                 <Clock className="w-6 h-6 text-muted-foreground/50" />
               </div>
-              <p className="text-sm font-medium text-muted-foreground mb-1">Aucun contenu</p>
+              <p className="text-sm font-medium text-muted-foreground mb-1">No content</p>
               <p className="text-xs text-muted-foreground/60">
-                {filter === "Tous"
-                  ? "Génère du contenu dans le Studio pour le retrouver ici."
-                  : `Aucun contenu ${filter} trouvé.`}
+                {filter === "All"
+                  ? "Generate content in the Studio to find it here."
+                  : `No ${filter} content found.`}
               </p>
             </div>
           ) : (

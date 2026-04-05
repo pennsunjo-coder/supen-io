@@ -4,12 +4,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getCache, setCache, invalidateCache } from "@/lib/cache";
 import type { Source } from "@/types/database";
 
-const CHUNK_SIZE = 400; // mots par chunk (cible 300-500)
-const CHUNK_OVERLAP = 50; // mots de chevauchement
+const CHUNK_SIZE = 400; // words per chunk (target 300-500)
+const CHUNK_OVERLAP = 50; // overlap words
 
 /**
- * Découpe un texte en chunks de CHUNK_SIZE mots avec CHUNK_OVERLAP mots de chevauchement.
- * Retourne un tableau de strings. Si le texte est court (<= CHUNK_SIZE), retourne [texte].
+ * Splits text into chunks of CHUNK_SIZE words with CHUNK_OVERLAP overlap words.
+ * Returns an array of strings. If the text is short (<= CHUNK_SIZE), returns [text].
  */
 function chunkText(text: string): string[] {
   const words = text.split(/\s+/).filter((w) => w.length > 0);
@@ -27,14 +27,14 @@ function chunkText(text: string): string[] {
 }
 
 /**
- * Extrait le texte principal d'une page HTML en supprimant
- * les balises script, style, nav, header, footer et publicités.
+ * Extracts the main text from an HTML page by removing
+ * script, style, nav, header, footer tags and ads.
  */
 function extractTextFromHtml(html: string): string {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, "text/html");
 
-  // Supprimer les éléments non-contenu
+  // Remove non-content elements
   const selectorsToRemove = [
     "script", "style", "nav", "header", "footer",
     "iframe", "noscript", "aside",
@@ -45,7 +45,7 @@ function extractTextFromHtml(html: string): string {
     doc.querySelectorAll(sel).forEach((el) => el.remove());
   }
 
-  // Chercher le contenu principal
+  // Find main content
   const main = doc.querySelector("article") || doc.querySelector("main") || doc.querySelector("[role='main']") || doc.body;
   const text = (main?.textContent || "")
     .replace(/\s+/g, " ")
@@ -55,9 +55,9 @@ function extractTextFromHtml(html: string): string {
 }
 
 /**
- * Extrait le texte d'un PDF.
- * Chrome/Firefox : pdf.js côté client (rapide).
- * Safari : Edge Function directement (pas de tentative pdf.js).
+ * Extracts text from a PDF.
+ * Chrome/Firefox: client-side pdf.js (fast).
+ * Safari: Edge Function directly (no pdf.js attempt).
  */
 async function extractTextFromPdf(file: File): Promise<{ text: string; pages: number }> {
   const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
@@ -99,7 +99,7 @@ async function extractTextFromPdf(file: File): Promise<{ text: string; pages: nu
     }
   }
 
-  // Safari ou fallback : Edge Function via supabase.functions.invoke
+  // Safari or fallback: Edge Function via supabase.functions.invoke
   console.log("🔵 Edge Function (Safari compatible)");
   const formData = new FormData();
   formData.append("file", file);
@@ -109,32 +109,32 @@ async function extractTextFromPdf(file: File): Promise<{ text: string; pages: nu
   });
 
   if (error) throw new Error(error.message || "Edge Function failed");
-  if (!data?.text) throw new Error("Aucun texte extrait par le serveur");
+  if (!data?.text) throw new Error("No text extracted by the server");
 
   console.log("🟢 Edge Function:", data.pages, "pages");
   return { text: data.text, pages: data.pages };
 }
 
 export interface GroupedSource {
-  id: string;          // premier chunk ID (pour key)
-  ids: string[];       // tous les chunk IDs
+  id: string;          // first chunk ID (for key)
+  ids: string[];       // all chunk IDs
   type: "url" | "note" | "pdf";
-  title: string;       // nom sans suffixe chunk
+  title: string;       // name without chunk suffix
   chunkCount: number;
   wordCount: number;
-  content: string;     // premier chunk pour preview
+  content: string;     // first chunk for preview
   file_path: string | null;
 }
 
 /**
- * Groupe les sources par fichier (même PDF = 1 entrée).
- * URLs/Notes avec suffixe (1/3) sont aussi groupées.
+ * Groups sources by file (same PDF = 1 entry).
+ * URLs/Notes with suffix (1/3) are also grouped.
  */
 function groupSources(sources: Source[]): GroupedSource[] {
   const groups = new Map<string, Source[]>();
 
   for (const s of sources) {
-    // Extraire le titre de base (sans " (1/3)")
+    // Extract the base title (without " (1/3)")
     const baseTitle = s.title.replace(/\s*\(\d+\/\d+\)$/, "");
     const key = `${s.type}:${baseTitle}`;
 
@@ -183,7 +183,7 @@ export function useSources() {
         setSources(typed);
         setCache(cacheKey, typed);
       }
-    } catch { /* réseau */ }
+    } catch { /* network */ }
     setLoading(false);
   }, [user]);
 
@@ -193,10 +193,10 @@ export function useSources() {
 
   const addUrl = useCallback(
     async (url: string): Promise<{ error: string | null }> => {
-      if (!user) return { error: "Non connecté" };
+      if (!user) return { error: "Not connected" };
       console.log("🔵 addUrl:", url);
 
-      // Fetch via Edge Function (pas de CORS)
+      // Fetch via Edge Function (no CORS)
       let title = url.slice(0, 120);
       let pageContent = "";
 
@@ -215,7 +215,7 @@ export function useSources() {
         console.warn("🟡 addUrl: Edge Function unavailable");
       }
 
-      // Fallback : si Edge Function échoue, essayer côté client
+      // Fallback: if Edge Function fails, try client-side
       if (!pageContent) {
         try {
           const response = await fetch(url, {
@@ -232,7 +232,7 @@ export function useSources() {
       }
 
       if (!pageContent || pageContent.length < 50) {
-        return { error: "Impossible d'accéder à cette page. Colle le texte manuellement dans une Note." };
+        return { error: "Unable to access this page. Paste the text manually in a Note." };
       }
 
       const chunks = chunkText(pageContent);
@@ -261,7 +261,7 @@ export function useSources() {
 
   const addNote = useCallback(
     async (title: string, content: string): Promise<{ error: string | null }> => {
-      if (!user) return { error: "Non connecté" };
+      if (!user) return { error: "Not connected" };
       console.log("🔵 addNote:", title);
 
       const chunks = chunkText(content);
@@ -295,13 +295,13 @@ export function useSources() {
 
   const addPdf = useCallback(
     async (file: File): Promise<{ error: string | null }> => {
-      if (!user) return { error: "Non connecté" };
+      if (!user) return { error: "Not connected" };
 
       if (file.size > 10 * 1024 * 1024) {
-        return { error: "Le fichier ne doit pas dépasser 10 Mo." };
+        return { error: "File must not exceed 10 MB." };
       }
 
-      // 1. Extraire le texte côté client avec pdf.js
+      // 1. Extract text client-side with pdf.js
       let pdfText: string;
       let pageCount: number;
       try {
@@ -312,14 +312,14 @@ export function useSources() {
         console.log("🟢 PDF: extracted", pageCount, "pages,", pdfText.split(/\s+/).length, "words");
       } catch (err) {
         console.error("🔴 PDF extraction failed:", err);
-        return { error: "Impossible de lire ce PDF. Le fichier est peut-être protégé ou corrompu." };
+        return { error: "Unable to read this PDF. The file may be protected or corrupted." };
       }
 
       if (!pdfText || pdfText.length < 10) {
-        return { error: "Aucun texte extractible dans ce PDF." };
+        return { error: "No extractable text in this PDF." };
       }
 
-      // 2. Uploader dans Storage
+      // 2. Upload to Storage
       const filePath = `${user.id}/${Date.now()}_${file.name}`;
       try {
         const { error: uploadError } = await supabase.storage
@@ -328,13 +328,13 @@ export function useSources() {
 
         if (uploadError) {
           console.warn("Storage upload failed:", uploadError.message);
-          // On continue même si le storage échoue — le texte est extrait
+          // Continue even if storage fails — text is extracted
         }
       } catch {
-        // Storage pas configuré — on continue avec le texte
+        // Storage not configured — continue with text
       }
 
-      // 3. Découper en chunks et insérer
+      // 3. Split into chunks and insert
       const title = file.name.replace(/\.pdf$/i, "");
       const chunks = chunkText(pdfText);
       invalidateCache(`sources:${user.id}`);
@@ -360,7 +360,7 @@ export function useSources() {
         if (error) return { error: error.message };
       }
 
-      console.log(`🟢 PDF "${title}": ${pageCount} pages, ${chunks.length} chunks, ${pdfText.split(/\s+/).length} mots — saved to sources`);
+      console.log(`🟢 PDF "${title}": ${pageCount} pages, ${chunks.length} chunks, ${pdfText.split(/\s+/).length} words — saved to sources`);
       await fetchSources();
       return { error: null };
     },
@@ -369,10 +369,10 @@ export function useSources() {
 
   const searchWeb = useCallback(
     async (query: string): Promise<{ error: string | null }> => {
-      if (!user) return { error: "Non connecté" };
+      if (!user) return { error: "Not connected" };
       console.log("🔵 searchWeb:", query);
 
-      // Essayer via Edge Function (clé Tavily côté serveur)
+      // Try via Edge Function (Tavily key server-side)
       let title = "";
       let content = "";
 
@@ -381,7 +381,7 @@ export function useSources() {
           body: { query },
         });
         if (!fnErr && data?.content) {
-          title = data.title || `Recherche : ${query.slice(0, 100)}`;
+          title = data.title || `Search: ${query.slice(0, 100)}`;
           content = data.content;
           console.log("🟢 searchWeb: via Edge Function");
         }
@@ -389,11 +389,11 @@ export function useSources() {
         console.warn("🟡 searchWeb: Edge Function unavailable, trying client-side");
       }
 
-      // Fallback client-side si Edge Function échoue
+      // Fallback client-side if Edge Function fails
       if (!content) {
         const TAVILY_KEY = import.meta.env.VITE_TAVILY_API_KEY;
         if (!TAVILY_KEY || TAVILY_KEY === "your-tavily-api-key") {
-          return { error: "Recherche web non disponible. Déployez la Edge Function search-web." };
+          return { error: "Web search unavailable. Deploy the search-web Edge Function." };
         }
         try {
           const response = await fetch("https://api.tavily.com/search", {
@@ -401,19 +401,19 @@ export function useSources() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ api_key: TAVILY_KEY, query, max_results: 3, include_answer: true }),
           });
-          if (!response.ok) return { error: `Erreur Tavily : ${response.status}` };
+          if (!response.ok) return { error: `Tavily error: ${response.status}` };
           const data = await response.json();
           if (data.answer) content += `${data.answer}\n\n`;
           if (data.results) {
             for (const r of data.results) content += `— ${r.title}\n${r.url}\n${r.content?.slice(0, 500) ?? ""}\n\n`;
           }
-          title = `Recherche : ${query.slice(0, 100)}`;
+          title = `Search: ${query.slice(0, 100)}`;
         } catch (err) {
-          return { error: err instanceof Error ? err.message : "Erreur recherche" };
+          return { error: err instanceof Error ? err.message : "Search error" };
         }
       }
 
-      if (!content.trim()) return { error: "Aucun résultat trouvé." };
+      if (!content.trim()) return { error: "No results found." };
 
       const chunks = chunkText(content.trim());
       if (chunks.length === 1) {
