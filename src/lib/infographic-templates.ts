@@ -21,7 +21,7 @@ body{width:${w}px;height:${h}px;background:#FFF8F0;font-family:'Patrick Hand',cu
 .sections{display:flex;flex-direction:column;gap:${h > 1100 ? 20 : 16}px;flex:1}
 .section{display:flex;align-items:flex-start;gap:14px;padding:14px 18px;background:rgba(0,0,0,0.02);border-radius:12px;border-left:4px solid var(--c)}
 .num{width:42px;height:42px;border-radius:50%;background:var(--c);color:#fff;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Poppins',sans-serif;box-shadow:0 3px 10px rgba(0,0,0,0.15)}
-.emoji{font-size:30px;flex-shrink:0;line-height:1;margin-top:3px}
+.ico{width:44px;height:44px;border-radius:12px;background:color-mix(in srgb,var(--c) 12%,transparent);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .sc{flex:1}
 .st{font-size:18px;font-weight:700;color:var(--c);margin-bottom:4px;font-family:'Poppins',sans-serif}
 .sb{font-size:14px;color:#2D3748;line-height:1.45}
@@ -31,11 +31,11 @@ body{width:${w}px;height:${h}px;background:#FFF8F0;font-family:'Patrick Hand',cu
 </style></head><body>
 <div class="header"><div class="badge">{{BADGE}}</div><div class="title">{{TITLE}}</div></div>
 <div class="sections">
-<div class="section s1"><div class="num">1</div><div class="emoji">{{P1_EMOJI}}</div><div class="sc"><div class="st">{{P1_TITLE}}</div><div class="sb">{{P1_BODY}}</div></div></div>
-<div class="section s2"><div class="num">2</div><div class="emoji">{{P2_EMOJI}}</div><div class="sc"><div class="st">{{P2_TITLE}}</div><div class="sb">{{P2_BODY}}</div></div></div>
-<div class="section s3"><div class="num">3</div><div class="emoji">{{P3_EMOJI}}</div><div class="sc"><div class="st">{{P3_TITLE}}</div><div class="sb">{{P3_BODY}}</div></div></div>
-<div class="section s4"><div class="num">4</div><div class="emoji">{{P4_EMOJI}}</div><div class="sc"><div class="st">{{P4_TITLE}}</div><div class="sb">{{P4_BODY}}</div></div></div>
-<div class="section s5"><div class="num">5</div><div class="emoji">{{P5_EMOJI}}</div><div class="sc"><div class="st">{{P5_TITLE}}</div><div class="sb">{{P5_BODY}}</div></div></div>
+<div class="section s1"><div class="num">1</div><div class="ico">{{P1_ICON}}</div><div class="sc"><div class="st">{{P1_TITLE}}</div><div class="sb">{{P1_BODY}}</div></div></div>
+<div class="section s2"><div class="num">2</div><div class="ico">{{P2_ICON}}</div><div class="sc"><div class="st">{{P2_TITLE}}</div><div class="sb">{{P2_BODY}}</div></div></div>
+<div class="section s3"><div class="num">3</div><div class="ico">{{P3_ICON}}</div><div class="sc"><div class="st">{{P3_TITLE}}</div><div class="sb">{{P3_BODY}}</div></div></div>
+<div class="section s4"><div class="num">4</div><div class="ico">{{P4_ICON}}</div><div class="sc"><div class="st">{{P4_TITLE}}</div><div class="sb">{{P4_BODY}}</div></div></div>
+<div class="section s5"><div class="num">5</div><div class="ico">{{P5_ICON}}</div><div class="sc"><div class="st">{{P5_TITLE}}</div><div class="sb">{{P5_BODY}}</div></div></div>
 </div>
 <div class="footer">{{FOOTER}}</div>
 </body></html>`;
@@ -57,7 +57,7 @@ body{width:${w}px;height:${h}px;background:linear-gradient(160deg,#0F172A,#1E293
 .sections{display:flex;flex-direction:column;gap:${h > 1100 ? 18 : 14}px;flex:1}
 .section{display:flex;align-items:flex-start;gap:16px;padding:18px 22px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;backdrop-filter:blur(4px)}
 .num{width:40px;height:40px;border-radius:10px;background:var(--c);color:#000;font-size:16px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.emoji{font-size:28px;flex-shrink:0;line-height:1;margin-top:4px}
+.ico{width:40px;height:40px;border-radius:10px;background:color-mix(in srgb,var(--c) 12%,transparent);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .sc{flex:1}
 .st{font-size:17px;font-weight:700;color:#F1F5F9;margin-bottom:5px}
 .sb{font-size:13px;color:#94A3B8;line-height:1.5}
@@ -66,11 +66,11 @@ body{width:${w}px;height:${h}px;background:linear-gradient(160deg,#0F172A,#1E293
 </style></head><body>
 <div class="header"><div class="badge">{{BADGE}}</div><div class="title">{{TITLE}}</div></div>
 <div class="sections">
-<div class="section s1"><div class="num">1</div><div class="emoji">{{P1_EMOJI}}</div><div class="sc"><div class="st">{{P1_TITLE}}</div><div class="sb">{{P1_BODY}}</div></div></div>
-<div class="section s2"><div class="num">2</div><div class="emoji">{{P2_EMOJI}}</div><div class="sc"><div class="st">{{P2_TITLE}}</div><div class="sb">{{P2_BODY}}</div></div></div>
-<div class="section s3"><div class="num">3</div><div class="emoji">{{P3_EMOJI}}</div><div class="sc"><div class="st">{{P3_TITLE}}</div><div class="sb">{{P3_BODY}}</div></div></div>
-<div class="section s4"><div class="num">4</div><div class="emoji">{{P4_EMOJI}}</div><div class="sc"><div class="st">{{P4_TITLE}}</div><div class="sb">{{P4_BODY}}</div></div></div>
-<div class="section s5"><div class="num">5</div><div class="emoji">{{P5_EMOJI}}</div><div class="sc"><div class="st">{{P5_TITLE}}</div><div class="sb">{{P5_BODY}}</div></div></div>
+<div class="section s1"><div class="num">1</div><div class="ico">{{P1_ICON}}</div><div class="sc"><div class="st">{{P1_TITLE}}</div><div class="sb">{{P1_BODY}}</div></div></div>
+<div class="section s2"><div class="num">2</div><div class="ico">{{P2_ICON}}</div><div class="sc"><div class="st">{{P2_TITLE}}</div><div class="sb">{{P2_BODY}}</div></div></div>
+<div class="section s3"><div class="num">3</div><div class="ico">{{P3_ICON}}</div><div class="sc"><div class="st">{{P3_TITLE}}</div><div class="sb">{{P3_BODY}}</div></div></div>
+<div class="section s4"><div class="num">4</div><div class="ico">{{P4_ICON}}</div><div class="sc"><div class="st">{{P4_TITLE}}</div><div class="sb">{{P4_BODY}}</div></div></div>
+<div class="section s5"><div class="num">5</div><div class="ico">{{P5_ICON}}</div><div class="sc"><div class="st">{{P5_TITLE}}</div><div class="sb">{{P5_BODY}}</div></div></div>
 </div>
 <div class="footer">{{FOOTER}}</div>
 </body></html>`;
@@ -98,12 +98,12 @@ body{width:${w}px;height:${h}px;background:#FFFFF5;font-family:'Patrick Hand',cu
 </style></head><body>
 <div class="header"><div class="title">{{TITLE}}</div></div>
 <div class="grid">
-<div class="card c1"><div class="card-head">{{P1_EMOJI}} {{P1_TITLE}}</div><div class="card-body">{{P1_BODY}}</div></div>
-<div class="card c2"><div class="card-head">{{P2_EMOJI}} {{P2_TITLE}}</div><div class="card-body">{{P2_BODY}}</div></div>
-<div class="card c3"><div class="card-head">{{P3_EMOJI}} {{P3_TITLE}}</div><div class="card-body">{{P3_BODY}}</div></div>
-<div class="card c4"><div class="card-head">{{P4_EMOJI}} {{P4_TITLE}}</div><div class="card-body">{{P4_BODY}}</div></div>
-<div class="card c5"><div class="card-head">{{P5_EMOJI}} {{P5_TITLE}}</div><div class="card-body">{{P5_BODY}}</div></div>
-<div class="card c6"><div class="card-head">{{P6_EMOJI}} {{P6_TITLE}}</div><div class="card-body">{{P6_BODY}}</div></div>
+<div class="card c1"><div class="card-head">{{P1_TITLE}}</div><div class="card-body">{{P1_BODY}}</div></div>
+<div class="card c2"><div class="card-head">{{P2_TITLE}}</div><div class="card-body">{{P2_BODY}}</div></div>
+<div class="card c3"><div class="card-head">{{P3_TITLE}}</div><div class="card-body">{{P3_BODY}}</div></div>
+<div class="card c4"><div class="card-head">{{P4_TITLE}}</div><div class="card-body">{{P4_BODY}}</div></div>
+<div class="card c5"><div class="card-head">{{P5_TITLE}}</div><div class="card-body">{{P5_BODY}}</div></div>
+<div class="card c6"><div class="card-head">{{P6_TITLE}}</div><div class="card-body">{{P6_BODY}}</div></div>
 </div>
 <div class="footer">{{FOOTER}}</div>
 </body></html>`;
@@ -124,7 +124,7 @@ body{width:${w}px;height:${h}px;background:#FFFFFF;font-family:'Poppins',sans-se
 .sections{display:flex;flex-direction:column;gap:${h > 1100 ? 22 : 16}px;flex:1}
 .section{display:flex;align-items:center;gap:20px;padding:16px 24px;background:#F8FAFC;border-radius:16px}
 .num{width:56px;height:56px;border-radius:50%;background:var(--c);color:#fff;font-size:22px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 6px 20px rgba(0,0,0,0.12)}
-.emoji{font-size:36px;flex-shrink:0}
+.ico{width:48px;height:48px;border-radius:14px;background:color-mix(in srgb,var(--c) 10%,transparent);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .sc{flex:1}
 .st{font-size:18px;font-weight:700;color:#111;margin-bottom:3px}
 .sb{font-size:13px;color:#64748B;line-height:1.45}
@@ -133,11 +133,11 @@ body{width:${w}px;height:${h}px;background:#FFFFFF;font-family:'Poppins',sans-se
 </style></head><body>
 <div class="header"><div class="badge">{{BADGE}}</div><div class="title">{{TITLE}}</div></div>
 <div class="sections">
-<div class="section s1"><div class="num">1</div><div class="emoji">{{P1_EMOJI}}</div><div class="sc"><div class="st">{{P1_TITLE}}</div><div class="sb">{{P1_BODY}}</div></div></div>
-<div class="section s2"><div class="num">2</div><div class="emoji">{{P2_EMOJI}}</div><div class="sc"><div class="st">{{P2_TITLE}}</div><div class="sb">{{P2_BODY}}</div></div></div>
-<div class="section s3"><div class="num">3</div><div class="emoji">{{P3_EMOJI}}</div><div class="sc"><div class="st">{{P3_TITLE}}</div><div class="sb">{{P3_BODY}}</div></div></div>
-<div class="section s4"><div class="num">4</div><div class="emoji">{{P4_EMOJI}}</div><div class="sc"><div class="st">{{P4_TITLE}}</div><div class="sb">{{P4_BODY}}</div></div></div>
-<div class="section s5"><div class="num">5</div><div class="emoji">{{P5_EMOJI}}</div><div class="sc"><div class="st">{{P5_TITLE}}</div><div class="sb">{{P5_BODY}}</div></div></div>
+<div class="section s1"><div class="num">1</div><div class="ico">{{P1_ICON}}</div><div class="sc"><div class="st">{{P1_TITLE}}</div><div class="sb">{{P1_BODY}}</div></div></div>
+<div class="section s2"><div class="num">2</div><div class="ico">{{P2_ICON}}</div><div class="sc"><div class="st">{{P2_TITLE}}</div><div class="sb">{{P2_BODY}}</div></div></div>
+<div class="section s3"><div class="num">3</div><div class="ico">{{P3_ICON}}</div><div class="sc"><div class="st">{{P3_TITLE}}</div><div class="sb">{{P3_BODY}}</div></div></div>
+<div class="section s4"><div class="num">4</div><div class="ico">{{P4_ICON}}</div><div class="sc"><div class="st">{{P4_TITLE}}</div><div class="sb">{{P4_BODY}}</div></div></div>
+<div class="section s5"><div class="num">5</div><div class="ico">{{P5_ICON}}</div><div class="sc"><div class="st">{{P5_TITLE}}</div><div class="sb">{{P5_BODY}}</div></div></div>
 </div>
 <div class="footer">{{FOOTER}}</div>
 </body></html>`;
@@ -160,16 +160,16 @@ body{width:${w}px;height:${h}px;background:#FFF8F0;font-family:'Patrick Hand',cu
 .stat-num{font-size:64px;font-weight:900;color:var(--c);line-height:1;font-family:'Poppins',sans-serif}
 .stat-label{font-size:18px;font-weight:700;color:#1A1A1A;margin-top:8px}
 .stat-desc{font-size:13px;color:#5D3A1A;margin-top:4px;line-height:1.3}
-.stat-emoji{font-size:36px;margin-bottom:8px}
+.stat-ico{width:52px;height:52px;border-radius:14px;background:color-mix(in srgb,var(--c) 12%,transparent);display:flex;align-items:center;justify-content:center;margin-bottom:8px}
 .c1{--c:#E53E3E}.c2{--c:#3182CE}.c3{--c:#38A169}.c4{--c:#DD6B20}
 .footer{text-align:center;margin-top:auto;padding-top:18px;border-top:2px solid #5D3A1A;font-size:14px;font-weight:700;color:#5D3A1A;font-family:'Poppins',sans-serif}
 </style></head><body>
 <div class="header"><div class="badge">{{BADGE}}</div><div class="title">{{TITLE}}</div></div>
 <div class="stats">
-<div class="stat c1"><div class="stat-emoji">{{P1_EMOJI}}</div><div class="stat-num">{{P1_TITLE}}</div><div class="stat-label">{{P1_BODY}}</div></div>
-<div class="stat c2"><div class="stat-emoji">{{P2_EMOJI}}</div><div class="stat-num">{{P2_TITLE}}</div><div class="stat-label">{{P2_BODY}}</div></div>
-<div class="stat c3"><div class="stat-emoji">{{P3_EMOJI}}</div><div class="stat-num">{{P3_TITLE}}</div><div class="stat-label">{{P3_BODY}}</div></div>
-<div class="stat c4"><div class="stat-emoji">{{P4_EMOJI}}</div><div class="stat-num">{{P4_TITLE}}</div><div class="stat-label">{{P4_BODY}}</div></div>
+<div class="stat c1"><div class="stat-ico">{{P1_ICON}}</div><div class="stat-num">{{P1_TITLE}}</div><div class="stat-label">{{P1_BODY}}</div></div>
+<div class="stat c2"><div class="stat-ico">{{P2_ICON}}</div><div class="stat-num">{{P2_TITLE}}</div><div class="stat-label">{{P2_BODY}}</div></div>
+<div class="stat c3"><div class="stat-ico">{{P3_ICON}}</div><div class="stat-num">{{P3_TITLE}}</div><div class="stat-label">{{P3_BODY}}</div></div>
+<div class="stat c4"><div class="stat-ico">{{P4_ICON}}</div><div class="stat-num">{{P4_TITLE}}</div><div class="stat-label">{{P4_BODY}}</div></div>
 </div>
 <div class="footer">{{FOOTER}}</div>
 </body></html>`;
@@ -205,16 +205,16 @@ body{width:${w}px;height:${h}px;background:#FFFFF5;font-family:'Patrick Hand',cu
 <div class="vs-container">
 <div class="col col-left">
 <div class="col-head">{{P1_TITLE}}</div>
-<div class="row"><div class="row-title">{{P2_EMOJI}} {{P2_TITLE}}</div>{{P2_BODY}}</div>
-<div class="row"><div class="row-title">{{P3_EMOJI}} {{P3_TITLE}}</div>{{P3_BODY}}</div>
-<div class="row"><div class="row-title">{{P4_EMOJI}} {{P4_TITLE}}</div>{{P4_BODY}}</div>
+<div class="row"><div class="row-title">{{P2_TITLE}}</div>{{P2_BODY}}</div>
+<div class="row"><div class="row-title">{{P3_TITLE}}</div>{{P3_BODY}}</div>
+<div class="row"><div class="row-title">{{P4_TITLE}}</div>{{P4_BODY}}</div>
 </div>
 <div class="vs"><div class="vs-badge">VS</div></div>
 <div class="col col-right">
 <div class="col-head">{{P1_BODY}}</div>
-<div class="row"><div class="row-title">{{P5_EMOJI}} {{P5_TITLE}}</div>{{P5_BODY}}</div>
-<div class="row"><div class="row-title">{{P6_EMOJI}} {{P6_TITLE}}</div>{{P6_BODY}}</div>
-<div class="row"><div class="row-title">{{P7_EMOJI}} {{P7_TITLE}}</div>{{P7_BODY}}</div>
+<div class="row"><div class="row-title">{{P5_TITLE}}</div>{{P5_BODY}}</div>
+<div class="row"><div class="row-title">{{P6_TITLE}}</div>{{P6_BODY}}</div>
+<div class="row"><div class="row-title">{{P7_TITLE}}</div>{{P7_BODY}}</div>
 </div>
 </div>
 <div class="footer">{{FOOTER}}</div>

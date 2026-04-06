@@ -4,6 +4,7 @@
  */
 
 import { TEMPLATE_REGISTRY, TEMPLATE_IDS } from "./infographic-templates";
+import { selectIcon, getIconSvg } from "./infographic-icons";
 
 // ─── Types ───
 
@@ -241,16 +242,25 @@ export function buildInfographicPrompt(content: string, platform: string, custom
   }
 
   const templateFn = TEMPLATE_REGISTRY[templateId];
-  const templateHtml = templateFn(dims.width, dims.height);
+  let templateHtml = templateFn(dims.width, dims.height);
   const extraction = extractKeyPoints(content);
-  const emojis = assignEmojis(extraction.points, content);
+
+  // Pre-fill SVG icons into the template (deterministic, not left to Claude)
+  const sectionColors = ["#E53E3E", "#3182CE", "#38A169", "#DD6B20", "#9B59B6", "#EC4899", "#00C9B1"];
+  for (let i = 0; i < 7; i++) {
+    const pointText = extraction.points[i]?.title || "";
+    const iconName = selectIcon(pointText, i);
+    const color = sectionColors[i % sectionColors.length];
+    const iconSvg = getIconSvg(iconName, color, 24);
+    templateHtml = templateHtml.replace(`{{P${i + 1}_ICON}}`, iconSvg);
+  }
 
   const variationSeed = Math.random().toString(36).substring(2, 8);
   const extra = customInstructions ? `\nAdditional user instructions: ${customInstructions}` : "";
 
-  // Build placeholder hints
+  // Build placeholder hints (text only — icons are pre-filled)
   const pointHints = extraction.points.map((p, i) =>
-    `Point ${i + 1}: emoji=${emojis[i]}, title="${p.title}", body="${p.body}"`
+    `Point ${i + 1}: title="${p.title}", body="${p.body}"`
   ).join("\n");
 
   return `You are filling an infographic HTML template with real content.
@@ -259,10 +269,11 @@ Variation seed: ${variationSeed}
 
 YOUR TASK:
 1. Read the CONTENT below and extract the most impactful key points
-2. Fill the HTML template by replacing ALL {{PLACEHOLDERS}}
-3. Keep ALL HTML structure and CSS EXACTLY as-is — only replace placeholders
+2. Fill the HTML template by replacing ALL {{PLACEHOLDERS}} (text only — SVG icons are already filled in)
+3. Keep ALL HTML structure, CSS, and SVG icons EXACTLY as-is — only replace text placeholders
 4. Make titles PUNCHY and VIRAL (Awa K. Penn style)
-5. Output ONLY the filled HTML — no markdown, no explanation
+5. Do NOT add emojis — professional SVG icons are already embedded
+6. Output ONLY the filled HTML — no markdown, no explanation
 
 PLACEHOLDER MAP:
 {{BADGE}} → "${extraction.badge}"
@@ -314,8 +325,8 @@ ${extraction.points.slice(0, 5).map((p, i) => `${i + 1}. ${p.title}: ${p.body}`)
 Requirements:
 - Exact format: ${dims.width}x${dims.height}px
 - Numbered sections with colored circles
-- Large emojis before sections
-- Footer: "Created with Supen.io | Follow for more 🔄"
+- Professional line icons (NOT emojis) before sections
+- Footer: "Created with Supen.io | Follow for more"
 - Professional, viral-worthy design
 
 Platform: ${platform}`;
