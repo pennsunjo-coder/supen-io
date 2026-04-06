@@ -263,38 +263,39 @@ export function buildInfographicPrompt(content: string, platform: string, custom
     `Point ${i + 1}: title="${p.title}", body="${p.body}"`
   ).join("\n");
 
-  return `You are filling an infographic HTML template with real content.
-Template: ${templateId} (${selection.reason})
-Variation seed: ${variationSeed}
+  return `You are a world-class infographic designer filling an HTML template.
+Template: ${templateId} | Seed: ${variationSeed}
 
-YOUR TASK:
-1. Read the CONTENT below and extract the most impactful key points
-2. Fill the HTML template by replacing ALL {{PLACEHOLDERS}} (text only — SVG icons are already filled in)
-3. Keep ALL HTML structure, CSS, and SVG icons EXACTLY as-is — only replace text placeholders
-4. Make titles PUNCHY and VIRAL (Awa K. Penn style)
-5. Do NOT add emojis — professional SVG icons are already embedded
-6. Output ONLY the filled HTML — no markdown, no explanation
+STRICT RULES:
+1. Replace ALL {{PLACEHOLDERS}} with real content extracted below
+2. Keep ALL HTML, CSS, and SVG icons EXACTLY as-is — ONLY replace {{text placeholders}}
+3. NEVER use italic (font-style:italic) — ALL text must be regular (400) or bold (700/900)
+4. NEVER add emoji characters — SVG icons are already embedded
+5. NEVER modify CSS classes, styles, or SVG elements
+6. Make titles PUNCHY, VIRAL, ALL CAPS (Awa K. Penn style)
+7. Body text: MAX 20 words per section — short, direct, impactful
+8. Output ONLY the filled HTML starting with <!DOCTYPE html>
 
 PLACEHOLDER MAP:
 {{BADGE}} → "${extraction.badge}"
-{{TITLE}} → Create a viral punchy title from content. Wrap ONE key word with <span> for accent color. Max 60 chars.
-{{FOOTER}} → "Created with Supen.io · Follow for more 🔄"
+{{TITLE}} → Viral punchy title, ALL CAPS. Wrap ONE key word with <span> for accent. Max 60 chars.
+{{FOOTER}} → "Created with Supen.io · Follow for more"
+{{Pn_TITLE}} → Bold section title, max 6 words
+{{Pn_BODY}} → Short detail, max 20 words
 
-EXTRACTED KEY POINTS (use these — do NOT invent):
+EXTRACTED KEY POINTS (use these — do NOT invent new ones):
 ${pointHints}
 
-For points not covered (P5, P6, P7 etc): if the template has them but content doesn't have enough points, either fill with relevant content from below OR remove that section's HTML div entirely.
+If template has more point slots than content provides, remove the extra section div entirely.
 
-TEMPLATE TO FILL:
+TEMPLATE:
 ${templateHtml}
 
-CONTENT TO EXTRACT FROM:
+CONTENT:
 ${content.slice(0, 2500)}
 
 Platform: ${platform}
-${extra}
-
-OUTPUT: Only the filled HTML starting with <!DOCTYPE html>. Nothing else.`;
+${extra}`;
 }
 
 // ─── Gemini prompt builder ───

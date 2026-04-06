@@ -4,7 +4,7 @@
  * Each template returns a full HTML string with {{PLACEHOLDERS}}.
  */
 
-const FONT_IMPORTS = `<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand:wght@400&family=Poppins:wght@400;700;900&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">`;
+const FONT_IMPORTS = `<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">`;
 
 // ─── TEMPLATE 1: AWA_CLASSIC ───
 // Based on: numbered sections, cream bg, wood border, handwritten
@@ -13,7 +13,7 @@ export function awaClassic(w: number, h: number): string {
 <html><head><meta charset="UTF-8">${FONT_IMPORTS}
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{width:${w}px;height:${h}px;background:#FFF8F0;font-family:'Patrick Hand',cursive;border:8px solid #5D3A1A;padding:48px;overflow:hidden;display:flex;flex-direction:column;box-shadow:inset 0 0 80px rgba(0,0,0,0.03)}
+body{width:${w}px;height:${h}px;background:#FFF8F0;font-family:'Poppins',sans-serif;border:8px solid #5D3A1A;padding:48px;overflow:hidden;display:flex;flex-direction:column;box-shadow:inset 0 0 80px rgba(0,0,0,0.03)}
 .header{text-align:center;margin-bottom:32px;padding-bottom:20px;border-bottom:3px solid #E53E3E}
 .badge{display:inline-block;background:#E53E3E;color:#fff;font-size:12px;font-weight:700;padding:5px 14px;border-radius:20px;margin-bottom:14px;letter-spacing:1px;text-transform:uppercase;font-family:'Poppins',sans-serif}
 .title{font-size:${h > 1100 ? 46 : 42}px;font-weight:900;color:#1A1A1A;line-height:1.12;text-transform:uppercase}
@@ -83,7 +83,7 @@ export function cheatSheet(w: number, h: number): string {
 <html><head><meta charset="UTF-8">${FONT_IMPORTS}
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{width:${w}px;height:${h}px;background:#FFFFF5;font-family:'Patrick Hand',cursive;border:6px solid #888;padding:44px;overflow:hidden;display:flex;flex-direction:column;box-shadow:inset 0 0 60px rgba(0,0,0,0.02)}
+body{width:${w}px;height:${h}px;background:#FFFFF5;font-family:'Poppins',sans-serif;border:6px solid #888;padding:44px;overflow:hidden;display:flex;flex-direction:column;box-shadow:inset 0 0 60px rgba(0,0,0,0.02)}
 .header{text-align:center;margin-bottom:28px;padding-bottom:16px;border-bottom:3px double #333}
 .title{font-size:${h > 1100 ? 42 : 38}px;font-weight:900;color:#1A1A1A;line-height:1.1;text-transform:uppercase;border:3px solid #333;display:inline-block;padding:6px 24px;border-radius:6px}
 .title span{color:#E53E3E}
@@ -150,7 +150,7 @@ export function statsImpact(w: number, h: number): string {
 <html><head><meta charset="UTF-8">${FONT_IMPORTS}
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{width:${w}px;height:${h}px;background:#FFF8F0;font-family:'Patrick Hand',cursive;border:8px solid #5D3A1A;padding:48px;overflow:hidden;display:flex;flex-direction:column;box-shadow:inset 0 0 60px rgba(0,0,0,0.03)}
+body{width:${w}px;height:${h}px;background:#FFF8F0;font-family:'Poppins',sans-serif;border:8px solid #5D3A1A;padding:48px;overflow:hidden;display:flex;flex-direction:column;box-shadow:inset 0 0 60px rgba(0,0,0,0.03)}
 .header{text-align:center;margin-bottom:32px}
 .badge{display:inline-block;background:#DD6B20;color:#fff;font-size:12px;font-weight:700;padding:5px 14px;border-radius:20px;margin-bottom:14px;letter-spacing:1px;text-transform:uppercase;font-family:'Poppins',sans-serif}
 .title{font-size:${h > 1100 ? 44 : 40}px;font-weight:900;color:#1A1A1A;line-height:1.12;text-transform:uppercase}
@@ -182,7 +182,7 @@ export function comparisonVs(w: number, h: number): string {
 <html><head><meta charset="UTF-8">${FONT_IMPORTS}
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{width:${w}px;height:${h}px;background:#FFFFF5;font-family:'Patrick Hand',cursive;border:6px solid #888;padding:44px;overflow:hidden;display:flex;flex-direction:column;box-shadow:inset 0 0 60px rgba(0,0,0,0.02)}
+body{width:${w}px;height:${h}px;background:#FFFFF5;font-family:'Poppins',sans-serif;border:6px solid #888;padding:44px;overflow:hidden;display:flex;flex-direction:column;box-shadow:inset 0 0 60px rgba(0,0,0,0.02)}
 .header{text-align:center;margin-bottom:28px}
 .title{font-size:${h > 1100 ? 42 : 38}px;font-weight:900;color:#1A1A1A;line-height:1.1;text-transform:uppercase}
 .title .left{color:#3182CE}.title .right{color:#E53E3E}

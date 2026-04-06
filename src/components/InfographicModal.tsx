@@ -23,7 +23,7 @@ import { toast } from "sonner";
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
-const FONT_LINK = '<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand:wght@400&family=Poppins:wght@400;700;900&display=swap" rel="stylesheet">';
+const FONT_LINK = '<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">';
 
 function injectFontsInHtml(html: string): string {
   if (html.includes("fonts.googleapis.com")) return html;
@@ -214,7 +214,7 @@ export default function InfographicModal({ open, onClose, content, platform }: P
       container.style.width = `${dims.width}px`;
       container.style.height = `${dims.height}px`;
       container.style.overflow = "hidden";
-      container.style.fontFamily = "'Patrick Hand', cursive";
+      container.style.fontFamily = "'Poppins', sans-serif";
       container.style.background = "#FFF8F0";
       container.style.padding = "48px";
       container.style.boxSizing = "border-box";
@@ -281,7 +281,7 @@ export default function InfographicModal({ open, onClose, content, platform }: P
       const styleMatch = htmlCode.match(/<style[\s\S]*?<\/style>/i);
       const bodyMatch = htmlCode.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
       container.innerHTML = (styleMatch ? styleMatch[0] : "") + (bodyMatch ? bodyMatch[1] : htmlCode);
-      container.style.fontFamily = "'Patrick Hand', cursive";
+      container.style.fontFamily = "'Poppins', sans-serif";
       container.style.background = "#FFF8F0";
       container.style.padding = "48px";
       container.style.boxSizing = "border-box";
