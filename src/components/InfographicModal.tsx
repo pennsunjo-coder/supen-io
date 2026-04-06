@@ -14,6 +14,8 @@ import {
   buildGeminiImagePrompt,
   analyzeContent,
   getFormatDimensions,
+  selectBestTemplate,
+  resetRegenerationCounter,
 } from "@/lib/infographic-style";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -79,6 +81,7 @@ export default function InfographicModal({ open, onClose, content, platform }: P
       setShowPrompt(false);
       setShowZoom(false);
       setShowConfetti(false);
+      resetRegenerationCounter();
     }
   }, [open, content]);
 
@@ -105,6 +108,7 @@ export default function InfographicModal({ open, onClose, content, platform }: P
 
   const analysis = analyzeContent(content, platform);
   const dims = getFormatDimensions(analysis.format);
+  const templateSelection = selectBestTemplate(content, platform);
   const aspectRatio = dims.height / dims.width;
   const iframeScale = 0.42;
 
@@ -404,9 +408,9 @@ export default function InfographicModal({ open, onClose, content, platform }: P
                     <p className="text-sm font-medium mb-1">Our AI will automatically detect:</p>
                     <div className="flex flex-wrap justify-center gap-2">
                       {[
-                        { label: `Style: ${analysis.contentType}`, color: "bg-blue-500/10 text-blue-400" },
+                        { label: `Template: ${templateSelection.templateId}`, color: "bg-blue-500/10 text-blue-400" },
                         { label: `Theme: ${analysis.colorTheme}`, color: "bg-green-500/10 text-green-400" },
-                        { label: `Format: ${dims.width}x${dims.height}`, color: "bg-orange-500/10 text-orange-400" },
+                        { label: `${dims.width}x${dims.height}`, color: "bg-orange-500/10 text-orange-400" },
                       ].map((tag) => (
                         <span key={tag.label} className={cn("text-[10px] px-2 py-1 rounded-full font-medium", tag.color)}>
                           {tag.label}
