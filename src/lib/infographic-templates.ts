@@ -16,10 +16,10 @@ export function awaClassic(w: number, h: number): string {
 body{width:${w}px;height:${h}px;background:#FFF8F0;font-family:'Poppins',sans-serif;border:8px solid #5D3A1A;padding:48px;overflow:hidden;display:flex;flex-direction:column;box-shadow:inset 0 0 80px rgba(0,0,0,0.03)}
 .header{text-align:center;margin-bottom:32px;padding-bottom:20px;border-bottom:3px solid #E53E3E}
 .badge{display:inline-block;background:#E53E3E;color:#fff;font-size:12px;font-weight:700;padding:5px 14px;border-radius:20px;margin-bottom:14px;letter-spacing:1px;text-transform:uppercase;font-family:'Poppins',sans-serif}
-.title{font-size:${h > 1100 ? 46 : 42}px;font-weight:900;color:#1A1A1A;line-height:1.12;text-transform:uppercase}
+.title{font-size:${h > 1100 ? 46 : 42}px;font-weight:900;color:#1A1A1A;line-height:1.12;text-transform:uppercase;letter-spacing:-0.5px;text-shadow:0 1px 2px rgba(0,0,0,0.05)}
 .title span{color:#E53E3E}
 .sections{display:flex;flex-direction:column;gap:${h > 1100 ? 20 : 16}px;flex:1}
-.section{display:flex;align-items:flex-start;gap:14px;padding:14px 18px;background:rgba(0,0,0,0.02);border-radius:12px;border-left:4px solid var(--c)}
+.section{display:flex;align-items:flex-start;gap:14px;padding:14px 18px;background:rgba(0,0,0,0.02);border-radius:10px;border-left:4px solid var(--c);box-shadow:0 2px 8px rgba(0,0,0,0.04)}
 .num{width:42px;height:42px;border-radius:50%;background:var(--c);color:#fff;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Poppins',sans-serif;box-shadow:0 3px 10px rgba(0,0,0,0.15)}
 .ico{width:44px;height:44px;border-radius:12px;background:color-mix(in srgb,var(--c) 12%,transparent);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .sc{flex:1}
@@ -221,6 +221,80 @@ body{width:${w}px;height:${h}px;background:#FFFFF5;font-family:'Poppins',sans-se
 </body></html>`;
 }
 
+// ─── TEMPLATE 7: AWA_BREAKING ───
+// For urgent/breaking news style — maximum impact, 3-4 short points
+export function awaBreaking(w: number, h: number): string {
+  return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8">${FONT_IMPORTS}
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{width:${w}px;height:${h}px;background:#FFF8F0;font-family:'Poppins',sans-serif;border:10px solid #5D3A1A;padding:52px;overflow:hidden;display:flex;flex-direction:column;box-shadow:inset 0 0 80px rgba(0,0,0,0.03)}
+.alert{text-align:center;margin-bottom:20px}
+.alert-badge{display:inline-block;background:#E53E3E;color:#fff;font-size:14px;font-weight:900;padding:8px 24px;border-radius:24px;letter-spacing:2px;text-transform:uppercase;box-shadow:0 4px 16px rgba(229,62,62,0.3)}
+.header{text-align:center;margin-bottom:40px;padding-bottom:24px;border-bottom:4px solid #E53E3E}
+.title{font-size:${h > 1100 ? 52 : 48}px;font-weight:900;color:#1A1A1A;line-height:1.08;text-transform:uppercase;letter-spacing:-1px;text-shadow:0 2px 4px rgba(0,0,0,0.06)}
+.title span{color:#E53E3E}
+.subtitle{font-size:16px;font-weight:400;color:#5D3A1A;margin-top:16px;line-height:1.4}
+.sections{display:flex;flex-direction:column;gap:${h > 1100 ? 24 : 20}px;flex:1}
+.section{display:flex;align-items:flex-start;gap:16px;padding:20px 24px;background:rgba(229,62,62,0.03);border-radius:14px;border-left:5px solid var(--c);box-shadow:0 2px 8px rgba(0,0,0,0.04)}
+.num{width:48px;height:48px;border-radius:50%;background:var(--c);color:#fff;font-size:20px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 12px rgba(0,0,0,0.15)}
+.ico{width:44px;height:44px;border-radius:12px;background:color-mix(in srgb,var(--c) 12%,transparent);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sc{flex:1}
+.st{font-size:20px;font-weight:700;color:var(--c);margin-bottom:6px;letter-spacing:-0.3px}
+.sb{font-size:15px;color:#374151;line-height:1.45}
+.footer{text-align:center;margin-top:auto;padding-top:20px;border-top:3px solid #5D3A1A;font-size:14px;font-weight:700;color:#5D3A1A}
+.s1{--c:#E53E3E}.s2{--c:#3182CE}.s3{--c:#38A169}.s4{--c:#DD6B20}
+</style></head><body>
+<div class="alert"><div class="alert-badge">{{BADGE}}</div></div>
+<div class="header"><div class="title">{{TITLE}}</div></div>
+<div class="sections">
+<div class="section s1"><div class="num">1</div><div class="ico">{{P1_ICON}}</div><div class="sc"><div class="st">{{P1_TITLE}}</div><div class="sb">{{P1_BODY}}</div></div></div>
+<div class="section s2"><div class="num">2</div><div class="ico">{{P2_ICON}}</div><div class="sc"><div class="st">{{P2_TITLE}}</div><div class="sb">{{P2_BODY}}</div></div></div>
+<div class="section s3"><div class="num">3</div><div class="ico">{{P3_ICON}}</div><div class="sc"><div class="st">{{P3_TITLE}}</div><div class="sb">{{P3_BODY}}</div></div></div>
+<div class="section s4"><div class="num">4</div><div class="ico">{{P4_ICON}}</div><div class="sc"><div class="st">{{P4_TITLE}}</div><div class="sb">{{P4_BODY}}</div></div></div>
+</div>
+<div class="footer">{{FOOTER}}</div>
+</body></html>`;
+}
+
+// ─── TEMPLATE 8: AWA_MASTERCLASS ───
+// For "How to master X in Y minutes" — structured learning layout
+export function awaMasterclass(w: number, h: number): string {
+  return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8">${FONT_IMPORTS}
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{width:${w}px;height:${h}px;background:#FFFFF8;font-family:'Poppins',sans-serif;border:6px solid #666;padding:48px;overflow:hidden;display:flex;flex-direction:column;box-shadow:inset 0 0 60px rgba(0,0,0,0.02)}
+.header{margin-bottom:32px}
+.title-box{display:inline-block;border:3px solid #1A1A1A;border-radius:8px;padding:8px 28px;margin-bottom:16px}
+.title{font-size:${h > 1100 ? 40 : 36}px;font-weight:900;color:#1A1A1A;line-height:1.1;text-transform:uppercase;letter-spacing:-0.5px}
+.title span{color:#E53E3E}
+.subtitle{font-size:13px;color:#666;line-height:1.5;margin-top:12px}
+.content{display:grid;grid-template-columns:1fr 1fr;gap:20px;flex:1}
+.block{padding:18px;border-radius:10px;border:2px solid var(--c);box-shadow:0 2px 8px rgba(0,0,0,0.04)}
+.block-head{font-size:15px;font-weight:700;color:#fff;background:var(--c);margin:-18px -18px 14px;padding:10px 18px;border-radius:8px 8px 0 0;text-transform:uppercase;letter-spacing:0.5px}
+.block-body{font-size:12px;color:#374151;line-height:1.55}
+.block-body b{color:var(--c);font-weight:700}
+.b1{--c:#E53E3E}.b2{--c:#3182CE}.b3{--c:#38A169}.b4{--c:#DD6B20}.b5{--c:#9B59B6}.b6{--c:#E91E8C}
+.learn-section{margin-top:20px;padding:18px;background:rgba(0,0,0,0.02);border-radius:10px;border:2px dashed #999}
+.learn-title{font-size:16px;font-weight:900;color:#1A1A1A;text-transform:uppercase;margin-bottom:10px;text-align:center}
+.learn-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.learn-item{font-size:12px;color:#374151;line-height:1.5}
+.learn-item b{color:#E53E3E}
+.footer{text-align:center;margin-top:auto;padding-top:14px;border-top:2px solid #666;font-size:13px;font-weight:700;color:#666}
+</style></head><body>
+<div class="header"><div class="title-box"><div class="title">{{TITLE}}</div></div></div>
+<div class="content">
+<div class="block b1"><div class="block-head">{{P1_TITLE}}</div><div class="block-body">{{P1_BODY}}</div></div>
+<div class="block b2"><div class="block-head">{{P2_TITLE}}</div><div class="block-body">{{P2_BODY}}</div></div>
+<div class="block b3"><div class="block-head">{{P3_TITLE}}</div><div class="block-body">{{P3_BODY}}</div></div>
+<div class="block b4"><div class="block-head">{{P4_TITLE}}</div><div class="block-body">{{P4_BODY}}</div></div>
+</div>
+<div class="learn-section"><div class="learn-title">{{P5_TITLE}}</div><div class="learn-grid"><div class="learn-item">{{P5_BODY}}</div><div class="learn-item">{{P6_BODY}}</div></div></div>
+<div class="footer">{{FOOTER}}</div>
+</body></html>`;
+}
+
 // ─── Template registry ───
 
 export const TEMPLATE_REGISTRY: Record<string, (w: number, h: number) => string> = {
@@ -230,6 +304,8 @@ export const TEMPLATE_REGISTRY: Record<string, (w: number, h: number) => string>
   VIRAL_TIPS: viralTips,
   STATS_IMPACT: statsImpact,
   COMPARISON_VS: comparisonVs,
+  AWA_BREAKING: awaBreaking,
+  AWA_MASTERCLASS: awaMasterclass,
 };
 
 export const TEMPLATE_IDS = Object.keys(TEMPLATE_REGISTRY) as string[];

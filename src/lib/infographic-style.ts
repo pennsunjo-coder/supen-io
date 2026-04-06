@@ -96,15 +96,24 @@ export function selectBestTemplate(content: string, platform: string): TemplateS
     isMarketing: /marketing|contenu|content|viral|audience|engagement/i.test(content),
   };
 
+  const hasBreaking = /breaking|urgent|stop|dead|goodbye|end of|rip\b|game.?over|replaced/i.test(content);
+  const hasMasterclass = /master|guide complet|cheat.?sheet|tout savoir|everything|complete guide/i.test(content);
+
   let templateId: string;
   let reason: string;
 
-  if (p.hasStats && wordCount < 200) {
+  if (hasBreaking && wordCount < 200) {
+    templateId = "AWA_BREAKING";
+    reason = "Breaking/urgent content — high-impact alert layout";
+  } else if (p.hasStats && wordCount < 200) {
     templateId = "STATS_IMPACT";
     reason = "Key statistics detected — large numbers visual";
   } else if (p.hasComparison) {
     templateId = "COMPARISON_VS";
     reason = "Comparison content — two-column VS layout";
+  } else if (hasMasterclass && wordCount > 200) {
+    templateId = "AWA_MASTERCLASS";
+    reason = "Masterclass/guide — structured learning layout";
   } else if (p.hasHowTo || p.hasNumberedList) {
     templateId = "AWA_CLASSIC";
     reason = "How-to/steps — classic Awa Penn numbered sections";
@@ -308,7 +317,16 @@ CONTENT QUALITY:
 - NO generic statements. Be SPECIFIC with numbers, tools, outcomes
 - NO emoji characters anywhere — SVG icons are pre-embedded
 
-TITLE EXAMPLES (study these):
+VIRAL TITLE FORMULAS (use one):
+- STOP [doing X]. [Better alternative] instead.
+- [Number] [things] that [big claim]
+- How I [result] in [timeframe] (without [common excuse])
+- The [adjective] truth about [topic]
+- [Famous thing] is DEAD. Here's what's NEXT.
+- [Number]% of [people] don't know this [topic] secret
+- BREAKING: [shocking statement about topic]
+
+TITLE EXAMPLES:
 BAD: "Artificial Intelligence Is Important"
 GOOD: "AI REPLACES 40% OF JOBS BY 2030"
 
@@ -393,6 +411,61 @@ Requirements:
 - Professional, viral-worthy design
 
 Platform: ${platform}`;
+}
+
+// ─── Post-process generated HTML ───
+
+export function postProcessHtml(html: string): string {
+  let out = html;
+
+  // Ensure font link
+  if (!out.includes("fonts.googleapis.com")) {
+    out = out.replace("</head>",
+      '<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap" rel="stylesheet"></head>'
+    );
+  }
+
+  // Remove italic
+  out = out.replace(/font-style\s*:\s*italic/gi, "font-style:normal");
+
+  // Ensure overflow hidden on body
+  if (out.includes("<body") && !out.includes("overflow")) {
+    out = out.replace(/(<body[^>]*style="[^"]*)(")/, "$1;overflow:hidden$2");
+  }
+
+  // Ensure meta charset
+  if (!out.includes("charset")) {
+    out = out.replace("<head>", '<head><meta charset="UTF-8">');
+  }
+
+  return out;
+}
+
+// ─── Quality score ───
+
+export interface QualityScore {
+  score: number;
+  checks: { label: string; pass: boolean }[];
+}
+
+export function scoreInfographic(html: string, dims: { width: number; height: number }): QualityScore {
+  const checks = [
+    { label: "Has title", pass: /<div class="(title|main-title)">/.test(html) && !html.includes("{{TITLE}}") },
+    { label: "Has sections", pass: /<div class="section/.test(html) || /<div class="(stat|card|block|row)/.test(html) },
+    { label: "No placeholders left", pass: !html.includes("{{") },
+    { label: "Has footer", pass: /<div class="footer">/.test(html) && !html.includes("{{FOOTER}}") },
+    { label: "Correct dimensions", pass: html.includes(`${dims.width}px`) && html.includes(`${dims.height}px`) },
+    { label: "Font loaded", pass: html.includes("fonts.googleapis.com") },
+    { label: "No italic", pass: !html.includes("font-style:italic") && !html.includes("font-style: italic") },
+    { label: "No emoji characters", pass: !/[\u{1F300}-\u{1F9FF}]/u.test(html) },
+    { label: "Has SVG icons", pass: html.includes("<svg") },
+    { label: "Overflow hidden", pass: html.includes("overflow:hidden") || html.includes("overflow: hidden") },
+  ];
+
+  const passed = checks.filter(c => c.pass).length;
+  const score = Math.round((passed / checks.length) * 100);
+
+  return { score, checks };
 }
 
 // ─── Reset regeneration counter (call when modal opens fresh) ───

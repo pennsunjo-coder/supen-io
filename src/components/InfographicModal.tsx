@@ -16,6 +16,9 @@ import {
   getFormatDimensions,
   selectBestTemplate,
   resetRegenerationCounter,
+  postProcessHtml,
+  scoreInfographic,
+  type QualityScore,
 } from "@/lib/infographic-style";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -32,9 +35,12 @@ function injectFontsInHtml(html: string): string {
 
 const LOADING_MESSAGES = [
   "Analyzing your content...",
-  "Choosing the perfect style...",
-  "Building your infographic...",
-  "Adding finishing touches...",
+  "Detecting content type...",
+  "Selecting optimal layout...",
+  "Crafting viral title...",
+  "Building sections...",
+  "Adding visual elements...",
+  "Finalizing your infographic...",
 ];
 
 // ─── Types ───
@@ -67,6 +73,7 @@ export default function InfographicModal({ open, onClose, content, platform }: P
   const [loadingMsgIndex, setLoadingMsgIndex] = useState(0);
   const [customPrompt, setCustomPrompt] = useState("");
   const [showPrompt, setShowPrompt] = useState(false);
+  const [qualityScore, setQualityScore] = useState<QualityScore | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   // Reset state when modal opens or content changes
@@ -81,6 +88,7 @@ export default function InfographicModal({ open, onClose, content, platform }: P
       setShowPrompt(false);
       setShowZoom(false);
       setShowConfetti(false);
+      setQualityScore(null);
       resetRegenerationCounter();
     }
   }, [open, content]);
@@ -174,9 +182,11 @@ export default function InfographicModal({ open, onClose, content, platform }: P
         setStep("result");
         return;
       }
-      const html = await generateWithClaude();
+      const rawHtml = await generateWithClaude();
+      const html = postProcessHtml(rawHtml);
       setHtmlCode(html);
       setResultMode("claude");
+      setQualityScore(scoreInfographic(html, dims));
     } catch {
       setHtmlCode("<div style='padding:40px;color:#999;font-family:sans-serif;text-align:center'>Generation error. Please try again.</div>");
       setResultMode("claude");
@@ -600,6 +610,35 @@ export default function InfographicModal({ open, onClose, content, platform }: P
                     {saved ? "Saved" : "Save"}
                   </Button>
                 </div>
+
+                {/* Quality score */}
+                {qualityScore && resultMode === "claude" && (
+                  <div className="mb-3 p-3 rounded-lg bg-accent/20 border border-border/20">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-semibold">Quality Score</span>
+                      <span className={cn(
+                        "text-xs font-bold px-2 py-0.5 rounded-full",
+                        qualityScore.score >= 80 ? "bg-green-500/15 text-green-400" :
+                        qualityScore.score >= 60 ? "bg-yellow-500/15 text-yellow-400" :
+                        "bg-red-500/15 text-red-400",
+                      )}>
+                        {qualityScore.score}/100
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {qualityScore.checks.map((c) => (
+                        <span key={c.label} className={cn("text-[9px] px-1.5 py-0.5 rounded", c.pass ? "text-green-400/80" : "text-red-400/80 bg-red-500/10")}>
+                          {c.pass ? "✓" : "✗"} {c.label}
+                        </span>
+                      ))}
+                    </div>
+                    {qualityScore.score < 70 && (
+                      <button onClick={handleGenerate} className="mt-2 text-[10px] text-primary hover:underline">
+                        Score low — click to regenerate
+                      </button>
+                    )}
+                  </div>
+                )}
 
                 {/* History link */}
                 {saved && (
