@@ -201,6 +201,7 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
     setVariations([]);
     setSelectedVariation(null);
     setError(null);
+    setShowInfographic(false);
 
     try {
       // === SECTION 2 : Contexte utilisateur (RAG sources) ===

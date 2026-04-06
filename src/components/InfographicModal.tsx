@@ -67,6 +67,21 @@ export default function InfographicModal({ open, onClose, content, platform }: P
   const [showPrompt, setShowPrompt] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
+  // Reset state when modal opens or content changes
+  useEffect(() => {
+    if (open) {
+      setStep("ready");
+      setHtmlCode("");
+      setImageBase64("");
+      setResultMode(null);
+      setSaved(false);
+      setCustomPrompt("");
+      setShowPrompt(false);
+      setShowZoom(false);
+      setShowConfetti(false);
+    }
+  }, [open, content]);
+
   // Rotate loading messages every 2s
   useEffect(() => {
     if (step !== "generating") return;

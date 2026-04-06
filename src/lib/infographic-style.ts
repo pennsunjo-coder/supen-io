@@ -128,6 +128,16 @@ export function buildInfographicPrompt(content: string, platform: string, custom
   const dims = FORMAT_DIMS[analysis.format];
   const extra = customInstructions ? `\n\nAdditional user instructions: ${customInstructions}` : "";
 
+  // Variation seed forces different output on regeneration
+  const variationSeed = Math.random().toString(36).substring(2, 8);
+
+  // Extract key points from content to guide the AI
+  const lines = content.split("\n").filter(l => l.trim().length > 10);
+  const keyPoints = lines.slice(0, 5).map((l, i) => `${i + 1}. ${l.trim().slice(0, 120)}`);
+  const extractedPoints = keyPoints.length > 0
+    ? `\nEXTRACTED KEY POINTS (use these as your sections):\n${keyPoints.join("\n")}\n\nDo NOT invent new points. Use ONLY these extracted points.\n`
+    : "";
+
   const isDark = analysis.colorTheme === "tech";
   const borderCSS = palette.border === "none" ? "" : `border: ${palette.border};`;
   const shadowCSS = isDark ? "box-shadow: inset 0 0 80px rgba(0,200,180,0.05);" : "box-shadow: inset 0 0 80px rgba(0,0,0,0.03);";
@@ -344,6 +354,9 @@ INSTRUCTIONS:
 5. Keep body text SHORT (max 2 lines per section)
 6. Output ONLY the complete HTML. No markdown. No explanation. Start with <!DOCTYPE html>
 
+VARIATION SEED: ${variationSeed}
+IMPORTANT: Create a UNIQUE design. Vary the title wording, emoji choices, and content emphasis.
+${extractedPoints}
 CONTENT TO TRANSFORM:
 ${content.slice(0, 2500)}
 
