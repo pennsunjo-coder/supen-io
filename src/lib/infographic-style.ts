@@ -74,6 +74,13 @@ MANDATORY RULES — follow these EXACTLY:
 13. Subtle inner shadow: box-shadow: inset 0 0 60px rgba(0,0,0,0.04)
 14. Padding: 48px on all sides
 
+CRITICAL — CONTENT MUST FIT:
+- ALL content MUST fit within 1080x1080px. No scrolling — overflow: hidden is mandatory.
+- Maximum 5 sections for 1080x1080 format.
+- If content is long, reduce body font-size to 13px and section gap to 12px.
+- Reduce title to 40px if needed to fit everything.
+- Every element must be visible without scrolling.
+
 HTML TEMPLATE (use this exact structure):
 <!DOCTYPE html>
 <html>

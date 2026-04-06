@@ -49,6 +49,7 @@ export default function InfographicModal({ open, onClose, content, platform }: P
   const [showPrompt, setShowPrompt] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   function handleSelectType(id: string) {
@@ -168,7 +169,7 @@ Requirements:
 
   // ─── Download ───
 
-  function handleDownloadPng() {
+  async function handleDownloadPng() {
     if (resultMode === "gemini" && imageBase64) {
       const link = document.createElement("a");
       link.download = `supen-infographic-${Date.now()}.png`;
@@ -179,8 +180,68 @@ Requirements:
       toast.success("PNG downloaded!");
       return;
     }
-    // For Claude HTML — download as HTML file
-    handleDownloadHtml();
+
+    if (!htmlCode) return;
+    setDownloading(true);
+
+    try {
+      const container = document.createElement("div");
+      container.style.cssText = `
+        position: fixed; top: -9999px; left: -9999px;
+        width: 1080px; height: 1080px; overflow: hidden; z-index: -1;
+      `;
+      // Strip <html>/<head>/<body> wrappers — inject only the inner content + styles
+      const styleMatch = htmlCode.match(/<style[\s\S]*?<\/style>/i);
+      const bodyMatch = htmlCode.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+      const innerHtml = (styleMatch ? styleMatch[0] : "") + (bodyMatch ? bodyMatch[1] : htmlCode);
+      container.innerHTML = innerHtml;
+
+      // Copy body-level styles onto the container
+      const bodyStyleMatch = htmlCode.match(/<body[^>]*style="([^"]*)"/i);
+      if (bodyStyleMatch) container.style.cssText += bodyStyleMatch[1];
+      // Apply key styles from CSS
+      container.style.width = "1080px";
+      container.style.height = "1080px";
+      container.style.overflow = "hidden";
+      container.style.fontFamily = "'Patrick Hand', cursive";
+      container.style.background = "#FFF8F0";
+      container.style.border = "8px solid #5D3A1A";
+      container.style.padding = "48px";
+      container.style.boxSizing = "border-box";
+
+      document.body.appendChild(container);
+
+      // Wait for fonts to load
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      const html2canvas = (await import("html2canvas")).default;
+      const canvas = await html2canvas(container, {
+        width: 1080,
+        height: 1080,
+        scale: 1,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: "#FFF8F0",
+        logging: false,
+      });
+
+      document.body.removeChild(container);
+
+      const link = document.createElement("a");
+      link.download = `supen-infographic-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png", 1.0);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success("PNG downloaded! (1080x1080px)");
+    } catch (err) {
+      console.error("PNG download error:", err);
+      handleDownloadHtml();
+      toast.info("PNG failed — HTML downloaded instead. Open in browser and screenshot.");
+    }
+
+    setDownloading(false);
   }
 
   function handleDownloadHtml() {
@@ -357,22 +418,37 @@ Requirements:
                           className="w-full h-auto"
                         />
                       ) : (
-                        <iframe
-                          ref={iframeRef}
-                          srcDoc={htmlCode}
-                          className="w-full"
-                          style={{ height: 420, border: "none" }}
-                          sandbox="allow-same-origin"
-                          title="Infographic preview"
-                        />
+                        <div className="relative w-full" style={{ paddingBottom: "100%" }}>
+                          <iframe
+                            ref={iframeRef}
+                            srcDoc={htmlCode}
+                            className="absolute inset-0 w-full h-full"
+                            style={{
+                              border: "none",
+                              transform: "scale(0.45)",
+                              transformOrigin: "top left",
+                              width: "222%",
+                              height: "222%",
+                            }}
+                            sandbox="allow-same-origin"
+                            title="Infographic preview"
+                          />
+                        </div>
                       )}
                     </div>
 
                     {/* Action buttons */}
                     <div className="flex flex-wrap items-center gap-2 mb-3">
-                      <Button size="sm" className="h-9 gap-2 text-xs" onClick={handleDownloadPng}>
-                        <Download className="w-3.5 h-3.5" />
-                        {resultMode === "gemini" ? "Download PNG" : "Download HTML"}
+                      <Button
+                        size="sm"
+                        className="h-10 gap-2 text-sm font-semibold"
+                        onClick={handleDownloadPng}
+                        disabled={downloading}
+                      >
+                        {downloading
+                          ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating PNG...</>
+                          : <><Download className="w-4 h-4" /> Download PNG</>
+                        }
                       </Button>
 
                       {resultMode === "claude" && (
@@ -399,12 +475,6 @@ Requirements:
                       </Button>
                     </div>
 
-                    {/* Screenshot tip for Claude HTML */}
-                    {resultMode === "claude" && (
-                      <p className="text-[10px] text-muted-foreground/60 mb-3">
-                        Tip: Open in a new tab, then press Cmd+Shift+4 (Mac) or Win+Shift+S (PC) to screenshot as PNG
-                      </p>
-                    )}
 
                     {/* Custom prompt */}
                     <button onClick={() => setShowPrompt(!showPrompt)} className="text-xs text-muted-foreground hover:text-foreground transition-colors mb-2">
