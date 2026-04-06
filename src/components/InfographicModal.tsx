@@ -5,21 +5,28 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   X, RefreshCw, Download, Sparkles, Check,
   ExternalLink, Save, Loader2, Copy, Maximize2, FileCode,
-  ChevronLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic";
 import {
   buildInfographicPrompt,
-  FORMATS, TEMPLATES, ACCENT_COLORS,
-  type FormatConfig, type InfographicOptions,
+  buildGeminiImagePrompt,
+  analyzeContent,
+  getFormatDimensions,
 } from "@/lib/infographic-style";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+
+const LOADING_MESSAGES = [
+  "Analyzing your content...",
+  "Choosing the perfect style...",
+  "Building your infographic...",
+  "Adding finishing touches...",
+];
 
 // ─── Types ───
 
@@ -31,7 +38,7 @@ interface Props {
 }
 
 type ResultMode = "gemini" | "claude" | null;
-type Step = "template" | "customize" | "result";
+type Step = "ready" | "generating" | "result";
 
 // ─── Component ───
 
@@ -39,19 +46,7 @@ export default function InfographicModal({ open, onClose, content, platform }: P
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Flow state
-  const [step, setStep] = useState<Step>("template");
-  const [selectedTemplate, setSelectedTemplate] = useState("howto");
-  const [selectedFormat, setSelectedFormat] = useState<FormatConfig>(FORMATS[0]);
-  const [accentColor, setAccentColor] = useState(ACCENT_COLORS[0].hex);
-  const [brandName, setBrandName] = useState("");
-  const [sectionCount, setSectionCount] = useState(5);
-  const [showFrame, setShowFrame] = useState(true);
-  const [customPrompt, setCustomPrompt] = useState("");
-  const [showPrompt, setShowPrompt] = useState(false);
-
-  // Result state
-  const [generating, setGenerating] = useState(false);
+  const [step, setStep] = useState<Step>("ready");
   const [resultMode, setResultMode] = useState<ResultMode>(null);
   const [imageBase64, setImageBase64] = useState("");
   const [htmlCode, setHtmlCode] = useState("");
@@ -60,63 +55,41 @@ export default function InfographicModal({ open, onClose, content, platform }: P
   const [downloading, setDownloading] = useState(false);
   const [showZoom, setShowZoom] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [loadingMsgIndex, setLoadingMsgIndex] = useState(0);
+  const [customPrompt, setCustomPrompt] = useState("");
+  const [showPrompt, setShowPrompt] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  // Rotate loading messages every 2s
+  useEffect(() => {
+    if (step !== "generating") return;
+    setLoadingMsgIndex(0);
+    const interval = setInterval(() => {
+      setLoadingMsgIndex((i) => (i + 1) % LOADING_MESSAGES.length);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, [step]);
 
   // Show confetti when result arrives
   useEffect(() => {
-    if (step === "result" && !generating && (imageBase64 || htmlCode)) {
+    if (step === "result" && (imageBase64 || htmlCode)) {
       setShowConfetti(true);
       const t = setTimeout(() => setShowConfetti(false), 1500);
       return () => clearTimeout(t);
     }
-  }, [step, generating, imageBase64, htmlCode]);
+  }, [step, imageBase64, htmlCode]);
 
-  // ─── Build options ───
+  // ─── Auto-analysis ───
 
-  function getOptions(): InfographicOptions {
-    return {
-      format: selectedFormat,
-      template: selectedTemplate,
-      accentColor,
-      brandName,
-      sectionCount,
-      showFrame,
-      customInstructions: customPrompt || undefined,
-    };
-  }
-
-  // ─── Gemini prompt ───
-
-  function buildGeminiPrompt(): string {
-    const opts = getOptions();
-    const extra = customPrompt ? `\nAdditional instructions: ${customPrompt}` : "";
-    const tpl = TEMPLATES.find((t) => t.id === selectedTemplate);
-
-    return `Create a professional infographic in the style of a handwritten sketchnote/whiteboard.
-Template: ${tpl?.label || "How-To Guide"}
-Platform: ${platform}
-Format: ${opts.format.width}x${opts.format.height}px
-Content to visualize:
-${content.slice(0, 2000)}
-
-Requirements:
-- Background: #FFF8F0 (warm cream)
-- Bold title at top (48px, heavy weight)
-${opts.showFrame ? "- Wood-colored border frame (#5D3A1A)" : "- No border frame"}
-- Dominant accent color: ${accentColor}
-- Numbered sections with colored circles
-- Hand-drawn style, Patrick Hand font
-- Arrow symbols (→) for sub-points
-- Footer: "${opts.brandName ? `Follow ${opts.brandName} for more | Repost 🔄` : "Follow @awakpenn for more | Repost 🔄"}"
-- Max ${sectionCount} sections
-- Format: ${opts.format.width}x${opts.format.height}px${extra}`;
-  }
+  const analysis = analyzeContent(content, platform);
+  const dims = getFormatDimensions(analysis.format);
+  const aspectRatio = dims.height / dims.width;
+  const iframeScale = 0.42;
 
   // ─── Generation ───
 
   async function generateWithGemini(): Promise<string | null> {
     if (!GEMINI_API_KEY) return null;
-
     try {
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
@@ -124,7 +97,7 @@ ${opts.showFrame ? "- Wood-colored border frame (#5D3A1A)" : "- No border frame"
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: buildGeminiPrompt() }] }],
+            contents: [{ parts: [{ text: buildGeminiImagePrompt(content, platform) }] }],
             generationConfig: {
               responseModalities: ["IMAGE", "TEXT"],
               responseMimeType: "image/png",
@@ -148,10 +121,9 @@ ${opts.showFrame ? "- Wood-colored border frame (#5D3A1A)" : "- No border frame"
       max_tokens: 4096,
       messages: [{
         role: "user",
-        content: buildInfographicPrompt(content, platform, getOptions()),
+        content: buildInfographicPrompt(content, platform, customPrompt || undefined),
       }],
     });
-
     const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
     const htmlMatch = text.match(/<!DOCTYPE html>[\s\S]*<\/html>/i)
       || text.match(/<html[\s\S]*<\/html>/i)
@@ -160,8 +132,7 @@ ${opts.showFrame ? "- Wood-colored border frame (#5D3A1A)" : "- No border frame"
   }
 
   async function handleGenerate() {
-    setGenerating(true);
-    setStep("result");
+    setStep("generating");
     setImageBase64("");
     setHtmlCode("");
     setResultMode(null);
@@ -172,7 +143,7 @@ ${opts.showFrame ? "- Wood-colored border frame (#5D3A1A)" : "- No border frame"
       if (base64) {
         setImageBase64(base64);
         setResultMode("gemini");
-        setGenerating(false);
+        setStep("result");
         return;
       }
       const html = await generateWithClaude();
@@ -182,7 +153,7 @@ ${opts.showFrame ? "- Wood-colored border frame (#5D3A1A)" : "- No border frame"
       setHtmlCode("<div style='padding:40px;color:#999;font-family:sans-serif;text-align:center'>Generation error. Please try again.</div>");
       setResultMode("claude");
     }
-    setGenerating(false);
+    setStep("result");
   }
 
   // ─── Downloads ───
@@ -204,10 +175,9 @@ ${opts.showFrame ? "- Wood-colored border frame (#5D3A1A)" : "- No border frame"
 
     try {
       const container = document.createElement("div");
-      const f = selectedFormat;
       container.style.cssText = `
         position: fixed; top: -9999px; left: -9999px;
-        width: ${f.width}px; height: ${f.height}px; overflow: hidden; z-index: -1;
+        width: ${dims.width}px; height: ${dims.height}px; overflow: hidden; z-index: -1;
       `;
       const styleMatch = htmlCode.match(/<style[\s\S]*?<\/style>/i);
       const bodyMatch = htmlCode.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
@@ -215,13 +185,12 @@ ${opts.showFrame ? "- Wood-colored border frame (#5D3A1A)" : "- No border frame"
 
       const bodyStyleMatch = htmlCode.match(/<body[^>]*style="([^"]*)"/i);
       if (bodyStyleMatch) container.style.cssText += bodyStyleMatch[1];
-      container.style.width = `${f.width}px`;
-      container.style.height = `${f.height}px`;
+      container.style.width = `${dims.width}px`;
+      container.style.height = `${dims.height}px`;
       container.style.overflow = "hidden";
       container.style.fontFamily = "'Patrick Hand', cursive";
       container.style.background = "#FFF8F0";
-      if (showFrame) container.style.border = "8px solid #5D3A1A";
-      container.style.padding = f.id === "landscape" ? "32px 40px" : "48px";
+      container.style.padding = "48px";
       container.style.boxSizing = "border-box";
 
       document.body.appendChild(container);
@@ -229,8 +198,8 @@ ${opts.showFrame ? "- Wood-colored border frame (#5D3A1A)" : "- No border frame"
 
       const html2canvas = (await import("html2canvas")).default;
       const canvas = await html2canvas(container, {
-        width: f.width,
-        height: f.height,
+        width: dims.width,
+        height: dims.height,
         scale: 1,
         useCORS: true,
         allowTaint: true,
@@ -246,7 +215,7 @@ ${opts.showFrame ? "- Wood-colored border frame (#5D3A1A)" : "- No border frame"
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      toast.success(`PNG downloaded! (${f.width}x${f.height}px)`);
+      toast.success(`PNG downloaded! (${dims.width}x${dims.height}px)`);
     } catch (err) {
       console.error("PNG download error:", err);
       handleDownloadHtml();
@@ -279,24 +248,22 @@ ${opts.showFrame ? "- Wood-colored border frame (#5D3A1A)" : "- No border frame"
         return;
       }
       if (!htmlCode) return;
-      // For Claude HTML — render and copy
       setDownloading(true);
-      const f = selectedFormat;
+
       const container = document.createElement("div");
-      container.style.cssText = `position:fixed;top:-9999px;left:-9999px;width:${f.width}px;height:${f.height}px;overflow:hidden;z-index:-1;`;
+      container.style.cssText = `position:fixed;top:-9999px;left:-9999px;width:${dims.width}px;height:${dims.height}px;overflow:hidden;z-index:-1;`;
       const styleMatch = htmlCode.match(/<style[\s\S]*?<\/style>/i);
       const bodyMatch = htmlCode.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
       container.innerHTML = (styleMatch ? styleMatch[0] : "") + (bodyMatch ? bodyMatch[1] : htmlCode);
       container.style.fontFamily = "'Patrick Hand', cursive";
       container.style.background = "#FFF8F0";
-      if (showFrame) container.style.border = "8px solid #5D3A1A";
-      container.style.padding = f.id === "landscape" ? "32px 40px" : "48px";
+      container.style.padding = "48px";
       container.style.boxSizing = "border-box";
       document.body.appendChild(container);
       await new Promise(resolve => setTimeout(resolve, 1500));
 
       const html2canvas = (await import("html2canvas")).default;
-      const canvas = await html2canvas(container, { width: f.width, height: f.height, scale: 1, useCORS: true, backgroundColor: "#FFF8F0", logging: false });
+      const canvas = await html2canvas(container, { width: dims.width, height: dims.height, scale: 1, useCORS: true, backgroundColor: "#FFF8F0", logging: false });
       document.body.removeChild(container);
 
       canvas.toBlob(async (blob) => {
@@ -332,7 +299,6 @@ ${opts.showFrame ? "- Wood-colored border frame (#5D3A1A)" : "- No border frame"
 
       if (error) {
         toast.error("Error saving infographic");
-        console.warn("Save infographic error:", error.message);
       } else {
         setSaved(true);
         toast.success("Infographic saved to history!");
@@ -346,13 +312,7 @@ ${opts.showFrame ? "- Wood-colored border frame (#5D3A1A)" : "- No border frame"
   // ─── Reset ───
 
   function handleReset() {
-    setStep("template");
-    setSelectedTemplate("howto");
-    setSelectedFormat(FORMATS[0]);
-    setAccentColor(ACCENT_COLORS[0].hex);
-    setBrandName("");
-    setSectionCount(5);
-    setShowFrame(true);
+    setStep("ready");
     setImageBase64("");
     setHtmlCode("");
     setResultMode(null);
@@ -364,12 +324,8 @@ ${opts.showFrame ? "- Wood-colored border frame (#5D3A1A)" : "- No border frame"
 
   if (!open) return null;
 
-  // ─── Computed ───
-
-  const aspectRatio = selectedFormat.height / selectedFormat.width;
-  const iframeScale = 0.42;
-
-  // ─── Render ───
+  // ─── Content preview ───
+  const contentPreview = content.split(/\s+/).slice(0, 30).join(" ") + (content.split(/\s+/).length > 30 ? "..." : "");
 
   return (
     <AnimatePresence>
@@ -390,36 +346,23 @@ ${opts.showFrame ? "- Wood-colored border frame (#5D3A1A)" : "- No border frame"
         >
           {/* ═══ Header ═══ */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-border/20">
-            <div className="flex items-center gap-3">
-              {step !== "template" && (
-                <button
-                  onClick={() => {
-                    if (step === "customize") setStep("template");
-                    else if (step === "result") setStep("customize");
-                  }}
-                  className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-              )}
-              <div>
-                <h3 className="text-lg font-bold">
-                  {step === "template" && "Choose a template"}
-                  {step === "customize" && "Customize"}
-                  {step === "result" && "Your infographic"}
-                </h3>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {step === "template" && "Pick the layout that fits your content"}
-                  {step === "customize" && "Format, colors, and options"}
-                  {step === "result" && (
-                    <>
-                      {platform} — {selectedFormat.size}
-                      {resultMode === "gemini" && <span className="ml-2 text-[9px] bg-primary/15 text-primary px-1.5 py-0.5 rounded-full">Gemini</span>}
-                      {resultMode === "claude" && <span className="ml-2 text-[9px] bg-orange-500/15 text-orange-400 px-1.5 py-0.5 rounded-full">Claude</span>}
-                    </>
-                  )}
-                </p>
-              </div>
+            <div>
+              <h3 className="text-lg font-bold">
+                {step === "ready" && "Create your infographic"}
+                {step === "generating" && "Generating..."}
+                {step === "result" && "Your infographic"}
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {step === "ready" && "AI will analyze your content and design automatically"}
+                {step === "generating" && "This may take 10-20 seconds"}
+                {step === "result" && (
+                  <>
+                    {platform} — {dims.width}x{dims.height}
+                    {resultMode === "gemini" && <span className="ml-2 text-[9px] bg-primary/15 text-primary px-1.5 py-0.5 rounded-full">Gemini</span>}
+                    {resultMode === "claude" && <span className="ml-2 text-[9px] bg-orange-500/15 text-orange-400 px-1.5 py-0.5 rounded-full">Claude</span>}
+                  </>
+                )}
+              </p>
             </div>
             <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all">
               <X className="w-4 h-4" />
@@ -427,324 +370,244 @@ ${opts.showFrame ? "- Wood-colored border frame (#5D3A1A)" : "- No border frame"
           </div>
 
           <div className="p-6">
-            {/* ═══ Step 1: Template ═══ */}
-            {step === "template" && (
-              <div className="grid grid-cols-2 gap-3">
-                {TEMPLATES.map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => { setSelectedTemplate(t.id); setStep("customize"); }}
-                    className={cn(
-                      "flex flex-col items-center gap-2 p-4 rounded-xl border transition-all text-center",
-                      selectedTemplate === t.id
-                        ? "border-primary bg-primary/[0.05]"
-                        : "border-border/30 hover:border-primary/40 hover:bg-primary/[0.02]",
-                    )}
-                  >
-                    <span className="text-3xl">{t.emoji}</span>
-                    <p className="text-sm font-semibold">{t.label}</p>
-                    <p className="text-[11px] text-muted-foreground leading-tight">{t.desc}</p>
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* ═══ Step 2: Customize ═══ */}
-            {step === "customize" && (
-              <div className="space-y-5">
-                {/* Format */}
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">Format</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {FORMATS.map((f) => (
-                      <button
-                        key={f.id}
-                        onClick={() => setSelectedFormat(f)}
-                        className={cn(
-                          "p-3 rounded-xl border text-center transition-all",
-                          selectedFormat.id === f.id
-                            ? "border-primary bg-primary/[0.05]"
-                            : "border-border/30 hover:border-primary/40",
-                        )}
-                      >
-                        <span className="text-lg">{f.icon}</span>
-                        <p className="text-xs font-semibold mt-1">{f.label}</p>
-                        <p className="text-[10px] text-muted-foreground">{f.size}</p>
-                      </button>
-                    ))}
+            {/* ═══ State 1: Ready ═══ */}
+            {step === "ready" && (
+              <div className="text-center space-y-6">
+                {/* AI analysis preview */}
+                <div className="space-y-3">
+                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
+                    <Sparkles className="w-8 h-8 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium mb-1">Our AI will automatically detect:</p>
+                    <div className="flex flex-wrap justify-center gap-2">
+                      {[
+                        { label: `Style: ${analysis.contentType}`, color: "bg-blue-500/10 text-blue-400" },
+                        { label: `Theme: ${analysis.colorTheme}`, color: "bg-green-500/10 text-green-400" },
+                        { label: `Format: ${dims.width}x${dims.height}`, color: "bg-orange-500/10 text-orange-400" },
+                      ].map((tag) => (
+                        <span key={tag.label} className={cn("text-[10px] px-2 py-1 rounded-full font-medium", tag.color)}>
+                          {tag.label}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
-                {/* Accent color */}
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">Accent color</label>
-                  <div className="flex gap-2 flex-wrap">
-                    {ACCENT_COLORS.map((c) => (
-                      <button
-                        key={c.id}
-                        onClick={() => setAccentColor(c.hex)}
-                        className={cn(
-                          "w-9 h-9 rounded-full border-2 transition-all",
-                          accentColor === c.hex ? "border-foreground scale-110" : "border-transparent hover:scale-105",
-                        )}
-                        style={{ backgroundColor: c.hex }}
-                        title={c.label}
-                      >
-                        {accentColor === c.hex && <Check className="w-4 h-4 text-white mx-auto" />}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Brand name */}
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">Your name / brand (footer)</label>
-                  <input
-                    type="text"
-                    value={brandName}
-                    onChange={(e) => setBrandName(e.target.value)}
-                    placeholder="@awakpenn"
-                    className="w-full px-3 py-2 rounded-lg border border-border/30 bg-background text-sm focus:outline-none focus:border-primary/50"
-                  />
-                </div>
-
-                {/* Section count */}
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">
-                    Sections: {sectionCount}
-                  </label>
-                  <input
-                    type="range"
-                    min={3}
-                    max={6}
-                    value={sectionCount}
-                    onChange={(e) => setSectionCount(Number(e.target.value))}
-                    className="w-full accent-primary"
-                  />
-                  <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
-                    <span>3</span><span>4</span><span>5</span><span>6</span>
-                  </div>
-                </div>
-
-                {/* Frame toggle */}
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Wood frame border</label>
-                  <button
-                    onClick={() => setShowFrame(!showFrame)}
-                    className={cn(
-                      "w-11 h-6 rounded-full transition-all relative",
-                      showFrame ? "bg-primary" : "bg-border",
-                    )}
-                  >
-                    <div className={cn(
-                      "w-5 h-5 rounded-full bg-white shadow absolute top-0.5 transition-all",
-                      showFrame ? "left-[22px]" : "left-0.5",
-                    )} />
-                  </button>
+                {/* Content preview */}
+                <div className="bg-accent/30 rounded-xl p-4">
+                  <p className="text-xs text-muted-foreground italic leading-relaxed">{contentPreview}</p>
                 </div>
 
                 {/* Generate button */}
                 <Button
-                  className="w-full h-12 text-sm font-bold gap-2"
+                  className="w-full h-14 text-base font-bold gap-3"
                   onClick={handleGenerate}
                 >
-                  <Sparkles className="w-4 h-4" />
+                  <Sparkles className="w-5 h-5" />
                   Generate Infographic
                 </Button>
               </div>
             )}
 
-            {/* ═══ Step 3: Result ═══ */}
-            {step === "result" && (
-              <div>
-                {generating ? (
-                  /* Skeleton loader */
-                  <div className="space-y-4">
-                    <div
-                      className="rounded-xl overflow-hidden border border-border/30 bg-gradient-to-br from-amber-50/50 to-orange-50/30 relative"
-                      style={{ paddingBottom: `${aspectRatio * 100}%` }}
-                    >
-                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
-                        <div className="relative">
-                          <div className="w-16 h-16 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
-                          <Sparkles className="w-6 h-6 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-                        </div>
-                        <div className="text-center">
-                          <p className="text-sm font-semibold">Creating your infographic...</p>
-                          <p className="text-xs text-muted-foreground mt-1">This may take 10-20 seconds</p>
-                        </div>
-                        {/* Skeleton bars */}
-                        <div className="w-48 space-y-2 mt-2">
-                          <div className="h-3 rounded-full bg-border/40 animate-pulse" />
-                          <div className="h-3 rounded-full bg-border/30 animate-pulse w-3/4" />
-                          <div className="h-3 rounded-full bg-border/20 animate-pulse w-1/2" />
-                        </div>
-                      </div>
+            {/* ═══ State 2: Generating ═══ */}
+            {step === "generating" && (
+              <div className="space-y-4">
+                <div
+                  className="rounded-xl overflow-hidden border border-border/30 bg-gradient-to-br from-amber-50/50 to-orange-50/30 dark:from-primary/5 dark:to-accent/5 relative"
+                  style={{ paddingBottom: `${aspectRatio * 100}%` }}
+                >
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-5">
+                    <div className="relative">
+                      <div className="w-16 h-16 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+                      <Sparkles className="w-6 h-6 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                    </div>
+                    <div className="text-center">
+                      <AnimatePresence mode="wait">
+                        <motion.p
+                          key={loadingMsgIndex}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -8 }}
+                          transition={{ duration: 0.3 }}
+                          className="text-sm font-semibold"
+                        >
+                          {LOADING_MESSAGES[loadingMsgIndex]}
+                        </motion.p>
+                      </AnimatePresence>
+                    </div>
+                    <div className="w-48 space-y-2">
+                      <div className="h-3 rounded-full bg-border/40 animate-pulse" />
+                      <div className="h-3 rounded-full bg-border/30 animate-pulse w-3/4" />
+                      <div className="h-3 rounded-full bg-border/20 animate-pulse w-1/2" />
                     </div>
                   </div>
-                ) : (
-                  <>
-                    {/* Confetti + success message */}
-                    <AnimatePresence>
-                      {showConfetti && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0 }}
-                          className="text-center mb-3"
-                        >
-                          <p className="text-sm font-semibold">
-                            Your infographic is ready! <span className="text-lg">🎉</span>
-                          </p>
-                          <div className="flex justify-center gap-1 mt-1 text-lg">
-                            {["✨", "⭐", "✨", "⭐"].map((s, i) => (
-                              <motion.span
-                                key={i}
-                                initial={{ opacity: 0, scale: 0, y: -20 }}
-                                animate={{ opacity: [0, 1, 0], scale: [0.5, 1.2, 0], y: [0, -10, 20] }}
-                                transition={{ duration: 1.2, delay: i * 0.15 }}
-                              >
-                                {s}
-                              </motion.span>
-                            ))}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                </div>
+              </div>
+            )}
 
-                    {/* Preview */}
+            {/* ═══ State 3: Result ═══ */}
+            {step === "result" && (
+              <div>
+                {/* Confetti + success */}
+                <AnimatePresence>
+                  {showConfetti && (
                     <motion.div
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.4, ease: "easeOut" }}
-                      className="rounded-xl overflow-hidden border border-border/30 bg-white mb-4 relative group"
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      className="text-center mb-3"
                     >
-                      {resultMode === "gemini" && imageBase64 ? (
-                        <img
-                          src={`data:image/png;base64,${imageBase64}`}
-                          alt="Generated infographic"
-                          className="w-full h-auto"
-                        />
-                      ) : (
-                        <div className="relative w-full" style={{ paddingBottom: `${aspectRatio * 100}%` }}>
-                          <iframe
-                            ref={iframeRef}
-                            srcDoc={htmlCode}
-                            className="absolute inset-0 w-full h-full"
-                            style={{
-                              border: "none",
-                              transform: `scale(${iframeScale})`,
-                              transformOrigin: "top left",
-                              width: `${100 / iframeScale}%`,
-                              height: `${100 / iframeScale}%`,
-                            }}
-                            sandbox="allow-same-origin"
-                            title="Infographic preview"
-                          />
-                        </div>
-                      )}
-
-                      {/* Zoom overlay */}
-                      <button
-                        onClick={() => setShowZoom(true)}
-                        className="absolute top-3 right-3 w-8 h-8 rounded-lg bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                        title="Full screen"
-                      >
-                        <Maximize2 className="w-4 h-4" />
-                      </button>
-                    </motion.div>
-
-                    {/* Export buttons — 3 options */}
-                    <div className="flex flex-wrap items-center gap-2 mb-3">
-                      <Button
-                        size="sm"
-                        className="h-10 gap-2 text-sm font-semibold"
-                        onClick={handleDownloadPng}
-                        disabled={downloading}
-                      >
-                        {downloading
-                          ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</>
-                          : <><Download className="w-4 h-4" /> Download PNG</>
-                        }
-                      </Button>
-
-                      {resultMode === "claude" && (
-                        <Button variant="outline" size="sm" className="h-9 gap-2 text-xs" onClick={handleDownloadHtml}>
-                          <FileCode className="w-3.5 h-3.5" /> Download HTML
-                        </Button>
-                      )}
-
-                      <Button variant="outline" size="sm" className="h-9 gap-2 text-xs" onClick={handleCopyImage} disabled={downloading}>
-                        <Copy className="w-3.5 h-3.5" /> Copy Image
-                      </Button>
-                    </div>
-
-                    {/* Action row 2 */}
-                    <div className="flex flex-wrap items-center gap-2 mb-3">
-                      <Button variant="outline" size="sm" className="h-9 gap-2 text-xs" onClick={handleGenerate}>
-                        <RefreshCw className="w-3.5 h-3.5" /> Regenerate
-                      </Button>
-
-                      {resultMode === "claude" && (
-                        <Button variant="outline" size="sm" className="h-9 gap-2 text-xs" onClick={() => {
-                          const blob = new Blob([htmlCode], { type: "text/html" });
-                          window.open(URL.createObjectURL(blob), "_blank");
-                        }}>
-                          <ExternalLink className="w-3.5 h-3.5" /> Open in tab
-                        </Button>
-                      )}
-
-                      <Button
-                        variant={saved ? "ghost" : "outline"}
-                        size="sm"
-                        className={cn("h-9 gap-2 text-xs", saved && "text-green-400")}
-                        onClick={handleSave}
-                        disabled={saved || saving}
-                      >
-                        {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> :
-                         saved ? <Check className="w-3.5 h-3.5" /> :
-                         <Save className="w-3.5 h-3.5" />}
-                        {saved ? "Saved" : "Save"}
-                      </Button>
-                    </div>
-
-                    {/* View in history link */}
-                    {saved && (
-                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-3">
-                        <button
-                          onClick={() => { onClose(); navigate("/dashboard/history"); }}
-                          className="text-xs text-primary hover:underline"
-                        >
-                          View in History →
-                        </button>
-                      </motion.div>
-                    )}
-
-                    {/* Custom prompt */}
-                    <button onClick={() => setShowPrompt(!showPrompt)} className="text-xs text-muted-foreground hover:text-foreground transition-colors mb-2">
-                      {showPrompt ? "Hide instructions" : "Edit instructions"}
-                    </button>
-                    {showPrompt && (
-                      <div className="space-y-2">
-                        <Textarea
-                          value={customPrompt}
-                          onChange={(e) => setCustomPrompt(e.target.value)}
-                          placeholder="E.g. use red, add a QR code, change the title..."
-                          className="text-xs min-h-[60px] resize-none"
-                        />
-                        <Button size="sm" className="h-8 text-xs gap-1.5" onClick={handleGenerate}>
-                          <Sparkles className="w-3 h-3" /> Regenerate with instructions
-                        </Button>
+                      <p className="text-sm font-semibold">
+                        Your infographic is ready! <span className="text-lg">🎉</span>
+                      </p>
+                      <div className="flex justify-center gap-1 mt-1 text-lg">
+                        {["✨", "⭐", "✨", "⭐"].map((s, i) => (
+                          <motion.span
+                            key={i}
+                            initial={{ opacity: 0, scale: 0, y: -20 }}
+                            animate={{ opacity: [0, 1, 0], scale: [0.5, 1.2, 0], y: [0, -10, 20] }}
+                            transition={{ duration: 1.2, delay: i * 0.15 }}
+                          >
+                            {s}
+                          </motion.span>
+                        ))}
                       </div>
-                    )}
-                  </>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Preview */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                  className="rounded-xl overflow-hidden border border-border/30 bg-white mb-4 relative group"
+                >
+                  {resultMode === "gemini" && imageBase64 ? (
+                    <img
+                      src={`data:image/png;base64,${imageBase64}`}
+                      alt="Generated infographic"
+                      className="w-full h-auto"
+                    />
+                  ) : (
+                    <div className="relative w-full" style={{ paddingBottom: `${aspectRatio * 100}%` }}>
+                      <iframe
+                        ref={iframeRef}
+                        srcDoc={htmlCode}
+                        className="absolute inset-0 w-full h-full"
+                        style={{
+                          border: "none",
+                          transform: `scale(${iframeScale})`,
+                          transformOrigin: "top left",
+                          width: `${100 / iframeScale}%`,
+                          height: `${100 / iframeScale}%`,
+                        }}
+                        sandbox="allow-same-origin"
+                        title="Infographic preview"
+                      />
+                    </div>
+                  )}
+
+                  {/* Zoom overlay */}
+                  <button
+                    onClick={() => setShowZoom(true)}
+                    className="absolute top-3 right-3 w-8 h-8 rounded-lg bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Full screen"
+                  >
+                    <Maximize2 className="w-4 h-4" />
+                  </button>
+                </motion.div>
+
+                {/* Primary actions */}
+                <div className="flex flex-wrap items-center gap-2 mb-3">
+                  <Button
+                    size="sm"
+                    className="h-10 gap-2 text-sm font-semibold"
+                    onClick={handleDownloadPng}
+                    disabled={downloading}
+                  >
+                    {downloading
+                      ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</>
+                      : <><Download className="w-4 h-4" /> Download PNG</>
+                    }
+                  </Button>
+
+                  <Button variant="outline" size="sm" className="h-9 gap-2 text-xs" onClick={handleCopyImage} disabled={downloading}>
+                    <Copy className="w-3.5 h-3.5" /> Copy Image
+                  </Button>
+
+                  {resultMode === "claude" && (
+                    <Button variant="outline" size="sm" className="h-9 gap-2 text-xs" onClick={handleDownloadHtml}>
+                      <FileCode className="w-3.5 h-3.5" /> HTML
+                    </Button>
+                  )}
+                </div>
+
+                {/* Secondary actions */}
+                <div className="flex flex-wrap items-center gap-2 mb-3">
+                  <Button variant="outline" size="sm" className="h-9 gap-2 text-xs" onClick={handleGenerate}>
+                    <RefreshCw className="w-3.5 h-3.5" /> Regenerate
+                  </Button>
+
+                  {resultMode === "claude" && (
+                    <Button variant="outline" size="sm" className="h-9 gap-2 text-xs" onClick={() => {
+                      const blob = new Blob([htmlCode], { type: "text/html" });
+                      window.open(URL.createObjectURL(blob), "_blank");
+                    }}>
+                      <ExternalLink className="w-3.5 h-3.5" /> Open in tab
+                    </Button>
+                  )}
+
+                  <Button
+                    variant={saved ? "ghost" : "outline"}
+                    size="sm"
+                    className={cn("h-9 gap-2 text-xs", saved && "text-green-400")}
+                    onClick={handleSave}
+                    disabled={saved || saving}
+                  >
+                    {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> :
+                     saved ? <Check className="w-3.5 h-3.5" /> :
+                     <Save className="w-3.5 h-3.5" />}
+                    {saved ? "Saved" : "Save"}
+                  </Button>
+                </div>
+
+                {/* History link */}
+                {saved && (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-3">
+                    <button
+                      onClick={() => { onClose(); navigate("/dashboard/history"); }}
+                      className="text-xs text-primary hover:underline"
+                    >
+                      View in History →
+                    </button>
+                  </motion.div>
+                )}
+
+                {/* Custom prompt (collapsed) */}
+                <button onClick={() => setShowPrompt(!showPrompt)} className="text-xs text-muted-foreground hover:text-foreground transition-colors mb-2">
+                  {showPrompt ? "Hide custom instructions" : "Custom instructions"}
+                </button>
+                {showPrompt && (
+                  <div className="space-y-2">
+                    <Textarea
+                      value={customPrompt}
+                      onChange={(e) => setCustomPrompt(e.target.value)}
+                      placeholder="E.g. use dark theme, change the title, add more sections..."
+                      className="text-xs min-h-[60px] resize-none"
+                    />
+                    <Button size="sm" className="h-8 text-xs gap-1.5" onClick={handleGenerate}>
+                      <Sparkles className="w-3 h-3" /> Regenerate
+                    </Button>
+                  </div>
                 )}
               </div>
             )}
           </div>
         </motion.div>
 
-        {/* ═══ Zoom modal (fullscreen) ═══ */}
+        {/* ═══ Zoom modal ═══ */}
         <AnimatePresence>
           {showZoom && (
             <motion.div
@@ -770,7 +633,7 @@ ${opts.showFrame ? "- Wood-colored border frame (#5D3A1A)" : "- No border frame"
                 ) : (
                   <iframe
                     srcDoc={htmlCode}
-                    style={{ width: selectedFormat.width, height: selectedFormat.height, border: "none", background: "#FFF8F0" }}
+                    style={{ width: dims.width, height: dims.height, border: "none", background: "#FFF8F0" }}
                     sandbox="allow-same-origin"
                     title="Infographic full view"
                   />
