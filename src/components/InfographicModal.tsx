@@ -110,7 +110,9 @@ export default function InfographicModal({ open, onClose, content, platform }: P
   const dims = getFormatDimensions(analysis.format);
   const templateSelection = selectBestTemplate(content, platform);
   const aspectRatio = dims.height / dims.width;
-  const iframeScale = 0.42;
+  // Scale infographic to fit ~480px wide modal content area
+  const previewWidth = 480;
+  const iframeScale = previewWidth / dims.width;
 
   // ─── Generation ───
 

@@ -228,6 +228,8 @@ export function assignEmojis(points: Point[], content: string): string[] {
 
 let regenerationCounter = 0;
 
+const LAYOUT_VARIATIONS = ["vertical numbered", "two-column grid", "timeline steps", "split comparison", "hierarchy pyramid"];
+
 export function buildInfographicPrompt(content: string, platform: string, customInstructions?: string): string {
   regenerationCounter++;
   const analysis = analyzeContent(content, platform);
@@ -245,7 +247,7 @@ export function buildInfographicPrompt(content: string, platform: string, custom
   let templateHtml = templateFn(dims.width, dims.height);
   const extraction = extractKeyPoints(content);
 
-  // Pre-fill SVG icons into the template (deterministic, not left to Claude)
+  // Pre-fill SVG icons into the template (deterministic)
   const sectionColors = ["#E53E3E", "#3182CE", "#38A169", "#DD6B20", "#9B59B6", "#EC4899", "#00C9B1"];
   for (let i = 0; i < 7; i++) {
     const pointText = extraction.points[i]?.title || "";
@@ -256,46 +258,106 @@ export function buildInfographicPrompt(content: string, platform: string, custom
   }
 
   const variationSeed = Math.random().toString(36).substring(2, 8);
-  const extra = customInstructions ? `\nAdditional user instructions: ${customInstructions}` : "";
+  const extra = customInstructions ? `\nUser instructions: ${customInstructions}` : "";
 
-  // Build placeholder hints (text only — icons are pre-filled)
   const pointHints = extraction.points.map((p, i) =>
-    `Point ${i + 1}: title="${p.title}", body="${p.body}"`
+    `${i + 1}. "${p.title}" — ${p.body}`
   ).join("\n");
 
-  return `You are a world-class infographic designer filling an HTML template.
-Template: ${templateId} | Seed: ${variationSeed}
+  // Regeneration variation instruction
+  const regenInstruction = regenerationCounter > 1
+    ? `\n\nREGENERATION #${regenerationCounter}
+The previous design was rejected. You MUST use a COMPLETELY DIFFERENT approach:
+- Different title angle and wording
+- Different emphasis on content points
+- Suggested layout style: ${LAYOUT_VARIATIONS[(regenerationCounter - 1) % LAYOUT_VARIATIONS.length]}
+Make it significantly better.\n`
+    : "";
 
-STRICT RULES:
-1. Replace ALL {{PLACEHOLDERS}} with real content extracted below
-2. Keep ALL HTML, CSS, and SVG icons EXACTLY as-is — ONLY replace {{text placeholders}}
-3. NEVER use italic (font-style:italic) — ALL text must be regular (400) or bold (700/900)
-4. NEVER add emoji characters — SVG icons are already embedded
-5. NEVER modify CSS classes, styles, or SVG elements
-6. Make titles PUNCHY, VIRAL, ALL CAPS (Awa K. Penn style)
-7. Body text: MAX 20 words per section — short, direct, impactful
-8. Output ONLY the filled HTML starting with <!DOCTYPE html>
+  return `You are the world's best infographic designer. You specialize in viral social media content that gets millions of views. You have studied Awa K. Penn's infographics (26K+ likes, 1.7M+ views per post) and replicate their exact quality.
 
-PLACEHOLDER MAP:
+Your infographics go viral because they are:
+• Instantly scannable — reader understands value in 3 seconds
+• High contrast — crystal clear visual hierarchy
+• Professional but warm — not corporate, not childish
+• Information-dense but NOT cluttered — white space is essential
+• Shareable — people save and repost them
+
+═══ YOUR TASK ═══
+Fill the HTML template below by replacing {{PLACEHOLDERS}} with real content.
+Template: ${templateId} (${selection.reason})
+Seed: ${variationSeed}
+${regenInstruction}
+═══ CONTENT ANALYSIS ═══
+Before filling, analyze:
+- Main message: What is the ONE takeaway?
+- Target: Who will share this?
+- Extract: The 4-5 most ACTIONABLE, SPECIFIC points
+
+═══ ABSOLUTE RULES ═══
+
+TYPOGRAPHY:
+- Font: Poppins only (900 for titles, 700 for section heads, 400 for body)
+- NEVER use italic — font-style:italic is FORBIDDEN
+- Titles: ALL CAPS, punchy, create urgency
+- Body: sentence case, direct, max 15 words per section
+
+CONTENT QUALITY:
+- Section titles: MAX 6 words, specific and actionable
+- Section body: MAX 15 words, no fluff, direct value
+- NO generic statements. Be SPECIFIC with numbers, tools, outcomes
+- NO emoji characters anywhere — SVG icons are pre-embedded
+
+TITLE EXAMPLES (study these):
+BAD: "Artificial Intelligence Is Important"
+GOOD: "AI REPLACES 40% OF JOBS BY 2030"
+
+BAD: "You Should Learn New Skills"
+GOOD: "LEARN THIS SKILL OR GET LEFT BEHIND"
+
+BAD: "Social Media Can Help Your Business"
+GOOD: "1 POST = $10K IN SALES (HERE'S HOW)"
+
+BAD: "Tips for Being More Productive"
+GOOD: "5 HABITS THAT 10X YOUR OUTPUT"
+
+TEMPLATE RULES:
+- Keep ALL HTML structure, CSS, and SVG icons EXACTLY as-is
+- ONLY replace {{text placeholders}} — nothing else
+- If template has more slots than content provides, REMOVE the extra section div entirely
+- Do NOT add any new HTML elements, classes, or styles
+
+═══ PLACEHOLDER MAP ═══
 {{BADGE}} → "${extraction.badge}"
-{{TITLE}} → Viral punchy title, ALL CAPS. Wrap ONE key word with <span> for accent. Max 60 chars.
+{{TITLE}} → Viral ALL CAPS title. Wrap ONE key word with <span> for accent color. Max 60 chars.
 {{FOOTER}} → "Created with Supen.io · Follow for more"
-{{Pn_TITLE}} → Bold section title, max 6 words
-{{Pn_BODY}} → Short detail, max 20 words
+{{Pn_TITLE}} → Bold section title (max 6 words, specific)
+{{Pn_BODY}} → Short detail (max 15 words, actionable)
 
-EXTRACTED KEY POINTS (use these — do NOT invent new ones):
+═══ EXTRACTED KEY POINTS ═══
+Use ONLY these points — do NOT invent new ones:
 ${pointHints}
 
-If template has more point slots than content provides, remove the extra section div entirely.
-
-TEMPLATE:
+═══ TEMPLATE TO FILL ═══
 ${templateHtml}
 
-CONTENT:
+═══ SOURCE CONTENT ═══
 ${content.slice(0, 2500)}
 
 Platform: ${platform}
-${extra}`;
+${extra}
+
+═══ FINAL CHECKLIST ═══
+Before outputting, verify:
+□ Title is PUNCHY with urgency/curiosity
+□ Maximum 5 sections — quality over quantity
+□ Each body MAX 15 words — short and impactful
+□ NO italic text anywhere
+□ All SVG icons left untouched
+□ Content fits within ${dims.width}x${dims.height}px
+□ Starts with <!DOCTYPE html>, ends with </html>
+
+OUTPUT: Only the filled HTML. No explanation. No markdown.`;
 }
 
 // ─── Gemini prompt builder ───
