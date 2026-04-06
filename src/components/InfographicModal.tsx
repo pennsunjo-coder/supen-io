@@ -8,6 +8,7 @@ import {
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic";
+import { buildInfographicPrompt } from "@/lib/infographic-style";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -25,41 +26,6 @@ const STYLES = [
   { id: "colorful", label: "Colorful", desc: "Energetic and contrasting", colors: ["#6366F1", "#EC4899", "#F59E0B", "#FFF"] },
 ];
 
-const STYLE_PROMPTS: Record<string, string> = {
-  sketchnote: `MANDATORY STYLE — Sketchnote/Whiteboard (like viral LinkedIn infographics):
-- Background: #FFF8F0 (warm cream)
-- Outer border: 8px solid #5D3A1A (wood/brown frame)
-- Title: 52px, font-weight 900, color #1A1A1A, font-family 'Patrick Hand'
-- Section numbers: colored circles (red #E53E3E, blue #3182CE, green #38A169, orange #DD6B20) — 36px diameter, white text centered
-- Section titles: 20px bold, matching circle color
-- Body text: 15px, font-family 'Patrick Hand', color #2D3748
-- Use large emoji icons (24-32px) before each section title
-- Use → arrows for sub-points
-- Subtle inner shadow: box-shadow inset 0 0 40px rgba(0,0,0,0.03)
-- Footer: "Follow @author for more | Repost 🔄" — 14px bold, centered
-- Google Font: <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">`,
-
-  modern: `MANDATORY STYLE — Modern/Dark:
-- Background: linear-gradient(135deg, #0F172A, #1E293B)
-- No outer border
-- Title: 48px, font-weight 800, color #F1F5F9, font-family 'Inter'
-- Accent color: #249D8B (teal/cyan)
-- Section numbers: teal rounded squares with white text
-- Body text: 14px, color #94A3B8, font-family 'Inter'
-- Subtle glow effects on headings
-- Cards with background rgba(255,255,255,0.05) and border 1px solid rgba(255,255,255,0.1)
-- Google Font: <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">`,
-
-  colorful: `MANDATORY STYLE — Colorful/Bold:
-- Background: #FFFFFF
-- Title: 52px, font-weight 900, color #1A1A1A, font-family 'Poppins'
-- Primary colors: #6366F1 (indigo), #EC4899 (pink), #F59E0B (amber)
-- Section numbers: alternating colored circles with white numbers
-- Body text: 14px, color #374151, font-family 'Poppins'
-- Gradient accents on section headers
-- Rounded corners (12px) on cards
-- Google Font: <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;900&display=swap" rel="stylesheet">`,
-};
 
 interface Props {
   open: boolean;
@@ -118,26 +84,6 @@ Requirements:
 - Square format 1080x1080${extra}`;
   }
 
-  function buildClaudeSystemPrompt(styleId: string): string {
-    const stylePrompt = STYLE_PROMPTS[styleId] || STYLE_PROMPTS.sketchnote;
-    const extra = customPrompt ? `\n\nAdditional user instructions: ${customPrompt}` : "";
-
-    return `You are an expert infographic designer for social media.
-Generate COMPLETE standalone HTML/CSS code for a 1080x1080px infographic.
-
-${stylePrompt}
-
-STRUCTURE RULES:
-- Single self-contained HTML file with inline <style>
-- Body must be exactly 1080x1080px with overflow:hidden
-- Numbered sections (4-6) with colored circle badges
-- Large title at top, readable body text (15px min)
-- CTA footer at bottom
-- ONLY output the HTML code. No markdown. No explanation.
-- Start with <!DOCTYPE html>
-
-Target platform: ${platform}${extra}`;
-  }
 
   async function generateWithGemini(styleId: string): Promise<string | null> {
     if (!GEMINI_API_KEY) return null;
@@ -173,12 +119,14 @@ Target platform: ${platform}${extra}`;
     }
   }
 
-  async function generateWithClaude(styleId: string): Promise<string> {
+  async function generateWithClaude(): Promise<string> {
     const response = await anthropic.messages.create({
       model: CLAUDE_MODEL,
       max_tokens: 4096,
-      system: buildClaudeSystemPrompt(styleId),
-      messages: [{ role: "user", content: `Transform this content into a viral infographic:\n\n${content.slice(0, 2000)}` }],
+      messages: [{
+        role: "user",
+        content: buildInfographicPrompt(content, platform, customPrompt || undefined),
+      }],
     });
 
     const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
@@ -208,7 +156,7 @@ Target platform: ${platform}${extra}`;
       }
 
       // 2) Fallback Claude HTML/CSS
-      const html = await generateWithClaude(s);
+      const html = await generateWithClaude();
       setHtmlCode(html);
       setResultMode("claude");
     } catch {
