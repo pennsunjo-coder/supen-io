@@ -21,6 +21,13 @@ import { toast } from "sonner";
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
+const FONT_LINK = '<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand:wght@400&family=Poppins:wght@400;700;900&display=swap" rel="stylesheet">';
+
+function injectFontsInHtml(html: string): string {
+  if (html.includes("fonts.googleapis.com")) return html;
+  return html.replace("</head>", FONT_LINK + "</head>");
+}
+
 const LOADING_MESSAGES = [
   "Analyzing your content...",
   "Choosing the perfect style...",
@@ -494,7 +501,7 @@ export default function InfographicModal({ open, onClose, content, platform }: P
                     <div className="relative w-full" style={{ paddingBottom: `${aspectRatio * 100}%` }}>
                       <iframe
                         ref={iframeRef}
-                        srcDoc={htmlCode}
+                        srcDoc={injectFontsInHtml(htmlCode)}
                         className="absolute inset-0 w-full h-full"
                         style={{
                           border: "none",
@@ -503,7 +510,7 @@ export default function InfographicModal({ open, onClose, content, platform }: P
                           width: `${100 / iframeScale}%`,
                           height: `${100 / iframeScale}%`,
                         }}
-                        sandbox="allow-same-origin"
+                        sandbox="allow-same-origin allow-scripts"
                         title="Infographic preview"
                       />
                     </div>
@@ -632,9 +639,9 @@ export default function InfographicModal({ open, onClose, content, platform }: P
                   />
                 ) : (
                   <iframe
-                    srcDoc={htmlCode}
+                    srcDoc={injectFontsInHtml(htmlCode)}
                     style={{ width: dims.width, height: dims.height, border: "none", background: "#FFF8F0" }}
-                    sandbox="allow-same-origin"
+                    sandbox="allow-same-origin allow-scripts"
                     title="Infographic full view"
                   />
                 )}

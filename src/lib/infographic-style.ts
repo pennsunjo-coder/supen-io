@@ -125,117 +125,230 @@ export function getFormatDimensions(format: "square" | "portrait") {
 export function buildInfographicPrompt(content: string, platform: string, customInstructions?: string): string {
   const analysis = analyzeContent(content, platform);
   const palette = PALETTES[analysis.colorTheme];
-  const layout = LAYOUTS[analysis.contentType];
   const dims = FORMAT_DIMS[analysis.format];
   const extra = customInstructions ? `\n\nAdditional user instructions: ${customInstructions}` : "";
 
-  const isPortrait = analysis.format === "portrait";
-  const maxSections = isPortrait ? 6 : 5;
-  const titleSize = "48px";
-  const bodySize = analysis.wordCount > 250 ? "13px" : "15px";
-  const padding = "48px";
-
   const isDark = analysis.colorTheme === "tech";
-  const borderStyle = palette.border === "none" ? "border: none;" : `border: ${palette.border};`;
-  const footerColor = isDark ? palette.text : "#5D3A1A";
-  const footerBorder = isDark ? `1px solid ${palette.accent}33` : "2px solid #5D3A1A";
-  const shadowStyle = isDark
-    ? "box-shadow: none;"
-    : "box-shadow: inset 0 0 60px rgba(0,0,0,0.04);";
+  const borderCSS = palette.border === "none" ? "" : `border: ${palette.border};`;
+  const shadowCSS = isDark ? "box-shadow: inset 0 0 80px rgba(0,200,180,0.05);" : "box-shadow: inset 0 0 80px rgba(0,0,0,0.03);";
+  const badgeTextColor = isDark ? "#000" : "#fff";
+  const titleSize = analysis.wordCount > 200 ? "38px" : "46px";
+  const sectionGap = analysis.format === "portrait" ? "22px" : "18px";
+  const sectionBg = isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.02)";
+  const footerBorderCSS = `2px solid ${palette.accent}40`;
 
-  return `You are an expert viral infographic designer.
-Analyze this content and create a stunning ${dims.width}x${dims.height}px infographic.
+  return `You are an expert viral infographic designer for social media.
 
-DETECTED CONTENT TYPE: ${analysis.contentType}
-DETECTED THEME: ${analysis.colorTheme}
-WORD COUNT: ${analysis.wordCount}
+CONTENT ANALYSIS:
+- Type: ${analysis.contentType}
+- Theme: ${analysis.colorTheme}
+- Words: ${analysis.wordCount}
+- Platform: ${platform}
 
-${layout}
+YOUR TASK:
+Create a stunning, professional infographic as a single HTML file.
+Extract the KEY POINTS from the content (max 5 points).
+Each point needs: an emoji, a bold title, and 1-2 lines of text.
 
-COLOR PALETTE (use exactly):
-- Background: ${palette.bg}
-- Title color: ${palette.title}
-- Accent color: ${palette.accent}
-- Secondary accent: ${palette.secondary}
-- Body text: ${palette.text}
-- Border: ${palette.border}
-- Font family: ${palette.font}
+EXACT HTML TEMPLATE TO USE — replace ALL [PLACEHOLDERS] with real content:
 
-MANDATORY RULES:
-1. Exact dimensions: body { width: ${dims.width}px; height: ${dims.height}px; overflow: hidden; }
-2. ALL content must fit — no scrolling. overflow: hidden is mandatory.
-3. Maximum ${maxSections} sections. Reduce content if needed.
-4. If content is long, use font-size: 13px for body and reduce gaps.
-5. Title: ${titleSize}, weight 900, UPPERCASE, centered, line-height 1.1
-   — Color key words with accent color ${palette.accent}
-6. Section numbers: colored circles (36px), white number inside
-   Colors rotate: ${palette.accent}, ${palette.secondary}, #38A169, #DD6B20, #9B59B6
-7. Large emojis (28px) before section titles
-8. Sub-points use → arrows in accent color
-9. Footer: "Created with Supen.io | Follow for more 🔄"
-   — centered, 14px bold, color ${footerColor}, border-top: ${footerBorder}
-10. Professional, viral-worthy design
-11. ONLY output HTML. No markdown. No explanation. Start with <!DOCTYPE html>.
-
-GOOGLE FONTS:
-<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-
-HTML TEMPLATE:
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
-<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand:wght@400&family=Poppins:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-  width: ${dims.width}px; height: ${dims.height}px;
-  background: ${palette.bg};
-  font-family: '${palette.font}', ${isDark ? "sans-serif" : "cursive"};
-  ${borderStyle}
-  padding: ${padding};
-  overflow: hidden;
-  ${shadowStyle}
-  display: flex; flex-direction: column;
-}
-.title {
-  font-size: ${titleSize}; font-weight: 900; text-align: center;
-  color: ${palette.title}; margin-bottom: 24px; line-height: 1.1;
-  text-transform: uppercase; letter-spacing: -0.5px;
-}
-.title .accent { color: ${palette.accent}; }
-.sections { flex: 1; display: flex; flex-direction: column; gap: 16px; }
-.section { display: flex; align-items: flex-start; gap: 14px; }
-.number {
-  width: 36px; height: 36px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  color: white; font-weight: 900; font-size: 16px;
-  flex-shrink: 0; margin-top: 2px;
-}
-.section-content { flex: 1; }
-.section-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
-.section-body { font-size: ${bodySize}; color: ${palette.text}; line-height: 1.5; }
-.emoji { font-size: 28px; margin-right: 6px; vertical-align: middle; }
-.footer {
-  text-align: center; font-size: 14px; font-weight: 700;
-  color: ${footerColor}; margin-top: auto; padding-top: 16px;
-  border-top: ${footerBorder};
-}
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    width: ${dims.width}px;
+    height: ${dims.height}px;
+    background: ${palette.bg};
+    font-family: '${palette.font}', cursive, sans-serif;
+    ${borderCSS}
+    padding: 52px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    ${shadowCSS}
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 36px;
+    padding-bottom: 24px;
+    border-bottom: 3px solid ${palette.accent};
+  }
+
+  .badge {
+    display: inline-block;
+    background: ${palette.accent};
+    color: ${badgeTextColor};
+    font-size: 13px;
+    font-weight: 700;
+    padding: 6px 16px;
+    border-radius: 20px;
+    margin-bottom: 16px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .title {
+    font-size: ${titleSize};
+    font-weight: 900;
+    color: ${palette.title};
+    line-height: 1.15;
+    font-family: 'Poppins', sans-serif;
+  }
+
+  .title span { color: ${palette.accent}; }
+
+  .sections {
+    display: flex;
+    flex-direction: column;
+    gap: ${sectionGap};
+    flex: 1;
+  }
+
+  .section {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px 20px;
+    background: ${sectionBg};
+    border-radius: 12px;
+    border-left: 4px solid var(--color);
+  }
+
+  .number {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--color);
+    color: white;
+    font-size: 18px;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-family: 'Poppins', sans-serif;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+
+  .emoji {
+    font-size: 32px;
+    flex-shrink: 0;
+    line-height: 1;
+    margin-top: 4px;
+  }
+
+  .section-content { flex: 1; }
+
+  .section-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--color);
+    margin-bottom: 6px;
+    font-family: 'Poppins', sans-serif;
+  }
+
+  .section-body {
+    font-size: 14px;
+    color: ${palette.text};
+    line-height: 1.5;
+  }
+
+  .section-body .arrow {
+    color: ${palette.accent};
+    font-weight: bold;
+  }
+
+  .footer {
+    text-align: center;
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: ${footerBorderCSS};
+    font-size: 14px;
+    font-weight: 700;
+    color: ${palette.accent};
+    font-family: 'Poppins', sans-serif;
+  }
+
+  .s1 { --color: #E53E3E; }
+  .s2 { --color: #3182CE; }
+  .s3 { --color: #38A169; }
+  .s4 { --color: #DD6B20; }
+  .s5 { --color: #9B59B6; }
 </style>
 </head>
 <body>
-  [GENERATE CONTENT FOLLOWING THE LAYOUT ABOVE]
-  <div class="footer">Created with Supen.io | Follow for more 🔄</div>
+
+  <div class="header">
+    <div class="badge">[TOPIC BADGE - 2-3 words]</div>
+    <div class="title">[MAIN TITLE - make it viral and punchy, highlight KEY WORD with <span>]</div>
+  </div>
+
+  <div class="sections">
+
+    <div class="section s1">
+      <div class="number">1</div>
+      <div class="emoji">[RELEVANT EMOJI]</div>
+      <div class="section-content">
+        <div class="section-title">[POINT 1 TITLE]</div>
+        <div class="section-body">[POINT 1 DETAIL - max 2 lines]</div>
+      </div>
+    </div>
+
+    <div class="section s2">
+      <div class="number">2</div>
+      <div class="emoji">[RELEVANT EMOJI]</div>
+      <div class="section-content">
+        <div class="section-title">[POINT 2 TITLE]</div>
+        <div class="section-body">[POINT 2 DETAIL - max 2 lines]</div>
+      </div>
+    </div>
+
+    <div class="section s3">
+      <div class="number">3</div>
+      <div class="emoji">[RELEVANT EMOJI]</div>
+      <div class="section-content">
+        <div class="section-title">[POINT 3 TITLE]</div>
+        <div class="section-body">[POINT 3 DETAIL - max 2 lines]</div>
+      </div>
+    </div>
+
+    <div class="section s4">
+      <div class="number">4</div>
+      <div class="emoji">[RELEVANT EMOJI]</div>
+      <div class="section-content">
+        <div class="section-title">[POINT 4 TITLE]</div>
+        <div class="section-body">[POINT 4 DETAIL - max 2 lines]</div>
+      </div>
+    </div>
+
+    <!-- ADD SECTION 5 ONLY IF CONTENT HAS 5+ KEY POINTS -->
+
+  </div>
+
+  <div class="footer">Created with Supen.io · Follow for more 🔄</div>
+
 </body>
 </html>
+
+INSTRUCTIONS:
+1. Replace ALL [PLACEHOLDERS] with real content extracted from below
+2. Keep the EXACT CSS — do not modify styles, classes, or structure
+3. Make the title VIRAL and punchy (like Awa K. Penn style)
+4. Choose RELEVANT emojis that match each section topic
+5. Keep body text SHORT (max 2 lines per section)
+6. Output ONLY the complete HTML. No markdown. No explanation. Start with <!DOCTYPE html>
 
 CONTENT TO TRANSFORM:
 ${content.slice(0, 2500)}
 
 Platform: ${platform}
-${extra}
-
-OUTPUT: ONLY the complete HTML code. No markdown fences. No explanation. Start with <!DOCTYPE html>.`;
+${extra}`;
 }
 
 // ─── Gemini prompt builder (for image generation) ───
