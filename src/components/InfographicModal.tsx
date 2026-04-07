@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import GenerationProgress, { INFOGRAPHIC_STEPS } from "@/components/GenerationProgress";
 import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic";
 import {
   buildInfographicPrompt,
@@ -34,15 +35,7 @@ function injectFontsInHtml(html: string): string {
   return html.replace("</head>", FONT_LINK + "</head>");
 }
 
-const LOADING_MESSAGES = [
-  "Analyzing your content...",
-  "Detecting content type...",
-  "Selecting optimal layout...",
-  "Crafting viral title...",
-  "Building sections...",
-  "Adding visual elements...",
-  "Finalizing your infographic...",
-];
+// Loading messages moved to GenerationProgress component
 
 // ─── Types ───
 
@@ -71,7 +64,6 @@ export default function InfographicModal({ open, onClose, content, platform }: P
   const [downloading, setDownloading] = useState(false);
   const [showZoom, setShowZoom] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
-  const [loadingMsgIndex, setLoadingMsgIndex] = useState(0);
   const [customPrompt, setCustomPrompt] = useState("");
   const [showPrompt, setShowPrompt] = useState(false);
   const [qualityScore, setQualityScore] = useState<QualityScore | null>(null);
@@ -93,16 +85,6 @@ export default function InfographicModal({ open, onClose, content, platform }: P
       resetRegenerationCounter();
     }
   }, [open, content]);
-
-  // Rotate loading messages every 2s
-  useEffect(() => {
-    if (step !== "generating") return;
-    setLoadingMsgIndex(0);
-    const interval = setInterval(() => {
-      setLoadingMsgIndex((i) => (i + 1) % LOADING_MESSAGES.length);
-    }, 2500);
-    return () => clearInterval(interval);
-  }, [step]);
 
   // Show confetti when result arrives + auto-save
   useEffect(() => {
@@ -470,32 +452,16 @@ export default function InfographicModal({ open, onClose, content, platform }: P
             {step === "generating" && (
               <div className="space-y-4">
                 <div
-                  className="rounded-xl overflow-hidden border border-border/30 bg-gradient-to-br from-amber-50/50 to-orange-50/30 dark:from-primary/5 dark:to-accent/5 relative"
+                  className="rounded-xl overflow-hidden border border-border/30 bg-gradient-to-br from-primary/[0.03] to-accent/[0.03] relative"
                   style={{ paddingBottom: `${aspectRatio * 100}%` }}
                 >
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-5">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 px-10">
                     <div className="relative">
-                      <div className="w-16 h-16 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
-                      <Sparkles className="w-6 h-6 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                      <div className="w-14 h-14 rounded-full border-3 border-primary/20 border-t-primary animate-spin" />
+                      <Sparkles className="w-5 h-5 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                     </div>
-                    <div className="text-center">
-                      <AnimatePresence mode="wait">
-                        <motion.p
-                          key={loadingMsgIndex}
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -8 }}
-                          transition={{ duration: 0.3 }}
-                          className="text-sm font-semibold"
-                        >
-                          {LOADING_MESSAGES[loadingMsgIndex]}
-                        </motion.p>
-                      </AnimatePresence>
-                    </div>
-                    <div className="w-48 space-y-2">
-                      <div className="h-3 rounded-full bg-border/40 animate-pulse" />
-                      <div className="h-3 rounded-full bg-border/30 animate-pulse w-3/4" />
-                      <div className="h-3 rounded-full bg-border/20 animate-pulse w-1/2" />
+                    <div className="w-full max-w-xs">
+                      <GenerationProgress isActive={step === "generating"} steps={INFOGRAPHIC_STEPS} estimatedSeconds={20} />
                     </div>
                   </div>
                 </div>

@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { searchViralReferences, ViralReference, searchUserSources } from "@/lib/embeddings";
 import { supabase } from "@/lib/supabase";
 import { assertOnline, withRetry, withTimeout, friendlyError } from "@/lib/resilience";
+import GenerationProgress, { CONTENT_STEPS } from "@/components/GenerationProgress";
 import type { Source } from "@/types/database";
 import type { UserProfile } from "@/hooks/use-profile";
 import type { ContentSession } from "@/hooks/use-dashboard";
@@ -678,8 +679,14 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                         }
                         className="w-full h-11 mt-4 glow-sm gap-2 font-semibold text-sm"
                       >
-                        {isGenerating ? (<><RefreshCw className="w-4 h-4 animate-spin" /> Generating...</>) : (<><Sparkles className="w-4 h-4" /> Generate 5 variations</>)}
+                        {isGenerating ? (<><RefreshCw className="w-4 h-4 animate-spin" /> Generation en cours...</>) : (<><Sparkles className="w-4 h-4" /> Generer 5 variations</>)}
                       </Button>
+
+                      {isGenerating && (
+                        <div className="mt-4">
+                          <GenerationProgress isActive={isGenerating} steps={CONTENT_STEPS} estimatedSeconds={25} />
+                        </div>
+                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>
