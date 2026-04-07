@@ -103,13 +103,18 @@ export default function InfographicModal({ open, onClose, content, platform }: P
     return () => clearInterval(interval);
   }, [step]);
 
-  // Show confetti when result arrives
+  // Show confetti when result arrives + auto-save
   useEffect(() => {
     if (step === "result" && (imageBase64 || htmlCode)) {
       setShowConfetti(true);
       const t = setTimeout(() => setShowConfetti(false), 1500);
+      // Auto-save after successful generation
+      if (!saved && user) {
+        handleSave();
+      }
       return () => clearTimeout(t);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, imageBase64, htmlCode]);
 
   // ─── Auto-analysis ───
@@ -324,25 +329,37 @@ export default function InfographicModal({ open, onClose, content, platform }: P
     setSaving(true);
 
     try {
+      const saveContent = resultMode === "gemini"
+        ? `[Gemini Image] ${content.slice(0, 200)}`
+        : htmlCode.slice(0, 10000);
+
+      console.log("[InfographicModal] Saving infographic...", {
+        userId: user.id,
+        platform,
+        resultMode,
+        contentLength: saveContent.length,
+      });
+
       const { error } = await supabase.from("generated_content").insert({
         user_id: user.id,
         platform,
         format: "Infographic",
-        content: resultMode === "gemini"
-          ? `[Gemini Image] ${content.slice(0, 200)}`
-          : htmlCode.slice(0, 5000),
+        content: saveContent,
         viral_score: 85,
         image_prompt: resultMode === "gemini" ? "Gemini generated image" : "HTML infographic",
       });
 
       if (error) {
-        toast.error("Error saving infographic");
+        console.error("[InfographicModal] Supabase save error:", error.message, error.details, error.hint);
+        toast.error(`Erreur de sauvegarde : ${error.message}`);
       } else {
+        console.log("[InfographicModal] Saved successfully!");
         setSaved(true);
-        toast.success("Infographic saved to history!");
+        toast.success("Infographie sauvegardée !");
       }
-    } catch {
-      toast.error("Network error");
+    } catch (err) {
+      console.error("[InfographicModal] Network/unexpected error:", err);
+      toast.error("Erreur réseau lors de la sauvegarde");
     }
     setSaving(false);
   }

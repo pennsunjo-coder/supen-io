@@ -11,6 +11,7 @@ import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import type { DashboardContent, ContentSession } from "@/hooks/use-dashboard";
+import InfographicModal from "@/components/InfographicModal";
 
 /* ─── Platform icons ─── */
 
@@ -42,6 +43,7 @@ function TopContentCard({
   const [infographic, setInfographic] = useState("");
   const [promptCopied, setPromptCopied] = useState(false);
   const [infraCopied, setInfraCopied] = useState(false);
+  const [infographicModalOpen, setInfographicModalOpen] = useState(false);
 
   const Icon = platformIcons[item.platform];
   const score = item.viral_score || 0;
@@ -61,7 +63,7 @@ function TopContentCard({
 
   async function handleGenerateImage() {
     setPanel("image");
-    if (imagePrompt) return; // already generated
+    if (imagePrompt) return;
     setGenerating(true);
     try {
       const response = await anthropic.messages.create({
@@ -73,7 +75,10 @@ function TopContentCard({
       const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
       setImagePrompt(text);
       onUpdateImagePrompt(item.id, text);
-    } catch { /* silent */ }
+    } catch (err) {
+      console.error("[DashboardWidgets] Image prompt error:", err);
+      toast.error("Erreur lors de la génération du prompt image");
+    }
     setGenerating(false);
   }
 
@@ -154,7 +159,7 @@ En français. Réponds UNIQUEMENT avec la structure.`,
                   <Button variant="ghost" size="sm" className={cn("h-7 text-[10px] gap-1.5 px-2.5", panel === "image" ? "text-primary" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); handleGenerateImage(); }}>
                     <ImagePlus className="w-3 h-3" /> Image
                   </Button>
-                  <Button variant="ghost" size="sm" className={cn("h-7 text-[10px] gap-1.5 px-2.5", panel === "infographic" ? "text-primary" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); handleGenerateInfographic(); }}>
+                  <Button variant="ghost" size="sm" className={cn("h-7 text-[10px] gap-1.5 px-2.5", infographicModalOpen ? "text-primary" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); setInfographicModalOpen(true); }}>
                     <LayoutGrid className="w-3 h-3" /> Infographic
                   </Button>
                 </div>
@@ -199,40 +204,17 @@ En français. Réponds UNIQUEMENT avec la structure.`,
                 )}
               </AnimatePresence>
 
-              {/* Infographic Panel */}
-              <AnimatePresence>
-                {panel === "infographic" && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.15 }}>
-                    <div className="mt-2 p-3 rounded-lg bg-accent/20 border border-border/15 relative">
-                      <button onClick={(e) => { e.stopPropagation(); setPanel(null); }} className="absolute top-2 right-2 text-muted-foreground/40 hover:text-foreground">
-                        <X className="w-3 h-3" />
-                      </button>
-                      <p className="text-[10px] font-medium text-muted-foreground/70 mb-2">Infographic structure</p>
-                      {generating ? (
-                        <div className="flex items-center gap-2 py-3">
-                          <RefreshCw className="w-3 h-3 animate-spin text-muted-foreground" />
-                          <span className="text-[10px] text-muted-foreground">Generating...</span>
-                        </div>
-                      ) : (
-                        <>
-                          <div className="text-[11px] leading-relaxed whitespace-pre-wrap text-foreground/80 mb-2">{infographic}</div>
-                          <div className="flex items-center gap-1.5">
-                            <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 px-2 text-muted-foreground" onClick={(e) => { e.stopPropagation(); copyText(infographic, setInfraCopied); }}>
-                              {infraCopied ? <Check className="w-2.5 h-2.5 text-emerald-400" /> : <Copy className="w-2.5 h-2.5" />}
-                              {infraCopied ? "Copied" : "Copy structure"}
-                            </Button>
-                          </div>
-                          <p className="text-[9px] text-muted-foreground/40 mt-1.5">Use this structure in Canva or Nano Banana</p>
-                        </>
-                      )}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      <InfographicModal
+        open={infographicModalOpen}
+        onClose={() => setInfographicModalOpen(false)}
+        content={item.content}
+        platform={item.platform}
+      />
     </div>
   );
 }
@@ -302,9 +284,8 @@ function SessionVariationCard({
   const [panel, setPanel] = useState<"image" | "infographic" | null>(null);
   const [generating, setGenerating] = useState(false);
   const [imagePrompt, setImagePrompt] = useState(item.image_prompt || "");
-  const [infographic, setInfographic] = useState("");
   const [promptCopied, setPromptCopied] = useState(false);
-  const [infraCopied, setInfraCopied] = useState(false);
+  const [infographicModalOpen, setInfographicModalOpen] = useState(false);
 
   const color = angleColors[angle] || "bg-accent/40 text-muted-foreground";
 
@@ -328,7 +309,10 @@ function SessionVariationCard({
       const t = r.content.filter((b) => b.type === "text").map((b) => b.text).join("");
       setImagePrompt(t);
       onUpdateImagePrompt(item.id, t);
-    } catch { /* silent */ }
+    } catch (err) {
+      console.error("[SessionCard] Image prompt error:", err);
+      toast.error("Erreur lors de la génération du prompt image");
+    }
     setGenerating(false);
   }
 
@@ -345,23 +329,10 @@ function SessionVariationCard({
       const t = r.content.filter((b) => b.type === "text").map((b) => b.text).join("");
       setImagePrompt(t);
       onUpdateImagePrompt(item.id, t);
-    } catch { /* silent */ }
-    setGenerating(false);
-  }
-
-  async function genInfra() {
-    setPanel("infographic");
-    if (infographic) return;
-    setGenerating(true);
-    try {
-      const r = await anthropic.messages.create({
-        model: CLAUDE_MODEL,
-        max_tokens: 400,
-        system: `Tu es expert en design d'infographies virales. Crée une structure d'infographie pour ce contenu ${platform}. Format exact :\nTITRE: [titre accrocheur, max 8 mots]\nPOINT 1: [texte court]\nPOINT 2: [texte court]\nPOINT 3: [texte court]\nCTA: [appel à l'action]\nEn français. Réponds UNIQUEMENT avec la structure.`,
-        messages: [{ role: "user", content: item.content.slice(0, 600) }],
-      });
-      setInfographic(r.content.filter((b) => b.type === "text").map((b) => b.text).join(""));
-    } catch { /* silent */ }
+    } catch (err) {
+      console.error("[SessionCard] Image regen error:", err);
+      toast.error("Erreur lors de la régénération");
+    }
     setGenerating(false);
   }
 
@@ -387,7 +358,7 @@ function SessionVariationCard({
         <Button variant="ghost" size="sm" className={cn("h-6 text-[10px] gap-1 px-2", panel === "image" ? "text-primary" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); genImage(); }}>
           <ImagePlus className="w-2.5 h-2.5" /> {imagePrompt ? "Image" : "Image"}
         </Button>
-        <Button variant="ghost" size="sm" className={cn("h-6 text-[10px] gap-1 px-2", panel === "infographic" ? "text-primary" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); genInfra(); }}>
+        <Button variant="ghost" size="sm" className={cn("h-6 text-[10px] gap-1 px-2", infographicModalOpen ? "text-primary" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); setInfographicModalOpen(true); }}>
           <LayoutGrid className="w-2.5 h-2.5" /> Infographic
         </Button>
       </div>
@@ -422,30 +393,12 @@ function SessionVariationCard({
         )}
       </AnimatePresence>
 
-      {/* Infographic panel */}
-      <AnimatePresence>
-        {panel === "infographic" && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.15 }}>
-            <div className="mt-2 p-2.5 rounded-lg bg-accent/20 border border-border/15">
-              <div className="flex items-center justify-between mb-1.5">
-                <p className="text-[9px] font-medium text-muted-foreground/70">Infographic structure</p>
-                <button onClick={(e) => { e.stopPropagation(); setPanel(null); }} className="text-muted-foreground/40 hover:text-foreground"><X className="w-3 h-3" /></button>
-              </div>
-              {generating ? (
-                <div className="flex items-center gap-2 py-2"><RefreshCw className="w-3 h-3 animate-spin text-muted-foreground" /><span className="text-[9px] text-muted-foreground">Generating...</span></div>
-              ) : (
-                <>
-                  <div className="text-[10px] leading-relaxed whitespace-pre-wrap text-foreground/80 mb-1.5">{infographic}</div>
-                  <Button variant="ghost" size="sm" className="h-5 text-[9px] gap-1 px-1.5 text-muted-foreground" onClick={(e) => { e.stopPropagation(); copy(infographic, setInfraCopied); toast.success("Structure copied!"); }}>
-                    {infraCopied ? <Check className="w-2 h-2 text-emerald-400" /> : <Copy className="w-2 h-2" />} Copy
-                  </Button>
-                  <p className="text-[8px] text-muted-foreground/40 mt-1">Use in Canva or Nano Banana</p>
-                </>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <InfographicModal
+        open={infographicModalOpen}
+        onClose={() => setInfographicModalOpen(false)}
+        content={item.content}
+        platform={platform}
+      />
     </div>
   );
 }
