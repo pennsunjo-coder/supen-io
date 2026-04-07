@@ -25,7 +25,9 @@ export function awaClassic(w: number, h: number): string {
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{width:${w}px;height:${h}px;background:#FFFFF5;font-family:'Poppins',sans-serif;border:6px solid #5D3A1A;padding:${isPortrait ? 28 : 24}px;overflow:hidden;display:flex;flex-direction:column;box-shadow:inset 0 0 60px rgba(0,0,0,0.02)}
-.header{text-align:center;margin-bottom:${isPortrait ? 16 : 12}px;padding-bottom:12px;border-bottom:3px solid #E53E3E}
+.header{display:flex;align-items:flex-start;gap:14px;margin-bottom:${isPortrait ? 16 : 12}px;padding-bottom:12px;border-bottom:3px solid #E53E3E}
+.header-text{flex:1;text-align:center}
+.header-illust{flex-shrink:0;display:flex;align-items:center}
 .badge{display:inline-block;background:#E53E3E;color:#fff;font-size:10px;font-weight:700;padding:3px 12px;border-radius:14px;margin-bottom:8px;letter-spacing:1px;text-transform:uppercase;font-family:'Poppins',sans-serif}
 .title{font-size:${isPortrait ? 32 : 28}px;font-weight:900;color:#1A1A1A;line-height:1.08;text-transform:uppercase;letter-spacing:-0.5px}
 .title span{color:#E53E3E}
@@ -43,7 +45,7 @@ body{width:${w}px;height:${h}px;background:#FFFFF5;font-family:'Poppins',sans-se
 .footer{text-align:center;margin-top:8px;padding-top:10px;border-top:2px solid #5D3A1A;font-size:12px;font-weight:700;color:#5D3A1A;font-family:'Poppins',sans-serif}
 .s1{--c:#E53E3E}.s2{--c:#3182CE}.s3{--c:#38A169}.s4{--c:#DD6B20}.s5{--c:#9B59B6}.s6{--c:#EC4899}.s7{--c:#00897B}
 </style></head><body>
-<div class="header"><div class="badge">{{BADGE}}</div><div class="title">{{TITLE}}</div></div>
+<div class="header"><div class="header-text"><div class="badge">{{BADGE}}</div><div class="title">{{TITLE}}</div></div><div class="header-illust">{{MAIN_ILLUSTRATION}}</div></div>
 <div class="sections">
 <div class="section s1"><div class="num">1</div><div class="ico">{{P1_ICON}}</div><div class="sc"><div class="st">{{P1_TITLE}}</div><div class="sb">{{P1_BODY}}</div></div></div>
 <div class="section s2"><div class="num">2</div><div class="ico">{{P2_ICON}}</div><div class="sc"><div class="st">{{P2_TITLE}}</div><div class="sb">{{P2_BODY}}</div></div></div>
@@ -67,7 +69,9 @@ export function darkTech(w: number, h: number): string {
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{width:${w}px;height:${h}px;background:linear-gradient(160deg,#0F172A,#1E293B);font-family:'Inter',sans-serif;padding:${isPortrait ? 28 : 24}px;overflow:hidden;display:flex;flex-direction:column}
-.header{text-align:center;margin-bottom:${isPortrait ? 16 : 12}px}
+.header{display:flex;align-items:flex-start;gap:14px;margin-bottom:${isPortrait ? 16 : 12}px}
+.header-text{flex:1;text-align:center}
+.header-illust{flex-shrink:0;display:flex;align-items:center}
 .badge{display:inline-block;background:#00C9B1;color:#000;font-size:10px;font-weight:800;padding:3px 14px;border-radius:14px;margin-bottom:8px;letter-spacing:1.5px;text-transform:uppercase}
 .title{font-size:${isPortrait ? 32 : 28}px;font-weight:800;color:#F1F5F9;line-height:1.08}
 .title span{color:#00C9B1}
@@ -85,7 +89,7 @@ body{width:${w}px;height:${h}px;background:linear-gradient(160deg,#0F172A,#1E293
 .footer{text-align:center;margin-top:8px;padding-top:10px;border-top:1px solid rgba(0,201,177,0.2);font-size:11px;font-weight:700;color:#00C9B1}
 .s1{--c:#00C9B1}.s2{--c:#3B82F6}.s3{--c:#A78BFA}.s4{--c:#F59E0B}.s5{--c:#EC4899}.s6{--c:#10B981}.s7{--c:#F97316}
 </style></head><body>
-<div class="header"><div class="badge">{{BADGE}}</div><div class="title">{{TITLE}}</div></div>
+<div class="header"><div class="header-text"><div class="badge">{{BADGE}}</div><div class="title">{{TITLE}}</div></div><div class="header-illust">{{MAIN_ILLUSTRATION}}</div></div>
 <div class="sections">
 <div class="section s1"><div class="num">1</div><div class="ico">{{P1_ICON}}</div><div class="sc"><div class="st">{{P1_TITLE}}</div><div class="sb">{{P1_BODY}}</div></div></div>
 <div class="section s2"><div class="num">2</div><div class="ico">{{P2_ICON}}</div><div class="sc"><div class="st">{{P2_TITLE}}</div><div class="sb">{{P2_BODY}}</div></div></div>
@@ -148,7 +152,9 @@ export function viralTips(w: number, h: number): string {
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{width:${w}px;height:${h}px;background:#FFFFFF;font-family:'Poppins',sans-serif;padding:${isPortrait ? 28 : 24}px;overflow:hidden;display:flex;flex-direction:column}
-.header{text-align:center;margin-bottom:${isPortrait ? 14 : 10}px}
+.header{display:flex;align-items:flex-start;gap:14px;margin-bottom:${isPortrait ? 14 : 10}px}
+.header-text{flex:1;text-align:center}
+.header-illust{flex-shrink:0;display:flex;align-items:center}
 .badge{display:inline-block;background:linear-gradient(135deg,#6366F1,#EC4899);color:#fff;font-size:10px;font-weight:700;padding:3px 14px;border-radius:14px;margin-bottom:8px;letter-spacing:1px;text-transform:uppercase}
 .title{font-size:${isPortrait ? 30 : 26}px;font-weight:900;color:#111;line-height:1.08}
 .title span{background:linear-gradient(135deg,#6366F1,#EC4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
@@ -166,7 +172,7 @@ body{width:${w}px;height:${h}px;background:#FFFFFF;font-family:'Poppins',sans-se
 .footer{text-align:center;margin-top:8px;padding-top:10px;border-top:2px solid #E2E8F0;font-size:11px;font-weight:700;color:#6366F1}
 .s1{--c:#6366F1}.s2{--c:#EC4899}.s3{--c:#F59E0B}.s4{--c:#10B981}.s5{--c:#8B5CF6}.s6{--c:#3B82F6}.s7{--c:#EF4444}
 </style></head><body>
-<div class="header"><div class="badge">{{BADGE}}</div><div class="title">{{TITLE}}</div></div>
+<div class="header"><div class="header-text"><div class="badge">{{BADGE}}</div><div class="title">{{TITLE}}</div></div><div class="header-illust">{{MAIN_ILLUSTRATION}}</div></div>
 <div class="sections">
 <div class="section s1"><div class="num">1</div><div class="ico">{{P1_ICON}}</div><div class="sc"><div class="st">{{P1_TITLE}}</div><div class="sb">{{P1_BODY}}</div></div></div>
 <div class="section s2"><div class="num">2</div><div class="ico">{{P2_ICON}}</div><div class="sc"><div class="st">{{P2_TITLE}}</div><div class="sb">{{P2_BODY}}</div></div></div>
@@ -289,7 +295,9 @@ export function awaBreaking(w: number, h: number): string {
 body{width:${w}px;height:${h}px;background:#FFFFF5;font-family:'Poppins',sans-serif;border:8px solid #5D3A1A;padding:${isPortrait ? 26 : 22}px;overflow:hidden;display:flex;flex-direction:column;box-shadow:inset 0 0 60px rgba(0,0,0,0.02)}
 .alert{text-align:center;margin-bottom:10px}
 .alert-badge{display:inline-block;background:#E53E3E;color:#fff;font-size:12px;font-weight:900;padding:5px 18px;border-radius:18px;letter-spacing:1.5px;text-transform:uppercase;box-shadow:0 3px 12px rgba(229,62,62,0.3)}
-.header{text-align:center;margin-bottom:16px;padding-bottom:12px;border-bottom:4px solid #E53E3E}
+.header{display:flex;align-items:flex-start;gap:14px;margin-bottom:16px;padding-bottom:12px;border-bottom:4px solid #E53E3E}
+.header-text{flex:1;text-align:center}
+.header-illust{flex-shrink:0;display:flex;align-items:center}
 .title{font-size:${isPortrait ? 34 : 30}px;font-weight:900;color:#1A1A1A;line-height:1.08;text-transform:uppercase;letter-spacing:-0.5px}
 .title span{color:#E53E3E}
 .sections{display:flex;flex-direction:column;gap:${isPortrait ? 9 : 7}px;flex:1}
@@ -307,7 +315,7 @@ body{width:${w}px;height:${h}px;background:#FFFFF5;font-family:'Poppins',sans-se
 .s1{--c:#E53E3E}.s2{--c:#3182CE}.s3{--c:#38A169}.s4{--c:#DD6B20}.s5{--c:#9B59B6}.s6{--c:#EC4899}.s7{--c:#00897B}
 </style></head><body>
 <div class="alert"><div class="alert-badge">{{BADGE}}</div></div>
-<div class="header"><div class="title">{{TITLE}}</div></div>
+<div class="header"><div class="header-text"><div class="title">{{TITLE}}</div></div><div class="header-illust">{{MAIN_ILLUSTRATION}}</div></div>
 <div class="sections">
 <div class="section s1"><div class="num">1</div><div class="ico">{{P1_ICON}}</div><div class="sc"><div class="st">{{P1_TITLE}}</div><div class="sb">{{P1_BODY}}</div></div></div>
 <div class="section s2"><div class="num">2</div><div class="ico">{{P2_ICON}}</div><div class="sc"><div class="st">{{P2_TITLE}}</div><div class="sb">{{P2_BODY}}</div></div></div>

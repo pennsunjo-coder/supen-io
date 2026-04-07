@@ -11,6 +11,7 @@
 
 import { TEMPLATE_REGISTRY, TEMPLATE_IDS } from "./infographic-templates";
 import { selectIcon, getIconSvg } from "./infographic-icons";
+import { selectIllustration, getIllustrationSvg } from "./infographic-illustrations";
 
 // ─── Types ───
 
@@ -287,6 +288,13 @@ export function buildInfographicPrompt(content: string, platform: string, custom
     templateHtml = templateHtml.replace(`{{P${i + 1}_ICON}}`, iconSvg);
   }
 
+  // Pre-fill main illustration into header (if template supports it)
+  if (templateHtml.includes("{{MAIN_ILLUSTRATION}}")) {
+    const illustName = selectIllustration(analysis.contentType, templateId, content);
+    const illustSvg = getIllustrationSvg(illustName, 100);
+    templateHtml = templateHtml.replace("{{MAIN_ILLUSTRATION}}", illustSvg);
+  }
+
   const variationSeed = Math.random().toString(36).substring(2, 8);
   const extra = customInstructions ? `\nUser instructions: ${customInstructions}` : "";
 
@@ -346,6 +354,13 @@ CONTENT QUALITY:
 - NO generic statements. Include specific numbers, tool names, percentages
 - NO emoji characters anywhere — SVG icons are pre-embedded
 - Each body should contain at least one <span class="a">highlighted phrase</span>
+- For key statistics, make numbers visually impactful:
+  <span style="font-size:20px;font-weight:900;color:#E53E3E">40%</span>
+
+HEADER ILLUSTRATION:
+- A contextual SVG illustration is pre-embedded in the header area
+- Do NOT modify or remove it — it adds visual richness like Awa K. Penn's infographics
+- The illustration occupies the right side of the header
 
 VIRAL TITLE FORMULAS (use one):
 - STOP [doing X]. [Better alternative] instead.
@@ -364,10 +379,11 @@ BAD: "You Should Learn New Skills"
 GOOD: "LEARN THIS SKILL OR GET LEFT BEHIND"
 
 TEMPLATE RULES:
-- Keep ALL HTML structure, CSS, and SVG icons EXACTLY as-is
+- Keep ALL HTML structure, CSS, SVG icons, and SVG illustrations EXACTLY as-is
 - ONLY replace {{text placeholders}} — nothing else
 - NEVER delete section divs — fill ALL 7 sections with content
 - Do NOT add any new HTML elements, classes, or styles
+- Do NOT modify or remove any pre-embedded SVG elements (icons + header illustration)
 
 ═══ PLACEHOLDER MAP ═══
 {{BADGE}} → "${extraction.badge}"
@@ -497,6 +513,7 @@ export function scoreInfographic(html: string, dims: { width: number; height: nu
     { label: "Overflow hidden", pass: html.includes("overflow:hidden") || html.includes("overflow: hidden") },
     { label: "Has pro tip", pass: html.includes("pro-tip") || html.includes("what-now") || html.includes("verdict") || html.includes("bonus") },
     { label: "Has inline emphasis", pass: html.includes('class="a"') || html.includes("class='a'") },
+    { label: "Has header illustration", pass: html.includes("header-illust") },
   ];
 
   const passed = checks.filter(c => c.pass).length;
