@@ -17,32 +17,32 @@
 const FONT_IMPORTS = `<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">`;
 
 // ─── TEMPLATE 1: AWA_CLASSIC ───
-// Based on: numbered sections, cream bg, wood border, handwritten feel
+// Bulletproof: CSS forces vertical fill. Claude ONLY replaces {{text}}.
 export function awaClassic(w: number, h: number): string {
-  const isPortrait = h > 1100;
   return `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">${FONT_IMPORTS}
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{width:${w}px;height:${h}px;background:#FFFFF5;font-family:'Poppins',sans-serif;border:6px solid #5D3A1A;padding:${isPortrait ? 28 : 24}px;overflow:hidden;display:flex;flex-direction:column;box-shadow:inset 0 0 60px rgba(0,0,0,0.02)}
-.header{display:flex;align-items:flex-start;gap:14px;margin-bottom:${isPortrait ? 16 : 12}px;padding-bottom:12px;border-bottom:3px solid #E53E3E}
-.header-text{flex:1;text-align:center}
-.header-illust{flex-shrink:0;display:flex;align-items:center}
-.badge{display:inline-block;background:#E53E3E;color:#fff;font-size:10px;font-weight:700;padding:3px 12px;border-radius:14px;margin-bottom:8px;letter-spacing:1px;text-transform:uppercase;font-family:'Poppins',sans-serif}
-.title{font-size:${isPortrait ? 32 : 28}px;font-weight:900;color:#1A1A1A;line-height:1.08;text-transform:uppercase;letter-spacing:-0.5px}
+html,body{width:${w}px;height:${h}px;overflow:hidden}
+body{background:#FFFFF5;font-family:'Poppins',sans-serif;border:6px solid #5D3A1A;padding:22px;display:flex;flex-direction:column}
+.header{display:flex;align-items:center;gap:12px;margin-bottom:10px;padding-bottom:10px;border-bottom:3px solid #E53E3E}
+.header-text{flex:1}
+.header-illust{flex-shrink:0}
+.badge{display:inline-block;background:#E53E3E;color:#fff;font-size:9px;font-weight:700;padding:2px 10px;border-radius:10px;margin-bottom:6px;letter-spacing:1px;text-transform:uppercase}
+.title{font-size:26px;font-weight:900;color:#1A1A1A;line-height:1.05;text-transform:uppercase;letter-spacing:-0.5px;font-style:normal}
 .title span{color:#E53E3E}
-.sections{display:flex;flex-direction:column;gap:${isPortrait ? 10 : 7}px;flex:1}
-.section{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:rgba(0,0,0,0.02);border-radius:8px;border-left:3px solid var(--c)}
-.num{width:30px;height:30px;border-radius:50%;background:var(--c);color:#fff;font-size:14px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Poppins',sans-serif;box-shadow:0 2px 6px rgba(0,0,0,0.12)}
-.ico{width:32px;height:32px;border-radius:8px;background:color-mix(in srgb,var(--c) 10%,transparent);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sections{display:flex;flex-direction:column;justify-content:space-between;flex:1;gap:0}
+.section{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;background:rgba(0,0,0,0.018);border-radius:6px;border-left:3px solid var(--c);flex:1}
+.num{width:26px;height:26px;min-width:26px;border-radius:50%;background:var(--c);color:#fff;font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-style:normal}
+.ico{width:26px;height:26px;min-width:26px;border-radius:6px;background:color-mix(in srgb,var(--c) 10%,transparent);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .sc{flex:1;min-width:0}
-.st{font-size:14px;font-weight:700;color:var(--c);margin-bottom:2px;font-family:'Poppins',sans-serif}
-.sb{font-size:12px;color:#2D3748;line-height:1.3}
+.st{font-size:13px;font-weight:700;color:var(--c);margin-bottom:1px;font-style:normal}
+.sb{font-size:11px;color:#2D3748;line-height:1.35;font-style:normal}
 .sb .a{color:#E53E3E;font-weight:700}
-.pro-tip{margin-top:auto;padding:10px 14px;background:rgba(229,62,62,0.05);border:2px dashed #E53E3E;border-radius:8px;display:flex;align-items:flex-start;gap:8px}
-.pro-tip-label{font-size:11px;font-weight:900;color:#E53E3E;text-transform:uppercase;white-space:nowrap;letter-spacing:0.5px}
-.pro-tip-body{font-size:12px;color:#2D3748;line-height:1.3}
-.footer{text-align:center;margin-top:8px;padding-top:10px;border-top:2px solid #5D3A1A;font-size:12px;font-weight:700;color:#5D3A1A;font-family:'Poppins',sans-serif}
+.tip{padding:8px 10px;background:rgba(229,62,62,0.04);border:1.5px dashed #E53E3E;border-radius:6px;display:flex;gap:6px;align-items:flex-start;margin-top:6px}
+.tip b{font-size:9px;font-weight:900;color:#E53E3E;text-transform:uppercase;white-space:nowrap;letter-spacing:0.5px}
+.tip span{font-size:11px;color:#2D3748;line-height:1.3;font-style:normal}
+.footer{text-align:center;margin-top:6px;padding-top:6px;border-top:2px solid #5D3A1A;font-size:10px;font-weight:700;color:#5D3A1A;font-style:normal}
 .s1{--c:#E53E3E}.s2{--c:#3182CE}.s3{--c:#38A169}.s4{--c:#DD6B20}.s5{--c:#9B59B6}.s6{--c:#EC4899}.s7{--c:#00897B}
 </style></head><body>
 <div class="header"><div class="header-text"><div class="badge">{{BADGE}}</div><div class="title">{{TITLE}}</div></div><div class="header-illust">{{MAIN_ILLUSTRATION}}</div></div>
@@ -55,7 +55,7 @@ body{width:${w}px;height:${h}px;background:#FFFFF5;font-family:'Poppins',sans-se
 <div class="section s6"><div class="num">6</div><div class="ico">{{P6_ICON}}</div><div class="sc"><div class="st">{{P6_TITLE}}</div><div class="sb">{{P6_BODY}}</div></div></div>
 <div class="section s7"><div class="num">7</div><div class="ico">{{P7_ICON}}</div><div class="sc"><div class="st">{{P7_TITLE}}</div><div class="sb">{{P7_BODY}}</div></div></div>
 </div>
-<div class="pro-tip"><div class="pro-tip-label">Pro Tip:</div><div class="pro-tip-body">{{PRO_TIP}}</div></div>
+<div class="tip"><b>Pro Tip:</b><span>{{PRO_TIP}}</span></div>
 <div class="footer">{{FOOTER}}</div>
 </body></html>`;
 }
@@ -105,29 +105,27 @@ body{width:${w}px;height:${h}px;background:linear-gradient(160deg,#0F172A,#1E293
 }
 
 // ─── TEMPLATE 3: CHEAT_SHEET ───
-// Based on: multi-section grid, colored headers, notebook style
+// Bulletproof: CSS grid forces 3x2 fill. Claude ONLY replaces {{text}}.
 export function cheatSheet(w: number, h: number): string {
-  const isPortrait = h > 1100;
   return `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">${FONT_IMPORTS}
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{width:${w}px;height:${h}px;background:#FFFFF5;font-family:'Poppins',sans-serif;border:5px solid #888;padding:${isPortrait ? 24 : 20}px;overflow:hidden;display:flex;flex-direction:column;box-shadow:inset 0 0 40px rgba(0,0,0,0.02)}
-.header{text-align:center;margin-bottom:14px;padding-bottom:10px;border-bottom:3px double #333}
-.title{font-size:${isPortrait ? 30 : 26}px;font-weight:900;color:#1A1A1A;line-height:1.08;text-transform:uppercase;border:3px solid #333;display:inline-block;padding:4px 18px;border-radius:6px}
+html,body{width:${w}px;height:${h}px;overflow:hidden}
+body{background:#FFFFF5;font-family:'Poppins',sans-serif;border:5px solid #888;padding:20px;display:flex;flex-direction:column}
+.header{text-align:center;margin-bottom:10px;padding-bottom:8px;border-bottom:3px double #333}
+.title{font-size:24px;font-weight:900;color:#1A1A1A;line-height:1.05;text-transform:uppercase;border:3px solid #333;display:inline-block;padding:3px 16px;border-radius:4px;font-style:normal}
 .title span{color:#E53E3E}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1}
-.card{padding:12px;border-radius:8px;border:2px solid var(--c)}
-.card-head{font-size:13px;font-weight:700;color:#fff;background:var(--c);margin:-12px -12px 8px;padding:7px 12px;border-radius:6px 6px 0 0;text-transform:uppercase;letter-spacing:0.5px;font-family:'Poppins',sans-serif}
-.card-body{font-size:11px;color:#2D3748;line-height:1.4}
+.grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr 1fr;gap:8px;flex:1}
+.card{padding:10px;border-radius:6px;border:2px solid var(--c);display:flex;flex-direction:column}
+.card-head{font-size:11px;font-weight:700;color:#fff;background:var(--c);margin:-10px -10px 6px;padding:5px 10px;border-radius:4px 4px 0 0;text-transform:uppercase;letter-spacing:0.5px;font-style:normal}
+.card-body{font-size:10px;color:#2D3748;line-height:1.35;flex:1;font-style:normal}
 .card-body .a{color:var(--c);font-weight:700}
-.card-body .item{margin-bottom:4px;display:flex;gap:4px}
-.card-body .dot{color:var(--c);font-weight:bold;flex-shrink:0}
 .c1{--c:#E53E3E}.c2{--c:#3182CE}.c3{--c:#38A169}.c4{--c:#DD6B20}.c5{--c:#9B59B6}.c6{--c:#E91E8C}
-.bonus{margin-top:auto;padding:10px 12px;background:rgba(0,0,0,0.03);border:2px dashed #666;border-radius:8px}
-.bonus-title{font-size:12px;font-weight:900;color:#333;text-transform:uppercase;margin-bottom:4px;text-align:center}
-.bonus-body{font-size:11px;color:#2D3748;line-height:1.4;text-align:center}
-.footer{text-align:center;margin-top:8px;padding-top:8px;border-top:2px solid #333;font-size:12px;font-weight:700;color:#333;font-family:'Poppins',sans-serif}
+.bonus{padding:8px 10px;background:rgba(0,0,0,0.025);border:1.5px dashed #666;border-radius:6px;margin-top:6px}
+.bonus-title{font-size:10px;font-weight:900;color:#333;text-transform:uppercase;margin-bottom:2px;text-align:center;font-style:normal}
+.bonus-body{font-size:10px;color:#2D3748;line-height:1.35;text-align:center;font-style:normal}
+.footer{text-align:center;margin-top:6px;padding-top:6px;border-top:2px solid #333;font-size:10px;font-weight:700;color:#333;font-style:normal}
 </style></head><body>
 <div class="header"><div class="title">{{TITLE}}</div></div>
 <div class="grid">
@@ -231,37 +229,37 @@ body{width:${w}px;height:${h}px;background:#FFFFF5;font-family:'Poppins',sans-se
 }
 
 // ─── TEMPLATE 6: COMPARISON_VS ───
-// Based on: 2-column comparison, VS badge, structured rows
+// Bulletproof: CSS grid forces columns to fill. Claude ONLY replaces {{text}}.
 export function comparisonVs(w: number, h: number): string {
-  const isPortrait = h > 1100;
   return `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">${FONT_IMPORTS}
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{width:${w}px;height:${h}px;background:#FFFFF5;font-family:'Poppins',sans-serif;border:5px solid #888;padding:${isPortrait ? 24 : 20}px;overflow:hidden;display:flex;flex-direction:column;box-shadow:inset 0 0 40px rgba(0,0,0,0.02)}
-.header{text-align:center;margin-bottom:14px}
-.title{font-size:${isPortrait ? 30 : 26}px;font-weight:900;color:#1A1A1A;line-height:1.08;text-transform:uppercase}
+html,body{width:${w}px;height:${h}px;overflow:hidden}
+body{background:#FFFFF5;font-family:'Poppins',sans-serif;border:5px solid #888;padding:20px;display:flex;flex-direction:column}
+.header{text-align:center;margin-bottom:10px}
+.title{font-size:24px;font-weight:900;color:#1A1A1A;line-height:1.05;text-transform:uppercase;font-style:normal}
 .title .left{color:#3182CE}.title .right{color:#E53E3E}
-.vs-container{display:grid;grid-template-columns:1fr 36px 1fr;gap:0;flex:1}
-.col{display:flex;flex-direction:column;gap:8px}
-.col-head{font-size:15px;font-weight:900;color:#fff;padding:8px;border-radius:8px;text-align:center;text-transform:uppercase;font-family:'Poppins',sans-serif}
+.vs-container{display:grid;grid-template-columns:1fr 32px 1fr;gap:0;flex:1}
+.col{display:flex;flex-direction:column;gap:6px}
+.col-head{font-size:13px;font-weight:900;color:#fff;padding:7px;border-radius:6px;text-align:center;text-transform:uppercase;font-style:normal}
 .col-left .col-head{background:#3182CE}
 .col-right .col-head{background:#E53E3E}
-.row{padding:8px 10px;border-radius:6px;font-size:12px;color:#2D3748;line-height:1.3}
+.row{padding:8px 10px;border-radius:5px;font-size:11px;color:#2D3748;line-height:1.3;flex:1;font-style:normal}
 .row .a{font-weight:700}
 .col-left .row{background:rgba(49,130,206,0.06);border-left:3px solid #3182CE}
 .col-right .row{background:rgba(229,62,62,0.06);border-left:3px solid #E53E3E}
-.row-title{font-weight:700;font-size:13px;margin-bottom:2px;font-family:'Poppins',sans-serif}
+.row-title{font-weight:700;font-size:12px;margin-bottom:2px;font-style:normal}
 .col-left .row-title{color:#3182CE}
 .col-right .row-title{color:#E53E3E}
 .col-left .row .a{color:#3182CE}
 .col-right .row .a{color:#E53E3E}
 .vs{display:flex;align-items:center;justify-content:center}
-.vs-badge{width:36px;height:36px;border-radius:50%;background:#1A1A1A;color:#FFF;font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;font-family:'Poppins',sans-serif;box-shadow:0 3px 10px rgba(0,0,0,0.2)}
-.verdict{margin-top:auto;padding:10px 14px;background:rgba(56,161,105,0.08);border:2px solid #38A169;border-radius:8px;text-align:center}
-.verdict-label{font-size:12px;font-weight:900;color:#38A169;text-transform:uppercase;margin-bottom:3px}
-.verdict-body{font-size:12px;color:#2D3748;line-height:1.3}
-.footer{text-align:center;margin-top:8px;padding-top:8px;border-top:2px solid #888;font-size:12px;font-weight:700;color:#555;font-family:'Poppins',sans-serif}
+.vs-badge{width:32px;height:32px;border-radius:50%;background:#1A1A1A;color:#FFF;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.2)}
+.verdict{padding:8px 12px;background:rgba(56,161,105,0.06);border:1.5px solid #38A169;border-radius:6px;text-align:center;margin-top:6px}
+.verdict-label{font-size:10px;font-weight:900;color:#38A169;text-transform:uppercase;margin-bottom:2px;font-style:normal}
+.verdict-body{font-size:11px;color:#2D3748;line-height:1.3;font-style:normal}
+.footer{text-align:center;margin-top:6px;padding-top:6px;border-top:2px solid #888;font-size:10px;font-weight:700;color:#555;font-style:normal}
 </style></head><body>
 <div class="header"><div class="title">{{TITLE}}</div></div>
 <div class="vs-container">

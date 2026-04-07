@@ -312,120 +312,42 @@ The previous design was rejected. You MUST use a COMPLETELY DIFFERENT approach:
 Make it significantly better.\n`
     : "";
 
-  return `You are the world's best infographic designer. You specialize in viral social media content that gets millions of views. You have studied Awa K. Penn's infographics (26K+ likes, 1.7M+ views per post) and replicate their exact quality.
-
-Your infographics go viral because they are:
-• ULTRA-DENSE — content fills 90%+ of the canvas, NO empty space at bottom
-• Instantly scannable — reader understands value in 3 seconds
-• High contrast — crystal clear visual hierarchy
-• Information-rich — every section has 2-3 detail lines with specific data
-• Shareable — people save and repost them
-
-═══ YOUR TASK ═══
-Fill the HTML template below by replacing {{PLACEHOLDERS}} with real content.
-Template: ${templateId} (${selection.reason})
-Seed: ${variationSeed}
+  return `TASK: Find-and-replace {{PLACEHOLDERS}} in the HTML below. Output the complete HTML with replacements. Nothing else.
 ${regenInstruction}
-═══ CONTENT ANALYSIS ═══
-Before filling, analyze:
-- Main message: What is the ONE takeaway?
-- Target: Who will share this?
-- Extract: The 7 most ACTIONABLE, SPECIFIC points (not 4 or 5 — SEVEN)
+STRICT RULES:
+1. Output the ENTIRE HTML document from <!DOCTYPE html> to </html>
+2. ONLY replace text inside {{double curly braces}} — change NOTHING else
+3. Do NOT delete any HTML tags, divs, sections, or SVG elements
+4. Do NOT add any new tags, styles, classes, or attributes
+5. Do NOT add emoji characters (no unicode emoji — the SVG icons are already embedded)
+6. Do NOT use font-style:italic anywhere
+7. Every {{Pn_BODY}} must be 30-50 words with " • " sub-points
 
-═══ ABSOLUTE RULES ═══
-
-DENSITY (CRITICAL — #1 priority):
-- Fill ALL 7 sections — do NOT delete any section divs
-- Each {{Pn_BODY}} must be 25-50 words with SPECIFIC details, data, or examples
-- Use <span class="a">key phrase</span> to highlight 1-2 important words per body in accent color
-- Add bullet-style content: use " • " to separate sub-points within body text
-- {{PRO_TIP}} must be a specific actionable sentence (30-50 words)
-- The content MUST fill the entire ${dims.height}px height — zero empty space at bottom
-
-TYPOGRAPHY:
-- Font: Poppins only (900 for titles, 700 for section heads, 400 for body)
-- NEVER use italic — font-style:italic is FORBIDDEN
-- Titles: ALL CAPS, punchy, create urgency
-- Body: sentence case, direct, rich with specifics
-
-CONTENT QUALITY:
-- Section titles: MAX 6 words, specific and actionable
-- Section body: 25-50 words with numbers, tools, outcomes, sub-points
-- NO generic statements. Include specific numbers, tool names, percentages
-- NO emoji characters anywhere — SVG icons are pre-embedded
-- Each body should contain at least one <span class="a">highlighted phrase</span>
-- For key statistics, make numbers visually impactful:
-  <span style="font-size:20px;font-weight:900;color:#E53E3E">40%</span>
-
-HEADER ILLUSTRATION:
-- A contextual SVG illustration is pre-embedded in the header area
-- Do NOT modify or remove it — it adds visual richness like Awa K. Penn's infographics
-- The illustration occupies the right side of the header
-
-VIRAL TITLE FORMULAS (use one):
-- STOP [doing X]. [Better alternative] instead.
-- [Number] [things] that [big claim]
-- How I [result] in [timeframe] (without [common excuse])
-- The [adjective] truth about [topic]
-- [Famous thing] is DEAD. Here's what's NEXT.
-- [Number]% of [people] don't know this [topic] secret
-- BREAKING: [shocking statement about topic]
-
-TITLE EXAMPLES:
-BAD: "Artificial Intelligence Is Important"
-GOOD: "AI REPLACES 40% OF JOBS BY 2030"
-
-BAD: "You Should Learn New Skills"
-GOOD: "LEARN THIS SKILL OR GET LEFT BEHIND"
-
-TEMPLATE RULES:
-- Keep ALL HTML structure, CSS, SVG icons, and SVG illustrations EXACTLY as-is
-- ONLY replace {{text placeholders}} — nothing else
-- NEVER delete section divs — fill ALL 7 sections with content
-- Do NOT add any new HTML elements, classes, or styles
-- Do NOT modify or remove any pre-embedded SVG elements (icons + header illustration)
-
-═══ PLACEHOLDER MAP ═══
+REPLACEMENTS:
 {{BADGE}} → "${extraction.badge}"
-{{TITLE}} → Viral ALL CAPS title. Wrap ONE key word with <span> for accent color. Max 60 chars.
+{{TITLE}} → ALL CAPS viral title, max 50 chars, wrap ONE word in <span>THE_WORD</span>
+{{P1_TITLE}} through {{P7_TITLE}} → 3-6 word section header, specific and actionable
+{{P1_BODY}} through {{P7_BODY}} → 30-50 words each, structured as:
+  "<span class=\\"a\\">Key phrase</span> explanation detail • Second sub-point with specific number • Third specific detail with tool/metric name"
+{{PRO_TIP}} → 30-50 word actionable tip with specific recommendation
 {{FOOTER}} → "Created with Supen.io · Follow for more"
-{{Pn_TITLE}} → Bold section title (max 6 words, specific)
-{{Pn_BODY}} → Rich detail (25-50 words, with <span class="a">emphasis</span> and sub-points using " • ")
-{{PRO_TIP}} → Actionable pro tip sentence (30-50 words)
 
-═══ BODY TEXT EXAMPLE ═══
-BAD: "AI tools can help you work faster"
-GOOD: "Use <span class=\\"a\\">Claude + Cursor</span> to write production code 10x faster • Average dev saves 3h/day • 87% of YC startups already adopted this stack"
+BODY EXAMPLE:
+"<span class=\\"a\\">Claude + Cursor</span> write production code 10x faster than manual coding • Average developer saves 3.2 hours per day • 87% of YC 2025 startups use this exact AI stack for shipping"
 
-═══ EXTRACTED KEY POINTS ═══
-Use these as starting points — EXPAND each with specific details, data, and examples:
+KEY POINTS FROM SOURCE:
 ${pointHints}
-
 Pro tip hint: ${extraction.proTip}
 
-═══ TEMPLATE TO FILL ═══
-${templateHtml}
-
-═══ SOURCE CONTENT ═══
+SOURCE CONTENT:
 ${content.slice(0, 2500)}
 
-Platform: ${platform}
-${extra}
+Platform: ${platform}${extra}
 
-═══ FINAL CHECKLIST ═══
-Before outputting, verify:
-□ ALL 7 sections filled — no section deleted
-□ Title is PUNCHY with urgency/curiosity
-□ Each body has 25-50 words with specific data
-□ Each body uses <span class="a"> for emphasis on 1-2 key phrases
-□ {{PRO_TIP}} is filled with actionable advice
-□ NO italic text anywhere
-□ All SVG icons left untouched
-□ Content fills ENTIRE ${dims.width}x${dims.height}px — no empty space at bottom
-□ NO emoji characters — only SVG icons
-□ Starts with <!DOCTYPE html>, ends with </html>
+HTML TO FILL:
+${templateHtml}
 
-OUTPUT: Only the filled HTML. No explanation. No markdown.`;
+OUTPUT: The complete filled HTML only. No explanation, no markdown fences.`;
 }
 
 // ─── Gemini prompt builder ───
@@ -689,7 +611,7 @@ export function scoreInfographic(html: string, dims: { width: number; height: nu
     { label: "No emoji characters", pass: !/[\u{1F300}-\u{1F9FF}]/u.test(html) },
     { label: "Has SVG icons", pass: html.includes("<svg") },
     { label: "Overflow hidden", pass: html.includes("overflow:hidden") || html.includes("overflow: hidden") },
-    { label: "Has pro tip", pass: html.includes("pro-tip") || html.includes("what-now") || html.includes("verdict") || html.includes("bonus") },
+    { label: "Has pro tip", pass: html.includes("pro-tip") || html.includes("what-now") || html.includes("verdict") || html.includes("bonus") || html.includes("class=\"tip\"") },
     { label: "Has inline emphasis", pass: html.includes('class="a"') || html.includes("class='a'") },
     { label: "Has header illustration", pass: html.includes("header-illust") },
   ];
