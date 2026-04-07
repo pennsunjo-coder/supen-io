@@ -52,10 +52,10 @@ const LENGTHS = [
 type Section = "profil" | "preferences" | "compte" | "about";
 
 const NAV_ITEMS: { id: Section; label: string; icon: typeof User }[] = [
-  { id: "profil", label: "Profile", icon: User },
+  { id: "profil", label: "Profil", icon: User },
   { id: "preferences", label: "Preferences", icon: Sliders },
-  { id: "compte", label: "Account", icon: CreditCard },
-  { id: "about", label: "About", icon: Info },
+  { id: "compte", label: "Abonnement", icon: CreditCard },
+  { id: "about", label: "A propos", icon: Info },
 ];
 
 /* ─── Component ─── */
@@ -274,7 +274,7 @@ export default function Settings() {
                 <div className="pt-2">
                   <Button onClick={handleSaveProfile} disabled={saving || justSaved} className="h-9 gap-2 text-xs">
                     {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                    {justSaved ? "Sauvegarde !" : "Save"}
+                    {justSaved ? "Sauvegarde !" : "Sauvegarder"}
                   </Button>
                 </div>
               </div>
@@ -428,13 +428,13 @@ export default function Settings() {
                 })}
               </div>
 
-              {/* Sign out */}
+              {/* Deconnexion */}
               <div className="bg-card border border-border/30 rounded-xl p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-semibold">Sign out</p>
+                    <p className="text-sm font-semibold">Deconnexion</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      You can sign back in anytime
+                      Tu pourras te reconnecter a tout moment
                     </p>
                   </div>
                   <Button
@@ -443,19 +443,19 @@ export default function Settings() {
                     className="h-9 gap-2 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
                   >
                     <LogOut className="w-3.5 h-3.5" />
-                    Sign out
+                    Se deconnecter
                   </Button>
                 </div>
               </div>
 
-              {/* Danger zone */}
+              {/* Zone dangereuse */}
               <div className="bg-card border border-destructive/20 rounded-xl p-6">
                 <div className="flex items-center gap-2 mb-3">
                   <Trash2 className="w-4 h-4 text-destructive" />
-                  <p className="text-sm font-semibold text-destructive">Danger zone</p>
+                  <p className="text-sm font-semibold text-destructive">Zone dangereuse</p>
                 </div>
                 <p className="text-xs text-muted-foreground mb-4">
-                  Deleting your account is irreversible. All your data (sources, content, profile) will be permanently erased.
+                  La suppression de ton compte est irreversible. Toutes tes donnees (sources, contenu, profil) seront definitivement effacees.
                 </p>
                 {!showDeleteConfirm ? (
                   <Button
@@ -463,18 +463,18 @@ export default function Settings() {
                     onClick={() => setShowDeleteConfirm(true)}
                     className="h-9 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
                   >
-                    Delete my account
+                    Supprimer mon compte
                   </Button>
                 ) : (
                   <div className="flex items-center gap-3">
-                    <p className="text-xs text-destructive font-medium">Are you sure?</p>
+                    <p className="text-xs text-destructive font-medium">Es-tu sur ?</p>
                     <Button
                       variant="destructive"
                       size="sm"
                       onClick={handleDeleteAccount}
                       className="h-8 text-xs"
                     >
-                      Yes, delete permanently
+                      Oui, supprimer definitivement
                     </Button>
                     <Button
                       variant="ghost"
@@ -482,7 +482,7 @@ export default function Settings() {
                       onClick={() => setShowDeleteConfirm(false)}
                       className="h-8 text-xs"
                     >
-                      Cancel
+                      Annuler
                     </Button>
                   </div>
                 )}

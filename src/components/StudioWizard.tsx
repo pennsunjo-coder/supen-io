@@ -172,6 +172,8 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
     setSelectedVariation(null);
     setSaveStatus("idle");
     setError(null);
+    setFeedback({});
+    setStyleMemoryActive(false);
   }
 
   function toggleDocumentId(id: string) {
@@ -320,24 +322,23 @@ Règles strictes :
         onContentGenerated(parsed[0].content);
       }
 
-      // Score all variations in parallel via Haiku (fast + cheap)
-      scoreAllVariations(parsed, selectedPlatform.name, anthropic)
-        .then((scores) => {
-          setVariations((prev) =>
-            prev.map((v, i) => ({
-              ...v,
-              score: scores[i]?.total ?? 65,
-              scoreDetails: scores[i],
-              scoring: false,
-            }))
-          );
-        })
-        .catch(() => {
-          // If scoring fails, mark as done with fallback
-          setVariations((prev) => prev.map((v) => ({ ...v, scoring: false, score: 65 })));
-        });
-
-      await saveVariations(parsed);
+      // Score all variations in parallel via Haiku, then save with real scores
+      try {
+        const scores = await scoreAllVariations(parsed, selectedPlatform.name, anthropic);
+        const scored = parsed.map((v, i) => ({
+          ...v,
+          score: scores[i]?.total ?? 65,
+          scoreDetails: scores[i],
+          scoring: false,
+        }));
+        setVariations(scored);
+        await saveVariations(scored);
+      } catch {
+        // Scoring failed — save with fallback scores
+        const fallback = parsed.map((v) => ({ ...v, scoring: false, score: 65 }));
+        setVariations(fallback);
+        await saveVariations(fallback);
+      }
     } catch (err: unknown) {
       setError(friendlyError(err));
     } finally {
@@ -362,7 +363,7 @@ Règles strictes :
         image_prompt: v.scoreDetails ? JSON.stringify(v.scoreDetails) : null,
         source_ids: allSourceIds,
       }));
-      const { data: insertData, error: saveErr } = await supabase.from("generated_content").insert(inserts).select();
+      const { error: saveErr } = await supabase.from("generated_content").insert(inserts).select();
       if (saveErr) {
         setSaveStatus("failed");
         return false;

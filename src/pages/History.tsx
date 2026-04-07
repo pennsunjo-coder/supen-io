@@ -28,7 +28,7 @@ const platformIcons: Record<string, React.FC> = {
   "YouTube": IconYouTube,
 };
 
-const platformFilters = ["All", "Instagram", "TikTok", "LinkedIn", "Facebook", "X (Twitter)", "YouTube"];
+const platformFilters = ["Tout", "Instagram", "TikTok", "LinkedIn", "Facebook", "X (Twitter)", "YouTube"];
 
 function truncate(text: string, words: number): string {
   const w = text.split(/\s+/);
@@ -140,12 +140,12 @@ function HistoryCard({ item }: { item: GeneratedItem }) {
 
 const History = () => {
   const { grouped, loading } = useHistory();
-  const [filter, setFilter] = useState("All");
+  const [filter, setFilter] = useState("Tout");
 
   const filteredGroups = grouped
     .map((group) => ({
       ...group,
-      items: filter === "All" ? group.items : group.items.filter((i) => i.platform === filter),
+      items: filter === "Tout" ? group.items : group.items.filter((i) => i.platform === filter),
     }))
     .filter((group) => group.items.length > 0);
 
@@ -162,9 +162,9 @@ const History = () => {
               <Clock className="w-4 h-4 text-primary" />
             </div>
             <div>
-              <h1 className="text-lg font-bold">History</h1>
+              <h1 className="text-lg font-bold">Historique</h1>
               <p className="text-xs text-muted-foreground">
-                {loading ? "Loading..." : `${totalCount} generated content${totalCount > 1 ? "s" : ""}`}
+                {loading ? "Chargement..." : `${totalCount} contenu${totalCount > 1 ? "s" : ""} genere${totalCount > 1 ? "s" : ""}`}
               </p>
             </div>
           </div>
@@ -198,11 +198,11 @@ const History = () => {
               <div className="w-14 h-14 rounded-2xl bg-accent/40 flex items-center justify-center mb-4">
                 <Clock className="w-6 h-6 text-muted-foreground/50" />
               </div>
-              <p className="text-sm font-medium text-muted-foreground mb-1">No content</p>
+              <p className="text-sm font-medium text-muted-foreground mb-1">Aucun contenu</p>
               <p className="text-xs text-muted-foreground/60">
-                {filter === "All"
-                  ? "Generate content in the Studio to find it here."
-                  : `No ${filter} content found.`}
+                {filter === "Tout"
+                  ? "Genere du contenu dans le Studio pour le retrouver ici."
+                  : `Aucun contenu ${filter} trouve.`}
               </p>
             </div>
           ) : (

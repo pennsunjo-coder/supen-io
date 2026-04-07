@@ -86,19 +86,26 @@ export default function InfographicModal({ open, onClose, content, platform }: P
     }
   }, [open, content]);
 
-  // Show confetti when result arrives + auto-save
+  // Show confetti when result arrives + auto-save (with guard against duplicates)
+  const autoSaveTriggered = useRef(false);
   useEffect(() => {
     if (step === "result" && (imageBase64 || htmlCode)) {
       setShowConfetti(true);
       const t = setTimeout(() => setShowConfetti(false), 1500);
-      // Auto-save after successful generation
-      if (!saved && user) {
+      // Auto-save once after generation (ref prevents duplicate calls)
+      if (!autoSaveTriggered.current && user) {
+        autoSaveTriggered.current = true;
         handleSave();
       }
       return () => clearTimeout(t);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, imageBase64, htmlCode]);
+
+  // Reset auto-save guard when modal opens fresh
+  useEffect(() => {
+    if (open) autoSaveTriggered.current = false;
+  }, [open]);
 
   // ─── Auto-analysis ───
 
