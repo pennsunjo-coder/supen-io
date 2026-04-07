@@ -4,97 +4,80 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowRight, Zap, Sparkles, Plus,
+  ArrowRight, ArrowLeft, Sparkles, Plus, Check,
   Briefcase, Cpu, TrendingUp, Palette, Megaphone,
-  Heart, GraduationCap, ShoppingBag, Plane, Music,
-  PenTool, Camera, UtensilsCrossed, Home,
+  Heart, GraduationCap, ShoppingBag, PenTool, Camera,
+  Loader2,
 } from "lucide-react";
 import { useProfile } from "@/hooks/use-profile";
 import { useAuth } from "@/contexts/AuthContext";
 import { LogoFull } from "@/components/Logo";
 
-/* ─── Icônes SVG plateformes ─── */
+/* ─── Icones SVG plateformes ─── */
 
 const IconInstagram = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" className={className || "w-4 h-4"} fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+  <svg viewBox="0 0 24 24" className={className || "w-5 h-5"} fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
 );
 const IconTikTok = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" className={className || "w-4 h-4"} fill="currentColor"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
+  <svg viewBox="0 0 24 24" className={className || "w-5 h-5"} fill="currentColor"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
 );
 const IconYouTube = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" className={className || "w-4 h-4"} fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+  <svg viewBox="0 0 24 24" className={className || "w-5 h-5"} fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
 );
 const IconFacebook = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" className={className || "w-4 h-4"} fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+  <svg viewBox="0 0 24 24" className={className || "w-5 h-5"} fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
 );
 const IconX = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" className={className || "w-4 h-4"} fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+  <svg viewBox="0 0 24 24" className={className || "w-5 h-5"} fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
 );
 const IconLinkedIn = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" className={className || "w-4 h-4"} fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-);
-const IconThreads = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" className={className || "w-4 h-4"} fill="currentColor"><path d="M12.186 24h-.007c-3.581-.024-6.334-1.205-8.184-3.509C2.35 18.44 1.5 15.586 1.472 12.01v-.017c.03-3.579.879-6.43 2.525-8.482C5.845 1.205 8.6.024 12.18 0h.014c2.746.02 5.043.725 6.826 2.098 1.677 1.29 2.858 3.13 3.509 5.467l-2.04.569c-1.104-3.96-3.898-5.984-8.304-6.015-2.91.022-5.11.936-6.54 2.717C4.307 6.504 3.616 8.914 3.59 12c.025 3.086.718 5.496 2.057 7.164 1.432 1.783 3.631 2.698 6.54 2.717 2.623-.02 4.358-.631 5.8-2.045 1.647-1.613 1.618-3.593 1.09-4.798-.31-.71-.873-1.3-1.634-1.711-.108 1.752-.67 3.078-1.636 3.867-1.08.883-2.504 1.262-4.16 1.262-.595 0-1.232-.07-1.898-.21-1.86-.392-3.318-1.357-4.105-2.718-.585-1.01-.89-2.19-.89-3.455 0-1.742.56-3.196 1.62-4.206 1.157-1.103 2.813-1.685 4.788-1.685 2.084 0 3.776.627 4.892 1.815.518.55.913 1.2 1.178 1.935.166-.207.346-.4.54-.58 1.036-.954 2.467-1.46 4.135-1.46h.12c1.14.012 2.147.312 2.994.893.248.17.48.36.693.568l-1.42 1.42a3.496 3.496 0 00-2.267-.763h-.086c-1.058.01-1.89.336-2.474.97a2.99 2.99 0 00-.478.726c.106.435.165.891.175 1.37.02.944-.114 1.834-.397 2.649-.476 1.37-1.327 2.471-2.531 3.27-1.295.861-2.895 1.298-4.755 1.298z"/></svg>
-);
-const IconPinterest = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" className={className || "w-4 h-4"} fill="currentColor"><path d="M12 0C5.373 0 0 5.372 0 12c0 5.084 3.163 9.426 7.627 11.174-.105-.949-.2-2.405.042-3.441.218-.937 1.407-5.965 1.407-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738a.36.36 0 01.083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.889-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.163 0 7.398 2.967 7.398 6.931 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.359-.631-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24 12 24c6.627 0 12-5.373 12-12 0-6.628-5.373-12-12-12z"/></svg>
+  <svg viewBox="0 0 24 24" className={className || "w-5 h-5"} fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
 );
 
-/* ─── Données ─── */
+/* ─── Donnees ─── */
 
-const PLATFORM_OPTIONS: { id: string; icon: React.FC<{ className?: string }> }[] = [
+const PLATFORMS = [
   { id: "Instagram", icon: IconInstagram },
   { id: "TikTok", icon: IconTikTok },
   { id: "YouTube", icon: IconYouTube },
+  { id: "LinkedIn", icon: IconLinkedIn },
   { id: "Facebook", icon: IconFacebook },
   { id: "X (Twitter)", icon: IconX },
-  { id: "LinkedIn", icon: IconLinkedIn },
-  { id: "Threads", icon: IconThreads },
-  { id: "Pinterest", icon: IconPinterest },
 ];
 
-const SOURCE_OPTIONS = [
-  "Instagram", "TikTok", "YouTube", "Facebook",
-  "LinkedIn", "X (Twitter)", "Un ami", "Google", "Autre",
-];
-
-const NICHE_OPTIONS: { id: string; icon: React.FC<{ className?: string }> }[] = [
+const NICHES: { id: string; icon: React.FC<{ className?: string }> }[] = [
   { id: "Business & Entrepreneuriat", icon: Briefcase },
-  { id: "Intelligence Artificielle & Tech", icon: Cpu },
-  { id: "Finance & Investissement", icon: TrendingUp },
-  { id: "Créativité & Design", icon: Palette },
   { id: "Marketing Digital", icon: Megaphone },
-  { id: "Santé & Bien-être", icon: Heart },
-  { id: "Éducation & Formation", icon: GraduationCap },
+  { id: "Tech & IA", icon: Cpu },
+  { id: "Finance & Investissement", icon: TrendingUp },
+  { id: "Education & Formation", icon: GraduationCap },
+  { id: "Sante & Bien-etre", icon: Heart },
+  { id: "Creativite & Design", icon: Palette },
   { id: "E-commerce", icon: ShoppingBag },
-  { id: "Voyage & Lifestyle", icon: Plane },
-  { id: "Musique & Entertainment", icon: Music },
-  { id: "Écriture & Copywriting", icon: PenTool },
-  { id: "Photo & Vidéo", icon: Camera },
-  { id: "Food & Cuisine", icon: UtensilsCrossed },
-  { id: "Mode & Beauté", icon: Sparkles },
-  { id: "Immobilier", icon: Home },
+  { id: "Ecriture & Copywriting", icon: PenTool },
+  { id: "Photo & Video", icon: Camera },
 ];
+
+const SOURCES = [
+  "Reseaux sociaux", "Un ami / collegue", "Recherche Google",
+  "Newsletter", "YouTube", "Autre",
+];
+
+const TOTAL_STEPS = 4;
 
 const CONFETTI_COLORS = ["#818cf8", "#34d399", "#f472b6", "#fbbf24", "#60a5fa", "#a78bfa", "#fb923c", "#e879f9"];
-
-const stepAnim = {
-  initial: { opacity: 0, x: 40 },
-  animate: { opacity: 1, x: 0 },
-  exit: { opacity: 0, x: -40 },
-};
 
 function ConfettiPiece({ index }: { index: number }) {
   const color = CONFETTI_COLORS[index % CONFETTI_COLORS.length];
   const left = 10 + (index * 17) % 80;
-  const delay = index * 0.12;
-  const duration = 1.8 + (index % 3) * 0.4;
-  const size = 4 + (index % 3) * 2;
+  const delay = index * 0.1;
+  const duration = 1.6 + (index % 3) * 0.4;
+  const size = 5 + (index % 3) * 2;
   const rotation = index * 45;
   return (
     <motion.div
       initial={{ y: -20, opacity: 1, rotate: 0 }}
-      animate={{ y: 400, opacity: 0, rotate: rotation + 360 }}
+      animate={{ y: 500, opacity: 0, rotate: rotation + 360 }}
       transition={{ duration, delay, ease: "easeIn" }}
       className="absolute rounded-sm"
       style={{ left: `${left}%`, top: -10, width: size, height: size, backgroundColor: color }}
@@ -108,24 +91,33 @@ const Onboarding = () => {
   const { user } = useAuth();
   const { updateProfile, onboardingCompleted, loading: profileLoading } = useProfile();
 
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(0); // 0=welcome, 1=name, 2=platforms, 3=niche, 4=source, 5=success
   const [firstName, setFirstName] = useState("");
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
-  const [sourcePlatform, setSourcePlatform] = useState("");
   const [niche, setNiche] = useState("");
   const [customNiche, setCustomNiche] = useState("");
+  const [sourcePlatform, setSourcePlatform] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [showButton, setShowButton] = useState(false);
+  const [showFinalButton, setShowFinalButton] = useState(false);
   const [completed, setCompleted] = useState(false);
+  const [direction, setDirection] = useState(1); // 1=forward, -1=back
 
-  // Si l'utilisateur revient sur /onboarding alors qu'il a déjà terminé → hard redirect
-  // Attendre que profileLoading=false pour ne pas rediriger sur un état stale
   useEffect(() => {
     if (!profileLoading && onboardingCompleted && !completed) {
       window.location.href = "/dashboard";
     }
   }, [profileLoading, onboardingCompleted, completed]);
+
+  function goNext() {
+    setDirection(1);
+    setStep((s) => s + 1);
+  }
+
+  function goBack() {
+    setDirection(-1);
+    setStep((s) => Math.max(0, s - 1));
+  }
 
   function togglePlatform(id: string) {
     setSelectedPlatforms((prev) =>
@@ -133,7 +125,6 @@ const Onboarding = () => {
     );
   }
 
-  // UN SEUL upsert à la fin — avec retry si user pas encore disponible après OAuth
   async function handleComplete() {
     setSaving(true);
     setSaveError(null);
@@ -142,32 +133,19 @@ const Onboarding = () => {
     const payload = {
       first_name: firstName.trim(),
       platforms: selectedPlatforms,
-      source_platform: sourcePlatform,
+      source_platform: sourcePlatform || "Non precise",
       niche: finalNiche,
       onboarding_completed: true,
     };
 
-    console.log("🔵 Onboarding: saving", { niche: finalNiche, user: user?.id });
-
-    // Retry up to 3 times — user session may still be initializing after OAuth
-    let result = { success: false, error: "Not connected" as string | null };
+    let result = { success: false, error: "Non connecte" as string | null };
     for (let attempt = 0; attempt < 3; attempt++) {
       if (!user && attempt < 2) {
-        console.log(`🟡 Onboarding: user null, waiting 1s (attempt ${attempt + 1}/3)`);
         await new Promise((resolve) => setTimeout(resolve, 1000));
         continue;
       }
-
       result = await updateProfile(payload);
-
-      if (result.success) {
-        console.log("🟢 Onboarding: saved successfully");
-        break;
-      }
-
-      console.log(`🔴 Onboarding: error (attempt ${attempt + 1}/3)`, result.error);
-
-      // Retry on network errors (Load failed, fetch error)
+      if (result.success) break;
       if (attempt < 2 && result.error && /load failed|fetch|network/i.test(result.error)) {
         await new Promise((resolve) => setTimeout(resolve, 1000));
         continue;
@@ -176,191 +154,435 @@ const Onboarding = () => {
     }
 
     setSaving(false);
-
     if (!result.success) {
-      setSaveError(result.error || "Error saving. Please try again.");
+      setSaveError(result.error || "Erreur de sauvegarde. Reessayez.");
       return;
     }
 
     setCompleted(true);
-    setStep(4);
-    setTimeout(() => setShowButton(true), 2000);
+    setDirection(1);
+    setStep(5);
+    setTimeout(() => setShowFinalButton(true), 1800);
   }
 
-  const progress = Math.min(((step + 1) / 5) * 100, 100);
+  // Progress for steps 1-4 (welcome=0 and success=5 don't count)
+  const progressStep = Math.max(0, Math.min(step - 1, TOTAL_STEPS));
+  const progress = step === 0 ? 0 : step >= 5 ? 100 : (progressStep / TOTAL_STEPS) * 100;
+
+  const slideVariants = {
+    enter: (d: number) => ({ opacity: 0, x: d > 0 ? 60 : -60 }),
+    center: { opacity: 1, x: 0 },
+    exit: (d: number) => ({ opacity: 0, x: d > 0 ? -60 : 60 }),
+  };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <div className="h-1 bg-accent/20">
-        <motion.div className="h-full bg-primary rounded-r-full" initial={false} animate={{ width: `${progress}%` }} transition={{ duration: 0.4 }} />
-      </div>
+    <div className="min-h-screen bg-[#0A0A0F] flex flex-col items-center justify-center relative overflow-hidden">
+      {/* Background glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/[0.03] rounded-full blur-3xl pointer-events-none" />
 
-      <div className="px-6 pt-5">
-        <LogoFull size="sm" />
-      </div>
+      {/* Progress bar */}
+      {step > 0 && step < 5 && (
+        <div className="fixed top-0 left-0 right-0 z-50">
+          <div className="h-1 bg-white/5">
+            <motion.div
+              className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-r-full"
+              initial={false}
+              animate={{ width: `${progress}%` }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+            />
+          </div>
+          <div className="flex items-center justify-between px-6 py-3">
+            {step > 1 ? (
+              <button onClick={goBack} className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70 transition-colors">
+                <ArrowLeft className="w-3.5 h-3.5" /> Retour
+              </button>
+            ) : (
+              <div />
+            )}
+            <span className="text-[11px] text-white/30 font-medium">
+              Etape {progressStep} sur {TOTAL_STEPS}
+            </span>
+          </div>
+        </div>
+      )}
 
-      <div className="flex-1 flex items-center justify-center px-6">
-        <div className="w-full max-w-md">
-          <AnimatePresence mode="wait">
+      {/* Card */}
+      <div className="w-full max-w-lg px-6">
+        <AnimatePresence mode="wait" custom={direction}>
 
-            {/* Step 1 — Name */}
-            {step === 0 && (
-              <motion.div key="s0" {...stepAnim} transition={{ duration: 0.25 }}>
-                <h1 className="text-2xl font-bold text-foreground mb-2">Comment tu t'appelles ?</h1>
-                <p className="text-sm text-muted-foreground mb-8">Let's personalize your experience.</p>
+          {/* ═══ Step 0 — Welcome ═══ */}
+          {step === 0 && (
+            <motion.div
+              key="welcome"
+              custom={direction}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="text-center"
+            >
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                className="mb-8"
+              >
+                <LogoFull size="lg" />
+              </motion.div>
+
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2, duration: 0.4 }}
+                className="text-3xl font-bold text-white mb-3"
+              >
+                Bienvenue sur Supen.io
+              </motion.h1>
+
+              <motion.p
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35, duration: 0.4 }}
+                className="text-white/50 text-sm mb-10 leading-relaxed"
+              >
+                Configurons ton compte en 60 secondes.<br />
+                Tu seras pret a creer du contenu viral.
+              </motion.p>
+
+              {/* Step previews */}
+              <motion.div
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5, duration: 0.4 }}
+                className="flex items-center justify-center gap-6 mb-10"
+              >
+                {[
+                  { num: "1", label: "Prenom" },
+                  { num: "2", label: "Plateformes" },
+                  { num: "3", label: "Niche" },
+                  { num: "4", label: "Decouverte" },
+                ].map((s, i) => (
+                  <div key={i} className="flex flex-col items-center gap-1.5">
+                    <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs font-bold text-white/40">
+                      {s.num}
+                    </div>
+                    <span className="text-[10px] text-white/30">{s.label}</span>
+                  </div>
+                ))}
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.65, duration: 0.4 }}
+              >
+                <Button
+                  onClick={goNext}
+                  className="h-13 px-10 text-base font-semibold gap-2.5 rounded-xl"
+                  size="lg"
+                >
+                  C'est parti <ArrowRight className="w-5 h-5" />
+                </Button>
+              </motion.div>
+            </motion.div>
+          )}
+
+          {/* ═══ Step 1 — Prenom ═══ */}
+          {step === 1 && (
+            <motion.div
+              key="name"
+              custom={direction}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.3, ease: "easeOut" }}
+            >
+              <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-8 backdrop-blur-sm">
+                <h1 className="text-2xl font-bold text-white mb-2">Comment tu t'appelles ?</h1>
+                <p className="text-sm text-white/40 mb-8">On personnalise tout pour toi.</p>
+
                 <Input
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="Ton prénom"
+                  placeholder="Ton prenom"
                   autoFocus
-                  className="h-14 text-lg bg-accent/20 border-border/30"
-                  onKeyDown={(e) => e.key === "Enter" && firstName.trim() && setStep(1)}
+                  className="h-14 text-lg bg-white/5 border-white/10 text-white placeholder:text-white/20 focus-visible:ring-primary/50"
+                  onKeyDown={(e) => e.key === "Enter" && firstName.trim().length >= 2 && goNext()}
                 />
-                <Button onClick={() => setStep(1)} disabled={!firstName.trim()} className="w-full h-12 mt-6 gap-2 font-semibold glow-sm">
+
+                {firstName.length > 0 && firstName.trim().length < 2 && (
+                  <p className="text-xs text-amber-400/60 mt-2">Minimum 2 caracteres</p>
+                )}
+
+                <Button
+                  onClick={goNext}
+                  disabled={firstName.trim().length < 2}
+                  className="w-full h-12 mt-6 gap-2 font-semibold rounded-xl"
+                >
                   Continuer <ArrowRight className="w-4 h-4" />
                 </Button>
-              </motion.div>
-            )}
+              </div>
+            </motion.div>
+          )}
 
-            {/* Step 2 — Platforms */}
-            {step === 1 && (
-              <motion.div key="s1" {...stepAnim} transition={{ duration: 0.25 }}>
-                <h1 className="text-2xl font-bold text-foreground mb-2">Sur quelles plateformes crées-tu du contenu ?</h1>
-                <p className="text-sm text-muted-foreground mb-6">Select all that you use.</p>
-                <div className="flex flex-wrap gap-2">
-                  {PLATFORM_OPTIONS.map((p) => {
+          {/* ═══ Step 2 — Plateformes ═══ */}
+          {step === 2 && (
+            <motion.div
+              key="platforms"
+              custom={direction}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.3, ease: "easeOut" }}
+            >
+              <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-8 backdrop-blur-sm">
+                <h1 className="text-2xl font-bold text-white mb-2">Ou crees-tu du contenu ?</h1>
+                <p className="text-sm text-white/40 mb-6">Selectionne toutes tes plateformes.</p>
+
+                <div className="grid grid-cols-2 gap-3">
+                  {PLATFORMS.map((p) => {
                     const active = selectedPlatforms.includes(p.id);
                     return (
                       <button
                         key={p.id}
                         onClick={() => togglePlatform(p.id)}
                         className={cn(
-                          "flex items-center gap-2.5 px-4 py-3 rounded-[10px] border text-sm font-medium transition-all",
+                          "relative flex items-center gap-3 px-4 py-4 rounded-xl border text-sm font-medium transition-all",
                           active
-                            ? "border-primary/50 bg-primary/10 text-primary"
-                            : "border-border/30 bg-accent/20 text-muted-foreground hover:text-foreground hover:bg-accent/30",
+                            ? "border-primary/50 bg-primary/10 text-white"
+                            : "border-white/8 bg-white/[0.02] text-white/50 hover:text-white/70 hover:bg-white/[0.04] hover:border-white/15",
                         )}
                       >
-                        <p.icon className={cn("w-4 h-4", active ? "text-primary" : "text-muted-foreground")} />
+                        <p.icon className={cn("w-5 h-5", active ? "text-primary" : "text-white/40")} />
                         {p.id}
+                        {active && (
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary flex items-center justify-center"
+                          >
+                            <Check className="w-3 h-3 text-white" />
+                          </motion.div>
+                        )}
                       </button>
                     );
                   })}
                 </div>
-                <Button onClick={() => setStep(2)} disabled={selectedPlatforms.length === 0} className="w-full h-12 mt-8 gap-2 font-semibold glow-sm">
+
+                <Button
+                  onClick={goNext}
+                  disabled={selectedPlatforms.length === 0}
+                  className="w-full h-12 mt-6 gap-2 font-semibold rounded-xl"
+                >
                   Continuer <ArrowRight className="w-4 h-4" />
                 </Button>
-              </motion.div>
-            )}
 
-            {/* ÉTAPE 3 — Source */}
-            {step === 2 && (
-              <motion.div key="s2" {...stepAnim} transition={{ duration: 0.25 }}>
-                <h1 className="text-2xl font-bold text-foreground mb-2">Comment as-tu découvert Supen.io ?</h1>
-                <p className="text-sm text-muted-foreground mb-6">Ça nous aide à grandir.</p>
-                <div className="flex flex-wrap gap-2">
-                  {SOURCE_OPTIONS.map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => setSourcePlatform(s)}
-                      className={cn(
-                        "px-4 py-2.5 rounded-xl border text-sm font-medium transition-all",
-                        sourcePlatform === s
-                          ? "border-primary/50 bg-primary/10 text-primary"
-                          : "border-border/30 text-muted-foreground hover:text-foreground hover:bg-accent/30",
-                      )}
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
-                <Button onClick={() => setStep(3)} disabled={!sourcePlatform} className="w-full h-12 mt-8 gap-2 font-semibold glow-sm">
-                  Continuer <ArrowRight className="w-4 h-4" />
-                </Button>
-              </motion.div>
-            )}
+                {selectedPlatforms.length === 0 && (
+                  <p className="text-xs text-white/25 text-center mt-3">Selectionne au moins 1 plateforme</p>
+                )}
+              </div>
+            </motion.div>
+          )}
 
-            {/* ÉTAPE 4 — Niche */}
-            {step === 3 && (
-              <motion.div key="s3" {...stepAnim} transition={{ duration: 0.25 }}>
-                <h1 className="text-2xl font-bold text-foreground mb-2">Dans quel domaine évolues-tu ?</h1>
-                <p className="text-sm text-muted-foreground mb-6">We'll tailor suggestions to your niche.</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[360px] overflow-y-auto pr-1">
-                  {NICHE_OPTIONS.map((n) => {
+          {/* ═══ Step 3 — Niche ═══ */}
+          {step === 3 && (
+            <motion.div
+              key="niche"
+              custom={direction}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.3, ease: "easeOut" }}
+            >
+              <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-8 backdrop-blur-sm">
+                <h1 className="text-2xl font-bold text-white mb-2">Quelle est ta niche ?</h1>
+                <p className="text-sm text-white/40 mb-6">On adapte les suggestions a ton domaine.</p>
+
+                <div className="grid grid-cols-2 gap-2 max-h-[320px] overflow-y-auto pr-1">
+                  {NICHES.map((n) => {
                     const active = niche === n.id;
                     return (
                       <button
                         key={n.id}
                         onClick={() => { setNiche(n.id); setCustomNiche(""); }}
                         className={cn(
-                          "flex items-center gap-3 px-4 py-3 rounded-[10px] border text-left text-sm font-medium transition-all",
+                          "flex items-center gap-2.5 px-3.5 py-3 rounded-xl border text-left text-sm font-medium transition-all",
                           active
-                            ? "border-primary/50 bg-primary/10 text-primary"
-                            : "border-border/30 bg-accent/20 text-muted-foreground hover:text-foreground hover:bg-accent/30",
+                            ? "border-primary/50 bg-primary/10 text-white"
+                            : "border-white/8 bg-white/[0.02] text-white/50 hover:text-white/70 hover:bg-white/[0.04]",
                         )}
                       >
-                        <n.icon className={cn("w-4 h-4 shrink-0", active ? "text-primary" : "text-muted-foreground")} />
-                        <span className="truncate">{n.id}</span>
+                        <n.icon className={cn("w-4 h-4 shrink-0", active ? "text-primary" : "text-white/30")} />
+                        <span className="truncate text-[13px]">{n.id}</span>
                       </button>
                     );
                   })}
                   <button
                     onClick={() => setNiche("Autre")}
                     className={cn(
-                      "flex items-center gap-3 px-4 py-3 rounded-[10px] border text-left text-sm font-medium transition-all",
+                      "flex items-center gap-2.5 px-3.5 py-3 rounded-xl border text-left text-sm font-medium transition-all col-span-2",
                       niche === "Autre"
-                        ? "border-primary/50 bg-primary/10 text-primary"
-                        : "border-border/30 bg-accent/20 text-muted-foreground hover:text-foreground hover:bg-accent/30",
+                        ? "border-primary/50 bg-primary/10 text-white"
+                        : "border-white/8 bg-white/[0.02] text-white/50 hover:text-white/70 hover:bg-white/[0.04]",
                     )}
                   >
-                    <Plus className={cn("w-4 h-4 shrink-0", niche === "Autre" ? "text-primary" : "text-muted-foreground")} />
-                    <span>Autre</span>
+                    <Plus className={cn("w-4 h-4 shrink-0", niche === "Autre" ? "text-primary" : "text-white/30")} />
+                    Autre domaine
                   </button>
                 </div>
+
                 {niche === "Autre" && (
                   <Input
                     value={customNiche}
                     onChange={(e) => setCustomNiche(e.target.value)}
-                    placeholder="Specify your field..."
-                    className="mt-3 h-11 bg-accent/20 border-border/30"
+                    placeholder="Precise ton domaine..."
+                    className="mt-3 h-11 bg-white/5 border-white/10 text-white placeholder:text-white/20"
                     autoFocus
                   />
                 )}
-                {saveError && (
-                  <div className="mt-4 px-3 py-2 rounded-lg bg-destructive/10 border border-destructive/20 text-xs text-destructive">{saveError}</div>
-                )}
-                <Button onClick={handleComplete} disabled={!niche || (niche === "Autre" && !customNiche.trim()) || saving} className="w-full h-12 mt-6 gap-2 font-semibold glow-sm">
-                  {saving ? "Saving..." : <>Finish <Sparkles className="w-4 h-4" /></>}
-                </Button>
-              </motion.div>
-            )}
 
-            {/* ÉTAPE FINALE — Bienvenue */}
-            {step === 4 && (
-              <motion.div key="welcome" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, ease: "easeOut" }} className="text-center relative">
-                <div className="absolute inset-0 overflow-hidden pointer-events-none -top-20" style={{ height: 500 }}>
-                  {[...Array(20)].map((_, i) => (<ConfettiPiece key={i} index={i} />))}
+                <Button
+                  onClick={goNext}
+                  disabled={!niche || (niche === "Autre" && !customNiche.trim())}
+                  className="w-full h-12 mt-6 gap-2 font-semibold rounded-xl"
+                >
+                  Continuer <ArrowRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ═══ Step 4 — Decouverte (optionnel) ═══ */}
+          {step === 4 && (
+            <motion.div
+              key="source"
+              custom={direction}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.3, ease: "easeOut" }}
+            >
+              <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-8 backdrop-blur-sm">
+                <h1 className="text-2xl font-bold text-white mb-2">Comment as-tu decouvert Supen.io ?</h1>
+                <p className="text-sm text-white/40 mb-6">Optionnel — ca nous aide a grandir.</p>
+
+                <div className="flex flex-wrap gap-2.5">
+                  {SOURCES.map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => setSourcePlatform(s)}
+                      className={cn(
+                        "px-4 py-2.5 rounded-xl border text-sm font-medium transition-all",
+                        sourcePlatform === s
+                          ? "border-primary/50 bg-primary/10 text-white"
+                          : "border-white/8 bg-white/[0.02] text-white/50 hover:text-white/70 hover:bg-white/[0.04]",
+                      )}
+                    >
+                      {s}
+                    </button>
+                  ))}
                 </div>
-                <div className="relative z-10">
-                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
-                    <Sparkles className="w-7 h-7 text-primary" />
-                  </div>
-                  <h1 className="text-2xl font-bold text-foreground mb-2">Bienvenue sur Supen.io, {firstName} !</h1>
-                  <p className="text-sm text-muted-foreground leading-relaxed mb-8">Ton espace est prêt. Commençons à créer du contenu viral.</p>
-                  <AnimatePresence>
-                    {showButton && (
-                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-                        <Button onClick={() => { window.location.href = "/dashboard"; }} className="h-12 px-8 text-sm font-semibold glow-sm gap-2.5">
-                          <Sparkles className="w-4 h-4" /> Accéder au Studio
-                        </Button>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+
+                {saveError && (
+                  <div className="mt-4 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-400">{saveError}</div>
+                )}
+
+                <div className="flex gap-3 mt-8">
+                  <Button
+                    variant="outline"
+                    onClick={handleComplete}
+                    disabled={saving}
+                    className="flex-1 h-12 font-medium rounded-xl border-white/10 text-white/60 hover:text-white bg-white/[0.03]"
+                  >
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Passer"}
+                  </Button>
+                  <Button
+                    onClick={() => { if (sourcePlatform) handleComplete(); }}
+                    disabled={!sourcePlatform || saving}
+                    className="flex-1 h-12 gap-2 font-semibold rounded-xl"
+                  >
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Terminer <Sparkles className="w-4 h-4" /></>}
+                  </Button>
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ═══ Step 5 — Succes ═══ */}
+          {step === 5 && (
+            <motion.div
+              key="success"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+              className="text-center relative"
+            >
+              {/* Confetti */}
+              <div className="absolute inset-0 overflow-hidden pointer-events-none -top-20" style={{ height: 600 }}>
+                {[...Array(24)].map((_, i) => (<ConfettiPiece key={i} index={i} />))}
+              </div>
+
+              <div className="relative z-10">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                  className="w-20 h-20 rounded-2xl bg-primary/15 flex items-center justify-center mx-auto mb-6"
+                >
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.5, type: "spring" }}
+                  >
+                    <Check className="w-10 h-10 text-primary" />
+                  </motion.div>
+                </motion.div>
+
+                <motion.h1
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4, duration: 0.4 }}
+                  className="text-3xl font-bold text-white mb-3"
+                >
+                  C'est pret, {firstName} !
+                </motion.h1>
+
+                <motion.p
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6, duration: 0.4 }}
+                  className="text-white/40 text-sm leading-relaxed mb-10 max-w-sm mx-auto"
+                >
+                  Ton espace est configure. Supen.io va t'aider a creer du contenu viral pour {selectedPlatforms.slice(0, 3).join(", ")}{selectedPlatforms.length > 3 ? ` et ${selectedPlatforms.length - 3} autres` : ""}.
+                </motion.p>
+
+                <AnimatePresence>
+                  {showFinalButton && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4 }}
+                    >
+                      <Button
+                        onClick={() => { window.location.href = "/dashboard"; }}
+                        className="h-14 px-10 text-base font-bold rounded-xl gap-3"
+                        size="lg"
+                      >
+                        <Sparkles className="w-5 h-5" /> Commencer a creer
+                      </Button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </motion.div>
+          )}
+
+        </AnimatePresence>
       </div>
     </div>
   );
