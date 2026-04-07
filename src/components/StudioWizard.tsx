@@ -18,6 +18,7 @@ import { supabase } from "@/lib/supabase";
 import { assertOnline, withRetry, withTimeout, friendlyError } from "@/lib/resilience";
 import GenerationProgress, { CONTENT_STEPS } from "@/components/GenerationProgress";
 import { scoreAllVariations, scoreColor, scoreBarColor, scoreBadge, type ScoreDetails } from "@/lib/viral-scorer";
+import { saveInteraction, getUserStyleMemory, hasStyleMemory } from "@/lib/user-memory";
 import type { Source } from "@/types/database";
 import type { UserProfile } from "@/hooks/use-profile";
 import type { ContentSession } from "@/hooks/use-dashboard";
@@ -25,7 +26,7 @@ import type { ActivityData } from "@/hooks/use-activity";
 import { ContentSessionGrid } from "@/components/DashboardWidgets";
 import { ActivityWidget } from "@/components/ActivityWidget";
 import InfographicModal from "@/components/InfographicModal";
-import { StickyNote, Globe as GlobeIcon } from "lucide-react";
+import { StickyNote, Globe as GlobeIcon, Brain } from "lucide-react";
 
 /* ─── Platform icons ─── */
 
@@ -155,6 +156,7 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "failed">("idle");
   const [error, setError] = useState<string | null>(null);
   const [showInfographic, setShowInfographic] = useState(false);
+  const [styleMemoryActive, setStyleMemoryActive] = useState(false);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
 
   function reset() {
@@ -251,9 +253,19 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
         ? `\n11. Tu dois baser le contenu UNIQUEMENT sur les sources fournies en SECTION 2. Cite des faits, chiffres et idées qui viennent directement de ces sources. Ne génère PAS d'informations qui ne sont pas dans les sources.`
         : "";
 
+      // === SECTION 5 : Style utilisateur (mémoire) ===
+      let styleSection = "";
+      try {
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (currentUser) {
+          styleSection = await getUserStyleMemory(currentUser.id, selectedPlatform.name);
+          setStyleMemoryActive(styleSection.length > 0);
+        }
+      } catch { /* memory is non-critical */ }
+
       // === PROMPT STRUCTURÉ ===
       const systemPrompt = `## SECTION 1 — IDENTITÉ
-Tu es un expert en création de contenu viral pour les réseaux sociaux. Tu crées du contenu qui génère de l'engagement, des partages et de la croissance organique.${userSection}${viralSection}
+Tu es un expert en création de contenu viral pour les réseaux sociaux. Tu crées du contenu qui génère de l'engagement, des partages et de la croissance organique.${userSection}${viralSection}${styleSection}
 
 ## SECTION 4 — INSTRUCTIONS DE GÉNÉRATION
 Plateforme : ${selectedPlatform.name}
@@ -430,10 +442,18 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
   const [infraCopied, setInfraCopied] = useState(false);
 
   function handleCopy(idx: number) {
-    navigator.clipboard.writeText(variations[idx].content);
+    const v = variations[idx];
+    navigator.clipboard.writeText(v.content);
     setCopiedIdx(idx);
-    toast.success(`Content copied! Ready to post on ${selectedPlatform?.name || "your platform"}.`);
+    toast.success(`Contenu copie ! Pret a publier sur ${selectedPlatform?.name || "ta plateforme"}.`);
     setTimeout(() => setCopiedIdx(null), 2000);
+
+    // Track interaction for style memory
+    supabase.auth.getUser().then(({ data: { user: u } }) => {
+      if (u && selectedPlatform) {
+        saveInteraction(u.id, v.content, selectedPlatform.name, v.angle, v.score, "copied");
+      }
+    });
   }
 
   async function handleImagePrompt(idx: number) {
@@ -582,7 +602,7 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                         {sortedPlatforms.map((p) => {
                           const isFav = favPlatformNames.includes(p.name);
                           return (
-                            <button key={p.id} onClick={() => { setSelectedPlatform(p); setStep(1); }} className={cn("flex items-center gap-2 px-3.5 py-2.5 rounded-xl border text-muted-foreground hover:text-foreground hover:bg-accent/40 hover:border-border/50 active:scale-[0.97] transition-all", isFav ? "border-primary/20 bg-primary/[0.03]" : "border-border/30")}>
+                            <button key={p.id} onClick={() => { setSelectedPlatform(p); setStep(1); supabase.auth.getUser().then(({ data: { user: u } }) => { if (u) hasStyleMemory(u.id, p.name).then(setStyleMemoryActive); }); }} className={cn("flex items-center gap-2 px-3.5 py-2.5 rounded-xl border text-muted-foreground hover:text-foreground hover:bg-accent/40 hover:border-border/50 active:scale-[0.97] transition-all", isFav ? "border-primary/20 bg-primary/[0.03]" : "border-border/30")}>
                               <p.icon className="w-4 h-4" /><span className="text-xs font-medium">{p.name}</span>
                             </button>
                           );
@@ -697,6 +717,13 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                       >
                         {isGenerating ? (<><RefreshCw className="w-4 h-4 animate-spin" /> Generation en cours...</>) : (<><Sparkles className="w-4 h-4" /> Generer 5 variations</>)}
                       </Button>
+
+                      {styleMemoryActive && !isGenerating && (
+                        <div className="flex items-center justify-center gap-1.5 mt-3 text-[10px] text-primary/60">
+                          <Brain className="w-3 h-3" />
+                          <span>Adapte a ton style</span>
+                        </div>
+                      )}
 
                       {isGenerating && (
                         <div className="mt-4">
