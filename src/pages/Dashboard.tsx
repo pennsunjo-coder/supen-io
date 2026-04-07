@@ -9,6 +9,8 @@ import { useProfile } from "@/hooks/use-profile";
 import { useDashboard } from "@/hooks/use-dashboard";
 import { useActivity } from "@/hooks/use-activity";
 import { invalidateCache } from "@/lib/cache";
+import { useSearchParams } from "react-router-dom";
+import { toast } from "sonner";
 
 const Dashboard = () => {
   const { profile } = useProfile();
@@ -38,6 +40,18 @@ const Dashboard = () => {
 
   // Compteur de générations pour forcer le refetch
   const [genCount, setGenCount] = useState(0);
+
+  // Detect upgrade success from Stripe redirect
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    if (searchParams.get("upgraded") === "true") {
+      const plan = searchParams.get("plan") || "Pro";
+      toast.success(`Bienvenue sur ${plan.charAt(0).toUpperCase() + plan.slice(1)} ! Ton compte a ete mis a jour.`);
+      searchParams.delete("upgraded");
+      searchParams.delete("plan");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const handleToggleGroup = useCallback((ids: string[]) => {
     setActiveSourceIds((prev) => {

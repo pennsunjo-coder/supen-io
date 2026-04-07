@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/use-profile";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { PLANS, createCheckoutSession, isPlanActive, type Plan } from "@/lib/stripe";
 
 /* ─── Types ─── */
 
@@ -81,6 +82,23 @@ export default function Settings() {
 
   // Danger zone
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Billing
+  const [upgrading, setUpgrading] = useState<string | null>(null);
+  const currentPlan = (profile?.plan || "free") as Plan;
+  const planActive = isPlanActive(profile?.plan, profile?.plan_expires_at);
+
+  async function handleUpgrade(plan: "pro" | "business") {
+    if (!user) return;
+    setUpgrading(plan);
+    try {
+      const url = await createCheckoutSession(plan, user.id, user.email!);
+      window.location.href = url;
+    } catch {
+      toast.error("Erreur lors du demarrage du paiement. Reessaye.");
+    }
+    setUpgrading(null);
+  }
 
   // Load profile data
   useEffect(() => {
@@ -361,26 +379,53 @@ export default function Settings() {
           {activeSection === "compte" && (
             <>
               <div>
-                <h2 className="text-lg font-bold mb-1">Account</h2>
-                <p className="text-sm text-muted-foreground">Manage your subscription and account</p>
+                <h2 className="text-lg font-bold mb-1">Abonnement</h2>
+                <p className="text-sm text-muted-foreground">Gere ton abonnement et ton compte</p>
               </div>
 
-              {/* Current plan */}
-              <div className="bg-card border border-border/30 rounded-xl p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <Crown className="w-4 h-4 text-primary" />
-                      <p className="text-sm font-semibold">Current plan</p>
+              {/* Plan cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {(Object.entries(PLANS) as [Plan, typeof PLANS[Plan]][]).map(([planId, config]) => {
+                  const isCurrent = currentPlan === planId && (planId === "free" || planActive);
+                  return (
+                    <div key={planId} className={cn("bg-card border rounded-xl p-5 relative flex flex-col", config.color, isCurrent && "ring-1 ring-primary/30")}>
+                      {config.badge && (
+                        <span className={cn("absolute -top-2.5 left-4 text-[9px] font-semibold px-2 py-0.5 rounded-full", planId === "pro" ? "bg-primary/15 text-primary" : "bg-amber-500/15 text-amber-400")}>
+                          {config.badge}
+                        </span>
+                      )}
+                      <div className="mb-4">
+                        <p className="text-sm font-bold mb-1">{config.name}</p>
+                        <p className="text-2xl font-bold">
+                          {config.price === 0 ? "Gratuit" : `$${config.price}`}
+                          {config.price > 0 && <span className="text-xs font-normal text-muted-foreground">/mois</span>}
+                        </p>
+                      </div>
+                      <ul className="space-y-2 mb-5 flex-1">
+                        {config.features.map((f) => (
+                          <li key={f} className="flex items-start gap-2 text-xs text-muted-foreground">
+                            <Check className="w-3.5 h-3.5 text-primary/60 shrink-0 mt-0.5" />
+                            {f}
+                          </li>
+                        ))}
+                      </ul>
+                      {isCurrent ? (
+                        <Button variant="outline" disabled className="w-full h-9 text-xs">
+                          Plan actuel
+                        </Button>
+                      ) : planId !== "free" ? (
+                        <Button
+                          onClick={() => handleUpgrade(planId as "pro" | "business")}
+                          disabled={!!upgrading}
+                          className={cn("w-full h-9 text-xs gap-1.5 font-semibold", planId === "business" && "bg-amber-500 hover:bg-amber-600 text-white")}
+                        >
+                          {upgrading === planId ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Crown className="w-3.5 h-3.5" />}
+                          {upgrading === planId ? "Redirection..." : `Passer a ${config.name}`}
+                        </Button>
+                      ) : null}
                     </div>
-                    <p className="text-2xl font-bold">Free</p>
-                    <p className="text-xs text-muted-foreground mt-1">5 generations / day</p>
-                  </div>
-                  <Button className="h-9 gap-2 text-xs">
-                    <Crown className="w-3.5 h-3.5" />
-                    Upgrade plan
-                  </Button>
-                </div>
+                  );
+                })}
               </div>
 
               {/* Sign out */}

@@ -11,6 +11,10 @@ export interface UserProfile {
   niche: string;
   onboarding_completed: boolean;
   created_at: string;
+  plan?: string;
+  stripe_customer_id?: string;
+  stripe_subscription_id?: string;
+  plan_expires_at?: string;
 }
 
 export function useProfile() {

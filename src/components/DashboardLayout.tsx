@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAdmin } from "@/hooks/use-admin";
+import { useProfile } from "@/hooks/use-profile";
+import { isPlanActive } from "@/lib/stripe";
 
 const DashboardLayout = ({ children }: { children: ReactNode }) => {
   const location = useLocation();
@@ -13,6 +15,9 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
   const { signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { isAdmin } = useAdmin();
+  const { profile } = useProfile();
+  const currentPlan = profile?.plan || "free";
+  const planIsActive = isPlanActive(profile?.plan, profile?.plan_expires_at);
 
   const handleLogout = async () => {
     await signOut();
@@ -28,6 +33,24 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
         </Link>
 
         <div className="ml-auto flex items-center gap-1">
+          {planIsActive && currentPlan === "pro" && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 font-medium mr-1">
+              Pro
+            </span>
+          )}
+          {planIsActive && currentPlan === "business" && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-medium mr-1">
+              Business
+            </span>
+          )}
+          {!planIsActive && currentPlan === "free" && (
+            <button
+              onClick={() => navigate("/settings")}
+              className="text-[10px] px-2 py-0.5 rounded-full text-muted-foreground/50 hover:text-primary hover:bg-primary/5 transition-all mr-1"
+            >
+              Upgrade
+            </button>
+          )}
           {isAdmin && (
             <Link
               to="/admin"
