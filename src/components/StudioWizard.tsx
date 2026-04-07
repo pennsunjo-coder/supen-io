@@ -26,7 +26,7 @@ import type { ActivityData } from "@/hooks/use-activity";
 import { ContentSessionGrid } from "@/components/DashboardWidgets";
 import { ActivityWidget } from "@/components/ActivityWidget";
 import InfographicModal from "@/components/InfographicModal";
-import { StickyNote, Globe as GlobeIcon, Brain } from "lucide-react";
+import { StickyNote, Globe as GlobeIcon, Brain, ThumbsUp, ThumbsDown } from "lucide-react";
 
 /* ─── Platform icons ─── */
 
@@ -158,6 +158,7 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
   const [showInfographic, setShowInfographic] = useState(false);
   const [styleMemoryActive, setStyleMemoryActive] = useState(false);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+  const [feedback, setFeedback] = useState<Record<number, "liked" | "disliked" | null>>({});
 
   function reset() {
     setStarted(false);
@@ -454,6 +455,40 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
         saveInteraction(u.id, v.content, selectedPlatform.name, v.angle, v.score, "copied");
       }
     });
+  }
+
+  async function handleFeedback(idx: number, rating: "liked" | "disliked") {
+    const v = variations[idx];
+    const current = feedback[idx];
+    const newRating = current === rating ? null : rating;
+    setFeedback((prev) => ({ ...prev, [idx]: newRating }));
+
+    try {
+      const { data: { user: u } } = await supabase.auth.getUser();
+      if (!u) return;
+
+      if (newRating === null) {
+        await supabase.from("variation_feedback")
+          .delete()
+          .eq("user_id", u.id)
+          .eq("content_preview", v.content.slice(0, 100));
+        return;
+      }
+
+      await supabase.from("variation_feedback").insert({
+        user_id: u.id,
+        content_preview: v.content.slice(0, 100),
+        platform: selectedPlatform?.name || "",
+        angle: v.angle,
+        viral_score: v.score,
+        rating: newRating,
+      });
+
+      if (newRating === "liked") {
+        saveInteraction(u.id, v.content, selectedPlatform?.name || "", v.angle, v.score, "liked");
+        toast.success("Note ! On adapte les prochaines generations a ton style.");
+      }
+    } catch { /* non-critical */ }
   }
 
   async function handleImagePrompt(idx: number) {
@@ -813,6 +848,40 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                           </div>
                         </div>
                         <p className="text-[13px] leading-relaxed whitespace-pre-wrap text-foreground/85">{v.content}</p>
+
+                        {/* Like/Dislike feedback */}
+                        <div className="flex items-center gap-2 mt-2.5 pt-2 border-t border-border/10">
+                          <span className="text-[9px] text-muted-foreground/40 mr-1">Ce contenu te plait ?</span>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleFeedback(idx, "liked"); }}
+                            className={cn(
+                              "flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] transition-all",
+                              feedback[idx] === "liked"
+                                ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                                : "text-muted-foreground/40 hover:text-emerald-400 hover:bg-emerald-500/10"
+                            )}
+                          >
+                            <ThumbsUp className="w-2.5 h-2.5" />
+                            {feedback[idx] === "liked" ? "Aime" : "J'aime"}
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleFeedback(idx, "disliked"); }}
+                            className={cn(
+                              "flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] transition-all",
+                              feedback[idx] === "disliked"
+                                ? "bg-red-500/15 text-red-400 border border-red-500/30"
+                                : "text-muted-foreground/40 hover:text-red-400 hover:bg-red-500/10"
+                            )}
+                          >
+                            <ThumbsDown className="w-2.5 h-2.5" />
+                            {feedback[idx] === "disliked" ? "Pas pour moi" : "Pas top"}
+                          </button>
+                          {feedback[idx] === "liked" && (
+                            <span className="text-[9px] text-primary/50 ml-auto flex items-center gap-1">
+                              <Brain className="w-2.5 h-2.5" /> Style memorise
+                            </span>
+                          )}
+                        </div>
 
                         {/* Actions inline */}
                         {isSelected && (

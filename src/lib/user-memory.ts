@@ -45,23 +45,47 @@ export async function getUserStyleMemory(
       .order("created_at", { ascending: false })
       .limit(5);
 
-    if (!data || data.length === 0) return "";
+    // Also fetch explicit likes from variation_feedback
+    let likedData: { content_preview: string; angle: string; viral_score: number }[] = [];
+    try {
+      const { data: liked } = await supabase
+        .from("variation_feedback")
+        .select("content_preview, angle, viral_score")
+        .eq("user_id", userId)
+        .eq("platform", platform)
+        .eq("rating", "liked")
+        .order("created_at", { ascending: false })
+        .limit(3);
+      if (liked) likedData = liked;
+    } catch { /* table may not exist yet */ }
 
-    // Build style context from user's best interactions
-    const examples = data
+    const allData = [...(data || []), ...likedData.map((l) => ({
+      content: l.content_preview,
+      angle: l.angle,
+      viral_score: l.viral_score,
+      interaction_type: "liked" as const,
+    }))];
+
+    if (allData.length === 0) return "";
+
+    // Build style context
+    const examples = allData
+      .slice(0, 5)
       .map((d) => `[${d.angle} - Score ${d.viral_score}/100 - ${d.interaction_type}]:\n${d.content.slice(0, 200)}`)
       .join("\n\n");
 
-    // Detect favorite angle
+    // Detect favorite angle (combine both sources)
     const angleCounts: Record<string, number> = {};
-    for (const d of data) {
-      if (d.angle) angleCounts[d.angle] = (angleCounts[d.angle] || 0) + 1;
+    for (const d of allData) {
+      if (d.angle) {
+        // Liked interactions count double
+        angleCounts[d.angle] = (angleCounts[d.angle] || 0) + (d.interaction_type === "liked" ? 2 : 1);
+      }
     }
     const favoriteAngle = Object.entries(angleCounts)
       .sort(([, a], [, b]) => b - a)[0]?.[0];
 
-    // Detect average score for calibration
-    const avgScore = Math.round(data.reduce((sum, d) => sum + (d.viral_score || 0), 0) / data.length);
+    const avgScore = Math.round(allData.reduce((sum, d) => sum + (d.viral_score || 0), 0) / allData.length);
 
     return `\n\n## SECTION 5 — STYLE PREFERE DE CET UTILISATEUR
 Angle favori : ${favoriteAngle || "varie"}
