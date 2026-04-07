@@ -214,7 +214,6 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
         // searchUserSources a son propre fallback interne
         const userRefs = await searchUserSources(sanitized, ragIds, 8);
         if (userRefs.length > 0) {
-          console.log("📄 RAG: injecting", userRefs.length, "source chunks into prompt");
           userSection = "\n\n## CONTEXTE UTILISATEUR (sources sélectionnées)\n" +
             userRefs.map((r) => `### [${r.type.toUpperCase()}] ${r.title}\n${r.content.slice(0, 3000)}`).join("\n\n");
         }
@@ -224,7 +223,6 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
       if (ragIds.length > 0 && !userSection) {
         const selected = sources.filter((s) => ragIds.includes(s.id));
         if (selected.length > 0) {
-          console.log("📄 RAG fallback: injecting", selected.length, "sources directly");
           userSection = "\n\n## CONTEXTE UTILISATEUR (sources sélectionnées)\n" +
             selected.map((s) => `### [${s.type.toUpperCase()}] ${s.title}\n${s.content.slice(0, 3000)}`).join("\n\n");
         }
@@ -308,9 +306,7 @@ Règles strictes :
     setSaveStatus("saving");
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { console.warn("🔴 saveVariations: no user"); setSaveStatus("failed"); return false; }
-
-      console.log("🔵 saveVariations:", { userId: user.id, platform: selectedPlatform.name, format: selectedFormat, count: parsed.length });
+      if (!user) { setSaveStatus("failed"); return false; }
 
       const allSourceIds = [...new Set([...activeSourceIds, ...selectedDocumentIds])];
       const inserts = parsed.map((v) => ({
@@ -323,11 +319,9 @@ Règles strictes :
       }));
       const { data: insertData, error: saveErr } = await supabase.from("generated_content").insert(inserts).select();
       if (saveErr) {
-        console.warn("🔴 Insert failed:", saveErr.message, saveErr.details, saveErr.hint);
         setSaveStatus("failed");
         return false;
       }
-      console.log("🟢 Insert OK:", insertData?.length, "rows");
       setSaveStatus("saved");
       if (onGenerationComplete) onGenerationComplete();
       toast.success(`${parsed.length} variations saved`);
@@ -335,7 +329,6 @@ Règles strictes :
       setTimeout(() => setShowInfographic(true), 2000);
       return true;
     } catch (err) {
-      console.warn("🔴 Save exception:", err);
       setSaveStatus("failed");
       return false;
     }
@@ -425,7 +418,11 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
         messages: [{ role: "user", content: variations[idx].content.slice(0, 600) }],
       });
       setImagePrompt(response.content.filter((b) => b.type === "text").map((b) => b.text).join(""));
-    } catch { /* silent */ }
+    } catch (err) {
+      console.error("Image prompt error:", err);
+      toast.error("Erreur lors de la generation du prompt image");
+      setGenImage(false);
+    }
     setGenImage(false);
   }
 
@@ -443,7 +440,11 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
         messages: [{ role: "user", content: variations[idx].content.slice(0, 600) }],
       });
       setInfraContent(response.content.filter((b) => b.type === "text").map((b) => b.text).join(""));
-    } catch { /* silent */ }
+    } catch (err) {
+      console.error("Infographic error:", err);
+      toast.error("Erreur lors de la generation de l'infographie");
+      setGenInfra(false);
+    }
     setGenInfra(false);
   }
 

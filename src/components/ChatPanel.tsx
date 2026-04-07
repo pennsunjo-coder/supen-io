@@ -13,17 +13,17 @@ const RATE_LIMIT_MAX = 10;
 const RATE_LIMIT_WINDOW_MS = 60_000;
 
 const defaultPrompts = [
-  "Summarize my sources",
-  "Find key ideas",
-  "Generate viral hooks",
-  "Help me structure",
+  "Resume mes sources",
+  "Trouve les idees cles",
+  "Genere des hooks viraux",
+  "Aide-moi a structurer",
 ];
 
 const contentPrompts = [
-  "Improve the hook",
-  "Make it more impactful",
-  "Adapt for another network",
-  "Suggest a CTA",
+  "Ameliore l'accroche",
+  "Rends-le plus percutant",
+  "Adapte pour un autre reseau",
+  "Suggere un CTA",
 ];
 
 interface ChatPanelProps {
@@ -124,7 +124,7 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
         <div className="w-5 h-5 rounded-md bg-primary/10 flex items-center justify-center">
           <Sparkles className="w-3 h-3 text-primary" />
         </div>
-        <h2 className="text-base font-semibold">AI Coach</h2>
+        <h2 className="text-base font-semibold">Coach IA</h2>
         <div className="ml-auto flex items-center gap-2">
           {messages.length > 0 && (
             <button onClick={onClearConversation} className="text-[10px] text-muted-foreground/50 hover:text-destructive transition-colors flex items-center gap-1">
@@ -149,9 +149,9 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
             <div className="w-10 h-10 rounded-xl bg-primary/8 flex items-center justify-center mb-3">
               <Sparkles className="w-4 h-4 text-primary/70" />
             </div>
-            <p className="text-xs font-medium text-foreground mb-1">AI Coach</p>
+            <p className="text-xs font-medium text-foreground mb-1">Coach IA</p>
             <p className="text-[11px] text-muted-foreground text-center mb-4 leading-relaxed">
-              Chat while you create. Ask for hooks, ideas, feedback.
+              Pose-moi une question sur tes sources, demande des hooks viraux, ou un feedback sur ton contenu.
             </p>
             {sources.length > 0 && (
               <p className="text-[10px] text-primary/70 mb-3">{sources.length} source{sources.length > 1 ? "s" : ""}</p>

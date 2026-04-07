@@ -66,6 +66,7 @@ export default function Settings() {
 
   const [activeSection, setActiveSection] = useState<Section>("profil");
   const [saving, setSaving] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
 
   // Profile fields
   const [firstName, setFirstName] = useState("");
@@ -106,6 +107,8 @@ export default function Settings() {
     setSaving(false);
     if (success) {
       toast.success("Profile saved");
+      setJustSaved(true);
+      setTimeout(() => setJustSaved(false), 2000);
     } else {
       toast.error(error || "Error saving");
     }
@@ -251,9 +254,9 @@ export default function Settings() {
 
                 {/* Save */}
                 <div className="pt-2">
-                  <Button onClick={handleSaveProfile} disabled={saving} className="h-9 gap-2 text-xs">
+                  <Button onClick={handleSaveProfile} disabled={saving || justSaved} className="h-9 gap-2 text-xs">
                     {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                    Save
+                    {justSaved ? "Sauvegarde !" : "Save"}
                   </Button>
                 </div>
               </div>
@@ -269,8 +272,12 @@ export default function Settings() {
               </div>
 
               <div className="bg-card border border-border/30 rounded-xl p-6 space-y-6">
+                <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                  Bientot disponible
+                </span>
+
                 {/* Langue */}
-                <div>
+                <div className="opacity-50 pointer-events-none">
                   <label className="text-xs font-medium text-muted-foreground mb-2 block">Generation language</label>
                   <div className="flex gap-2">
                     {LANGUAGES.map((l) => (
@@ -291,7 +298,7 @@ export default function Settings() {
                 </div>
 
                 {/* Ton */}
-                <div>
+                <div className="opacity-50 pointer-events-none">
                   <label className="text-xs font-medium text-muted-foreground mb-2 block">Default tone</label>
                   <div className="flex flex-wrap gap-2">
                     {TONES.map((t) => (
@@ -312,7 +319,7 @@ export default function Settings() {
                 </div>
 
                 {/* Longueur */}
-                <div>
+                <div className="opacity-50 pointer-events-none">
                   <label className="text-xs font-medium text-muted-foreground mb-2 block">Preferred length</label>
                   <div className="flex gap-2">
                     {LENGTHS.map((l) => (
@@ -345,7 +352,7 @@ export default function Settings() {
               </div>
 
               <p className="text-[11px] text-muted-foreground">
-                These preferences will soon be applied during generation.
+                Les preferences de langue, ton et longueur seront bientot disponibles. Le protocole Anti-IA est deja actif.
               </p>
             </>
           )}

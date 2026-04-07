@@ -52,13 +52,13 @@ function HistoryCard({ item }: { item: GeneratedItem }) {
   function handleCopy() {
     navigator.clipboard.writeText(item.content);
     setCopied(true);
-    toast.success(`Content copied! Ready to post on ${item.platform}.`);
+    toast.success(`Contenu copie ! Pret a publier sur ${item.platform}.`);
     setTimeout(() => setCopied(false), 2000);
   }
 
   function handleReuse() {
     navigate("/dashboard");
-    toast("Content loaded in Studio. Click Create content to edit.");
+    toast("Ouvre le Studio pour creer du nouveau contenu.");
   }
 
   return (

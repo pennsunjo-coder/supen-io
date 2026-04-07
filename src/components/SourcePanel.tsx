@@ -281,7 +281,15 @@ const SourcePanel = ({
       <div className="mx-4 h-px bg-border/30 shrink-0" />
 
       {/* Source list */}
-      <div className="flex-1 overflow-y-auto min-h-0 px-3 py-3 space-y-0.5">
+      <div
+        className={cn(
+          "flex-1 overflow-y-auto min-h-0 px-3 py-3 space-y-0.5 transition-all",
+          dragOver && groupedSources.length > 0 && "border-2 border-dashed border-primary/40",
+        )}
+        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={handleDrop}
+      >
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
