@@ -1,6 +1,12 @@
 /**
  * Intelligent infographic engine.
  * Auto-analyzes content → selects template → builds prompt.
+ *
+ * DESIGN PHILOSOPHY (from Awa K. Penn reference analysis):
+ * - DENSITY: 85-95% canvas fill, NO empty space
+ * - COMPACT: tight padding (24px), small gaps (8px), small fonts
+ * - RICH: 7 sections + pro tip, sub-bullets within body
+ * - EMPHASIS: inline colored bold words (<span class="a">)
  */
 
 import { TEMPLATE_REGISTRY, TEMPLATE_IDS } from "./infographic-templates";
@@ -18,6 +24,7 @@ interface ExtractionResult {
   badge: string;
   subtitle: string;
   points: Point[];
+  proTip: string;
 }
 
 export interface TemplateSelection {
@@ -162,43 +169,57 @@ export function extractKeyPoints(content: string): ExtractionResult {
     const trimmed = line.trim();
     if (/^[\d\.\-•→\*]\s*/.test(trimmed)) {
       const text = trimmed.replace(/^[\d\.\-•→\*\s]+/, "").trim();
-      if (text.length > 10 && points.length < 7) {
+      if (text.length > 10 && points.length < 9) {
         const colonSplit = text.split(/[:—–]/);
         if (colonSplit.length >= 2) {
-          points.push({ title: colonSplit[0].trim().slice(0, 50), body: colonSplit.slice(1).join(":").trim().slice(0, 120) });
+          points.push({ title: colonSplit[0].trim().slice(0, 50), body: colonSplit.slice(1).join(":").trim().slice(0, 200) });
         } else {
-          points.push({ title: text.slice(0, 45), body: text.slice(45, 160).trim() });
+          points.push({ title: text.slice(0, 45), body: text.slice(45, 200).trim() });
         }
       }
     }
   }
 
   // Pass 2: if not enough, split by sentences
-  if (points.length < 3) {
+  if (points.length < 5) {
     const sentences = content.match(/[^.!?\n]+[.!?]+/g) || [];
     for (const s of sentences) {
       const trimmed = s.trim();
-      if (trimmed.length > 20 && points.length < 5) {
-        points.push({ title: trimmed.slice(0, 45), body: trimmed.slice(45, 140).trim() });
+      if (trimmed.length > 20 && points.length < 7) {
+        points.push({ title: trimmed.slice(0, 45), body: trimmed.slice(45, 200).trim() });
       }
     }
   }
 
   // Pass 3: last resort — chunk paragraphs
-  if (points.length < 3) {
+  if (points.length < 5) {
     const chunks = content.split(/\n\n+/).filter(c => c.trim().length > 20);
     for (const chunk of chunks) {
-      if (points.length < 5) {
+      if (points.length < 7) {
         const t = chunk.trim();
-        points.push({ title: t.slice(0, 45), body: t.slice(45, 140).trim() });
+        points.push({ title: t.slice(0, 45), body: t.slice(45, 200).trim() });
       }
     }
   }
 
-  return { title, badge, subtitle, points: points.slice(0, 7) };
+  // Generate a pro tip from the content
+  const proTip = generateProTip(content);
+
+  return { title, badge, subtitle, points: points.slice(0, 7), proTip };
 }
 
-// ─── Emoji assignment ───
+function generateProTip(content: string): string {
+  const sentences = content.match(/[^.!?\n]+[.!?]+/g) || [];
+  // Find a good actionable sentence for the pro tip
+  for (const s of sentences) {
+    if (/start|begin|first|try|recomm|conseil|astuce|important|clé|essentiel/i.test(s) && s.trim().length > 30) {
+      return s.trim().slice(0, 150);
+    }
+  }
+  return sentences[sentences.length - 1]?.trim().slice(0, 150) || "Start implementing today for maximum impact.";
+}
+
+// ─── Emoji assignment (kept for backward compat but not used in templates) ───
 
 const EMOJI_LIBRARY: Record<string, string[]> = {
   money: ["💰", "💵", "📈", "🏆", "💎", "🤑", "📊"],
@@ -257,12 +278,12 @@ export function buildInfographicPrompt(content: string, platform: string, custom
   const extraction = extractKeyPoints(content);
 
   // Pre-fill SVG icons into the template (deterministic)
-  const sectionColors = ["#E53E3E", "#3182CE", "#38A169", "#DD6B20", "#9B59B6", "#EC4899", "#00C9B1"];
+  const sectionColors = ["#E53E3E", "#3182CE", "#38A169", "#DD6B20", "#9B59B6", "#EC4899", "#00897B"];
   for (let i = 0; i < 7; i++) {
     const pointText = extraction.points[i]?.title || "";
     const iconName = selectIcon(pointText, i);
     const color = sectionColors[i % sectionColors.length];
-    const iconSvg = getIconSvg(iconName, color, 24);
+    const iconSvg = getIconSvg(iconName, color, 20);
     templateHtml = templateHtml.replace(`{{P${i + 1}_ICON}}`, iconSvg);
   }
 
@@ -286,10 +307,10 @@ Make it significantly better.\n`
   return `You are the world's best infographic designer. You specialize in viral social media content that gets millions of views. You have studied Awa K. Penn's infographics (26K+ likes, 1.7M+ views per post) and replicate their exact quality.
 
 Your infographics go viral because they are:
+• ULTRA-DENSE — content fills 90%+ of the canvas, NO empty space at bottom
 • Instantly scannable — reader understands value in 3 seconds
 • High contrast — crystal clear visual hierarchy
-• Professional but warm — not corporate, not childish
-• Information-dense but NOT cluttered — white space is essential
+• Information-rich — every section has 2-3 detail lines with specific data
 • Shareable — people save and repost them
 
 ═══ YOUR TASK ═══
@@ -301,21 +322,30 @@ ${regenInstruction}
 Before filling, analyze:
 - Main message: What is the ONE takeaway?
 - Target: Who will share this?
-- Extract: The 4-5 most ACTIONABLE, SPECIFIC points
+- Extract: The 7 most ACTIONABLE, SPECIFIC points (not 4 or 5 — SEVEN)
 
 ═══ ABSOLUTE RULES ═══
+
+DENSITY (CRITICAL — #1 priority):
+- Fill ALL 7 sections — do NOT delete any section divs
+- Each {{Pn_BODY}} must be 25-50 words with SPECIFIC details, data, or examples
+- Use <span class="a">key phrase</span> to highlight 1-2 important words per body in accent color
+- Add bullet-style content: use " • " to separate sub-points within body text
+- {{PRO_TIP}} must be a specific actionable sentence (30-50 words)
+- The content MUST fill the entire ${dims.height}px height — zero empty space at bottom
 
 TYPOGRAPHY:
 - Font: Poppins only (900 for titles, 700 for section heads, 400 for body)
 - NEVER use italic — font-style:italic is FORBIDDEN
 - Titles: ALL CAPS, punchy, create urgency
-- Body: sentence case, direct, max 15 words per section
+- Body: sentence case, direct, rich with specifics
 
 CONTENT QUALITY:
 - Section titles: MAX 6 words, specific and actionable
-- Section body: MAX 15 words, no fluff, direct value
-- NO generic statements. Be SPECIFIC with numbers, tools, outcomes
+- Section body: 25-50 words with numbers, tools, outcomes, sub-points
+- NO generic statements. Include specific numbers, tool names, percentages
 - NO emoji characters anywhere — SVG icons are pre-embedded
+- Each body should contain at least one <span class="a">highlighted phrase</span>
 
 VIRAL TITLE FORMULAS (use one):
 - STOP [doing X]. [Better alternative] instead.
@@ -333,16 +363,10 @@ GOOD: "AI REPLACES 40% OF JOBS BY 2030"
 BAD: "You Should Learn New Skills"
 GOOD: "LEARN THIS SKILL OR GET LEFT BEHIND"
 
-BAD: "Social Media Can Help Your Business"
-GOOD: "1 POST = $10K IN SALES (HERE'S HOW)"
-
-BAD: "Tips for Being More Productive"
-GOOD: "5 HABITS THAT 10X YOUR OUTPUT"
-
 TEMPLATE RULES:
 - Keep ALL HTML structure, CSS, and SVG icons EXACTLY as-is
 - ONLY replace {{text placeholders}} — nothing else
-- If template has more slots than content provides, REMOVE the extra section div entirely
+- NEVER delete section divs — fill ALL 7 sections with content
 - Do NOT add any new HTML elements, classes, or styles
 
 ═══ PLACEHOLDER MAP ═══
@@ -350,11 +374,18 @@ TEMPLATE RULES:
 {{TITLE}} → Viral ALL CAPS title. Wrap ONE key word with <span> for accent color. Max 60 chars.
 {{FOOTER}} → "Created with Supen.io · Follow for more"
 {{Pn_TITLE}} → Bold section title (max 6 words, specific)
-{{Pn_BODY}} → Short detail (max 15 words, actionable)
+{{Pn_BODY}} → Rich detail (25-50 words, with <span class="a">emphasis</span> and sub-points using " • ")
+{{PRO_TIP}} → Actionable pro tip sentence (30-50 words)
+
+═══ BODY TEXT EXAMPLE ═══
+BAD: "AI tools can help you work faster"
+GOOD: "Use <span class=\\"a\\">Claude + Cursor</span> to write production code 10x faster • Average dev saves 3h/day • 87% of YC startups already adopted this stack"
 
 ═══ EXTRACTED KEY POINTS ═══
-Use ONLY these points — do NOT invent new ones:
+Use these as starting points — EXPAND each with specific details, data, and examples:
 ${pointHints}
+
+Pro tip hint: ${extraction.proTip}
 
 ═══ TEMPLATE TO FILL ═══
 ${templateHtml}
@@ -367,12 +398,15 @@ ${extra}
 
 ═══ FINAL CHECKLIST ═══
 Before outputting, verify:
+□ ALL 7 sections filled — no section deleted
 □ Title is PUNCHY with urgency/curiosity
-□ Maximum 5 sections — quality over quantity
-□ Each body MAX 15 words — short and impactful
+□ Each body has 25-50 words with specific data
+□ Each body uses <span class="a"> for emphasis on 1-2 key phrases
+□ {{PRO_TIP}} is filled with actionable advice
 □ NO italic text anywhere
 □ All SVG icons left untouched
-□ Content fits within ${dims.width}x${dims.height}px
+□ Content fills ENTIRE ${dims.width}x${dims.height}px — no empty space at bottom
+□ NO emoji characters — only SVG icons
 □ Starts with <!DOCTYPE html>, ends with </html>
 
 OUTPUT: Only the filled HTML. No explanation. No markdown.`;
@@ -401,12 +435,13 @@ Format: ${dims.width}x${dims.height}px square
 
 Title: ${extraction.title}
 Key points:
-${extraction.points.slice(0, 5).map((p, i) => `${i + 1}. ${p.title}: ${p.body}`).join("\n")}
+${extraction.points.slice(0, 7).map((p, i) => `${i + 1}. ${p.title}: ${p.body}`).join("\n")}
 
 Requirements:
 - Exact format: ${dims.width}x${dims.height}px
-- Numbered sections with colored circles
+- 7 numbered sections with colored circles — FILL THE ENTIRE CANVAS
 - Professional line icons (NOT emojis) before sections
+- Dense content — 85-95% of canvas area used
 - Footer: "Created with Supen.io | Follow for more"
 - Professional, viral-worthy design
 
@@ -460,6 +495,8 @@ export function scoreInfographic(html: string, dims: { width: number; height: nu
     { label: "No emoji characters", pass: !/[\u{1F300}-\u{1F9FF}]/u.test(html) },
     { label: "Has SVG icons", pass: html.includes("<svg") },
     { label: "Overflow hidden", pass: html.includes("overflow:hidden") || html.includes("overflow: hidden") },
+    { label: "Has pro tip", pass: html.includes("pro-tip") || html.includes("what-now") || html.includes("verdict") || html.includes("bonus") },
+    { label: "Has inline emphasis", pass: html.includes('class="a"') || html.includes("class='a'") },
   ];
 
   const passed = checks.filter(c => c.pass).length;
