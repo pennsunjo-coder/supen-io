@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { getCache, setCache, invalidateCache } from "@/lib/cache";
+import { embedSource } from "@/lib/embeddings";
 import type { Source } from "@/types/database";
 
 const CHUNK_SIZE = 400; // words per chunk (target 300-500)
@@ -230,17 +231,19 @@ export function useSources() {
       const chunks = chunkText(pageContent);
 
       if (chunks.length === 1) {
-        const { error } = await supabase.from("sources").insert({
+        const { data: inserted, error } = await supabase.from("sources").insert({
           user_id: user.id, type: "url", title, content: chunks[0],
-        });
+        }).select("id, content");
         if (error) return { error: error.message };
+        if (inserted) inserted.forEach((s) => embedSource(s.id, s.content).catch(() => {}));
       } else {
         const inserts = chunks.map((chunk, i) => ({
           user_id: user.id, type: "url" as const,
           title: `${title} (${i + 1}/${chunks.length})`, content: chunk,
         }));
-        const { error } = await supabase.from("sources").insert(inserts);
+        const { data: inserted, error } = await supabase.from("sources").insert(inserts).select("id, content");
         if (error) return { error: error.message };
+        if (inserted) inserted.forEach((s) => embedSource(s.id, s.content).catch(() => {}));
       }
 
       invalidateCache(`sources:${user.id}`);
@@ -257,13 +260,14 @@ export function useSources() {
       const chunks = chunkText(content);
 
       if (chunks.length === 1) {
-        const { error } = await supabase.from("sources").insert({
+        const { data: inserted, error } = await supabase.from("sources").insert({
           user_id: user.id,
           type: "note",
           title: title.slice(0, 200),
           content: chunks[0],
-        });
-        if (error) { console.warn("🔴 addNote error:", error.message); return { error: error.message }; }
+        }).select("id, content");
+        if (error) return { error: error.message };
+        if (inserted) inserted.forEach((s) => embedSource(s.id, s.content).catch(() => {}));
       } else {
         const inserts = chunks.map((chunk, i) => ({
           user_id: user.id,
@@ -271,8 +275,9 @@ export function useSources() {
           title: `${title.slice(0, 180)} (${i + 1}/${chunks.length})`,
           content: chunk,
         }));
-        const { error } = await supabase.from("sources").insert(inserts);
-        if (error) { console.warn("🔴 addNote error:", error.message); return { error: error.message }; }
+        const { data: inserted, error } = await supabase.from("sources").insert(inserts).select("id, content");
+        if (error) return { error: error.message };
+        if (inserted) inserted.forEach((s) => embedSource(s.id, s.content).catch(() => {}));
       }
 
       invalidateCache(`sources:${user.id}`);
@@ -327,14 +332,15 @@ export function useSources() {
       invalidateCache(`sources:${user.id}`);
 
       if (chunks.length === 1) {
-        const { error } = await supabase.from("sources").insert({
+        const { data: inserted, error } = await supabase.from("sources").insert({
           user_id: user.id,
           type: "pdf",
           title,
           content: chunks[0],
           file_path: filePath,
-        });
+        }).select("id, content");
         if (error) return { error: error.message };
+        if (inserted) inserted.forEach((s) => embedSource(s.id, s.content).catch(() => {}));
       } else {
         const inserts = chunks.map((chunk, i) => ({
           user_id: user.id,
@@ -343,8 +349,9 @@ export function useSources() {
           content: chunk,
           file_path: i === 0 ? filePath : null,
         }));
-        const { error } = await supabase.from("sources").insert(inserts);
+        const { data: inserted, error } = await supabase.from("sources").insert(inserts).select("id, content");
         if (error) return { error: error.message };
+        if (inserted) inserted.forEach((s) => embedSource(s.id, s.content).catch(() => {}));
       }
 
       await fetchSources();
@@ -400,17 +407,19 @@ export function useSources() {
 
       const chunks = chunkText(content.trim());
       if (chunks.length === 1) {
-        const { error } = await supabase.from("sources").insert({
+        const { data: inserted, error } = await supabase.from("sources").insert({
           user_id: user.id, type: "url", title, content: chunks[0],
-        });
+        }).select("id, content");
         if (error) return { error: error.message };
+        if (inserted) inserted.forEach((s) => embedSource(s.id, s.content).catch(() => {}));
       } else {
         const inserts = chunks.map((chunk, i) => ({
           user_id: user.id, type: "url" as const,
           title: `${title} (${i + 1}/${chunks.length})`, content: chunk,
         }));
-        const { error } = await supabase.from("sources").insert(inserts);
+        const { data: inserted, error } = await supabase.from("sources").insert(inserts).select("id, content");
         if (error) return { error: error.message };
+        if (inserted) inserted.forEach((s) => embedSource(s.id, s.content).catch(() => {}));
       }
 
       invalidateCache(`sources:${user.id}`);
