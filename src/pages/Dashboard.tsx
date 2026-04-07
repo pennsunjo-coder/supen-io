@@ -115,6 +115,7 @@ const Dashboard = () => {
             conversationLoading={conversationLoading}
             onClearConversation={clearConversation}
             lastGeneratedContent={lastGeneratedContent}
+            profile={profile}
           />
         </div>
       </div>
