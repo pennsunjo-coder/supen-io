@@ -17,6 +17,7 @@ import { searchViralReferences, ViralReference, searchUserSources } from "@/lib/
 import { supabase } from "@/lib/supabase";
 import { assertOnline, withRetry, withTimeout, friendlyError } from "@/lib/resilience";
 import GenerationProgress, { CONTENT_STEPS } from "@/components/GenerationProgress";
+import { scoreAllVariations, scoreColor, scoreBarColor, scoreBadge, type ScoreDetails } from "@/lib/viral-scorer";
 import type { Source } from "@/types/database";
 import type { UserProfile } from "@/hooks/use-profile";
 import type { ContentSession } from "@/hooks/use-dashboard";
@@ -84,12 +85,6 @@ const ANGLE_COLORS: Record<string, string> = {
   "Débat": "bg-amber-500/15 text-amber-400",
 };
 
-function viralScore(text: string, idx: number): number {
-  // Deterministic score based on length + index
-  const base = 72 + ((text.length * 7 + idx * 13) % 23);
-  return Math.min(base, 94);
-}
-
 function wordCount(text: string): number {
   return text.split(/\s+/).filter((w) => w.length > 0).length;
 }
@@ -99,6 +94,8 @@ interface ParsedVariation {
   content: string;
   words: number;
   score: number;
+  scoreDetails?: ScoreDetails;
+  scoring?: boolean;
 }
 
 function parseVariations(raw: string): ParsedVariation[] {
@@ -117,7 +114,8 @@ function parseVariations(raw: string): ParsedVariation[] {
     angle: ANGLE_LABELS[idx % ANGLE_LABELS.length],
     content,
     words: wordCount(content),
-    score: viralScore(content, idx),
+    score: 0,
+    scoring: true,
   }));
 }
 
@@ -309,6 +307,23 @@ Règles strictes :
         onContentGenerated(parsed[0].content);
       }
 
+      // Score all variations in parallel via Haiku (fast + cheap)
+      scoreAllVariations(parsed, selectedPlatform.name, anthropic)
+        .then((scores) => {
+          setVariations((prev) =>
+            prev.map((v, i) => ({
+              ...v,
+              score: scores[i]?.total ?? 65,
+              scoreDetails: scores[i],
+              scoring: false,
+            }))
+          );
+        })
+        .catch(() => {
+          // If scoring fails, mark as done with fallback
+          setVariations((prev) => prev.map((v) => ({ ...v, scoring: false, score: 65 })));
+        });
+
       await saveVariations(parsed);
     } catch (err: unknown) {
       setError(friendlyError(err));
@@ -330,7 +345,8 @@ Règles strictes :
         platform: selectedPlatform.name,
         format: selectedFormat,
         content: v.content,
-        viral_score: v.score,
+        viral_score: v.score || 0,
+        image_prompt: v.scoreDetails ? JSON.stringify(v.scoreDetails) : null,
         source_ids: allSourceIds,
       }));
       const { data: insertData, error: saveErr } = await supabase.from("generated_content").insert(inserts).select();
@@ -730,12 +746,43 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                         <div className="flex items-center gap-2 mb-2.5">
                           <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded-full", angleColor)}>{v.angle}</span>
                           {isSelected && <span className="text-[9px] text-primary/70 flex items-center gap-0.5"><Check className="w-2.5 h-2.5" /> Selected</span>}
-                          <span className="text-[10px] text-muted-foreground/50 ml-auto">{v.words} words</span>
-                          <div className="flex items-center gap-1">
-                            <div className="w-10 h-1.5 rounded-full bg-accent/30 overflow-hidden">
-                              <div className="h-full rounded-full bg-emerald-500/60" style={{ width: `${v.score}%` }} />
-                            </div>
-                            <span className="text-[10px] text-emerald-400/80 font-medium">{v.score}%</span>
+                          <span className="text-[10px] text-muted-foreground/50 ml-auto">{v.words} mots</span>
+                          <div className="flex items-center gap-1.5 group/score relative">
+                            {v.scoring ? (
+                              <span className="text-[9px] text-muted-foreground/50 animate-pulse">Analyse...</span>
+                            ) : (
+                              <>
+                                <div className="w-12 h-1.5 rounded-full bg-accent/30 overflow-hidden">
+                                  <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${v.score}%` }}
+                                    transition={{ duration: 0.8, ease: "easeOut" }}
+                                    className={cn("h-full rounded-full", scoreBarColor(v.score))}
+                                  />
+                                </div>
+                                <span className={cn("text-[10px] font-semibold", scoreColor(v.score))}>{v.score}</span>
+                                {scoreBadge(v.score) && (
+                                  <span className="text-[8px] text-emerald-400/70 font-medium">{scoreBadge(v.score)}</span>
+                                )}
+                                {/* Score tooltip */}
+                                {v.scoreDetails && (
+                                  <div className="absolute right-0 top-full mt-1 z-50 hidden group-hover/score:block">
+                                    <div className="bg-card border border-border/30 rounded-lg shadow-xl p-3 w-52 text-[10px]">
+                                      <div className="space-y-1.5 mb-2">
+                                        <div className="flex justify-between"><span className="text-muted-foreground">Accroche</span><span className="font-semibold">{v.scoreDetails.hook}/20</span></div>
+                                        <div className="flex justify-between"><span className="text-muted-foreground">Emotion</span><span className="font-semibold">{v.scoreDetails.emotion}/20</span></div>
+                                        <div className="flex justify-between"><span className="text-muted-foreground">Specificite</span><span className="font-semibold">{v.scoreDetails.specificity}/20</span></div>
+                                        <div className="flex justify-between"><span className="text-muted-foreground">Actionable</span><span className="font-semibold">{v.scoreDetails.actionable}/20</span></div>
+                                        <div className="flex justify-between"><span className="text-muted-foreground">CTA</span><span className="font-semibold">{v.scoreDetails.cta}/20</span></div>
+                                      </div>
+                                      {v.scoreDetails.feedback && (
+                                        <p className="text-muted-foreground/80 text-[9px] border-t border-border/20 pt-1.5">{v.scoreDetails.feedback}</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </>
+                            )}
                           </div>
                         </div>
                         <p className="text-[13px] leading-relaxed whitespace-pre-wrap text-foreground/85">{v.content}</p>
