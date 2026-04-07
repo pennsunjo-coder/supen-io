@@ -430,38 +430,216 @@ OUTPUT: Only the filled HTML. No explanation. No markdown.`;
 
 // ─── Gemini prompt builder ───
 
-export function buildGeminiImagePrompt(content: string, platform: string): string {
+const GEMINI_STYLE_GUIDES: Record<string, { layout: string; colors: string; illustration: string; density: string }> = {
+  howto: {
+    layout: "Vertical numbered steps with large colored circles (30px) and line icons (20px). Each step has a bold colored title + 2-3 detail lines below. Process flow arrows or numbered circles illustration in header.",
+    colors: "#FFFFF5 cream background, #5D3A1A wood border (6px), section colors rotating: #E53E3E, #3182CE, #38A169, #DD6B20, #9B59B6, #EC4899, #00897B",
+    illustration: "Simple process-flow diagram (3 circles connected by arrows) in the top-right header area, ~90px wide",
+    density: "7 steps, each with bold 6-word title + 25-40 word body with bullet sub-points using ' - '"
+  },
+  tips: {
+    layout: "Clean numbered list with colored circle numbers and icon boxes. White background, subtle gray section backgrounds (#F8FAFC). Gradient badge (purple→pink).",
+    colors: "White #FFFFFF background, no border. Section colors: #6366F1, #EC4899, #F59E0B, #10B981, #8B5CF6, #3B82F6, #EF4444",
+    illustration: "Checklist graphic (3 colored checkboxes with lines) in header, ~90px",
+    density: "7 tips, each with specific tool names, numbers, or percentages"
+  },
+  stats: {
+    layout: "2x2 grid of large hero numbers (44px bold) in bordered cards at top, followed by 3 detail rows below. Each stat card has an icon, the big number, and a label.",
+    colors: "#FFFFF5 cream background, #5D3A1A border. Stat card borders: #E53E3E, #3182CE, #38A169, #DD6B20",
+    illustration: "Bar chart or growth curve SVG in header area, ~90px",
+    density: "4 big stat cards (huge numbers) + 3 supporting detail rows + pro tip"
+  },
+  comparison: {
+    layout: "Two columns separated by a VS circle badge (36px black circle, white 'VS' text). Left column blue (#3182CE), right column red (#E53E3E). Column headers are full-width colored pills.",
+    colors: "#FFFFF5 background, #888 border. Left: blue tints. Right: red tints. VS badge: #1A1A1A",
+    illustration: "Before/After arrows comparison graphic in header",
+    density: "3 comparison rows per column + verdict box at bottom"
+  },
+  quote: {
+    layout: "Large decorative quotation marks in header, centered quote text in large font, attribution below, then 3-4 context points.",
+    colors: "#FFFFF5 background, #E53E3E accent for quote marks, #1A1A1A text",
+    illustration: "Large decorative opening quotation marks, ~80px",
+    density: "1 main quote + 4 supporting context points"
+  },
+  general: {
+    layout: "Awa K. Penn classic: badge pill + ALL CAPS title in header (left) with illustration (right). 7 numbered sections below with colored circle numbers, icon boxes, and text blocks. Pro tip box at bottom with dashed border.",
+    colors: "#FFFFF5 cream background, #5D3A1A wood-tone border (6px). Section colors rotating: #E53E3E, #3182CE, #38A169, #DD6B20, #9B59B6, #EC4899, #00897B. Header border-bottom: 3px solid #E53E3E.",
+    illustration: "Contextual SVG illustration (growth chart, brain circuit, or target) in header right, ~90px",
+    density: "7 sections with 25-40 words each, every section has specific data points and sub-bullets"
+  },
+};
+
+export function buildGeminiImagePrompt(content: string, platform: string, customPrompt?: string): string {
   const analysis = analyzeContent(content, platform);
   const dims = FORMAT_DIMS[analysis.format];
-  const selection = selectBestTemplate(content, platform);
   const extraction = extractKeyPoints(content);
+  const guide = GEMINI_STYLE_GUIDES[analysis.contentType] || GEMINI_STYLE_GUIDES.general;
 
-  const styleMap: Record<string, string> = {
-    AWA_CLASSIC: "Handwritten sketchnote on cream paper with brown wood border frame",
-    DARK_TECH: "Modern dark tech style with cyan accents on dark navy background",
-    CHEAT_SHEET: "Notebook cheat sheet with colored section headers on white",
-    VIRAL_TIPS: "Clean white modern design with large colorful numbered circles",
-    STATS_IMPACT: "Data visualization with large hero numbers on cream background",
-    COMPARISON_VS: "Two-column VS comparison chart on light background",
-  };
+  const dimStr = `${dims.width}x${dims.height}`;
+  const isDark = analysis.colorTheme === "tech";
 
-  return `Create a professional infographic image.
-Style: ${styleMap[selection.templateId] || styleMap.AWA_CLASSIC}
-Format: ${dims.width}x${dims.height}px square
+  const pointsText = extraction.points.slice(0, 7).map((p, i) =>
+    `${i + 1}. ${p.title}${p.body ? ": " + p.body : ""}`
+  ).join("\n");
 
-Title: ${extraction.title}
-Key points:
-${extraction.points.slice(0, 7).map((p, i) => `${i + 1}. ${p.title}: ${p.body}`).join("\n")}
+  return `You are the world's greatest viral infographic designer. Your work consistently achieves:
+- 26,000+ likes on Facebook
+- 1.7 MILLION+ views on Twitter/X
+- 5,000+ shares in 24 hours
+- 97% save rate on Instagram
 
-Requirements:
-- Exact format: ${dims.width}x${dims.height}px
-- 7 numbered sections with colored circles — FILL THE ENTIRE CANVAS
-- Professional line icons (NOT emojis) before sections
-- Dense content — 85-95% of canvas area used
-- Footer: "Created with Supen.io | Follow for more"
-- Professional, viral-worthy design
+Your style is based on Awa K. Penn's viral methodology — the most-saved infographic creator on social media.
 
-Platform: ${platform}`;
+${"═".repeat(50)}
+CONTENT INTELLIGENCE REPORT
+${"═".repeat(50)}
+
+Content Type: ${analysis.contentType.toUpperCase()}
+Platform: ${platform}
+Format: ${dimStr}px (EXACT — no variation)
+Color Theme: ${analysis.colorTheme}
+Badge: "${extraction.badge}"
+
+Key Points Extracted:
+${pointsText}
+
+Pro Insight: ${extraction.proTip}
+
+${"═".repeat(50)}
+MASTERCLASS DESIGN SPECIFICATIONS
+${"═".repeat(50)}
+
+CANVAS (mandatory):
+- Size: EXACTLY ${dimStr}px — this is non-negotiable
+- Background: ${isDark ? "dark navy gradient #0F172A→#1E293B" : guide.colors.split(",")[0]}
+- Border: ${isDark ? "none" : "6px solid #5D3A1A (warm wood-tone frame)"}
+- Padding: 24px on all sides (TIGHT — like reference images)
+- Font: Poppins from Google Fonts — weights 900, 700, 400 ONLY
+- Overflow: hidden
+- Content must fill 90-95% of canvas — ZERO empty space at bottom
+
+LAYOUT: ${guide.layout}
+
+HEADER (top 12-15% of canvas):
+- LEFT side: badge pill (10px uppercase, colored background, white text, rounded) + title below
+- Title: ALL CAPS, Poppins 900, ${analysis.format === "portrait" ? "32px" : "28px"}, letter-spacing -0.5px
+- ONE word in the title highlighted with accent color (most impactful word)
+- RIGHT side: contextual illustration — ${guide.illustration}
+- Bottom border: 3px solid accent color, 12px padding below
+
+SECTION DESIGN (7 sections — ALL required):
+- Each section: flex row with [circle number] [icon box] [text content]
+- Circle number: 30px diameter, solid accent color, white number 14px Poppins 900
+- Icon box: 32px, 8px border-radius, 10% opacity accent color background, containing a simple 20px stroke-based line icon (like Lucide/Feather icons — NOT filled, NOT clipart)
+- Section title: 14px Poppins 700, accent color matching the circle
+- Section body: 12px Poppins 400, color ${isDark ? "#94A3B8" : "#2D3748"}, line-height 1.3
+  - 25-40 words per body
+  - Sub-points separated by " • " for density
+  - One key phrase in BOLD matching section color
+  - At least one specific number, percentage, tool name, or metric
+- Section background: ${isDark ? "rgba(255,255,255,0.04) with 1px white/8% border" : "rgba(0,0,0,0.02)"}
+- Border-left: 3px solid section accent color
+- Border-radius: 8px
+- Padding: 10px 12px
+- Gap between sections: 7-8px ONLY (very tight)
+
+SECTION COLORS (must rotate in this exact order):
+1: #E53E3E (red)  2: #3182CE (blue)  3: #38A169 (green)
+4: #DD6B20 (orange)  5: #9B59B6 (purple)  6: #EC4899 (pink)  7: #00897B (teal)
+
+PRO TIP BOX (mandatory, after sections):
+- Dashed border: 2px dashed accent color
+- Background: 5% opacity accent color
+- Label: "PRO TIP:" in 11px uppercase Poppins 900, accent color
+- Body: specific actionable advice, 30-50 words
+- Border-radius: 8px
+- Padding: 10px 14px
+
+FOOTER (mandatory, at very bottom):
+- Border-top: 2px solid ${isDark ? "rgba(0,201,177,0.2)" : "#5D3A1A"}
+- Text: "Created with Supen.io · Follow for more"
+- Font: 12px Poppins 700, color ${isDark ? "#00C9B1" : "#5D3A1A"}
+- Margin-top: 8px, padding-top: 10px
+
+${"═".repeat(50)}
+TYPOGRAPHY RULES (STRICT)
+${"═".repeat(50)}
+
+- Title: Poppins 900, ALL CAPS, letter-spacing -0.5px
+- Section headers: Poppins 700, sentence case, colored
+- Body text: Poppins 400, sentence case, dark gray
+- Pro tip label: Poppins 900, uppercase, accent color
+- NEVER use italic — font-style must ALWAYS be normal
+- NEVER use decorative/script fonts
+- Line-height: 1.08 for titles, 1.3 for body
+
+${"═".repeat(50)}
+ICON & ILLUSTRATION GUIDE
+${"═".repeat(50)}
+
+Section icons (30x30px):
+- Style: stroke-based line art (1.5px stroke, no fill)
+- Like Lucide/Feather icon library
+- Color: matches section accent color
+- Background: 10% opacity colored rounded rectangle
+- Examples: lightbulb, target, zap, chart, brain, rocket, shield, book, users, code
+
+Header illustration (~90px):
+- Simple, elegant SVG-style graphic
+- Uses stroke lines (1.5px) and subtle fills (10-20% opacity)
+- Relevant to the content topic
+- Position: right side of header, vertically centered with title
+- NEVER use realistic images, photos, or complex clipart
+
+${"═".repeat(50)}
+VIRAL CONTENT FORMULAS
+${"═".repeat(50)}
+
+Title must use one of these proven patterns:
+- "[Number] [THINGS] THAT [BIG CLAIM]" → "7 AI TOOLS THAT REPLACE YOUR ENTIRE TEAM"
+- "STOP [DOING X]. [DO Y] INSTEAD." → "STOP USING CHATGPT WRONG. DO THIS INSTEAD."
+- "THE [ADJECTIVE] TRUTH ABOUT [TOPIC]" → "THE UGLY TRUTH ABOUT FREELANCING IN 2026"
+- "[X]% OF [PEOPLE] DON'T KNOW THIS" → "90% OF MARKETERS DON'T KNOW THIS HACK"
+- "HOW I [RESULT] IN [TIME]" → "HOW I MADE $10K IN 30 DAYS WITH AI"
+- "[THING] IS DEAD. HERE'S WHAT'S NEXT." → "SEO IS DEAD. HERE'S WHAT'S NEXT."
+
+Body text must:
+- Include specific tool names (Claude, Notion, Figma, etc.)
+- Include specific numbers (47%, 3x faster, $2K/month)
+- Answer "So what?" for every point
+- Use " • " to pack multiple sub-facts per section
+
+${"═".repeat(50)}
+CONTENT TO TRANSFORM
+${"═".repeat(50)}
+
+${content.slice(0, 3000)}
+
+Platform: ${platform}
+${customPrompt ? `\nSpecial instructions: ${customPrompt}` : ""}
+
+${"═".repeat(50)}
+FINAL QUALITY CHECKLIST
+${"═".repeat(50)}
+
+Before generating, verify ALL of these:
+[ ] Canvas is EXACTLY ${dimStr}px
+[ ] ALL 7 sections present and filled with 25-40 words each
+[ ] Header has: badge pill + ALL CAPS title + illustration
+[ ] Title uses a viral formula with ONE highlighted word
+[ ] Each section: colored circle number + icon + title + rich body
+[ ] Each body has at least one bold key phrase in accent color
+[ ] Each body has specific data (numbers, tool names, percentages)
+[ ] Pro tip box present with dashed border and actionable advice
+[ ] Footer present: "Created with Supen.io · Follow for more"
+[ ] NO italic text anywhere
+[ ] NO emoji characters — only clean line-art SVG icons
+[ ] Content fills 90-95% of canvas — NO dead space at bottom
+[ ] Colors rotate: red→blue→green→orange→purple→pink→teal
+[ ] Gap between sections is 7-8px (very tight, no wasted space)
+[ ] Font is Poppins only — 900/700/400 weights
+
+Generate the infographic image now. Output ONLY the image.`;
 }
 
 // ─── Post-process generated HTML ───

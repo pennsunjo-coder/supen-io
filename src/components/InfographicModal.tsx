@@ -133,7 +133,7 @@ export default function InfographicModal({ open, onClose, content, platform }: P
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: buildGeminiImagePrompt(content, platform) }] }],
+            contents: [{ parts: [{ text: buildGeminiImagePrompt(content, platform, customPrompt || undefined) }] }],
             generationConfig: {
               responseModalities: ["IMAGE", "TEXT"],
               responseMimeType: "image/png",
