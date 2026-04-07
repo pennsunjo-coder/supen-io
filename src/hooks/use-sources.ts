@@ -91,16 +91,13 @@ async function extractTextFromPdf(file: File): Promise<{ text: string; pages: nu
       }
 
       if (fullText.trim().length > 20) {
-        console.log("🟢 PDF.js:", pdf.numPages, "pages");
         return { text: fullText.trim(), pages: pdf.numPages };
       }
     } catch (err) {
-      console.warn("🟡 PDF.js failed:", err);
     }
   }
 
   // Safari or fallback: Edge Function via supabase.functions.invoke
-  console.log("🔵 Edge Function (Safari compatible)");
   const formData = new FormData();
   formData.append("file", file);
 
@@ -111,7 +108,6 @@ async function extractTextFromPdf(file: File): Promise<{ text: string; pages: nu
   if (error) throw new Error(error.message || "Edge Function failed");
   if (!data?.text) throw new Error("No text extracted by the server");
 
-  console.log("🟢 Edge Function:", data.pages, "pages");
   return { text: data.text, pages: data.pages };
 }
 
@@ -194,7 +190,6 @@ export function useSources() {
   const addUrl = useCallback(
     async (url: string): Promise<{ error: string | null }> => {
       if (!user) return { error: "Not connected" };
-      console.log("🔵 addUrl:", url);
 
       // Fetch via Edge Function (no CORS)
       let title = url.slice(0, 120);
@@ -207,12 +202,9 @@ export function useSources() {
         if (!fnErr && data?.text) {
           pageContent = data.text;
           title = data.title?.slice(0, 120) || title;
-          console.log("🟢 addUrl: fetched via Edge Function,", pageContent.length, "chars");
         } else {
-          console.warn("🟡 addUrl: Edge Function failed, storing URL only");
         }
       } catch {
-        console.warn("🟡 addUrl: Edge Function unavailable");
       }
 
       // Fallback: if Edge Function fails, try client-side
@@ -251,7 +243,6 @@ export function useSources() {
         if (error) return { error: error.message };
       }
 
-      console.log("🟢 addUrl: success,", chunks.length, "chunks");
       invalidateCache(`sources:${user.id}`);
       await fetchSources();
       return { error: null };
@@ -262,7 +253,6 @@ export function useSources() {
   const addNote = useCallback(
     async (title: string, content: string): Promise<{ error: string | null }> => {
       if (!user) return { error: "Not connected" };
-      console.log("🔵 addNote:", title);
 
       const chunks = chunkText(content);
 
@@ -285,7 +275,6 @@ export function useSources() {
         if (error) { console.warn("🔴 addNote error:", error.message); return { error: error.message }; }
       }
 
-      console.log("🟢 addNote: success");
       invalidateCache(`sources:${user.id}`);
       await fetchSources();
       return { error: null };
@@ -305,11 +294,9 @@ export function useSources() {
       let pdfText: string;
       let pageCount: number;
       try {
-        console.log("🔵 PDF: extracting text from", file.name, `(${(file.size / 1024).toFixed(0)}KB)`);
         const result = await extractTextFromPdf(file);
         pdfText = result.text;
         pageCount = result.pages;
-        console.log("🟢 PDF: extracted", pageCount, "pages,", pdfText.split(/\s+/).length, "words");
       } catch (err) {
         console.error("🔴 PDF extraction failed:", err);
         return { error: "Unable to read this PDF. The file may be protected or corrupted." };
@@ -360,7 +347,6 @@ export function useSources() {
         if (error) return { error: error.message };
       }
 
-      console.log(`🟢 PDF "${title}": ${pageCount} pages, ${chunks.length} chunks, ${pdfText.split(/\s+/).length} words — saved to sources`);
       await fetchSources();
       return { error: null };
     },
@@ -370,7 +356,6 @@ export function useSources() {
   const searchWeb = useCallback(
     async (query: string): Promise<{ error: string | null }> => {
       if (!user) return { error: "Not connected" };
-      console.log("🔵 searchWeb:", query);
 
       // Try via Edge Function (Tavily key server-side)
       let title = "";
@@ -383,10 +368,8 @@ export function useSources() {
         if (!fnErr && data?.content) {
           title = data.title || `Search: ${query.slice(0, 100)}`;
           content = data.content;
-          console.log("🟢 searchWeb: via Edge Function");
         }
       } catch {
-        console.warn("🟡 searchWeb: Edge Function unavailable, trying client-side");
       }
 
       // Fallback client-side if Edge Function fails
@@ -430,7 +413,6 @@ export function useSources() {
         if (error) return { error: error.message };
       }
 
-      console.log("🟢 searchWeb: saved,", chunks.length, "chunks");
       invalidateCache(`sources:${user.id}`);
       await fetchSources();
       return { error: null };

@@ -23,6 +23,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { assertOnline, withRetry, withTimeout, sanitizeInfographicHtml, friendlyError } from "@/lib/resilience";
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
@@ -157,14 +158,21 @@ export default function InfographicModal({ open, onClose, content, platform }: P
   }
 
   async function generateWithClaude(): Promise<string> {
-    const response = await anthropic.messages.create({
-      model: CLAUDE_MODEL,
-      max_tokens: 4096,
-      messages: [{
-        role: "user",
-        content: buildInfographicPrompt(content, platform, customPrompt || undefined),
-      }],
-    });
+    assertOnline();
+    const response = await withRetry(
+      () => withTimeout(
+        anthropic.messages.create({
+          model: CLAUDE_MODEL,
+          max_tokens: 4096,
+          messages: [{
+            role: "user",
+            content: buildInfographicPrompt(content, platform, customPrompt || undefined),
+          }],
+        }),
+        45_000,
+      ),
+      { maxRetries: 1, baseDelayMs: 3000 },
+    );
     const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
     const htmlMatch = text.match(/<!DOCTYPE html>[\s\S]*<\/html>/i)
       || text.match(/<html[\s\S]*<\/html>/i)
@@ -188,12 +196,13 @@ export default function InfographicModal({ open, onClose, content, platform }: P
         return;
       }
       const rawHtml = await generateWithClaude();
-      const html = postProcessHtml(rawHtml);
+      const html = sanitizeInfographicHtml(postProcessHtml(rawHtml));
       setHtmlCode(html);
       setResultMode("claude");
       setQualityScore(scoreInfographic(html, dims));
-    } catch {
-      setHtmlCode("<div style='padding:40px;color:#999;font-family:sans-serif;text-align:center'>Generation error. Please try again.</div>");
+    } catch (err) {
+      const msg = friendlyError(err);
+      setHtmlCode(`<div style='padding:40px;color:#999;font-family:sans-serif;text-align:center'>${msg}</div>`);
       setResultMode("claude");
     }
     setStep("result");
@@ -333,13 +342,6 @@ export default function InfographicModal({ open, onClose, content, platform }: P
         ? `[Gemini Image] ${content.slice(0, 200)}`
         : htmlCode.slice(0, 10000);
 
-      console.log("[InfographicModal] Saving infographic...", {
-        userId: user.id,
-        platform,
-        resultMode,
-        contentLength: saveContent.length,
-      });
-
       const { error } = await supabase.from("generated_content").insert({
         user_id: user.id,
         platform,
@@ -353,7 +355,6 @@ export default function InfographicModal({ open, onClose, content, platform }: P
         console.error("[InfographicModal] Supabase save error:", error.message, error.details, error.hint);
         toast.error(`Erreur de sauvegarde : ${error.message}`);
       } else {
-        console.log("[InfographicModal] Saved successfully!");
         setSaved(true);
         toast.success("Infographie sauvegardée !");
       }
@@ -558,7 +559,7 @@ export default function InfographicModal({ open, onClose, content, platform }: P
                           width: `${100 / iframeScale}%`,
                           height: `${100 / iframeScale}%`,
                         }}
-                        sandbox="allow-same-origin allow-scripts"
+                        sandbox="allow-same-origin"
                         title="Infographic preview"
                       />
                     </div>
@@ -718,7 +719,7 @@ export default function InfographicModal({ open, onClose, content, platform }: P
                   <iframe
                     srcDoc={injectFontsInHtml(htmlCode)}
                     style={{ width: dims.width, height: dims.height, border: "none", background: "#FFF8F0" }}
-                    sandbox="allow-same-origin allow-scripts"
+                    sandbox="allow-same-origin"
                     title="Infographic full view"
                   />
                 )}

@@ -15,6 +15,7 @@ import { sanitizeInput } from "@/lib/security";
 import { toast } from "sonner";
 import { searchViralReferences, ViralReference, searchUserSources } from "@/lib/embeddings";
 import { supabase } from "@/lib/supabase";
+import { assertOnline, withRetry, withTimeout, friendlyError } from "@/lib/resilience";
 import type { Source } from "@/types/database";
 import type { UserProfile } from "@/hooks/use-profile";
 import type { ContentSession } from "@/hooks/use-dashboard";
@@ -276,26 +277,40 @@ Règles strictes :
 9. Réponds UNIQUEMENT avec les 5 variations séparées par ---VARIATION---. Rien d'autre.
 10. Réponds toujours en français.${docInstruction}`;
 
-      const response = await anthropic.messages.create({
-        model: CLAUDE_MODEL,
-        max_tokens: 4096,
-        system: systemPrompt,
-        messages: [{ role: "user", content: userMessage }],
-      });
+      assertOnline();
 
+      const response = await withRetry(
+        () => withTimeout(
+          anthropic.messages.create({
+            model: CLAUDE_MODEL,
+            max_tokens: 4096,
+            system: systemPrompt,
+            messages: [{ role: "user", content: userMessage }],
+          }),
+          45_000,
+          "La generation a pris trop de temps (45s). Reessaie avec un sujet plus court."
+        ),
+        {
+          maxRetries: 1,
+          baseDelayMs: 3000,
+          onRetry: (attempt, delay) => {
+            setError(`Serveur surcharge, nouvel essai dans ${Math.round(delay / 1000)}s... (tentative ${attempt + 1})`);
+          },
+        }
+      );
+
+      setError(null);
       const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
       const parsed = parseVariations(text);
       setVariations(parsed);
 
-      // Notify the AI coach
       if (parsed.length > 0 && onContentGenerated) {
         onContentGenerated(parsed[0].content);
       }
 
-      // Save to generated_content
       await saveVariations(parsed);
     } catch (err: unknown) {
-      setError(`Generation error: ${err instanceof Error ? err.message : "Unknown error"}`);
+      setError(friendlyError(err));
     } finally {
       setIsGenerating(false);
     }

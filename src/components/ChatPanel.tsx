@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { anthropic, CLAUDE_MODEL, SYSTEM_PROMPT } from "@/lib/anthropic";
 import { sanitizeInput, createRateLimiter } from "@/lib/security";
+import { assertOnline, friendlyError } from "@/lib/resilience";
 import type { MessageParam } from "@anthropic-ai/sdk/resources/messages";
 import type { Source } from "@/types/database";
 import type { ConversationMessage } from "@/types/database";
@@ -77,7 +78,12 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
     if (!content) return;
     if (!rateLimiter.canProceed()) {
       const wait = Math.ceil(rateLimiter.getRemainingTime() / 1000);
-      setError(`Limit: ${RATE_LIMIT_MAX} msg/min. Retry in ${wait}s.`);
+      setError(`Limite : ${RATE_LIMIT_MAX} msg/min. Reessaie dans ${wait}s.`);
+      return;
+    }
+
+    try { assertOnline(); } catch (e) {
+      setError(e instanceof Error ? e.message : "Pas de connexion internet.");
       return;
     }
 
@@ -106,7 +112,7 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
     } catch (err: unknown) {
       if (err instanceof Error && err.name === "AbortError") return;
       setStreamingContent("");
-      setError(`Error: ${err instanceof Error ? err.message : "Unknown"}`);
+      setError(friendlyError(err));
     } finally {
       setIsLoading(false);
       abortRef.current = null;

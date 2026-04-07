@@ -151,7 +151,6 @@ export function useDashboard() {
         .limit(25);
 
       if (topErr1) {
-        console.warn("🔴 useDashboard topContent full query error:", topErr1.message);
         // Fallback : essayer sans viral_score et image_prompt (colonnes peut-être absentes)
         const { data: td2, error: topErr2 } = await supabase
           .from("generated_content")
@@ -160,7 +159,6 @@ export function useDashboard() {
           .order("created_at", { ascending: false })
           .limit(25);
         if (topErr2) {
-          console.warn("🔴 useDashboard fallback query error:", topErr2.message);
         } else if (td2) {
           topData = td2.map((r) => ({ ...r, viral_score: 0, image_prompt: "" })) as DashboardContent[];
         }
@@ -169,11 +167,9 @@ export function useDashboard() {
       }
 
       if (topData && topData.length > 0) {
-        console.log("🟢 useDashboard: fetched", topData.length, "top contents");
         setTopContent(topData);
         setSessions(groupIntoSessions(topData).slice(0, 10));
       } else {
-        console.log("🟡 useDashboard: no content found for user", user.id);
         setTopContent([]);
         setSessions([]);
       }

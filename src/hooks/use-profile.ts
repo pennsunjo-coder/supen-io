@@ -37,14 +37,7 @@ export function useProfile() {
         .eq("user_id", user.id)
         .maybeSingle();
 
-      console.log("🔵 fetchProfile result:", {
-        onboarding_completed: data?.onboarding_completed,
-        user_id: data?.user_id,
-        error: error?.message,
-      });
-
       if (error) {
-        console.warn("useProfile fetch:", error.message);
         setProfile(null);
       } else if (data) {
         setProfile(data as UserProfile);
@@ -84,13 +77,7 @@ export function useProfile() {
           .select()
           .single();
 
-        console.log("🟢 updateProfile result:", {
-          onboarding_completed: data?.onboarding_completed,
-          success: !error,
-        });
-
         if (error) {
-          console.warn("useProfile upsert error:", error.message);
           return { success: false, error: error.message };
         }
         if (data) {

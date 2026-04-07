@@ -60,7 +60,6 @@ export function useActivity() {
       const thisWeek = all.filter((c) => c.created_at >= mondayISO).length;
       const thisMonth = all.filter((c) => c.created_at >= firstOfMonthISO).length;
 
-      console.log("🔵 Activity:", { total, thisWeek, thisMonth, mondayISO, firstOfMonthISO, sample: all[0]?.created_at });
 
       // Heatmap 28 days
       const heatmap: HeatmapDay[] = Array.from({ length: 28 }, (_, i) => {
