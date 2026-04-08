@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useHistory, GeneratedItem } from "@/hooks/use-history";
@@ -142,14 +142,20 @@ const History = () => {
   const { grouped, loading } = useHistory();
   const [filter, setFilter] = useState("Tout");
 
-  const filteredGroups = grouped
-    .map((group) => ({
-      ...group,
-      items: filter === "Tout" ? group.items : group.items.filter((i) => i.platform === filter),
-    }))
-    .filter((group) => group.items.length > 0);
+  const filteredGroups = useMemo(
+    () => grouped
+      .map((group) => ({
+        ...group,
+        items: filter === "Tout" ? group.items : group.items.filter((i) => i.platform === filter),
+      }))
+      .filter((group) => group.items.length > 0),
+    [grouped, filter]
+  );
 
-  const totalCount = filteredGroups.reduce((acc, g) => acc + g.items.length, 0);
+  const totalCount = useMemo(
+    () => filteredGroups.reduce((acc, g) => acc + g.items.length, 0),
+    [filteredGroups]
+  );
 
   return (
     <DashboardLayout>

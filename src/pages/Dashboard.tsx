@@ -78,35 +78,28 @@ const Dashboard = () => {
   // Refetch quand genCount change (après reset du wizard qui revient à l'accueil)
   useEffect(() => {
     if (genCount > 0) {
-      console.log("🔄 Dashboard: refetching after generation", genCount);
       dashboard.refetch();
       activity.refetch();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [genCount]);
-
-  // Debug logs
-  useEffect(() => {
-    console.log("📊 Dashboard state:", {
-      topContent: dashboard.topContent.length,
-      activityTotal: activity.total,
-      dashboardLoading: dashboard.loading,
-    });
-  }, [dashboard.topContent, activity.total, dashboard.loading]);
 
   return (
     <DashboardLayout>
       <div className="flex-1 flex min-h-0">
-        <SourcePanel
-          groupedSources={grouped}
-          loading={sourcesLoading}
-          activeSourceIds={activeSourceIds}
-          onToggleGroup={handleToggleGroup}
-          onAddUrl={addUrl}
-          onAddNote={addNote}
-          onAddPdf={addPdf}
-          onSearchWeb={searchWeb}
-          onRemoveGroup={removeGrouped}
-        />
+        <div className="hidden md:block">
+          <SourcePanel
+            groupedSources={grouped}
+            loading={sourcesLoading}
+            activeSourceIds={activeSourceIds}
+            onToggleGroup={handleToggleGroup}
+            onAddUrl={addUrl}
+            onAddNote={addNote}
+            onAddPdf={addPdf}
+            onSearchWeb={searchWeb}
+            onRemoveGroup={removeGrouped}
+          />
+        </div>
 
         <div className="flex-1 flex flex-col min-w-0">
           <StudioWizard
@@ -121,7 +114,7 @@ const Dashboard = () => {
           />
         </div>
 
-        <div className="w-[300px] shrink-0 border-l border-border/40 bg-accent/[0.03]">
+        <div className="hidden lg:block w-[300px] shrink-0 border-l border-border/40 bg-accent/[0.03]">
           <ChatPanel
             sources={sources}
             messages={messages}

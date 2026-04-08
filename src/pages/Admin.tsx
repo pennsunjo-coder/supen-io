@@ -76,7 +76,7 @@ export default function Admin() {
           className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          Dashboard
+          Retour au dashboard
         </button>
         <div className="ml-auto flex items-center gap-2">
           <span className="text-[10px] font-mono bg-red-500/15 text-red-400 px-2 py-0.5 rounded-full">ADMIN</span>

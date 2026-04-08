@@ -124,11 +124,11 @@ export default function Settings() {
     });
     setSaving(false);
     if (success) {
-      toast.success("Profile saved");
+      toast.success("Profil sauvegarde !");
       setJustSaved(true);
       setTimeout(() => setJustSaved(false), 2000);
     } else {
-      toast.error(error || "Error saving");
+      toast.error(error || "Erreur lors de la sauvegarde");
     }
   }
 
@@ -140,15 +140,14 @@ export default function Settings() {
   async function handleDeleteAccount() {
     if (!user) return;
     try {
-      // Delete profile + content, then sign out
       await supabase.from("user_profiles").delete().eq("user_id", user.id);
       await supabase.from("generated_content").delete().eq("user_id", user.id);
       await supabase.from("sources").delete().eq("user_id", user.id);
       await signOut();
-      toast.success("Account deleted");
+      toast.success("Compte supprime");
       navigate("/");
     } catch {
-      toast.error("Error deleting account");
+      toast.error("Erreur lors de la suppression du compte");
     }
   }
 
@@ -169,14 +168,14 @@ export default function Settings() {
           className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to dashboard
+          Retour au dashboard
         </button>
-        <h1 className="ml-auto text-sm font-semibold">Settings</h1>
+        <h1 className="ml-auto text-sm font-semibold">Parametres</h1>
       </header>
 
-      <div className="flex max-w-5xl mx-auto py-8 px-4 gap-8">
+      <div className="flex flex-col md:flex-row max-w-5xl mx-auto py-8 px-4 gap-6 md:gap-8">
         {/* Sidebar nav */}
-        <nav className="w-48 shrink-0 space-y-1">
+        <nav className="md:w-48 shrink-0 flex md:flex-col gap-1 overflow-x-auto md:overflow-visible">
           {NAV_ITEMS.map((item) => (
             <button
               key={item.id}
@@ -200,18 +199,18 @@ export default function Settings() {
           {activeSection === "profil" && (
             <>
               <div>
-                <h2 className="text-lg font-bold mb-1">Profile</h2>
-                <p className="text-sm text-muted-foreground">Your personal information</p>
+                <h2 className="text-lg font-bold mb-1">Profil</h2>
+                <p className="text-sm text-muted-foreground">Tes informations personnelles</p>
               </div>
 
               <div className="bg-card border border-border/30 rounded-xl p-6 space-y-5">
-                {/* First name */}
+                {/* Prenom */}
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">First name</label>
+                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Prenom</label>
                   <Input
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
-                    placeholder="Your first name"
+                    placeholder="Ton prenom"
                     className="max-w-sm"
                   />
                 </div>
@@ -224,12 +223,12 @@ export default function Settings() {
                     disabled
                     className="max-w-sm bg-muted/50 cursor-not-allowed"
                   />
-                  <p className="text-[11px] text-muted-foreground mt-1">Email cannot be changed</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">L'email ne peut pas etre modifie</p>
                 </div>
 
                 {/* Niche */}
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Niche / Field</label>
+                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Niche / Domaine</label>
                   <div className="flex flex-wrap gap-2">
                     {NICHES.map((n) => (
                       <button
@@ -248,9 +247,9 @@ export default function Settings() {
                   </div>
                 </div>
 
-                {/* Platforms */}
+                {/* Plateformes */}
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Preferred platforms</label>
+                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Plateformes preferees</label>
                   <div className="flex flex-wrap gap-2">
                     {PLATFORMS.map((p) => (
                       <button
@@ -285,8 +284,8 @@ export default function Settings() {
           {activeSection === "preferences" && (
             <>
               <div>
-                <h2 className="text-lg font-bold mb-1">Content preferences</h2>
-                <p className="text-sm text-muted-foreground">Customize content generation</p>
+                <h2 className="text-lg font-bold mb-1">Preferences de contenu</h2>
+                <p className="text-sm text-muted-foreground">Personnalise la generation de contenu</p>
               </div>
 
               <div className="bg-card border border-border/30 rounded-xl p-6 space-y-6">
@@ -296,7 +295,7 @@ export default function Settings() {
 
                 {/* Langue */}
                 <div className="opacity-50 pointer-events-none">
-                  <label className="text-xs font-medium text-muted-foreground mb-2 block">Generation language</label>
+                  <label className="text-xs font-medium text-muted-foreground mb-2 block">Langue de generation</label>
                   <div className="flex gap-2">
                     {LANGUAGES.map((l) => (
                       <button
@@ -317,7 +316,7 @@ export default function Settings() {
 
                 {/* Ton */}
                 <div className="opacity-50 pointer-events-none">
-                  <label className="text-xs font-medium text-muted-foreground mb-2 block">Default tone</label>
+                  <label className="text-xs font-medium text-muted-foreground mb-2 block">Ton par defaut</label>
                   <div className="flex flex-wrap gap-2">
                     {TONES.map((t) => (
                       <button
@@ -338,7 +337,7 @@ export default function Settings() {
 
                 {/* Longueur */}
                 <div className="opacity-50 pointer-events-none">
-                  <label className="text-xs font-medium text-muted-foreground mb-2 block">Preferred length</label>
+                  <label className="text-xs font-medium text-muted-foreground mb-2 block">Longueur preferee</label>
                   <div className="flex gap-2">
                     {LENGTHS.map((l) => (
                       <button
@@ -360,9 +359,9 @@ export default function Settings() {
                 {/* Anti-IA */}
                 <div className="flex items-center justify-between py-3 border-t border-border/20">
                   <div>
-                    <p className="text-sm font-medium">Anti-AI Protocol</p>
+                    <p className="text-sm font-medium">Protocole Anti-IA</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Automatically humanizes generated content
+                      Humanise automatiquement le contenu genere
                     </p>
                   </div>
                   <Switch checked={antiAi} onCheckedChange={setAntiAi} />
