@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Youtube, Lightbulb, Wand2, BarChart3,
-  Loader2, Wrench, Check, Copy, Plus, ChevronDown,
+  Youtube, Lightbulb, Wand2, BarChart3, TrendingUp,
+  Loader2, Wrench, Check, Copy, Plus, ChevronDown, ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -16,8 +16,10 @@ import { useProfile } from "@/hooks/use-profile";
 import { useSources } from "@/hooks/use-sources";
 import { assertOnline, withTimeout, friendlyError } from "@/lib/resilience";
 import { getHooks } from "@/lib/viral-hooks";
+import { fetchTrends, type Trend } from "@/lib/trends";
+import { useNavigate } from "react-router-dom";
 
-type ToolId = "transcriber" | "hooks" | "humanizer" | "analyzer";
+type ToolId = "transcriber" | "hooks" | "humanizer" | "analyzer" | "trends";
 
 const TOOLS: Array<{
   id: ToolId;
@@ -53,6 +55,13 @@ const TOOLS: Array<{
     description: "Analyse un post concurrent et decouvre ce qui le rend viral.",
     icon: BarChart3,
     color: "text-emerald-400 bg-emerald-500/10",
+  },
+  {
+    id: "trends",
+    title: "Radar de tendances",
+    description: "Decouvre les sujets qui buzzent dans ta niche en temps reel.",
+    icon: TrendingUp,
+    color: "text-cyan-400 bg-cyan-500/10",
   },
 ];
 
@@ -130,6 +139,11 @@ const Tools = () => {
             {openTool === "analyzer" && (
               <motion.div key="analyzer" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-5">
                 <ViralAnalyzer />
+              </motion.div>
+            )}
+            {openTool === "trends" && (
+              <motion.div key="trends" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-5">
+                <TrendsRadar profileNiche={profile?.niche} addNote={addNote} />
               </motion.div>
             )}
           </AnimatePresence>
@@ -614,6 +628,123 @@ Sois strict dans la notation. Tout en francais.`,
               ))}
             </ul>
           </div>
+        </motion.div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Tool 5: Trends Radar ─── */
+
+function TrendsRadar({ profileNiche, addNote }: { profileNiche?: string; addNote: (title: string, content: string) => Promise<{ error: string | null }> }) {
+  const navigate = useNavigate();
+  const [niche, setNiche] = useState(profileNiche || "");
+  const [trends, setTrends] = useState<Trend[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [addingIdx, setAddingIdx] = useState<number | null>(null);
+  const [addedSet, setAddedSet] = useState<Set<number>>(new Set());
+
+  async function handleScan() {
+    if (!niche.trim()) return;
+    setLoading(true);
+    setTrends([]);
+    setAddedSet(new Set());
+
+    try {
+      const fetched = await fetchTrends(niche, 8);
+      if (fetched.length === 0) {
+        toast.error("Aucune tendance trouvee. Verifie ta connexion ou la configuration Tavily.");
+      } else {
+        setTrends(fetched);
+        toast.success(`${fetched.length} tendances trouvees !`);
+      }
+    } catch (err) {
+      toast.error("Erreur lors du scan des tendances");
+    }
+    setLoading(false);
+  }
+
+  async function handleAddTrend(trend: Trend, idx: number) {
+    setAddingIdx(idx);
+    const noteContent = `${trend.title}\n\nSource : ${trend.source} (${trend.url})\n\n${trend.snippet}`;
+    const { error } = await addNote(`Tendance : ${trend.title.slice(0, 100)}`, noteContent);
+    setAddingIdx(null);
+    if (error) {
+      toast.error(`Erreur : ${error}`);
+    } else {
+      setAddedSet((prev) => new Set(prev).add(idx));
+      toast.success("Tendance ajoutee aux sources !");
+    }
+  }
+
+  function handleCreateContent(trend: Trend) {
+    sessionStorage.setItem("supen_pending_idea", trend.title);
+    toast.success("Sujet selectionne, redirection vers le Studio...");
+    navigate("/dashboard");
+  }
+
+  return (
+    <div className="rounded-xl border border-border/30 bg-card p-5">
+      <div className="flex items-center gap-2 mb-3">
+        <TrendingUp className="w-4 h-4 text-cyan-400" />
+        <h3 className="text-sm font-semibold">Radar de tendances</h3>
+      </div>
+
+      <div className="flex gap-2 mb-3">
+        <Input
+          value={niche}
+          onChange={(e) => setNiche(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && !loading && handleScan()}
+          placeholder="Ta niche (ex: marketing, IA, fitness...)"
+          disabled={loading}
+          className="bg-accent/30 border-border/30 h-10 text-sm"
+        />
+        <Button onClick={handleScan} disabled={loading || !niche.trim()} className="h-10 gap-2 text-xs font-semibold min-w-[120px]">
+          {loading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Scan...</> : <><TrendingUp className="w-3.5 h-3.5" /> Scanner</>}
+        </Button>
+      </div>
+
+      {trends.length > 0 && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-2">
+          {trends.map((trend, idx) => (
+            <div key={idx} className="rounded-lg border border-border/20 bg-accent/10 p-3 hover:border-border/40 transition-all">
+              <div className="flex items-start justify-between gap-2 mb-1.5">
+                <p className="text-[12px] font-semibold text-foreground/90 leading-snug flex-1">{trend.title}</p>
+                <span className="text-[9px] text-cyan-400/60 font-mono shrink-0">{trend.score}</span>
+              </div>
+              {trend.snippet && (
+                <p className="text-[11px] text-muted-foreground/70 mb-2 line-clamp-2">{trend.snippet}</p>
+              )}
+              <div className="flex items-center justify-between gap-2">
+                <a
+                  href={trend.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] text-muted-foreground/50 hover:text-foreground flex items-center gap-1"
+                >
+                  <ExternalLink className="w-2.5 h-2.5" /> {trend.source}
+                </a>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => handleAddTrend(trend, idx)}
+                    disabled={addingIdx === idx || addedSet.has(idx)}
+                    className="text-[10px] text-muted-foreground/60 hover:text-foreground px-2 py-1 rounded hover:bg-accent/30 transition-all disabled:opacity-50 flex items-center gap-1"
+                  >
+                    {addingIdx === idx ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> :
+                     addedSet.has(idx) ? <Check className="w-2.5 h-2.5 text-emerald-400" /> :
+                     <Plus className="w-2.5 h-2.5" />}
+                    {addedSet.has(idx) ? "Ajoute" : "Ajouter"}
+                  </button>
+                  <button
+                    onClick={() => handleCreateContent(trend)}
+                    className="text-[10px] text-cyan-400/80 hover:text-cyan-400 font-medium px-2 py-1 rounded hover:bg-cyan-500/10 transition-all"
+                  >
+                    Creer →
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
         </motion.div>
       )}
     </div>

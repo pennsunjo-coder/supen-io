@@ -20,6 +20,7 @@ import GenerationProgress, { CONTENT_STEPS } from "@/components/GenerationProgre
 import { scoreAllVariations, scoreColor, scoreBarColor, scoreBadge, type ScoreDetails } from "@/lib/viral-scorer";
 import { saveInteraction, getUserStyleMemory, hasStyleMemory } from "@/lib/user-memory";
 import { getHooks, detectNiche, getDailyHook, type Hook } from "@/lib/viral-hooks";
+import { fetchTrends, type Trend } from "@/lib/trends";
 import type { Source } from "@/types/database";
 import type { UserProfile } from "@/hooks/use-profile";
 import type { ContentSession } from "@/hooks/use-dashboard";
@@ -27,7 +28,7 @@ import type { ActivityData } from "@/hooks/use-activity";
 import { ContentSessionGrid } from "@/components/DashboardWidgets";
 import { ActivityWidget } from "@/components/ActivityWidget";
 import InfographicModal from "@/components/InfographicModal";
-import { StickyNote, Globe as GlobeIcon, Brain, ThumbsUp, ThumbsDown } from "lucide-react";
+import { StickyNote, Globe as GlobeIcon, Brain, ThumbsUp, ThumbsDown, TrendingUp, ChevronDown } from "lucide-react";
 
 /* ─── Platform icons ─── */
 
@@ -160,6 +161,31 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
   const [styleMemoryActive, setStyleMemoryActive] = useState(false);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<Record<number, "liked" | "disliked" | null>>({});
+  const [trends, setTrends] = useState<Trend[]>([]);
+  const [trendsLoading, setTrendsLoading] = useState(false);
+  const [trendsOpen, setTrendsOpen] = useState(false);
+
+  async function loadTrends() {
+    if (trends.length > 0) {
+      setTrendsOpen((v) => !v);
+      return;
+    }
+    setTrendsLoading(true);
+    setTrendsOpen(true);
+    const fetched = await fetchTrends(profile?.niche || "general", 5);
+    setTrends(fetched);
+    setTrendsLoading(false);
+    if (fetched.length === 0) {
+      toast.error("Impossible de charger les tendances. Reessaie plus tard.");
+    }
+  }
+
+  function useTrend(trend: Trend) {
+    setSourceText(trend.title);
+    setSourceMode("idea");
+    setStarted(true);
+    setStep(2);
+  }
 
   // Hook suggestions based on user input + profile niche
   const suggestedHooks = useMemo<Hook[]>(() => {
@@ -609,6 +635,50 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                 >
                   <Copy className="w-2.5 h-2.5" /> Copier ce hook
                 </button>
+              </div>
+
+              {/* Tendances de ta niche */}
+              <div className="mt-3 max-w-md mx-auto rounded-xl border border-emerald-500/15 bg-gradient-to-br from-emerald-500/[0.05] to-teal-500/[0.03] overflow-hidden">
+                <button
+                  onClick={loadTrends}
+                  className="w-full flex items-center gap-2 px-4 py-3 text-left"
+                >
+                  <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="text-[11px] font-semibold text-emerald-400/90 flex-1">Tendances dans ta niche</span>
+                  {trendsLoading ? (
+                    <RefreshCw className="w-3 h-3 animate-spin text-emerald-400/60" />
+                  ) : (
+                    <ChevronDown className={cn("w-3.5 h-3.5 text-emerald-400/60 transition-transform", trendsOpen && "rotate-180")} />
+                  )}
+                </button>
+                <AnimatePresence>
+                  {trendsOpen && trends.length > 0 && (
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="px-4 pb-3 space-y-2">
+                      {trends.map((trend, i) => (
+                        <div key={i} className="rounded-lg border border-border/15 bg-background/40 p-2.5 text-left">
+                          <p className="text-[11px] font-medium text-foreground/90 leading-snug mb-1 line-clamp-2">{trend.title}</p>
+                          {trend.snippet && (
+                            <p className="text-[10px] text-muted-foreground/60 line-clamp-2 mb-1.5">{trend.snippet}</p>
+                          )}
+                          <div className="flex items-center justify-between">
+                            <span className="text-[9px] text-muted-foreground/40">{trend.source}</span>
+                            <button
+                              onClick={() => useTrend(trend)}
+                              className="text-[10px] text-emerald-400/80 hover:text-emerald-400 font-medium flex items-center gap-1"
+                            >
+                              Creer du contenu <ArrowRight className="w-2.5 h-2.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </motion.div>
+                  )}
+                  {trendsOpen && !trendsLoading && trends.length === 0 && (
+                    <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} className="px-4 pb-3 text-[10px] text-muted-foreground/50 text-center">
+                      Aucune tendance trouvee. Reessaie plus tard.
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
 

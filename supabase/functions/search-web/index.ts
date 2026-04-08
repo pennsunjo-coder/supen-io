@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 200, headers: corsHeaders });
 
   try {
-    const { query } = await req.json();
+    const { query, max_results } = await req.json();
     if (!query) return json({ error: "No query" }, 400);
 
     const TAVILY_KEY = Deno.env.get("TAVILY_API_KEY");
@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         api_key: TAVILY_KEY,
         query,
-        max_results: 3,
+        max_results: typeof max_results === "number" && max_results > 0 ? Math.min(max_results, 10) : 3,
         include_answer: true,
       }),
     });
@@ -46,7 +46,13 @@ Deno.serve(async (req) => {
 
     const title = `Recherche : ${query.slice(0, 100)}`;
 
-    return json({ title, content: content.trim() });
+    // Return both formatted content (for source insertion) AND raw results (for trends)
+    return json({
+      title,
+      content: content.trim(),
+      results: data.results || [],
+      answer: data.answer || "",
+    });
   } catch (err) {
     return json({ error: err instanceof Error ? err.message : "Erreur serveur" }, 500);
   }
