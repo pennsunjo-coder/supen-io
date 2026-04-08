@@ -194,7 +194,7 @@ const SourcePanel = ({
   };
 
   return (
-    <div className="w-[250px] flex flex-col border-r border-border/40 bg-accent/[0.03]">
+    <div className="w-full md:w-[250px] flex flex-col h-full">
       {/* Header */}
       <div className="px-5 pt-5 pb-3 border-b border-border/20 shrink-0">
         <h2 className="text-base font-semibold text-foreground">Sources</h2>
@@ -226,7 +226,7 @@ const SourcePanel = ({
               }}
               disabled={saving || pdfLoading}
               className={cn(
-                "flex flex-col items-center gap-1 px-1 py-2 rounded-lg border text-[11px] font-medium transition-all disabled:opacity-50",
+                "flex flex-col items-center gap-1 px-1 py-3 md:py-2 rounded-lg border text-[11px] font-medium transition-all disabled:opacity-50 active:scale-95",
                 isPdfBusy
                   ? "border-primary/40 bg-primary/10 text-primary"
                   : isActive
@@ -234,7 +234,7 @@ const SourcePanel = ({
                     : "border-border/40 text-muted-foreground hover:text-foreground hover:bg-accent/50 hover:border-border/60"
               )}
             >
-              {isPdfBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Icon className="w-4 h-4" />}
+              {isPdfBusy ? <Loader2 className="w-5 h-5 md:w-4 md:h-4 animate-spin" /> : <Icon className="w-5 h-5 md:w-4 md:h-4" />}
               {isPdfBusy ? "Import..." : label}
             </button>
           );

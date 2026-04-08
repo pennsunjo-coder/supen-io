@@ -11,6 +11,10 @@ import { useActivity } from "@/hooks/use-activity";
 import { invalidateCache } from "@/lib/cache";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
+import { BookOpen, Sparkles, Bot } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+type MobileTab = "sources" | "studio" | "coach";
 
 const Dashboard = () => {
   const { profile } = useProfile();
@@ -37,6 +41,7 @@ const Dashboard = () => {
 
   const [activeSourceIds, setActiveSourceIds] = useState<Set<string>>(new Set());
   const [lastGeneratedContent, setLastGeneratedContent] = useState<string>("");
+  const [mobileTab, setMobileTab] = useState<MobileTab>("studio");
 
   // Compteur de générations pour forcer le refetch
   const [genCount, setGenCount] = useState(0);
@@ -67,7 +72,6 @@ const Dashboard = () => {
   }, []);
 
   const handleGenerationComplete = useCallback(() => {
-    // Invalider le cache pour forcer un vrai refetch
     invalidateCache("history:");
     invalidateCache("dashboard:");
     dashboard.refetch();
@@ -75,7 +79,6 @@ const Dashboard = () => {
     setGenCount((c) => c + 1);
   }, [dashboard, activity]);
 
-  // Refetch quand genCount change (après reset du wizard qui revient à l'accueil)
   useEffect(() => {
     if (genCount > 0) {
       dashboard.refetch();
@@ -86,8 +89,12 @@ const Dashboard = () => {
 
   return (
     <DashboardLayout>
-      <div className="flex-1 flex min-h-0">
-        <div className="hidden md:block">
+      <div className="flex-1 flex min-h-0 pb-16 md:pb-0">
+        {/* Sources panel: desktop always visible, mobile only if tab active */}
+        <div className={cn(
+          "shrink-0 border-r border-border/40 bg-accent/[0.03] md:w-auto md:flex md:flex-col",
+          mobileTab === "sources" ? "flex flex-col w-full" : "hidden md:flex",
+        )}>
           <SourcePanel
             groupedSources={grouped}
             loading={sourcesLoading}
@@ -101,7 +108,11 @@ const Dashboard = () => {
           />
         </div>
 
-        <div className="flex-1 flex flex-col min-w-0">
+        {/* Studio: desktop always visible, mobile only if tab active */}
+        <div className={cn(
+          "flex-1 flex-col min-w-0 md:flex",
+          mobileTab === "studio" ? "flex" : "hidden md:flex",
+        )}>
           <StudioWizard
             activeSourceIds={Array.from(activeSourceIds)}
             sources={sources}
@@ -114,7 +125,11 @@ const Dashboard = () => {
           />
         </div>
 
-        <div className="hidden lg:block w-[300px] shrink-0 border-l border-border/40 bg-accent/[0.03]">
+        {/* Coach panel: desktop visible at lg+, mobile only if tab active */}
+        <div className={cn(
+          "shrink-0 border-l border-border/40 bg-accent/[0.03] lg:w-[300px] lg:flex lg:flex-col",
+          mobileTab === "coach" ? "flex flex-col w-full" : "hidden lg:flex",
+        )}>
           <ChatPanel
             sources={sources}
             messages={messages}
@@ -126,6 +141,50 @@ const Dashboard = () => {
           />
         </div>
       </div>
+
+      {/* Mobile bottom navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-background/95 backdrop-blur-md border-t border-border/30 flex items-center justify-around px-2 py-1.5 pb-[max(env(safe-area-inset-bottom),0.375rem)]">
+        <button
+          onClick={() => setMobileTab("sources")}
+          className={cn(
+            "flex flex-col items-center gap-0.5 py-1.5 px-4 rounded-xl transition-all relative",
+            mobileTab === "sources" ? "text-primary" : "text-muted-foreground/60",
+          )}
+        >
+          <BookOpen className="w-5 h-5" />
+          <span className="text-[9px] font-medium">Sources</span>
+          {grouped.length > 0 && (
+            <span className="absolute top-0 right-2 w-1.5 h-1.5 rounded-full bg-primary" />
+          )}
+        </button>
+
+        <button
+          onClick={() => setMobileTab("studio")}
+          className={cn(
+            "flex flex-col items-center gap-0.5 py-1.5 px-5 rounded-2xl transition-all",
+            mobileTab === "studio"
+              ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+              : "text-muted-foreground/60",
+          )}
+        >
+          <Sparkles className="w-5 h-5" />
+          <span className="text-[9px] font-medium">Studio</span>
+        </button>
+
+        <button
+          onClick={() => setMobileTab("coach")}
+          className={cn(
+            "flex flex-col items-center gap-0.5 py-1.5 px-4 rounded-xl transition-all relative",
+            mobileTab === "coach" ? "text-primary" : "text-muted-foreground/60",
+          )}
+        >
+          <Bot className="w-5 h-5" />
+          <span className="text-[9px] font-medium">Coach</span>
+          {messages.length > 0 && (
+            <span className="absolute top-0 right-2 w-1.5 h-1.5 rounded-full bg-primary" />
+          )}
+        </button>
+      </nav>
     </DashboardLayout>
   );
 };

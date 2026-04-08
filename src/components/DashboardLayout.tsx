@@ -55,7 +55,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
             <Link
               to="/admin"
               className={cn(
-                "flex items-center gap-1.5 px-2 h-7 rounded-lg text-[10px] font-medium transition-all mr-1",
+                "hidden md:flex items-center gap-1.5 px-2 h-7 rounded-lg text-[10px] font-medium transition-all mr-1",
                 location.pathname === "/admin"
                   ? "bg-red-500/15 text-red-400"
                   : "bg-red-500/10 text-red-400/70 hover:bg-red-500/15 hover:text-red-400",
@@ -74,14 +74,14 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
                 ? "bg-primary/10 text-primary"
                 : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
             )}
-            title="History"
+            title="Historique"
           >
             <Clock className="w-4 h-4" />
           </Link>
           <button
             onClick={toggleTheme}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all"
-            title={theme === "dark" ? "Light mode" : "Dark mode"}
+            className="hidden md:flex w-8 h-8 rounded-lg items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all"
+            title={theme === "dark" ? "Mode clair" : "Mode sombre"}
           >
             <div className="transition-transform duration-300 hover:rotate-[360deg]">
               {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
@@ -101,8 +101,8 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
           </button>
           <button
             onClick={handleLogout}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all"
-            title="Sign out"
+            className="hidden md:flex w-8 h-8 rounded-lg items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all"
+            title="Se deconnecter"
           >
             <LogOut className="w-4 h-4" />
           </button>
