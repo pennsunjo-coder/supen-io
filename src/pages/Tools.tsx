@@ -2,164 +2,580 @@ import { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
-  Youtube, Download, Image, ArrowRight, FileText,
-  CheckCircle2, Loader2, Wrench
+  Youtube, Lightbulb, Wand2, BarChart3,
+  Loader2, Wrench, Check, Copy, Plus, ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
+import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic";
+import { supabase } from "@/lib/supabase";
+import { useProfile } from "@/hooks/use-profile";
+import { useSources } from "@/hooks/use-sources";
+import { assertOnline, withTimeout, friendlyError } from "@/lib/resilience";
 
-interface Tool {
-  id: string;
+type ToolId = "transcriber" | "hooks" | "humanizer" | "analyzer";
+
+const TOOLS: Array<{
+  id: ToolId;
   title: string;
   description: string;
   icon: typeof Youtube;
-  placeholder: string;
-  action: string;
-  badge?: string;
-}
-
-const tools: Tool[] = [
+  color: string;
+}> = [
   {
     id: "transcriber",
     title: "YouTube Transcriber",
-    description: "Extrais le transcript de n'importe quelle vidéo YouTube pour l'utiliser comme source.",
+    description: "Extrais le transcript d'une video YouTube et ajoute-le a tes sources.",
     icon: Youtube,
-    placeholder: "https://youtube.com/watch?v=...",
-    action: "Transcrire",
+    color: "text-red-400 bg-red-500/10",
   },
   {
-    id: "downloader",
-    title: "Video Downloader",
-    description: "Télécharge des vidéos depuis Instagram, Facebook et TikTok.",
-    icon: Download,
-    placeholder: "Colle l'URL de la vidéo...",
-    action: "Télécharger",
+    id: "hooks",
+    title: "Generateur de hooks viraux",
+    description: "10 accroches percutantes prets a utiliser pour ta niche.",
+    icon: Lightbulb,
+    color: "text-amber-400 bg-amber-500/10",
   },
   {
-    id: "imagegen",
-    title: "Génération d'images",
-    description: "Crée des visuels uniques à partir d'un prompt pour tes posts et stories.",
-    icon: Image,
-    placeholder: "Décris l'image que tu veux créer...",
-    action: "Générer",
-    badge: "Nouveau",
+    id: "humanizer",
+    title: "Reformulateur Anti-IA",
+    description: "Transforme un texte IA en ecriture 100% humaine.",
+    icon: Wand2,
+    color: "text-purple-400 bg-purple-500/10",
+  },
+  {
+    id: "analyzer",
+    title: "Analyseur viral",
+    description: "Analyse un post concurrent et decouvre ce qui le rend viral.",
+    icon: BarChart3,
+    color: "text-emerald-400 bg-emerald-500/10",
   },
 ];
 
-const Tools = () => {
-  const [inputs, setInputs] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState<string | null>(null);
-  const [done, setDone] = useState<string | null>(null);
+const PLATFORMS_LIST = ["Instagram", "TikTok", "LinkedIn", "Facebook", "X (Twitter)", "YouTube"];
 
-  const handleAction = (toolId: string) => {
-    if (!inputs[toolId]?.trim()) return;
-    setLoading(toolId);
-    setDone(null);
-    setTimeout(() => {
-      setLoading(null);
-      setDone(toolId);
-      setTimeout(() => setDone(null), 3000);
-    }, 2000);
-  };
+const Tools = () => {
+  const { profile } = useProfile();
+  const { addNote } = useSources();
+  const [openTool, setOpenTool] = useState<ToolId | null>(null);
 
   return (
     <DashboardLayout>
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-2xl mx-auto p-6 md:p-8">
+        <div className="max-w-3xl mx-auto p-6 md:p-8">
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
                 <Wrench className="w-4 h-4 text-primary" />
               </div>
-              <h1 className="text-xl font-bold">Outils créateur</h1>
+              <h1 className="text-xl font-bold">Boite a outils</h1>
             </div>
             <p className="text-sm text-muted-foreground ml-12">
-              Des utilitaires gratuits pour accélérer ton workflow.
+              Des utilitaires gratuits pour accelerer ton workflow.
             </p>
           </div>
 
-          {/* Tools list */}
-          <div className="space-y-4">
-            {tools.map((tool, i) => (
-              <motion.div
+          {/* Tools grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {TOOLS.map((tool, i) => (
+              <motion.button
                 key={tool.id}
-                initial={{ opacity: 0, y: 12 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.08, duration: 0.3 }}
-                className="rounded-xl border border-border/30 bg-card/50 p-5 hover:border-border/50 transition-colors"
+                transition={{ delay: i * 0.05 }}
+                onClick={() => setOpenTool(openTool === tool.id ? null : tool.id)}
+                className={cn(
+                  "rounded-xl border p-4 text-left transition-all",
+                  openTool === tool.id
+                    ? "border-primary/40 bg-primary/[0.03] ring-1 ring-primary/15"
+                    : "border-border/30 bg-card/50 hover:border-border/60",
+                )}
               >
-                <div className="flex items-start gap-3.5 mb-4">
-                  <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                    <tool.icon className="w-4 h-4 text-primary" />
+                <div className="flex items-start gap-3">
+                  <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0", tool.color)}>
+                    <tool.icon className="w-4 h-4" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-semibold">{tool.title}</h3>
-                      {tool.badge && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
-                          {tool.badge}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">{tool.description}</p>
+                    <h3 className="text-sm font-semibold mb-0.5">{tool.title}</h3>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">{tool.description}</p>
                   </div>
+                  <ChevronDown className={cn("w-3.5 h-3.5 text-muted-foreground/40 shrink-0 mt-1 transition-transform", openTool === tool.id && "rotate-180")} />
                 </div>
-
-                <div className="flex gap-2">
-                  <Input
-                    value={inputs[tool.id] || ""}
-                    onChange={(e) => setInputs((prev) => ({ ...prev, [tool.id]: e.target.value }))}
-                    onKeyDown={(e) => e.key === "Enter" && handleAction(tool.id)}
-                    placeholder={tool.placeholder}
-                    className="bg-accent/30 border-border/30 h-10 text-sm focus:ring-primary/30"
-                  />
-                  <Button
-                    size="sm"
-                    className={cn(
-                      "shrink-0 h-10 gap-1.5 min-w-[110px] text-xs font-medium",
-                      done === tool.id && "bg-emerald-600 hover:bg-emerald-600"
-                    )}
-                    disabled={loading === tool.id || !inputs[tool.id]?.trim()}
-                    onClick={() => handleAction(tool.id)}
-                  >
-                    {loading === tool.id ? (
-                      <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        En cours...
-                      </>
-                    ) : done === tool.id ? (
-                      <>
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        Terminé !
-                      </>
-                    ) : (
-                      <>
-                        {tool.action}
-                        <ArrowRight className="w-3 h-3" />
-                      </>
-                    )}
-                  </Button>
-                </div>
-
-                {done === tool.id && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    className="mt-3 flex items-center gap-2 text-xs text-emerald-400/80"
-                  >
-                    <FileText className="w-3 h-3" />
-                    <span>Résultat sauvegardé dans ton Notebook</span>
-                  </motion.div>
-                )}
-              </motion.div>
+              </motion.button>
             ))}
           </div>
+
+          {/* Tool panels */}
+          <AnimatePresence mode="wait">
+            {openTool === "transcriber" && (
+              <motion.div key="transcriber" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-5">
+                <YouTubeTranscriber addNote={addNote} />
+              </motion.div>
+            )}
+            {openTool === "hooks" && (
+              <motion.div key="hooks" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-5">
+                <HookGenerator profileNiche={profile?.niche} profilePlatforms={profile?.platforms} />
+              </motion.div>
+            )}
+            {openTool === "humanizer" && (
+              <motion.div key="humanizer" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-5">
+                <Humanizer />
+              </motion.div>
+            )}
+            {openTool === "analyzer" && (
+              <motion.div key="analyzer" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-5">
+                <ViralAnalyzer />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </DashboardLayout>
   );
 };
+
+/* ─── Tool 1: YouTube Transcriber ─── */
+
+function YouTubeTranscriber({ addNote }: { addNote: (title: string, content: string) => Promise<{ error: string | null }> }) {
+  const [url, setUrl] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [transcript, setTranscript] = useState("");
+  const [title, setTitle] = useState("");
+  const [adding, setAdding] = useState(false);
+  const [added, setAdded] = useState(false);
+
+  async function handleTranscribe() {
+    if (!url.trim()) return;
+    setLoading(true);
+    setTranscript("");
+    setTitle("");
+    setAdded(false);
+
+    try {
+      assertOnline();
+      const { data, error } = await supabase.functions.invoke("youtube-transcript", {
+        body: { url: url.trim() },
+      });
+      if (error) throw new Error(error.message);
+      if (!data?.transcript) throw new Error("Aucune transcription retournee");
+
+      setTranscript(data.transcript);
+      setTitle(data.title || "Video YouTube");
+      toast.success("Transcription extraite !");
+    } catch (err) {
+      toast.error(friendlyError(err) || "Impossible d'extraire la transcription. Verifie que la video a des sous-titres.");
+    }
+    setLoading(false);
+  }
+
+  async function handleAddToSources() {
+    if (!transcript) return;
+    setAdding(true);
+    const { error } = await addNote(`YouTube : ${title}`, transcript);
+    setAdding(false);
+    if (error) {
+      toast.error(`Erreur : ${error}`);
+    } else {
+      setAdded(true);
+      toast.success("Transcription ajoutee a tes sources !");
+    }
+  }
+
+  function handleCopy() {
+    navigator.clipboard.writeText(transcript);
+    toast.success("Transcription copiee !");
+  }
+
+  return (
+    <div className="rounded-xl border border-border/30 bg-card p-5">
+      <div className="flex items-center gap-2 mb-3">
+        <Youtube className="w-4 h-4 text-red-400" />
+        <h3 className="text-sm font-semibold">YouTube Transcriber</h3>
+      </div>
+
+      <div className="flex gap-2 mb-4">
+        <Input
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && !loading && handleTranscribe()}
+          placeholder="https://youtube.com/watch?v=..."
+          disabled={loading}
+          className="bg-accent/30 border-border/30 h-10 text-sm"
+        />
+        <Button onClick={handleTranscribe} disabled={loading || !url.trim()} className="h-10 gap-2 text-xs font-semibold min-w-[120px]">
+          {loading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Extraction...</> : "Transcrire"}
+        </Button>
+      </div>
+
+      {transcript && (
+        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}>
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-xs font-medium text-muted-foreground truncate flex-1">{title}</p>
+            <span className="text-[10px] text-muted-foreground/60 ml-2">{transcript.split(/\s+/).length} mots</span>
+          </div>
+          <div className="bg-accent/20 border border-border/20 rounded-lg p-3 mb-3 max-h-64 overflow-y-auto">
+            <p className="text-[12px] leading-relaxed text-foreground/85 whitespace-pre-wrap">{transcript}</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleCopy} className="h-9 gap-1.5 text-xs">
+              <Copy className="w-3 h-3" /> Copier
+            </Button>
+            <Button onClick={handleAddToSources} disabled={adding || added} size="sm" className="h-9 gap-1.5 text-xs flex-1">
+              {adding ? <Loader2 className="w-3 h-3 animate-spin" /> :
+               added ? <Check className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
+              {added ? "Ajoute aux sources" : "Ajouter aux sources"}
+            </Button>
+          </div>
+        </motion.div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Tool 2: Hook Generator ─── */
+
+function HookGenerator({ profileNiche, profilePlatforms }: { profileNiche?: string; profilePlatforms?: string[] }) {
+  const [topic, setTopic] = useState("");
+  const [niche, setNiche] = useState(profileNiche || "");
+  const [platform, setPlatform] = useState(profilePlatforms?.[0] || "Instagram");
+  const [loading, setLoading] = useState(false);
+  const [hooks, setHooks] = useState<string[]>([]);
+  const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+
+  async function handleGenerate() {
+    if (!topic.trim()) return;
+    setLoading(true);
+    setHooks([]);
+
+    try {
+      assertOnline();
+      const response = await withTimeout(
+        anthropic.messages.create({
+          model: CLAUDE_MODEL,
+          max_tokens: 1000,
+          system: `Tu es un expert en accroches virales pour les reseaux sociaux. Genere 10 hooks (accroches) puissants en francais pour ${platform}, niche ${niche || "creator"}.
+
+Regles strictes :
+- Chaque hook fait MAX 12 mots
+- Aucune intro, juste les 10 hooks numerotes 1. a 10.
+- Variete de styles : question, statistique choquante, contrarian, confession, promesse, story, FOMO
+- Evite les cliches IA (jamais "delve", "tapestry", "in today's world")
+- Ton direct, percutant, francais naturel
+- Reponds UNIQUEMENT avec les 10 hooks numerotes, rien d'autre`,
+          messages: [{ role: "user", content: `Sujet : ${topic.trim()}` }],
+        }),
+        30_000,
+      );
+
+      const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
+      const parsed = text
+        .split("\n")
+        .map((line) => line.replace(/^\d+[\.\)]\s*/, "").trim())
+        .filter((line) => line.length > 5 && line.length < 200);
+
+      if (parsed.length === 0) throw new Error("Aucun hook genere");
+      setHooks(parsed.slice(0, 10));
+      toast.success(`${parsed.length} hooks generes !`);
+    } catch (err) {
+      toast.error(friendlyError(err));
+    }
+    setLoading(false);
+  }
+
+  function copyHook(idx: number) {
+    navigator.clipboard.writeText(hooks[idx]);
+    setCopiedIdx(idx);
+    toast.success("Hook copie !");
+    setTimeout(() => setCopiedIdx(null), 2000);
+  }
+
+  return (
+    <div className="rounded-xl border border-border/30 bg-card p-5">
+      <div className="flex items-center gap-2 mb-3">
+        <Lightbulb className="w-4 h-4 text-amber-400" />
+        <h3 className="text-sm font-semibold">Generateur de hooks viraux</h3>
+      </div>
+
+      <div className="space-y-2 mb-3">
+        <Input
+          value={topic}
+          onChange={(e) => setTopic(e.target.value)}
+          placeholder="Ton sujet (ex: productivite, IA, fitness...)"
+          disabled={loading}
+          className="bg-accent/30 border-border/30 h-10 text-sm"
+        />
+        <div className="grid grid-cols-2 gap-2">
+          <Input
+            value={niche}
+            onChange={(e) => setNiche(e.target.value)}
+            placeholder="Ta niche"
+            disabled={loading}
+            className="bg-accent/30 border-border/30 h-10 text-sm"
+          />
+          <select
+            value={platform}
+            onChange={(e) => setPlatform(e.target.value)}
+            disabled={loading}
+            className="bg-accent/30 border border-border/30 rounded-lg h-10 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary/30"
+          >
+            {PLATFORMS_LIST.map((p) => (<option key={p} value={p}>{p}</option>))}
+          </select>
+        </div>
+        <Button onClick={handleGenerate} disabled={loading || !topic.trim()} className="w-full h-10 gap-2 text-xs font-semibold">
+          {loading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generation...</> : <>Generer 10 hooks</>}
+        </Button>
+      </div>
+
+      {hooks.length > 0 && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-1.5">
+          {hooks.map((hook, idx) => (
+            <div key={idx} className="group flex items-start gap-2 p-2.5 rounded-lg bg-accent/20 border border-border/15 hover:border-border/30 transition-all">
+              <span className="text-[10px] text-muted-foreground/50 font-mono mt-0.5 shrink-0 w-4">{idx + 1}.</span>
+              <p className="text-[12px] leading-relaxed text-foreground/90 flex-1">{hook}</p>
+              <button onClick={() => copyHook(idx)} className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground/60 hover:text-foreground shrink-0">
+                {copiedIdx === idx ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+              </button>
+            </div>
+          ))}
+        </motion.div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Tool 3: Anti-AI Humanizer ─── */
+
+function Humanizer() {
+  const [input, setInput] = useState("");
+  const [output, setOutput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  async function handleHumanize() {
+    if (!input.trim()) return;
+    setLoading(true);
+    setOutput("");
+
+    try {
+      assertOnline();
+      const response = await withTimeout(
+        anthropic.messages.create({
+          model: CLAUDE_MODEL,
+          max_tokens: 2000,
+          system: `Tu es un expert en reecriture anti-IA. Transforme ce texte en ecriture 100% humaine indetectable par les detecteurs d'IA.
+
+Regles strictes :
+- Francais uniquement
+- Varie la longueur des phrases (courtes + longues melangees)
+- Tournures naturelles, imparfaites, parfois familieres
+- Aucun mot interdit IA : delve, tapestry, vibrant, garner, intricate, foster, leverage, robust, seamless
+- Aucune expression IA : "in today's world", "game changer", "embark on a journey"
+- Garde le sens et le message principal
+- Pas de markdown, pas de listes
+- Reponds UNIQUEMENT avec le texte reecrit, rien d'autre`,
+          messages: [{ role: "user", content: input.trim() }],
+        }),
+        45_000,
+      );
+
+      const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
+      setOutput(text.trim());
+      toast.success("Texte humanise !");
+    } catch (err) {
+      toast.error(friendlyError(err));
+    }
+    setLoading(false);
+  }
+
+  function handleCopy() {
+    navigator.clipboard.writeText(output);
+    setCopied(true);
+    toast.success("Copie !");
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <div className="rounded-xl border border-border/30 bg-card p-5">
+      <div className="flex items-center gap-2 mb-3">
+        <Wand2 className="w-4 h-4 text-purple-400" />
+        <h3 className="text-sm font-semibold">Reformulateur Anti-IA</h3>
+      </div>
+
+      <Textarea
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        placeholder="Colle ici le texte a humaniser..."
+        disabled={loading}
+        className="bg-accent/30 border-border/30 text-sm min-h-[120px] resize-none mb-2"
+      />
+      <Button onClick={handleHumanize} disabled={loading || !input.trim()} className="w-full h-10 gap-2 text-xs font-semibold mb-3">
+        {loading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Humanisation...</> : <><Wand2 className="w-3.5 h-3.5" /> Humaniser</>}
+      </Button>
+
+      {output && (
+        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}>
+          <p className="text-[10px] font-medium text-muted-foreground/60 mb-1.5">Resultat humanise</p>
+          <div className="bg-accent/20 border border-border/20 rounded-lg p-3 mb-2 max-h-64 overflow-y-auto">
+            <p className="text-[12px] leading-relaxed text-foreground/90 whitespace-pre-wrap">{output}</p>
+          </div>
+          <Button variant="outline" size="sm" onClick={handleCopy} className="h-9 gap-1.5 text-xs">
+            {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+            {copied ? "Copie" : "Copier le texte"}
+          </Button>
+        </motion.div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Tool 4: Viral Analyzer ─── */
+
+interface ViralAnalysis {
+  hookScore: number;
+  structureScore: number;
+  ctaScore: number;
+  strengths: string[];
+  weaknesses: string[];
+  improvements: string[];
+}
+
+function ViralAnalyzer() {
+  const [input, setInput] = useState("");
+  const [analysis, setAnalysis] = useState<ViralAnalysis | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function handleAnalyze() {
+    if (!input.trim()) return;
+    setLoading(true);
+    setAnalysis(null);
+
+    try {
+      assertOnline();
+      const response = await withTimeout(
+        anthropic.messages.create({
+          model: CLAUDE_MODEL,
+          max_tokens: 800,
+          system: `Tu es un expert en contenu viral. Analyse ce post et evalue son potentiel viral.
+
+Reponds UNIQUEMENT avec ce JSON exact (pas de markdown, pas de backticks) :
+{
+  "hookScore": N (0-100, force de l'accroche),
+  "structureScore": N (0-100, qualite de la structure),
+  "ctaScore": N (0-100, force du CTA),
+  "strengths": ["point fort 1", "point fort 2", "point fort 3"],
+  "weaknesses": ["point faible 1", "point faible 2"],
+  "improvements": ["amelioration 1", "amelioration 2", "amelioration 3"]
+}
+
+Sois strict dans la notation. Tout en francais.`,
+          messages: [{ role: "user", content: input.trim() }],
+        }),
+        30_000,
+      );
+
+      const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
+      const cleaned = text.replace(/```json?/g, "").replace(/```/g, "").trim();
+      const parsed = JSON.parse(cleaned) as ViralAnalysis;
+      setAnalysis(parsed);
+      toast.success("Analyse terminee !");
+    } catch (err) {
+      toast.error(friendlyError(err) || "Impossible d'analyser le contenu");
+    }
+    setLoading(false);
+  }
+
+  function scoreColor(score: number) {
+    if (score >= 80) return "text-emerald-400";
+    if (score >= 60) return "text-amber-400";
+    return "text-red-400";
+  }
+
+  function scoreBar(score: number) {
+    if (score >= 80) return "bg-emerald-500";
+    if (score >= 60) return "bg-amber-500";
+    return "bg-red-500";
+  }
+
+  return (
+    <div className="rounded-xl border border-border/30 bg-card p-5">
+      <div className="flex items-center gap-2 mb-3">
+        <BarChart3 className="w-4 h-4 text-emerald-400" />
+        <h3 className="text-sm font-semibold">Analyseur viral</h3>
+      </div>
+
+      <Textarea
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        placeholder="Colle un post a analyser..."
+        disabled={loading}
+        className="bg-accent/30 border-border/30 text-sm min-h-[120px] resize-none mb-2"
+      />
+      <Button onClick={handleAnalyze} disabled={loading || !input.trim()} className="w-full h-10 gap-2 text-xs font-semibold mb-4">
+        {loading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Analyse...</> : <><BarChart3 className="w-3.5 h-3.5" /> Analyser</>}
+      </Button>
+
+      {analysis && (
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+          {/* Scores */}
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { label: "Accroche", value: analysis.hookScore },
+              { label: "Structure", value: analysis.structureScore },
+              { label: "CTA", value: analysis.ctaScore },
+            ].map((s) => (
+              <div key={s.label} className="bg-accent/20 border border-border/20 rounded-lg p-2.5">
+                <p className="text-[9px] text-muted-foreground uppercase mb-1">{s.label}</p>
+                <p className={cn("text-lg font-bold", scoreColor(s.value))}>{s.value}<span className="text-[10px] text-muted-foreground/50">/100</span></p>
+                <div className="h-1 bg-accent/40 rounded-full mt-1.5 overflow-hidden">
+                  <div className={cn("h-full rounded-full transition-all", scoreBar(s.value))} style={{ width: `${s.value}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Strengths */}
+          <div>
+            <p className="text-[10px] font-semibold text-emerald-400 uppercase mb-1.5">Points forts</p>
+            <ul className="space-y-1">
+              {analysis.strengths.map((s, i) => (
+                <li key={i} className="text-[12px] text-foreground/85 flex items-start gap-1.5">
+                  <Check className="w-3 h-3 text-emerald-400 shrink-0 mt-0.5" /> {s}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Weaknesses */}
+          <div>
+            <p className="text-[10px] font-semibold text-red-400 uppercase mb-1.5">Points faibles</p>
+            <ul className="space-y-1">
+              {analysis.weaknesses.map((w, i) => (
+                <li key={i} className="text-[12px] text-foreground/85 flex items-start gap-1.5">
+                  <span className="text-red-400 shrink-0">×</span> {w}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Improvements */}
+          <div>
+            <p className="text-[10px] font-semibold text-primary uppercase mb-1.5">Suggestions</p>
+            <ul className="space-y-1">
+              {analysis.improvements.map((imp, i) => (
+                <li key={i} className="text-[12px] text-foreground/85 flex items-start gap-1.5">
+                  <Lightbulb className="w-3 h-3 text-primary shrink-0 mt-0.5" /> {imp}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </motion.div>
+      )}
+    </div>
+  );
+}
 
 export default Tools;
