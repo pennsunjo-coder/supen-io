@@ -28,7 +28,8 @@ import type { ActivityData } from "@/hooks/use-activity";
 import { ContentSessionGrid } from "@/components/DashboardWidgets";
 import { ActivityWidget } from "@/components/ActivityWidget";
 import InfographicModal from "@/components/InfographicModal";
-import { StickyNote, Globe as GlobeIcon, Brain, ThumbsUp, ThumbsDown, TrendingUp, ChevronDown } from "lucide-react";
+import { StickyNote, Globe as GlobeIcon, Brain, ThumbsUp, ThumbsDown, TrendingUp, ChevronDown, CalendarDays } from "lucide-react";
+import { useCalendar } from "@/hooks/use-calendar";
 
 /* ─── Platform icons ─── */
 
@@ -161,6 +162,35 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
   const [styleMemoryActive, setStyleMemoryActive] = useState(false);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<Record<number, "liked" | "disliked" | null>>({});
+  const { schedulePost } = useCalendar();
+  const [scheduleIdx, setScheduleIdx] = useState<number | null>(null);
+  const [scheduleDate, setScheduleDate] = useState(new Date().toISOString().slice(0, 10));
+  const [scheduleTime, setScheduleTime] = useState("09:00");
+  const [scheduling, setScheduling] = useState(false);
+
+  async function handleSchedule() {
+    if (scheduleIdx === null || !selectedPlatform) return;
+    const variation = variations[scheduleIdx];
+    if (!variation) return;
+    setScheduling(true);
+    try {
+      const scheduledAt = new Date(`${scheduleDate}T${scheduleTime}:00`).toISOString();
+      const { error } = await schedulePost({
+        content: variation.content,
+        platform: selectedPlatform.name,
+        scheduled_at: scheduledAt,
+      });
+      if (error) {
+        toast.error(`Erreur : ${error}`);
+      } else {
+        toast.success("Post planifie !");
+        setScheduleIdx(null);
+      }
+    } catch {
+      toast.error("Erreur lors de la planification");
+    }
+    setScheduling(false);
+  }
   const [trends, setTrends] = useState<Trend[]>([]);
   const [trendsLoading, setTrendsLoading] = useState(false);
   const [trendsOpen, setTrendsOpen] = useState(false);
@@ -1018,6 +1048,9 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                             <Button variant="ghost" size="sm" className={cn("h-7 text-[11px] gap-1.5 px-2.5", infraPanel === idx ? "text-primary" : "text-muted-foreground hover:text-foreground")} onClick={(e) => { e.stopPropagation(); handleInfraPrompt(idx); }}>
                               <Layers className="w-3 h-3" /> Infographic
                             </Button>
+                            <Button variant="ghost" size="sm" className="h-7 text-[11px] gap-1.5 px-2.5 text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); setScheduleIdx(idx); setScheduleDate(new Date().toISOString().slice(0, 10)); }}>
+                              <CalendarDays className="w-3 h-3" /> Planifier
+                            </Button>
                           </motion.div>
                         )}
                       </motion.div>
@@ -1140,6 +1173,71 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
         content={variations[selectedVariation ?? 0]?.content || ""}
         platform={selectedPlatform?.name || ""}
       />
+
+      {/* Schedule mini-modal */}
+      <AnimatePresence>
+        {scheduleIdx !== null && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            onClick={() => setScheduleIdx(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-card border border-border/40 rounded-2xl shadow-2xl w-full max-w-sm p-5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <CalendarDays className="w-4 h-4 text-primary" />
+                <h3 className="text-sm font-bold">Planifier ce post</h3>
+              </div>
+              <div className="bg-accent/20 border border-border/20 rounded-lg p-3 mb-4 max-h-24 overflow-y-auto">
+                <p className="text-[11px] text-muted-foreground line-clamp-3 leading-snug">
+                  {variations[scheduleIdx]?.content}
+                </p>
+              </div>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] font-medium text-muted-foreground mb-1 block">Date</label>
+                    <input
+                      type="date"
+                      value={scheduleDate}
+                      onChange={(e) => setScheduleDate(e.target.value)}
+                      className="w-full bg-accent/30 border border-border/30 rounded-lg h-9 px-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-medium text-muted-foreground mb-1 block">Heure</label>
+                    <input
+                      type="time"
+                      value={scheduleTime}
+                      onChange={(e) => setScheduleTime(e.target.value)}
+                      className="w-full bg-accent/30 border border-border/30 rounded-lg h-9 px-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    />
+                  </div>
+                </div>
+                <div className="text-[10px] text-muted-foreground/60 text-center">
+                  Sera publie sur <span className="text-foreground font-medium">{selectedPlatform?.name}</span>
+                </div>
+              </div>
+              <div className="flex gap-2 mt-4">
+                <Button variant="outline" onClick={() => setScheduleIdx(null)} className="flex-1 h-9 text-xs">
+                  Annuler
+                </Button>
+                <Button onClick={handleSchedule} disabled={scheduling} className="flex-1 h-9 gap-1.5 text-xs font-semibold">
+                  {scheduling ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                  Planifier
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

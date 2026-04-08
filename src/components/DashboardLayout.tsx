@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Settings, LogOut, Clock, Sun, Moon, Shield } from "lucide-react";
+import { Settings, LogOut, Clock, Sun, Moon, Shield, CalendarDays } from "lucide-react";
 import { LogoFull } from "@/components/Logo";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -66,6 +66,18 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
               Admin
             </Link>
           )}
+          <Link
+            to="/dashboard/calendar"
+            className={cn(
+              "w-8 h-8 rounded-lg flex items-center justify-center transition-all",
+              location.pathname === "/dashboard/calendar"
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
+            )}
+            title="Calendrier"
+          >
+            <CalendarDays className="w-4 h-4" />
+          </Link>
           <Link
             to="/dashboard/history"
             className={cn(

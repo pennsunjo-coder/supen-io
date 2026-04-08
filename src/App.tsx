@@ -17,6 +17,7 @@ const Login = lazy(() => import("./pages/Login.tsx"));
 const Dashboard = lazy(() => import("./pages/Dashboard.tsx"));
 const Tools = lazy(() => import("./pages/Tools.tsx"));
 const History = lazy(() => import("./pages/History.tsx"));
+const Calendar = lazy(() => import("./pages/Calendar.tsx"));
 const Onboarding = lazy(() => import("./pages/Onboarding.tsx"));
 const Settings = lazy(() => import("./pages/Settings.tsx"));
 const Admin = lazy(() => import("./pages/Admin.tsx"));
@@ -76,6 +77,7 @@ const App = () => {
                     <Route path="/dashboard/studio" element={<Navigate to="/dashboard" replace />} />
                     <Route path="/dashboard/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
                     <Route path="/dashboard/tools" element={<ProtectedRoute><Tools /></ProtectedRoute>} />
+                    <Route path="/dashboard/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
                     <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                     <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
                     <Route path="/privacy" element={<Privacy />} />
