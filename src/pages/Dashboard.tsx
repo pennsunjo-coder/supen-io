@@ -13,6 +13,8 @@ import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { BookOpen, Sparkles, Bot } from "lucide-react";
 import { cn } from "@/lib/utils";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import { Button } from "@/components/ui/button";
 
 type MobileTab = "sources" | "studio" | "coach";
 
@@ -113,16 +115,30 @@ const Dashboard = () => {
           "flex-1 flex-col min-w-0 md:flex",
           mobileTab === "studio" ? "flex" : "hidden md:flex",
         )}>
-          <StudioWizard
-            activeSourceIds={Array.from(activeSourceIds)}
-            sources={sources}
-            profile={profile}
-            sessions={dashboard.sessions}
-            onUpdateImagePrompt={dashboard.updateImagePrompt}
-            activityData={activity}
-            onContentGenerated={setLastGeneratedContent}
-            onGenerationComplete={handleGenerationComplete}
-          />
+          <ErrorBoundary
+            fallback={
+              <div className="flex-1 flex items-center justify-center p-6">
+                <div className="text-center max-w-sm">
+                  <p className="text-sm font-medium mb-2">Le Studio a rencontre une erreur</p>
+                  <p className="text-xs text-muted-foreground mb-4">Tes donnees sont en securite. Recharge pour reessayer.</p>
+                  <Button onClick={() => window.location.reload()} size="sm" variant="outline">
+                    Recharger
+                  </Button>
+                </div>
+              </div>
+            }
+          >
+            <StudioWizard
+              activeSourceIds={Array.from(activeSourceIds)}
+              sources={sources}
+              profile={profile}
+              sessions={dashboard.sessions}
+              onUpdateImagePrompt={dashboard.updateImagePrompt}
+              activityData={activity}
+              onContentGenerated={setLastGeneratedContent}
+              onGenerationComplete={handleGenerationComplete}
+            />
+          </ErrorBoundary>
         </div>
 
         {/* Coach panel: desktop visible at lg+, mobile only if tab active */}
@@ -130,15 +146,23 @@ const Dashboard = () => {
           "shrink-0 border-l border-border/40 bg-accent/[0.03] lg:w-[300px] lg:flex lg:flex-col",
           mobileTab === "coach" ? "flex flex-col w-full" : "hidden lg:flex",
         )}>
-          <ChatPanel
-            sources={sources}
-            messages={messages}
-            onMessagesChange={setMessages}
-            conversationLoading={conversationLoading}
-            onClearConversation={clearConversation}
-            lastGeneratedContent={lastGeneratedContent}
-            profile={profile}
-          />
+          <ErrorBoundary
+            fallback={
+              <div className="flex-1 flex items-center justify-center p-4">
+                <p className="text-xs text-muted-foreground text-center">Le Coach a rencontre une erreur. Recharge la page.</p>
+              </div>
+            }
+          >
+            <ChatPanel
+              sources={sources}
+              messages={messages}
+              onMessagesChange={setMessages}
+              conversationLoading={conversationLoading}
+              onClearConversation={clearConversation}
+              lastGeneratedContent={lastGeneratedContent}
+              profile={profile}
+            />
+          </ErrorBoundary>
         </div>
       </div>
 
