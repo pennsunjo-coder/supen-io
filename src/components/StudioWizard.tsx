@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,6 +19,7 @@ import { assertOnline, withRetry, withTimeout, friendlyError } from "@/lib/resil
 import GenerationProgress, { CONTENT_STEPS } from "@/components/GenerationProgress";
 import { scoreAllVariations, scoreColor, scoreBarColor, scoreBadge, type ScoreDetails } from "@/lib/viral-scorer";
 import { saveInteraction, getUserStyleMemory, hasStyleMemory } from "@/lib/user-memory";
+import { getHooks, detectNiche, getDailyHook, type Hook } from "@/lib/viral-hooks";
 import type { Source } from "@/types/database";
 import type { UserProfile } from "@/hooks/use-profile";
 import type { ContentSession } from "@/hooks/use-dashboard";
@@ -159,6 +160,17 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
   const [styleMemoryActive, setStyleMemoryActive] = useState(false);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<Record<number, "liked" | "disliked" | null>>({});
+
+  // Hook suggestions based on user input + profile niche
+  const suggestedHooks = useMemo<Hook[]>(() => {
+    if (!sourceText.trim() || sourceText.trim().length < 3) return [];
+    const detected = detectNiche(sourceText);
+    const niche = detected !== "general" ? detected : (profile?.niche || "general");
+    return getHooks(niche, undefined, 3);
+  }, [sourceText, profile?.niche]);
+
+  // Daily hook for the home screen
+  const dailyHook = useMemo<Hook>(() => getDailyHook(profile?.niche), [profile?.niche]);
 
   function reset() {
     setStarted(false);
@@ -581,6 +593,23 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                   <span className="text-[10px]">{activeSourceIds.length > 0 ? `${activeSourceIds.length} source${activeSourceIds.length > 1 ? "s" : ""}` : "6 plateformes"}</span>
                 </div>
               </div>
+
+              {/* Hook du jour */}
+              <div className="mt-6 max-w-md mx-auto px-4 py-3 rounded-xl bg-gradient-to-br from-amber-500/[0.05] to-orange-500/[0.03] border border-amber-500/15">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[9px] font-medium text-amber-400/70 uppercase tracking-wider flex items-center gap-1">
+                    <Lightbulb className="w-2.5 h-2.5" /> Hook du jour
+                  </span>
+                  <span className="text-[8px] text-muted-foreground/40 uppercase">{dailyHook.type}</span>
+                </div>
+                <p className="text-[12px] text-foreground/85 leading-relaxed text-left mb-2">"{dailyHook.text}"</p>
+                <button
+                  onClick={() => { navigator.clipboard.writeText(dailyHook.text); toast.success("Hook copie !"); }}
+                  className="text-[10px] text-amber-400/70 hover:text-amber-400 transition-colors flex items-center gap-1"
+                >
+                  <Copy className="w-2.5 h-2.5" /> Copier ce hook
+                </button>
+              </div>
             </div>
 
             {/* 2. DERNIÈRES CRÉATIONS (si > 0) */}
@@ -742,6 +771,24 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                       {/* KEYWORD MODE — input */}
                       {sourceMode === "keyword" && (
                         <Input value={sourceText} onChange={(e) => setSourceText(e.target.value)} placeholder={sourceModes.find((m) => m.id === sourceMode)?.placeholder} maxLength={200} className="bg-accent/20 border-border/30 h-11 text-sm" onKeyDown={(e) => e.key === "Enter" && sourceText.trim() && handleGenerate()} />
+                      )}
+
+                      {/* Hook suggestions for idea/keyword modes */}
+                      {(sourceMode === "idea" || sourceMode === "keyword") && sourceText.trim().length > 3 && suggestedHooks.length > 0 && (
+                        <div className="mt-3 space-y-1">
+                          <p className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">Accroches suggerees</p>
+                          {suggestedHooks.map((hook, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() => setSourceText(hook.text)}
+                              className="text-[11px] text-left w-full px-2.5 py-1.5 rounded-lg bg-accent/15 hover:bg-accent/30 text-muted-foreground/70 hover:text-foreground transition-all truncate flex items-center gap-2"
+                            >
+                              <span className="text-amber-400/60 shrink-0">→</span>
+                              <span className="truncate">{hook.text}</span>
+                            </button>
+                          ))}
+                        </div>
                       )}
 
                       <Button

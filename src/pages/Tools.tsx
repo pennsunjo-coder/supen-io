@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ import { supabase } from "@/lib/supabase";
 import { useProfile } from "@/hooks/use-profile";
 import { useSources } from "@/hooks/use-sources";
 import { assertOnline, withTimeout, friendlyError } from "@/lib/resilience";
+import { getHooks } from "@/lib/viral-hooks";
 
 type ToolId = "transcriber" | "hooks" | "humanizer" | "analyzer";
 
@@ -245,6 +246,16 @@ function HookGenerator({ profileNiche, profilePlatforms }: { profileNiche?: stri
   const [loading, setLoading] = useState(false);
   const [hooks, setHooks] = useState<string[]>([]);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+  const [copiedLocal, setCopiedLocal] = useState<number | null>(null);
+
+  const localHooks = useMemo(() => getHooks(niche, undefined, 5), [niche]);
+
+  function copyLocalHook(text: string, idx: number) {
+    navigator.clipboard.writeText(text);
+    setCopiedLocal(idx);
+    toast.success("Hook copie !");
+    setTimeout(() => setCopiedLocal(null), 2000);
+  }
 
   async function handleGenerate() {
     if (!topic.trim()) return;
@@ -326,21 +337,52 @@ Regles strictes :
           </select>
         </div>
         <Button onClick={handleGenerate} disabled={loading || !topic.trim()} className="w-full h-10 gap-2 text-xs font-semibold">
-          {loading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generation...</> : <>Generer 10 hooks</>}
+          {loading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generation IA...</> : <>Generer 10 hooks IA personnalises</>}
         </Button>
       </div>
 
+      {/* Local library hooks — instant */}
+      {localHooks.length > 0 && (
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[10px] font-medium text-muted-foreground/70 uppercase tracking-wider">
+              Bibliotheque
+            </p>
+            <span className="text-[9px] text-muted-foreground/40">{localHooks.length} hooks</span>
+          </div>
+          <div className="space-y-1.5">
+            {localHooks.map((hook, idx) => (
+              <div key={`lib-${idx}`} className="group flex items-start gap-2 p-2.5 rounded-lg bg-accent/15 border border-border/10 hover:border-border/30 transition-all">
+                <span className="text-[8px] text-amber-400/60 font-bold mt-1 shrink-0 uppercase">{hook.type}</span>
+                <p className="text-[12px] leading-relaxed text-foreground/85 flex-1">{hook.text}</p>
+                <button onClick={() => copyLocalHook(hook.text, idx)} className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground/60 hover:text-foreground shrink-0">
+                  {copiedLocal === idx ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* AI-generated hooks */}
       {hooks.length > 0 && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-1.5">
-          {hooks.map((hook, idx) => (
-            <div key={idx} className="group flex items-start gap-2 p-2.5 rounded-lg bg-accent/20 border border-border/15 hover:border-border/30 transition-all">
-              <span className="text-[10px] text-muted-foreground/50 font-mono mt-0.5 shrink-0 w-4">{idx + 1}.</span>
-              <p className="text-[12px] leading-relaxed text-foreground/90 flex-1">{hook}</p>
-              <button onClick={() => copyHook(idx)} className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground/60 hover:text-foreground shrink-0">
-                {copiedIdx === idx ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-              </button>
-            </div>
-          ))}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[10px] font-medium text-primary/70 uppercase tracking-wider">
+              Personnalises IA pour "{topic}"
+            </p>
+          </div>
+          <div className="space-y-1.5">
+            {hooks.map((hook, idx) => (
+              <div key={idx} className="group flex items-start gap-2 p-2.5 rounded-lg bg-primary/5 border border-primary/15 hover:border-primary/30 transition-all">
+                <span className="text-[10px] text-primary/60 font-mono mt-0.5 shrink-0 w-4">{idx + 1}.</span>
+                <p className="text-[12px] leading-relaxed text-foreground/90 flex-1">{hook}</p>
+                <button onClick={() => copyHook(idx)} className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground/60 hover:text-foreground shrink-0">
+                  {copiedIdx === idx ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                </button>
+              </div>
+            ))}
+          </div>
         </motion.div>
       )}
     </div>
