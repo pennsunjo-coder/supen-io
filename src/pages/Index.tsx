@@ -13,8 +13,6 @@ import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/contexts/ThemeContext";
 import { LogoFull } from "@/components/Logo";
-import { awaClassic, darkTech, viralTips } from "@/lib/infographic-templates";
-import { getIconSvg, selectIcon } from "@/lib/infographic-icons";
 
 const ROTATING_WORDS = ["Viral", "Compelling", "Human", "Irresistible"];
 
@@ -206,123 +204,11 @@ function AnimatedCounter({ end, suffix = "", duration = 2000 }: { end: number; s
   return <span ref={setEl}>{formatted}{suffix}</span>;
 }
 
-// ─── Live infographic demo data ───
-
-interface DemoExample {
-  category: string;
-  source: string;
-  templateFn: (w: number, h: number) => string;
-  data: {
-    badge: string;
-    title: string;
-    proTip: string;
-    points: { title: string; body: string }[];
-  };
-}
-
-const DEMO_EXAMPLES: DemoExample[] = [
-  {
-    category: "Business",
-    source: "Comment j'ai lance mon business avec 200 EUR. Aucun investissement majeur, juste une bonne idee et beaucoup de travail. Aujourd'hui, 18 mois plus tard, je genere 47 000 EUR par mois avec une equipe de 3 personnes.",
-    templateFn: awaClassic,
-    data: {
-      badge: "BUSINESS",
-      title: "DE 200<span>EUR</span> A 47K<span>/MOIS</span>",
-      proTip: "Commence avec ce que tu as. Pas besoin de capital pour valider une idee. Lance, mesure, itere — c'est la seule formule qui marche reellement en 2026.",
-      points: [
-        { title: "Investissement minimal", body: "200 EUR sur le compte. Aucun pret, aucun investisseur. <span class=\"a\">Bootstrap pur</span> avec un MVP code en 48h le weekend." },
-        { title: "Client zero rapide", body: "Premier client paye en 12 jours. Prix : 49 EUR. Validation immediate du <span class=\"a\">product-market fit</span> sans theorie." },
-        { title: "Iteration brutale", body: "47 versions du produit en 6 mois. Chaque feedback client = nouvelle version. <span class=\"a\">Vitesse > perfection</span>." },
-        { title: "Marketing organique", body: "0 EUR de pub. 100% LinkedIn + cold DM. Resultat : <span class=\"a\">2 300 leads</span> qualifies en 4 mois." },
-        { title: "Premiere embauche", body: "Mois 9. CA mensuel 18K EUR. Embauche d'un dev junior pour <span class=\"a\">scaler la production</span> de contenu." },
-        { title: "Equipe de 3", body: "Mois 15. CA 35K EUR. Ajout d'une <span class=\"a\">commerciale + content manager</span>. Marge : 68%." },
-        { title: "47K mensuel stable", body: "Mois 18. Revenus recurrents <span class=\"a\">predictibles</span>. Pipeline 12 mois. Rentabilite confirmee." },
-      ],
-    },
-  },
-  {
-    category: "Tech & IA",
-    source: "L'IA va remplacer 40% des taches administratives d'ici 2027. Mais pas comme tu le crois. Les vrais gagnants sont ceux qui maitrisent les outils maintenant. Voici les 7 outils IA qui vont transformer ton workflow.",
-    templateFn: darkTech,
-    data: {
-      badge: "TECH 2026",
-      title: "7 OUTILS <span>IA</span> QUI CHANGENT TOUT",
-      proTip: "L'IA ne remplace pas les humains. Elle remplace les humains qui n'utilisent pas l'IA. Maitrise ces 7 outils maintenant ou regarde ta productivite stagner pendant que d'autres explosent.",
-      points: [
-        { title: "Claude Sonnet 4.5", body: "Le meilleur LLM pour l'ecriture longue et l'analyse. <span class=\"a\">200K context window</span>, raisonnement superieur, sortie en francais natif." },
-        { title: "Cursor AI", body: "Code 10x plus vite avec un IDE qui comprend tout ton codebase. <span class=\"a\">Multi-file edits</span> intelligents et debug automatique." },
-        { title: "Perplexity Pro", body: "Recherche web augmentee. Resultats sources et verifies. <span class=\"a\">Remplace Google</span> pour la recherche professionnelle." },
-        { title: "Eleven Labs", body: "Voix IA indetectable. Clone ta voix avec 30 secondes d'audio. <span class=\"a\">Podcasts automatises</span> en 27 langues." },
-        { title: "Midjourney v7", body: "Generation d'images avec photo-realisme parfait. <span class=\"a\">Style consistency</span> entre projets. Workflow agences." },
-        { title: "Runway Gen-3", body: "Video IA professionnelle. Generation 10s realistes. <span class=\"a\">Editing IA</span> integre. Cout 100x inferieur tournage." },
-        { title: "Notion AI", body: "Tout ton knowledge base devient interrogeable. <span class=\"a\">Resume + recherche</span> instant sur 1000+ docs." },
-      ],
-    },
-  },
-  {
-    category: "Marketing",
-    source: "5 hacks marketing pour multiplier ton engagement par 10. Sans budget pub, sans equipe, juste avec des techniques eprouvees par les top creators.",
-    templateFn: viralTips,
-    data: {
-      badge: "TOP TIPS",
-      title: "5 HACKS POUR <span>10X</span> TON ENGAGEMENT",
-      proTip: "Le secret n'est pas de poster plus. C'est de poster mieux. Applique ces 5 hacks pendant 30 jours et mesure : tu verras une difference immediate sur ton taux d'engagement.",
-      points: [
-        { title: "Hook en 7 mots max", body: "La premiere ligne decide tout. <span class=\"a\">7 mots ou moins</span> qui choquent, intriguent ou promettent. Test : couvre le reste du post — l'accroche tient seule ?" },
-        { title: "Post a 7h45 du matin", body: "Le creneau magique LinkedIn. <span class=\"a\">+340% de portee</span> vs midi. Algorithme privilegie les posts du matin pour la vague de connexions." },
-        { title: "Repondre dans les 30 min", body: "Reponds a tous les commentaires en moins de <span class=\"a\">30 minutes</span>. L'algorithme detecte l'engagement et booste ta portee de 2-3x." },
-        { title: "Carrousel > video", body: "Les carrousels generent <span class=\"a\">3x plus de saves</span> que les videos. Format ideal : 8 slides, 1 idee par slide, fin avec CTA." },
-        { title: "Question a la fin", body: "Termine TOUJOURS par une question ouverte. <span class=\"a\">+180% de commentaires</span>. Question simple, evite oui/non." },
-        { title: "Hashtags cibles", body: "Maximum <span class=\"a\">5 hashtags</span> dont 3 niches + 2 larges. Trop de hashtags = signal spam pour l'algorithme." },
-        { title: "Bonus : storytelling", body: "Raconte une histoire personnelle au moins 1 fois sur 3. <span class=\"a\">Engagement x2</span> par rapport aux posts purement educatifs." },
-      ],
-    },
-  },
-];
-
-// Section colors for icon injection (matches templates)
-const DEMO_SECTION_COLORS = ["#E53E3E", "#3182CE", "#38A169", "#DD6B20", "#9B59B6", "#EC4899", "#00897B"];
-
-function fillDemoTemplate(example: DemoExample): string {
-  let html = example.templateFn(1080, 1080);
-
-  // Fill icons (use generic selection by point title)
-  for (let i = 0; i < 7; i++) {
-    const point = example.data.points[i];
-    if (point) {
-      const iconName = selectIcon(point.title, i);
-      const color = DEMO_SECTION_COLORS[i % DEMO_SECTION_COLORS.length];
-      const iconSvg = getIconSvg(iconName, color, 18);
-      html = html.replace(`{{P${i + 1}_ICON}}`, iconSvg);
-    } else {
-      html = html.replace(`{{P${i + 1}_ICON}}`, "");
-    }
-  }
-
-  // Fill text placeholders
-  html = html.replace("{{BADGE}}", example.data.badge);
-  html = html.replace("{{TITLE}}", example.data.title);
-  html = html.replace("{{FOOTER}}", "Created with Supen.io");
-  html = html.replace("{{PRO_TIP}}", example.data.proTip);
-  html = html.replace("{{MAIN_ILLUSTRATION}}", "");
-
-  for (let i = 0; i < 7; i++) {
-    const point = example.data.points[i] || { title: "", body: "" };
-    html = html.replace(`{{P${i + 1}_TITLE}}`, point.title);
-    html = html.replace(`{{P${i + 1}_BODY}}`, point.body);
-  }
-
-  return html;
-}
-
 const Index = () => {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [wordIdx, setWordIdx] = useState(0);
-  const [demoIdx, setDemoIdx] = useState(0);
-  const currentDemo = DEMO_EXAMPLES[demoIdx];
-  const demoHtml = fillDemoTemplate(currentDemo);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -522,117 +408,6 @@ const Index = () => {
               </motion.div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* ═══════════ LIVE INFOGRAPHIC DEMO ═══════════ */}
-      <section className="py-24 px-6 border-b border-border/20 relative overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-primary/[0.04] rounded-full blur-[120px] pointer-events-none" />
-        <div className="max-w-6xl mx-auto relative z-10">
-          <motion.div className="text-center mb-12"
-            initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }} transition={{ duration: 0.5 }}
-          >
-            <span className="text-xs text-primary font-semibold uppercase tracking-widest">Demo</span>
-            <h2 className="text-3xl md:text-4xl font-bold mt-3 mb-4">
-              Vois la <span className="text-gradient">magie</span> en action
-            </h2>
-            <p className="text-muted-foreground max-w-xl mx-auto">
-              Du texte brut a une infographie virale en 60 secondes. Aucun designer requis.
-            </p>
-          </motion.div>
-
-          {/* Category tabs */}
-          <div className="flex justify-center gap-2 mb-8">
-            {DEMO_EXAMPLES.map((ex, i) => (
-              <button
-                key={ex.category}
-                onClick={() => setDemoIdx(i)}
-                className={cn(
-                  "px-4 py-2 rounded-full text-xs font-semibold transition-all",
-                  demoIdx === i
-                    ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
-                    : "bg-accent/30 text-muted-foreground hover:bg-accent/50 hover:text-foreground border border-border/30"
-                )}
-              >
-                {ex.category}
-              </button>
-            ))}
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6 items-start">
-            {/* Source text */}
-            <motion.div
-              key={`source-${demoIdx}`}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.4 }}
-              className="rounded-2xl border border-border/40 bg-card/50 p-6"
-            >
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <FileText className="w-3.5 h-3.5 text-primary" />
-                </div>
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Texte source</span>
-                <span className="ml-auto text-[10px] text-muted-foreground/50">{currentDemo.source.split(/\s+/).length} mots</span>
-              </div>
-              <p className="text-sm leading-relaxed text-foreground/80 whitespace-pre-wrap">{currentDemo.source}</p>
-              <div className="flex items-center gap-2 mt-6 pt-4 border-t border-border/20">
-                <Sparkles className="w-3.5 h-3.5 text-primary" />
-                <span className="text-[11px] text-muted-foreground">Generation automatique en 60s</span>
-                <ArrowRight className="w-3 h-3 text-primary ml-auto" />
-              </div>
-            </motion.div>
-
-            {/* Generated infographic */}
-            <motion.div
-              key={`demo-${demoIdx}`}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5 }}
-              className="rounded-2xl border border-border/40 bg-card/50 p-4 relative"
-            >
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                  <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-                </div>
-                <span className="text-xs font-semibold text-emerald-400/80 uppercase tracking-wider">Infographie generee</span>
-                <span className="ml-auto text-[10px] text-muted-foreground/50">1080x1080</span>
-              </div>
-              <div className="relative w-full rounded-xl overflow-hidden bg-white" style={{ paddingBottom: "100%" }}>
-                <iframe
-                  srcDoc={demoHtml}
-                  className="absolute inset-0 w-full h-full"
-                  style={{
-                    border: "none",
-                    transform: "scale(0.42)",
-                    transformOrigin: "top left",
-                    width: `${100 / 0.42}%`,
-                    height: `${100 / 0.42}%`,
-                  }}
-                  sandbox="allow-same-origin"
-                  title={`Demo infographic ${currentDemo.category}`}
-                />
-              </div>
-              <button
-                onClick={() => setDemoIdx((demoIdx + 1) % DEMO_EXAMPLES.length)}
-                className="w-full mt-3 h-10 rounded-lg bg-accent/30 hover:bg-accent/50 border border-border/30 text-xs font-medium text-foreground transition-all flex items-center justify-center gap-2"
-              >
-                Voir un autre exemple <ArrowRight className="w-3 h-3" />
-              </button>
-            </motion.div>
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0 }} whileInView={{ opacity: 1 }}
-            viewport={{ once: true }} transition={{ delay: 0.3 }}
-            className="text-center mt-10"
-          >
-            <Button onClick={() => navigate("/login")} size="lg" className="bg-foreground text-background hover:bg-foreground/90 font-semibold h-12 px-8 rounded-xl group">
-              Cree ta premiere infographie gratuitement
-              <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-0.5 transition-transform" />
-            </Button>
-          </motion.div>
         </div>
       </section>
 
