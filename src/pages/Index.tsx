@@ -5,7 +5,8 @@ import {
   Zap, ArrowRight, Sparkles, BookOpen, Wand2, Shield,
   Youtube, FileText, Globe, MessageSquare, Check, Star,
   ChevronDown, Twitter, Instagram, Linkedin, Mail,
-  Layers, Target, PenTool, BarChart3, Users, Sun, Moon, Gift
+  Layers, Target, PenTool, BarChart3, Users, Sun, Moon, Gift,
+  X as XIcon, Brain, TrendingUp, Clock, CreditCard,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
@@ -119,11 +120,16 @@ const plans = [
 ];
 
 const faqs = [
-  { q: "Does the content really pass AI detectors?", a: "Yes. Our Anti-AI Protocol uses grade 5 reading level, varied sentence structures, personal anecdotes, and natural imperfections to produce content that reads as genuinely human." },
-  { q: "What platforms does Supen.io support?", a: "We support X (Twitter), LinkedIn, Instagram captions & carousels, YouTube descriptions, blog posts, TikTok scripts, and newsletter drafts." },
-  { q: "Can I upload YouTube videos?", a: "Absolutely. Just paste a YouTube URL and we'll extract the full transcript for you to analyze, summarize, or repurpose into other formats." },
-  { q: "Is there a free plan?", a: "Yes! Start with our free plan — 3 sources and 5 AI generations per day. Upgrade anytime for unlimited access." },
-  { q: "What AI model powers Supen.io?", a: "We use Claude by Anthropic for intelligent, nuanced content generation that understands context and tone." },
+  { q: "Est-ce vraiment gratuit pour commencer ?", a: "Oui, le plan Free te donne acces a 5 generations par jour sans carte bancaire. Tu peux essayer toutes les fonctionnalites avant de passer au Pro." },
+  { q: "En quelle langue Supen.io genere-t-il du contenu ?", a: "Supen.io genere du contenu en francais, anglais, ou la langue de tes sources. L'IA s'adapte automatiquement au contexte." },
+  { q: "Mes donnees sont-elles securisees ?", a: "Oui, toutes tes donnees sont chiffrees et stockees sur Supabase (SOC 2 Type II). Nous ne vendons jamais tes donnees et tu peux les supprimer a tout moment." },
+  { q: "Puis-je utiliser mes propres documents ?", a: "Oui ! Importe des PDFs, URLs, transcripts YouTube, ou notes. L'IA genere du contenu base sur TES sources via notre systeme RAG semantique." },
+  { q: "Comment fonctionne le scoring viral ?", a: "Claude Haiku analyse chaque variation sur 5 criteres : accroche, emotion, specificite, actionnable, CTA. Score total sur 100, calibre strictement (la plupart du contenu = 50-65)." },
+  { q: "Y a-t-il une limite de generations ?", a: "Plan Free : 5/jour. Plan Pro : illimite + scoring + memoire de style. Plan Business : tout Pro + reponses prioritaires + analytics." },
+  { q: "Puis-je annuler mon abonnement ?", a: "Oui, a tout moment depuis tes parametres. Pas d'engagement, pas de frais caches. Ton plan reste actif jusqu'a la fin de la periode payee." },
+  { q: "Fonctionne-t-il pour toutes les plateformes ?", a: "Instagram, TikTok, LinkedIn, Facebook, YouTube, X (Twitter). Le contenu est adapte au format et au ton de chaque plateforme automatiquement." },
+  { q: "Comment fonctionne le Coach IA ?", a: "Le Coach connait ta niche, tes plateformes, tes sources et ton style prefere. Il s'ameliore avec chaque interaction grace a la memoire de conversation." },
+  { q: "Le contenu passe-t-il les detecteurs d'IA ?", a: "Oui. Notre Protocole Anti-IA utilise un niveau d'ecriture CM2, varie la longueur des phrases, et ajoute des imperfections naturelles. Resultat : contenu indetectable par les detecteurs." },
 ];
 
 const PlatformX = () => (
@@ -160,6 +166,44 @@ const platforms = [
   { name: "Blog", icon: null },
 ];
 
+// Animated counter that counts up when scrolled into view
+function AnimatedCounter({ end, suffix = "", duration = 2000 }: { end: number; suffix?: string; duration?: number }) {
+  const [value, setValue] = useState(0);
+  const [hasAnimated, setHasAnimated] = useState(false);
+  const ref = useState<HTMLSpanElement | null>(null);
+  const [el, setEl] = useState<HTMLSpanElement | null>(null);
+
+  useEffect(() => {
+    if (!el || hasAnimated) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setHasAnimated(true);
+          const start = Date.now();
+          const tick = () => {
+            const elapsed = Date.now() - start;
+            const progress = Math.min(elapsed / duration, 1);
+            // ease-out cubic
+            const eased = 1 - Math.pow(1 - progress, 3);
+            setValue(Math.floor(end * eased));
+            if (progress < 1) requestAnimationFrame(tick);
+            else setValue(end);
+          };
+          tick();
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.3 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [el, end, duration, hasAnimated]);
+
+  const formatted = value >= 1000 ? `${(value / 1000).toFixed(value >= 10000 ? 0 : 1)}k` : value.toLocaleString("fr-FR");
+
+  return <span ref={setEl}>{formatted}{suffix}</span>;
+}
+
 const Index = () => {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
@@ -175,21 +219,26 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      {/* ═══════════ NAVBAR ═══════════ */}
-      <nav className="sticky top-0 z-50 backdrop-blur-xl bg-background/80">
-        <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-3">
-          <Link to="/" className="hover:opacity-80 transition-opacity"><LogoFull size="sm" /></Link>
+      {/* ═══════════ NAVBAR (sticky) ═══════════ */}
+      <nav className="sticky top-0 z-50 backdrop-blur-xl bg-background/85 border-b border-border/10">
+        <div className="max-w-7xl mx-auto flex items-center justify-between px-4 md:px-6 py-3">
+          <Link to="/" className="hover:opacity-80 transition-opacity shrink-0"><LogoFull size="sm" /></Link>
           <div className="hidden md:flex items-center bg-primary/[0.06] border border-primary/15 rounded-full px-1 py-1">
-            {["Features", "Results", "Pricing", "FAQ"].map((item) => (
-              <a key={item} href={`#${item.toLowerCase()}`} className="px-4 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-all">{item}</a>
+            {[
+              { label: "Features", href: "#features" },
+              { label: "Resultats", href: "#results" },
+              { label: "Tarifs", href: "#pricing" },
+              { label: "FAQ", href: "#faq" },
+            ].map((item) => (
+              <a key={item.label} href={item.href} className="px-4 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-all">{item.label}</a>
             ))}
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={toggleTheme} className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground transition-all" title={theme === "dark" ? "Light mode" : "Dark mode"}>
+            <button onClick={toggleTheme} className="hidden sm:flex w-8 h-8 rounded-lg items-center justify-center text-muted-foreground hover:text-foreground transition-all" title={theme === "dark" ? "Mode clair" : "Mode sombre"}>
               {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
-            <Button size="sm" onClick={() => navigate("/login")} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-5 h-9 text-sm font-medium">
-              Get Started
+            <Button size="sm" onClick={() => navigate("/login")} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-3 md:px-5 h-9 text-xs md:text-sm font-semibold shadow-sm">
+              Commencer gratuitement
             </Button>
           </div>
         </div>
@@ -245,12 +294,19 @@ const Index = () => {
 
           <motion.div variants={fadeUp} custom={3} className="flex gap-3 justify-center flex-wrap">
             <Button size="lg" onClick={() => navigate("/login")} className="bg-foreground text-background hover:bg-foreground/90 h-11 px-7 text-sm font-medium rounded-lg group">
-              Start for free
+              Commencer gratuitement
               <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-0.5 transition-transform" />
             </Button>
             <Button size="lg" variant="outline" onClick={() => navigate("/login")} className="bg-foreground/[0.06] border-foreground/10 hover:bg-foreground/10 text-foreground h-11 px-7 text-sm rounded-lg">
-              See how it works
+              Voir comment ca marche
             </Button>
+          </motion.div>
+
+          {/* Credibility badges */}
+          <motion.div variants={fadeUp} custom={4} className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 mt-6 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5"><Check className="w-3 h-3 text-emerald-500" /> Gratuit pour commencer</span>
+            <span className="flex items-center gap-1.5"><CreditCard className="w-3 h-3 text-emerald-500" /> Aucune carte requise</span>
+            <span className="flex items-center gap-1.5"><Clock className="w-3 h-3 text-emerald-500" /> Resultats en 60 secondes</span>
           </motion.div>
 
           {/* Marquee */}
@@ -286,6 +342,44 @@ const Index = () => {
         </div>
       </section>
 
+      {/* ═══════════ ANIMATED STATS COUNTER ═══════════ */}
+      <section className="py-16 px-6 border-b border-border/20">
+        <div className="max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }} transition={{ duration: 0.5 }}
+              className="text-center"
+            >
+              <p className="text-5xl md:text-6xl font-black text-gradient tracking-tight mb-2">
+                <AnimatedCounter end={50000} suffix="+" />
+              </p>
+              <p className="text-sm text-muted-foreground font-medium">Contenus generes</p>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }} transition={{ delay: 0.15, duration: 0.5 }}
+              className="text-center md:border-x md:border-border/20"
+            >
+              <p className="text-5xl md:text-6xl font-black text-gradient tracking-tight mb-2">
+                <AnimatedCounter end={2500} suffix="+" />
+              </p>
+              <p className="text-sm text-muted-foreground font-medium">Createurs actifs</p>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }} transition={{ delay: 0.3, duration: 0.5 }}
+              className="text-center"
+            >
+              <p className="text-5xl md:text-6xl font-black text-gradient tracking-tight mb-2">
+                <AnimatedCounter end={98} suffix="%" />
+              </p>
+              <p className="text-sm text-muted-foreground font-medium">Taux de satisfaction</p>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
       {/* ═══════════ FEATURES ═══════════ */}
       <section id="features" className="py-24 px-6">
         <div className="max-w-6xl mx-auto">
@@ -314,6 +408,74 @@ const Index = () => {
               </motion.div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ═══════════ COMPARISON TABLE ═══════════ */}
+      <section className="py-24 px-6 border-b border-border/20">
+        <div className="max-w-4xl mx-auto">
+          <motion.div className="text-center mb-12"
+            initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }} transition={{ duration: 0.5 }}
+          >
+            <span className="text-xs text-primary font-semibold uppercase tracking-widest">Comparaison</span>
+            <h2 className="text-3xl md:text-4xl font-bold mt-3 mb-4">Pourquoi <span className="text-gradient">Supen.io</span> ?</h2>
+            <p className="text-muted-foreground">Compare avec les autres outils de creation de contenu IA.</p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }} transition={{ duration: 0.5 }}
+            className="rounded-2xl border border-border/40 bg-card overflow-hidden"
+          >
+            <div className="grid grid-cols-4 border-b border-border/30 bg-accent/20">
+              <div className="px-3 md:px-5 py-4 text-xs font-semibold text-muted-foreground">Fonctionnalite</div>
+              <div className="px-3 md:px-5 py-4 text-center">
+                <span className="text-xs md:text-sm font-bold text-primary">Supen.io</span>
+              </div>
+              <div className="px-3 md:px-5 py-4 text-center">
+                <span className="text-xs md:text-sm font-medium text-muted-foreground">ChatGPT</span>
+              </div>
+              <div className="px-3 md:px-5 py-4 text-center">
+                <span className="text-xs md:text-sm font-medium text-muted-foreground">Jasper</span>
+              </div>
+            </div>
+            {[
+              { feature: "RAG sur tes sources", supen: true, chatgpt: false, jasper: false },
+              { feature: "Coach IA personnalise", supen: true, chatgpt: false, jasper: false },
+              { feature: "Infographies auto", supen: true, chatgpt: false, jasper: false },
+              { feature: "Memoire de style", supen: true, chatgpt: false, jasper: false },
+              { feature: "Scoring viral reel", supen: true, chatgpt: false, jasper: false },
+              { feature: "Tendances temps reel", supen: true, chatgpt: false, jasper: false },
+              { feature: "5 variations par sujet", supen: true, chatgpt: false, jasper: true },
+              { feature: "Anti-IA detector", supen: true, chatgpt: false, jasper: false },
+            ].map((row, i) => (
+              <div key={i} className={cn("grid grid-cols-4 border-b border-border/15 last:border-b-0", i % 2 === 0 ? "bg-background" : "bg-accent/[0.03]")}>
+                <div className="px-3 md:px-5 py-3.5 text-xs md:text-sm font-medium text-foreground/85">{row.feature}</div>
+                <div className="px-3 md:px-5 py-3.5 flex items-center justify-center">
+                  {row.supen ? (
+                    <div className="w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center">
+                      <Check className="w-3 h-3 text-primary" />
+                    </div>
+                  ) : (
+                    <XIcon className="w-4 h-4 text-muted-foreground/30" />
+                  )}
+                </div>
+                <div className="px-3 md:px-5 py-3.5 flex items-center justify-center">
+                  {row.chatgpt ? <Check className="w-4 h-4 text-emerald-400" /> : <XIcon className="w-4 h-4 text-muted-foreground/30" />}
+                </div>
+                <div className="px-3 md:px-5 py-3.5 flex items-center justify-center">
+                  {row.jasper ? <Check className="w-4 h-4 text-emerald-400" /> : <XIcon className="w-4 h-4 text-muted-foreground/30" />}
+                </div>
+              </div>
+            ))}
+            <div className="grid grid-cols-4 bg-accent/30 border-t-2 border-primary/20">
+              <div className="px-3 md:px-5 py-4 text-xs md:text-sm font-bold">Prix mensuel</div>
+              <div className="px-3 md:px-5 py-4 text-center text-sm font-bold text-primary">$10</div>
+              <div className="px-3 md:px-5 py-4 text-center text-sm text-muted-foreground">$20</div>
+              <div className="px-3 md:px-5 py-4 text-center text-sm text-muted-foreground">$49</div>
+            </div>
+          </motion.div>
         </div>
       </section>
 
@@ -580,22 +742,33 @@ const Index = () => {
         </div>
       </section>
 
-      {/* ═══════════ FINAL CTA ═══════════ */}
-      <section className="py-24 px-6 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
+      {/* ═══════════ FINAL CTA BANNER ═══════════ */}
+      <section className="py-24 px-6 relative overflow-hidden bg-gradient-to-br from-primary/[0.08] via-primary/[0.04] to-transparent border-t border-primary/10">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-primary/[0.08] rounded-full blur-[120px] pointer-events-none" />
         <motion.div
-          className="relative z-10 max-w-2xl mx-auto text-center"
+          className="relative z-10 max-w-3xl mx-auto text-center"
           initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }} transition={{ duration: 0.5 }}
         >
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to <span className="text-gradient">go viral</span>?</h2>
-          <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-            Join thousands of creators using Supen.io to create content that connects. Start free, no credit card required.
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 mb-5">
+            <Sparkles className="w-3 h-3 text-primary" />
+            <span className="text-[11px] font-semibold text-primary uppercase tracking-wider">Pret a commencer ?</span>
+          </div>
+          <h2 className="text-4xl md:text-5xl font-black mb-4 tracking-tight">
+            Cree ton premier <span className="text-gradient">contenu viral</span><br />en moins de 60 secondes
+          </h2>
+          <p className="text-base text-muted-foreground mb-8 max-w-md mx-auto leading-relaxed">
+            Rejoins 2 500+ createurs qui utilisent Supen.io pour creer du contenu qui convertit.
           </p>
-          <Button size="lg" onClick={() => navigate("/login")} className="glow-sm font-semibold group h-12 px-10 text-base">
-            Start Creating Now
-            <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+          <Button size="lg" onClick={() => navigate("/login")} className="bg-foreground text-background hover:bg-foreground/90 font-bold group h-13 px-10 text-base rounded-xl">
+            Commencer gratuitement
+            <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
           </Button>
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 mt-5 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5"><Check className="w-3 h-3 text-emerald-500" /> Gratuit pour toujours</span>
+            <span className="flex items-center gap-1.5"><Check className="w-3 h-3 text-emerald-500" /> Aucune carte requise</span>
+            <span className="flex items-center gap-1.5"><Check className="w-3 h-3 text-emerald-500" /> Setup en 60 secondes</span>
+          </div>
         </motion.div>
       </section>
 
