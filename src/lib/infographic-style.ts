@@ -480,7 +480,7 @@ PRO TIP BOX (mandatory, after sections):
 FOOTER (mandatory, at very bottom):
 - Border-top: 2px solid ${isDark ? "rgba(0,201,177,0.2)" : "#5D3A1A"}
 - Text: "Created with Supen.io · Follow for more"
-- Font: 12px Poppins 700, color ${isDark ? "#00C9B1" : "#5D3A1A"}
+- Font: 12px Poppins 700, color ${isDark ? "#24A89B" : "#5D3A1A"}
 - Margin-top: 8px, padding-top: 10px
 
 ${"═".repeat(50)}

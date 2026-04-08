@@ -49,7 +49,7 @@ const COLORS = {
   purple: "#9B59B6",
   pink: "#EC4899",
   teal: "#00897B",
-  cyan: "#00C9B1",
+  cyan: "#24A89B",
   amber: "#F59E0B",
   dark: "#1A1A1A",
 };
