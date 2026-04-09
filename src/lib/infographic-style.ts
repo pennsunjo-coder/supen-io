@@ -441,6 +441,81 @@ const TEMPLATE_STYLE_GUIDES: Record<string, TemplateStyleGuide> = {
   },
 };
 
+// Build the per-template "CONTENU À INTÉGRER" structure that maps each
+// extracted point to its visual block + pastel color (per the meta-prompt palette).
+function buildContenuAIntegrer(templateId: string, extraction: ExtractionResult): string {
+  const points = extraction.points;
+  const get = (i: number, field: "title" | "body"): string =>
+    points[i]?.[field] || "(à inférer du contenu source)";
+  const lines: string[] = [`Titre : ${(extraction.title || "TITRE PRINCIPAL").toUpperCase()}`];
+
+  switch (templateId) {
+    case "UI_CARDS":
+      lines.push(`Bloc 1 — carte « Mauvais » (Rouge pastel #FFB3B3) : ${get(0, "title")} — ${get(0, "body")}`);
+      lines.push(`Bloc 2 — carte « Bon » (Orange pastel #FFD4A3) : ${get(1, "title")} — ${get(1, "body")}`);
+      lines.push(`Bloc 3 — carte « Excellent / ★ Cible » (Vert pastel #B3FFD1) : ${get(2, "title")} — ${get(2, "body")}`);
+      lines.push(`Bloc 4 — sidebar « Pourquoi ça marche » (Vert pastel) : 4 raisons cochées — ${get(3, "body")} • ${get(4, "body")} • ${get(5, "body")} • ${get(6, "body")}`);
+      break;
+    case "WHITEBOARD": {
+      const wbColors = [
+        "Bleu pastel #AEC6CF",
+        "Rouge pastel #FFB3B3",
+        "Vert pastel #B3FFD1",
+        "Bleu pastel #AEC6CF",
+        "Rouge pastel #FFB3B3",
+        "Vert pastel #B3FFD1",
+        "Bleu pastel #AEC6CF",
+      ];
+      for (let i = 0; i < 7; i++) {
+        lines.push(`Bloc ${i + 1} — conseil/étape (${wbColors[i]}) : ${get(i, "title")} — ${get(i, "body")}`);
+      }
+      lines.push(`Astuce pro (Orange pastel #FFD4A3, dashed border) : ${extraction.proTip}`);
+      break;
+    }
+    case "FUNNEL": {
+      const fnColors = [
+        "Rouge pastel #FFB3B3 (étage le plus large)",
+        "Orange pastel #FFD4A3",
+        "Jaune pastel #FFE9A3",
+        "Vert pastel #B3FFD1",
+        "Bleu pastel #AEC6CF (étage le plus étroit)",
+      ];
+      for (let i = 0; i < 5; i++) {
+        lines.push(`Étage ${i + 1} (${fnColors[i]}) : ${get(i, "title")} — ${get(i, "body")}`);
+      }
+      lines.push(`CTA pleine largeur (Brand Supen #24A89B) : ${get(5, "title") || "Tu y es presque"} — ${extraction.proTip}`);
+      break;
+    }
+    case "DATA_GRID": {
+      const dgColors = [
+        "Rouge pastel #FFB3B3",
+        "Orange pastel #FFD4A3",
+        "Vert pastel #B3FFD1",
+        "Violet pastel #D4B3FF",
+      ];
+      const useCases = [get(4, "title"), get(4, "body"), get(5, "title"), get(5, "body")];
+      for (let i = 0; i < 4; i++) {
+        lines.push(`Ligne ${i + 1} (dot ${dgColors[i]}) : ${get(i, "title")} — ${get(i, "body")} | Idéal pour : ${useCases[i]}`);
+      }
+      lines.push(`Bonus (Bleu pastel #AEC6CF) : ${get(6, "title")}`);
+      lines.push(`À noter (Violet pastel #D4B3FF) : ${get(6, "body")}`);
+      lines.push(`À retenir (Brand Supen #24A89B) : ${extraction.proTip}`);
+      break;
+    }
+    case "AWA_CLASSIC":
+    default: {
+      const awaColors = ["Rouge", "Bleu", "Vert", "Orange", "Violet", "Rose", "Teal"];
+      for (let i = 0; i < 7; i++) {
+        lines.push(`Section ${i + 1} (${awaColors[i]}) : ${get(i, "title")} — ${get(i, "body")}`);
+      }
+      lines.push(`Pro tip (dashed border rouge) : ${extraction.proTip}`);
+      break;
+    }
+  }
+
+  return lines.join("\n");
+}
+
 export function buildGeminiImagePrompt(
   content: string,
   platform: string,
@@ -459,8 +534,43 @@ export function buildGeminiImagePrompt(
   const pointsText = extraction.points.slice(0, 7).map((p, i) =>
     `${i + 1}. ${p.title}${p.body ? ": " + p.body : ""}`
   ).join("\n");
+  const contenuAIntegrer = buildContenuAIntegrer(templateId, extraction);
 
-  return `=== IDENTITÉ ===
+  return `=== MASTER PROMPT — INGÉNIERIE VISUELLE (PRIORITÉ ABSOLUE) ===
+
+Rôle : Expert en Visual Design et Architecture de l'Information.
+Objectif : Créer une infographie à fort impact visuel, ultra-lisible, sans aucun encombrement inutile.
+
+1. OCCUPATION DE L'ESPACE (Full Frame - OBLIGATOIRE)
+- Format : Portrait 4:5. Utilise 100% de la surface disponible.
+- Margins : AUCUNE bordure externe blanche. Les blocs de couleur doivent toucher les bords de l'image.
+- Density : Les éléments graphiques (cartes, titres) doivent occuper au moins 85% de l'espace total. ÉVITE les grands vides non structurés.
+
+2. HIÉRARCHIE ET TEXTE (Bold & Massive - OBLIGATOIRE)
+- Taille de Police : Applique la règle "Read-at-a-glance". Le titre doit être GIGANTESQUE (minimum 80-100px). Le corps du texte doit être en GRAS (Bold) et occuper au moins 1/4 de la largeur de son conteneur.
+- Quantité : MAXIMUM 6 mots par ligne. Utilise des verbes d'action.
+- Typographie : Mélange Serif élégant pour les titres + Sans-Serif ultra-moderne (Helvetica/Inter) pour le contenu.
+
+3. STYLE VISUEL ET FINITION (Premium UI - OBLIGATOIRE)
+- Conteneurs : Cards avec coins très arrondis (border-radius 16-24px) et ombre portée douce (box-shadow: 0 8px 32px rgba(0,0,0,0.08)). JAMAIS de contours noirs épais.
+- Couleurs : Palette Pastel-Professionnelle UNIQUEMENT. Fond blanc cassé (#F9F9F9). Accents : Bleu (#AEC6CF), Orange (#FFD4A3) ou Vert (#B3FFD1) pour souligner les points clés.
+- Éléments graphiques : Flèches directionnelles ÉPAISSES pour guider l'œil. Icônes minimalistes "Line Art" de GRANDE taille (48-64px) à côté du texte.
+
+4. INTERDICTIONS STRICTES (Negative Prompt - VIOLATIONS = ÉCHEC)
+- PAS de texte flou ou petit (minimum 14px pour le corps)
+- PAS d'illustrations complexes ou détaillées qui distraient
+- PAS de bordures noires épaisses autour des cadres
+- PAS de zones de texte étouffées — padding minimum 20px dans chaque bloc
+- PAS de fond sombre sauf si template AWA_CLASSIC
+- PAS de texte anglais — tout en FRANÇAIS
+
+=== FIN DU MASTER PROMPT ===
+
+(Le Master Prompt ci-dessus EST PRIORITAIRE sur tout ce qui suit. En cas de conflit, applique le Master Prompt.)
+
+${"═".repeat(50)}
+=== IDENTITÉ ===
+${"═".repeat(50)}
 
 Tu es un Directeur Artistique Senior spécialisé en Data-driven Design pour les réseaux sociaux professionnels (LinkedIn, Instagram, Twitter/X). Tu maîtrises le Minimalisme Informatif : chaque élément graphique doit servir la compréhension du texte. Le lecteur doit comprendre la valeur en moins de 3 secondes.
 
@@ -481,8 +591,8 @@ JAMAIS de couleurs primaires agressives. Palette Pastel-Professionnelle officiel
 - Jaune         (#FFE066) = Surlignage de mots-clés UNIQUEMENT
 - Brand Supen   (#24A89B) = Accent CTA, footer, signature
 
-RÈGLE 3 — Architecture de l'Espace (White Space) :
-L'espace vide = clarté. Grille invisible. Marges généreuses. Le texte ne doit JAMAIS sembler étouffé. Le canvas respire à ${isCleanTemplate ? "65-75%" : "85-92%"} de remplissage maximum — JAMAIS 100%.
+RÈGLE 3 — Architecture de l'Espace (alignée Master Prompt §1) :
+Le canvas couvre 100% de la surface (AUCUNE marge blanche externe — les blocs touchent les bords). Densité interne ≥ 85% : les éléments graphiques remplissent au minimum 85% de l'espace. La respiration vient des padding internes (≥ 20px par bloc, Master Prompt §4), JAMAIS de marges externes vides. Le texte ne doit JAMAIS sembler étouffé.
 
 RÈGLE 4 — Contraste Typographique :
 Maximum 2 familles de polices pour tout le visuel :
@@ -544,12 +654,15 @@ ${"═".repeat(50)}
 === FORMAT DE SORTIE ===
 ${"═".repeat(50)}
 
-- Dimensions exactes : ${dimStr}px (carré 1080×1080 ou portrait 1080×1350)
+- Dimensions exactes : ${dimStr}px (portrait 4:5 préféré conformément au Master Prompt §1)
+- Surface : couverte à 100% — AUCUNE bordure blanche externe (Master Prompt §1)
+- Densité interne : ≥ 85% du canvas (Master Prompt §1)
 - Sortie : image PNG UNIQUEMENT (aucun texte, aucun HTML dans la réponse)
-- Polices : Playfair Display + Inter/Poppins via Google Fonts (Caveat seulement si WHITEBOARD)
+- Polices : Playfair Display (titres) + Inter/Poppins (corps) via Google Fonts (Caveat uniquement si WHITEBOARD)
 - Couleur de marque Supen : #24A89B sur les CTAs, footer, signatures
-- Padding : ${isCleanTemplate ? "32-40px" : "22-28px"} sur tous les bords
-- Gap entre sections : ${isCleanTemplate ? "12-18px (respiration généreuse)" : "7-9px (compact mais lisible)"}
+- Padding par bloc : ≥ 20px (Master Prompt §4), idéalement ${isCleanTemplate ? "24-32px" : "20-26px"}
+- Coins arrondis : 16-24px sur les cards (Master Prompt §3)
+- Ombres : box-shadow douce 0 8px 32px rgba(0,0,0,0.08), JAMAIS de bordures noires épaisses
 - Footer en bas : "Créé avec Supen.io"
 - Tout le contenu rédigé en FRANÇAIS
 
@@ -570,6 +683,14 @@ Source intégrale (à reformuler, ne pas copier verbatim) :
 ${content.slice(0, 2500)}
 
 ${customPrompt ? `Instructions utilisateur additionnelles : ${customPrompt}\n` : ""}
+${"═".repeat(50)}
+=== CONTENU À INTÉGRER (structure exacte attendue par bloc, template ${templateId}) ===
+${"═".repeat(50)}
+
+${contenuAIntegrer}
+
+(Chaque "Bloc" ci-dessus correspond à une zone visuelle distincte de l'infographie. Respecte l'ordre, les couleurs pastel indiquées, et la séparation par bloc.)
+
 ${"═".repeat(50)}
 === RÈGLES D'ÉCRITURE (FRANÇAIS) ===
 ${"═".repeat(50)}
@@ -600,18 +721,21 @@ ${"═".repeat(50)}
 === CHECKLIST FINALE (à valider AVANT génération) ===
 ${"═".repeat(50)}
 
-[ ] Canvas exactement ${dimStr}px
-[ ] Titre = élément le plus proéminent (Règle du Tiers Supérieur)
+[ ] Canvas exactement ${dimStr}px (Master Prompt §1)
+[ ] Densité ≥ 85% — AUCUNE bordure externe blanche (Master Prompt §1)
+[ ] Titre GIGANTESQUE (≥80px) Serif élégant centré (Master Prompt §2 + Règle 1)
+[ ] Corps en GRAS, ≤ 6 mots par ligne, verbes d'action (Master Prompt §2)
 [ ] Hiérarchie cognitive des couleurs respectée (palette pastel pro)
-[ ] White space généreux (${isCleanTemplate ? "65-75%" : "85-92%"} de remplissage)
+[ ] Cards arrondies 16-24px + box-shadow douce, AUCUN contour noir épais (Master Prompt §3)
+[ ] Padding ≥ 20px par bloc (Master Prompt §4)
 [ ] Maximum 2 familles de polices (1 Serif + 1 Sans, ou + Caveat si Whiteboard)
 [ ] Bodies courts (${isCleanTemplate ? "18-25" : "30-50"} mots par section)
-[ ] Ancrages visuels présents (icônes ou numéros cerclés)
+[ ] Ancrages visuels présents (icônes Line Art 48-64px ou numéros cerclés)
 [ ] Brand color #24A89B utilisée sur les CTAs / footer
 [ ] Footer "Créé avec Supen.io" en bas
-[ ] Tout le texte en FRANÇAIS
-[ ] AUCUN italique
-[ ] AUCUN emoji unicode
+[ ] Tout le texte en FRANÇAIS — JAMAIS d'anglais (Master Prompt §4)
+[ ] AUCUN italique — AUCUN emoji unicode
+[ ] Texte ≥ 14px partout (Master Prompt §4)
 
 Génère l'image maintenant. Sortie : UNIQUEMENT l'image, sans texte de réponse.`;
 }
