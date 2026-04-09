@@ -412,6 +412,7 @@ body{background:#FFFFFF;font-family:'Inter',sans-serif;display:flex;flex-directi
 // Constitution v3.0 — Notebook tips style.
 // Header (20%) / Body (70%) with 3 vertical cards and dot-grid background / Footer (10%).
 // Inter font only — Caveat dropped, brain + lightbulb SVG doodles dropped.
+// Distinct palette: blue/orange/green pastels (Constitution default).
 export function whiteboard(w: number, h: number): string {
   const isPortrait = h > 1100;
   return `<!DOCTYPE html>
@@ -426,11 +427,11 @@ body{background:#FFFFFF;font-family:'Inter',sans-serif;display:flex;flex-directi
 .badge{display:inline-block;padding:8px 22px;background:#EBF5FB;color:#1F2937;font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;border-radius:16px;font-style:normal;flex-shrink:0}
 .body{flex:1 1 70%;padding:24px 40px;display:flex;flex-direction:column;gap:16px;min-height:0;background-image:radial-gradient(circle,#E8EAED 1px,transparent 1px);background-size:24px 24px}
 .card{flex:1 1 0;border-radius:16px;padding:40px;box-shadow:0 4px 16px rgba(0,0,0,0.06);display:flex;flex-direction:column;justify-content:center;font-style:normal;min-height:0;overflow:hidden}
-.card.c1{background:#FFF0F0}
+.card.c1{background:#EBF5FB}
 .card.c2{background:#FEF9E7}
 .card.c3{background:#EAFAF1}
 .card-label{display:inline-block;align-self:flex-start;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:1.8px;margin-bottom:14px;padding:6px 14px;border-radius:16px;font-style:normal}
-.c1 .card-label{background:#FFB3B3;color:#1F2937}
+.c1 .card-label{background:#AEC6CF;color:#1F2937}
 .c2 .card-label{background:#FFD4A3;color:#1F2937}
 .c3 .card-label{background:#B3FFD1;color:#1F2937}
 .card-title{font-family:'Inter',sans-serif;font-size:${isPortrait ? 32 : 28}px;font-weight:900;color:#1F2937;line-height:1.1;margin-bottom:10px;font-style:normal;max-width:600px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -493,6 +494,7 @@ body{background:#FFFFFF;font-family:'Inter',sans-serif;display:flex;flex-directi
 // Constitution v3.0 — 3-concept reference cards.
 // Header (20%) / Body (70%) with 3 concept cards / Footer (10%).
 // Inter font only — table layout, bonus cards, and tip box dropped.
+// Distinct palette: blue/violet/green pastels (cool data accent).
 export function dataGrid(w: number, h: number): string {
   const isPortrait = h > 1100;
   return `<!DOCTYPE html>
@@ -507,12 +509,12 @@ body{background:#FFFFFF;font-family:'Inter',sans-serif;display:flex;flex-directi
 .badge{display:inline-block;padding:8px 22px;background:#EBF5FB;color:#1F2937;font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;border-radius:16px;font-style:normal;flex-shrink:0}
 .body{flex:1 1 70%;padding:24px 40px;display:flex;flex-direction:column;gap:16px;min-height:0}
 .card{flex:1 1 0;border-radius:16px;padding:40px;box-shadow:0 4px 16px rgba(0,0,0,0.06);display:flex;flex-direction:column;justify-content:center;font-style:normal;min-height:0;overflow:hidden}
-.card.c1{background:#FFF0F0}
-.card.c2{background:#FEF9E7}
+.card.c1{background:#EBF5FB}
+.card.c2{background:#F4EDFF}
 .card.c3{background:#EAFAF1}
 .card-label{display:flex;align-items:center;align-self:flex-start;gap:10px;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:1.8px;margin-bottom:14px;padding:6px 14px;border-radius:16px;font-style:normal}
-.c1 .card-label{background:#FFB3B3;color:#1F2937}
-.c2 .card-label{background:#FFD4A3;color:#1F2937}
+.c1 .card-label{background:#AEC6CF;color:#1F2937}
+.c2 .card-label{background:#D4B3FF;color:#1F2937}
 .c3 .card-label{background:#B3FFD1;color:#1F2937}
 .label-dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#1F2937;flex-shrink:0}
 .card-title{font-family:'Inter',sans-serif;font-size:${isPortrait ? 32 : 28}px;font-weight:900;color:#1F2937;line-height:1.1;margin-bottom:10px;font-style:normal;max-width:600px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}

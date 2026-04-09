@@ -324,10 +324,10 @@ export function buildInfographicPrompt(
     : "Titre ALL CAPS viral, 4-8 mots, un mot encadré dans <span>";
 
   const templateHints: Record<string, string> = {
-    UI_CARDS: "Comparaison à 3 niveaux. P1=mauvaise version (à éviter), P2=version correcte, P3=meilleure version. P4-P7 = 4 raisons courtes (10-15 mots) qui justifient pourquoi le niveau Excellent fonctionne, format <span class=\"a\">Mot-clé</span> + explication. PRO_TIP non utilisé visuellement.",
-    WHITEBOARD: "Tableau dessiné. P1-P7 = 7 conseils/étapes courts. Chaque body = 18-25 mots avec UN mot-clé entouré de <span class=\"a\">. PRO_TIP = astuce finale (20-30 mots).",
-    FUNNEL: "Entonnoir séquentiel à 5 étapes. P1-P5 = 5 étapes progressives (P1=large/début, P5=précis/fin), title 2-4 mots ALL CAPS, body 12-18 mots. P6_TITLE = label CTA (3-5 mots, ex: 'Tu y es presque'). PRO_TIP = phrase CTA actionnable (10-15 mots). P7 non utilisé.",
-    DATA_GRID: "Tableau framework. P1-P4 = 4 concepts (title=nom 2-4 mots, body=description 15-25 mots avec un <span class=\"a\">mot-clé</span>). P5_TITLE/P5_BODY/P6_TITLE/P6_BODY = 4 cas d'usage 'Idéal pour' (3-6 mots chacun, un par concept). P7_TITLE = bonus (15-20 mots), P7_BODY = à noter (15-20 mots). PRO_TIP = à retenir (20-30 mots).",
+    UI_CARDS: "Constitution v3.0 — Comparaison à 3 cartes verticales. P1=mauvaise version (carte rouge pastel 'Mauvais'), P2=version correcte (carte orange pastel 'Acceptable'), P3=meilleure version (carte verte pastel 'Excellence'). Chaque title = 4-6 mots punchy. Chaque body = 18-25 mots avec UN mot-clé dans <span class=\"a\">. ⚠️ P4-P7 + PRO_TIP NE SONT PAS RENDUS visuellement — laisse-les VIDES (chaîne vide) pour économiser des tokens.",
+    WHITEBOARD: "Constitution v3.0 — 3 conseils en 3 cartes verticales sur fond dot grid. P1=Conseil 1, P2=Conseil 2, P3=Conseil 3. Chaque title = 4-6 mots, chaque body = 18-25 mots avec UN mot-clé dans <span class=\"a\">. ⚠️ P4-P7 + PRO_TIP NE SONT PAS RENDUS visuellement — laisse-les VIDES.",
+    FUNNEL: "Constitution v3.0 — 3 étapes en 3 cartes verticales numérotées. P1=Étape 1 (départ), P2=Étape 2 (intermédiaire), P3=Étape 3 (finale). Chaque title = 4-6 mots, chaque body = 18-25 mots avec UN mot-clé dans <span class=\"a\">. ⚠️ P4-P7 + PRO_TIP NE SONT PAS RENDUS visuellement — laisse-les VIDES.",
+    DATA_GRID: "Constitution v3.0 — 3 concepts en 3 cartes verticales avec dot indicators. P1=Concept 1, P2=Concept 2, P3=Concept 3. Chaque title = 2-4 mots, chaque body = 18-25 mots avec UN mot-clé dans <span class=\"a\">. ⚠️ P4-P7 + PRO_TIP NE SONT PAS RENDUS visuellement — laisse-les VIDES.",
   };
   const templateNote = templateHints[templateId] || "";
 
@@ -889,18 +889,18 @@ export interface QualityScore {
 export function scoreInfographic(html: string, dims: { width: number; height: number }): QualityScore {
   const checks = [
     { label: "Has title", pass: /<div class="(title|main-title)">/.test(html) && !html.includes("{{TITLE}}") },
-    { label: "Has sections", pass: /<div class="section/.test(html) || /<div class="(stat|card|block|row)/.test(html) },
+    { label: "Has cards/sections", pass: /<div class="(card|section|stat|block|row)/.test(html) },
+    { label: "Has Header section", pass: /<div class="header"/.test(html) },
+    { label: "Has Body section", pass: /<div class="(body|sections|cards|funnel|table|content|grid|stats|details)"/.test(html) },
     { label: "No placeholders left", pass: !html.includes("{{") },
     { label: "Has footer", pass: /<div class="footer">/.test(html) && !html.includes("{{FOOTER}}") },
     { label: "Correct dimensions", pass: html.includes(`${dims.width}px`) && html.includes(`${dims.height}px`) },
     { label: "Font loaded", pass: html.includes("fonts.googleapis.com") },
     { label: "No italic", pass: !html.includes("font-style:italic") && !html.includes("font-style: italic") },
     { label: "No emoji characters", pass: !/[\u{1F300}-\u{1F9FF}]/u.test(html) },
-    { label: "Has SVG icons", pass: html.includes("<svg") },
+    { label: "Soft shadow used", pass: html.includes("box-shadow") && !/border:\s*\d+px solid #000/.test(html) },
     { label: "Overflow hidden", pass: html.includes("overflow:hidden") || html.includes("overflow: hidden") },
-    { label: "Has pro tip", pass: html.includes("pro-tip") || html.includes("what-now") || html.includes("verdict") || html.includes("bonus") || html.includes("class=\"tip\"") },
     { label: "Has inline emphasis", pass: html.includes('class="a"') || html.includes("class='a'") },
-    { label: "Has header illustration", pass: html.includes("header-illust") },
   ];
 
   const passed = checks.filter(c => c.pass).length;
