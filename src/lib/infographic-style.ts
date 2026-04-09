@@ -516,6 +516,96 @@ function buildContenuAIntegrer(templateId: string, extraction: ExtractionResult)
   return lines.join("\n");
 }
 
+// Build the per-template "3 PANNEAUX" mapping (Master Prompt Rendu Industriel — Commande C).
+// Each template is translated into exactly 3 horizontal panels with their own solid pastel background.
+function build3PanelMapping(templateId: string, extraction: ExtractionResult): string {
+  const points = extraction.points;
+  const get = (i: number, field: "title" | "body"): string =>
+    points[i]?.[field] || "(à inférer du contenu source)";
+
+  switch (templateId) {
+    case "UI_CARDS":
+      return `Panneau 1 (haut, 33%, fond UNI #FFF0F0 — rouge très pâle) :
+  Étiquette « ✗ MAUVAIS » noir #1F2937 + concept court
+  Concept : ${get(0, "title")}
+  Détail : ${get(0, "body")}
+
+Panneau 2 (milieu, 33%, fond UNI #FFF9F0 — orange très pâle) :
+  Étiquette « ~ CORRECT » noir #1F2937 + concept court
+  Concept : ${get(1, "title")}
+  Détail : ${get(1, "body")}
+
+Panneau 3 (bas, 33%, fond UNI #F0FFF4 — vert très pâle) :
+  Étiquette « ✓ EXCELLENT » noir #1F2937 + concept court
+  Concept : ${get(2, "title")}
+  Détail : ${get(2, "body")}
+  Footer : "Créé avec Supen.io" en brand color #24A89B`;
+
+    case "WHITEBOARD":
+      return `Panneau 1 (haut, 33%, fond UNI #FFFFFF blanc pur) :
+  Titre principal en lettres CAPITALES géantes (≥80px), Sans-Serif noir #1F2937
+  1 ligne max, ≤6 mots, verbe d'action
+
+Panneau 2 (milieu, 33%, fond UNI #F0F8FF — bleu très pâle) :
+  Liste verticale des 4 conseils principaux en gros caractères noir
+  • ${get(0, "title")}
+  • ${get(1, "title")}
+  • ${get(2, "title")}
+  • ${get(3, "title")}
+
+Panneau 3 (bas, 33%, fond UNI #FFFEF0 — jaune très pâle) :
+  « ASTUCE PRO » en haut + takeaway final en gros texte noir
+  Texte : ${extraction.proTip}
+  Footer : "Créé avec Supen.io" en brand color #24A89B`;
+
+    case "FUNNEL":
+      return `Panneau 1 (haut, 33%, fond UNI #FFF0F0 — rouge très pâle) :
+  « ÉTAPES 1-2 — DÉCOUVERTE » en titre noir
+  Étape 1 : ${get(0, "title")}
+  Étape 2 : ${get(1, "title")}
+  Flèche épaisse vers le bas (geometric, pas dessinée à la main)
+
+Panneau 2 (milieu, 33%, fond UNI #FFF9F0 — orange très pâle) :
+  « ÉTAPE 3 — CONVERSION » en titre noir
+  Étape 3 : ${get(2, "title")}
+  Détail : ${get(2, "body")}
+  Flèche épaisse vers le bas
+
+Panneau 3 (bas, 33%, fond UNI #F0FFF4 — vert très pâle) :
+  « ÉTAPES 4-5 — VICTOIRE » en titre noir
+  Étape 4 : ${get(3, "title")}
+  Étape 5 : ${get(4, "title")}
+  CTA pleine largeur en brand color #24A89B : ${extraction.proTip}
+  Footer : "Créé avec Supen.io"`;
+
+    case "DATA_GRID":
+      return `Panneau 1 (haut, 33%, fond UNI #FFFFFF blanc pur) :
+  Titre principal en CAPITALES géantes (≥80px) noir #1F2937
+  En-tête de table : « ÉLÉMENT | DESCRIPTION | IDÉAL POUR »
+
+Panneau 2 (milieu, 33%, fond UNI #F0F8FF — bleu très pâle) :
+  4 lignes de données alignées en colonnes avec dots colorés à gauche :
+  • ${get(0, "title")} | ${get(0, "body")} | ${get(4, "title")}
+  • ${get(1, "title")} | ${get(1, "body")} | ${get(4, "body")}
+  • ${get(2, "title")} | ${get(2, "body")} | ${get(5, "title")}
+  • ${get(3, "title")} | ${get(3, "body")} | ${get(5, "body")}
+
+Panneau 3 (bas, 33%, fond UNI #F0FFF4 — vert très pâle) :
+  « À RETENIR » en titre noir + conclusion gigantesque
+  Texte : ${extraction.proTip}
+  Footer : "Créé avec Supen.io" en brand color #24A89B`;
+
+    case "AWA_CLASSIC":
+    default:
+      return `STRUCTURE 3 PANNEAUX NON APPLIQUÉE pour AWA_CLASSIC.
+Garde son style dark/cream existant : cream #FFFFF5 + wood frame 6px #5D3A1A,
+header (badge + titre ALL CAPS + illustration), 7 sections numérotées denses,
+pro tip dashed rouge en bas, footer brand. Le Master Prompt §C ne s'applique
+pas à AWA_CLASSIC mais toutes les autres règles (typography, padding, no
+clipart, etc.) restent obligatoires.`;
+  }
+}
+
 export function buildGeminiImagePrompt(
   content: string,
   platform: string,
@@ -535,38 +625,83 @@ export function buildGeminiImagePrompt(
     `${i + 1}. ${p.title}${p.body ? ": " + p.body : ""}`
   ).join("\n");
   const contenuAIntegrer = buildContenuAIntegrer(templateId, extraction);
+  const panelMapping = build3PanelMapping(templateId, extraction);
 
-  return `=== MASTER PROMPT — INGÉNIERIE VISUELLE (PRIORITÉ ABSOLUE) ===
+  return `=== MASTER PROMPT RENDU INDUSTRIEL (PRIORITÉ ABSOLUE) ===
 
-Rôle : Expert en Visual Design et Architecture de l'Information.
-Objectif : Créer une infographie à fort impact visuel, ultra-lisible, sans aucun encombrement inutile.
+Tu es un expert en Visual Design industriel style Apple / Notion / Figma.
+Tu ne dessines PAS — tu CONSTRUIS des interfaces.
+Chaque pixel doit être mathématiquement justifié.
 
-1. OCCUPATION DE L'ESPACE (Full Frame - OBLIGATOIRE)
-- Format : Portrait 4:5. Utilise 100% de la surface disponible.
-- Margins : AUCUNE bordure externe blanche. Les blocs de couleur doivent toucher les bords de l'image.
-- Density : Les éléments graphiques (cartes, titres) doivent occuper au moins 85% de l'espace total. ÉVITE les grands vides non structurés.
+━━━ COMMANDE A : ZERO ILLUSTRATION POLICY ━━━
+INTERDICTION TOTALE d'utiliser :
+- Personnages, avatars, visages, corps humains
+- Décors, paysages, objets complexes
+- Illustrations style clipart ou cartoon
+- Ombres complexes, textures, dégradés compliqués
 
-2. HIÉRARCHIE ET TEXTE (Bold & Massive - OBLIGATOIRE)
-- Taille de Police : Applique la règle "Read-at-a-glance". Le titre doit être GIGANTESQUE (minimum 80-100px). Le corps du texte doit être en GRAS (Bold) et occuper au moins 1/4 de la largeur de son conteneur.
-- Quantité : MAXIMUM 6 mots par ligne. Utilise des verbes d'action.
-- Typographie : Mélange Serif élégant pour les titres + Sans-Serif ultra-moderne (Helvetica/Inter) pour le contenu.
+Utilise EXCLUSIVEMENT :
+- Rectangles à coins arrondis (border-radius 16-24px)
+- Cercles parfaits
+- Lignes droites et flèches géométriques
+- Icônes Line Art minimalistes (stroke, pas fill)
+- L'image doit ressembler à une APP MOBILE MODERNE (SaaS)
 
-3. STYLE VISUEL ET FINITION (Premium UI - OBLIGATOIRE)
-- Conteneurs : Cards avec coins très arrondis (border-radius 16-24px) et ombre portée douce (box-shadow: 0 8px 32px rgba(0,0,0,0.08)). JAMAIS de contours noirs épais.
-- Couleurs : Palette Pastel-Professionnelle UNIQUEMENT. Fond blanc cassé (#F9F9F9). Accents : Bleu (#AEC6CF), Orange (#FFD4A3) ou Vert (#B3FFD1) pour souligner les points clés.
-- Éléments graphiques : Flèches directionnelles ÉPAISSES pour guider l'œil. Icônes minimalistes "Line Art" de GRANDE taille (48-64px) à côté du texte.
+━━━ COMMANDE B : TYPOGRAPHY FIRST ━━━
+Le texte EST l'élément principal. Règles absolues :
+- Texte en noir PUR (#000000 ou #1F2937) sur fonds pastels UNIS
+- JAMAIS de texte sur fond texturé ou dégradé complexe
+- Police Sans-Serif MASSIVE (Inter, Poppins, Helvetica)
+- Titre principal : minimum 80-100px, ALL CAPS
+- Si un mot est important : 3x plus gros que le reste
+- Maximum 6 mots par ligne
+- Padding minimum 20px à l'intérieur de chaque bloc
 
-4. INTERDICTIONS STRICTES (Negative Prompt - VIOLATIONS = ÉCHEC)
-- PAS de texte flou ou petit (minimum 14px pour le corps)
-- PAS d'illustrations complexes ou détaillées qui distraient
-- PAS de bordures noires épaisses autour des cadres
-- PAS de zones de texte étouffées — padding minimum 20px dans chaque bloc
-- PAS de fond sombre sauf si template AWA_CLASSIC
-- PAS de texte anglais — tout en FRANÇAIS
+━━━ COMMANDE C : THE GRID CONSTRAINT ━━━
+Structure OBLIGATOIRE en 3 panneaux horizontaux égaux :
+- Panneau 1 (Haut, 33%) : Fond blanc #FFFFFF — Titre GIGANTESQUE
+- Panneau 2 (Milieu, 33%) : Fond pastel coloré uni — Point principal
+- Panneau 3 (Bas, 33%) : Fond pastel différent — CTA / conclusion
+Chaque panneau a sa propre couleur de fond UNIE.
+AUCUN élément ne dépasse de son panneau.
+
+━━━ APPLICATION COMMANDE C POUR ${templateId} ━━━
+
+${panelMapping}
+
+━━━ EXEMPLE DE STRUCTURE PARFAITE ━━━
+"Infographie technique ultra-minimaliste. Format vertical.
+Structure en 3 panneaux horizontaux massifs.
+Panneau 1 : Titre en lettres capitales géantes, noir sur blanc.
+Panneau 2 : Fond bleu ciel très pâle (#EBF5FB).
+  Texte à gauche en gras. Icône géométrique simple à droite.
+Panneau 3 : Fond vert menthe très pâle (#EAFAF1).
+  Texte à gauche en gras. Check vert géant à droite.
+Style : Rendu vectoriel pur, haute définition,
+  texte ultra-net, zéro ombre complexe, style Apple/Notion."
+
+━━━ INTERDICTIONS ABSOLUES ━━━
+✗ PAS de personnages ou illustrations complexes
+✗ PAS de texte flou ou en dessous de 14px
+✗ PAS de bordures noires épaisses
+✗ PAS de fond sombre (sauf AWA_CLASSIC)
+✗ PAS de texte en anglais — TOUT en FRANÇAIS
+✗ PAS de zones étouffées sans padding
+✗ PAS de style "dessin à main levée"
+✗ PAS de rendu "brouillon" ou "esquisse"
+
+━━━ CHECKLIST FINALE ━━━
+[ ] 3 panneaux horizontaux clairement définis
+[ ] Titre gigantesque et lisible à distance
+[ ] Texte noir sur fond pastel uni (jamais texturé)
+[ ] Formes géométriques pures uniquement
+[ ] Style Apple/Notion/Figma — pas cartoon
+[ ] Tout le texte en FRANÇAIS
+[ ] Footer "Créé avec Supen.io" en brand color #24A89B
 
 === FIN DU MASTER PROMPT ===
 
-(Le Master Prompt ci-dessus EST PRIORITAIRE sur tout ce qui suit. En cas de conflit, applique le Master Prompt.)
+(Le Master Prompt RENDU INDUSTRIEL ci-dessus EST PRIORITAIRE ABSOLUE. Toutes les sections suivantes sont des références secondaires. En cas de conflit avec une section ci-dessous, applique IMPÉRATIVEMENT le Master Prompt et IGNORE la directive contradictoire.)
 
 ${"═".repeat(50)}
 === IDENTITÉ ===
