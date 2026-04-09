@@ -209,19 +209,19 @@ export default function InfographicModal({ open, onClose, content, platform }: P
 
   // Hard guard against duplicate saves: ref is mutated synchronously,
   // so even React StrictMode double-fires can't slip a second insert through.
-  // handleSave self-guards on this ref — both call sites just call handleSave().
+  // handleSave is now called EXPLICITLY from handleGenerate after a verified
+  // success — no useEffect-based auto-save (which used to fire on every state
+  // change including the error-fallback path that polluted the database).
   const savedRef = useRef(false);
 
-  // Show confetti when result arrives + trigger the single auto-save
+  // Visual confetti only — save is handled explicitly in handleGenerate
   useEffect(() => {
-    if (step === "result" && (imageBase64 || htmlCode) && user) {
+    if (step === "result" && (imageBase64 || htmlCode)) {
       setShowConfetti(true);
       const t = setTimeout(() => setShowConfetti(false), 1500);
-      handleSave(); // self-guarded by savedRef
       return () => clearTimeout(t);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, imageBase64, htmlCode, user]);
+  }, [step, imageBase64, htmlCode]);
 
   // Reset save guard when the modal opens fresh
   useEffect(() => {
@@ -241,8 +241,15 @@ export default function InfographicModal({ open, onClose, content, platform }: P
 
   // ─── Generation ───
 
+  // Image generation can be slow — give Gemini up to 2 minutes before aborting.
+  // On abort: throw a clear French error (caught by handleGenerate, no fallback).
+  // On HTTP error or empty response: return null → fallback to Claude.
   async function generateWithGemini(): Promise<string | null> {
     if (!GEMINI_API_KEY) return null;
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 120_000); // 120s
+
     try {
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
@@ -256,14 +263,33 @@ export default function InfographicModal({ open, onClose, content, platform }: P
               responseMimeType: "image/png",
             },
           }),
+          signal: controller.signal,
         },
       );
-      if (!response.ok) return null;
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "");
+        console.warn("[Gemini] HTTP", response.status, errorText.slice(0, 200));
+        return null;
+      }
+
       const data = await response.json();
-      return data.candidates?.[0]?.content?.parts
+      const base64 = data.candidates?.[0]?.content?.parts
         ?.find((p: { inlineData?: { data: string } }) => p.inlineData)
-        ?.inlineData?.data || null;
-    } catch {
+        ?.inlineData?.data;
+
+      if (!base64) {
+        console.warn("[Gemini] No image in response");
+        return null;
+      }
+      return base64;
+    } catch (err) {
+      clearTimeout(timeoutId);
+      if (err instanceof Error && err.name === "AbortError") {
+        throw new Error("La génération d'image a dépassé 2 minutes. Réessaie avec un contenu plus court.");
+      }
+      console.warn("[Gemini] Network error:", err);
       return null;
     }
   }
@@ -280,7 +306,7 @@ export default function InfographicModal({ open, onClose, content, platform }: P
             content: buildInfographicPrompt(content, platform, customPrompt || undefined, forcedTemplate),
           }],
         }),
-        45_000,
+        60_000, // 60s — Claude is text-only, faster than Gemini image gen
       ),
       { maxRetries: 1, baseDelayMs: 3000 },
     );
@@ -297,27 +323,52 @@ export default function InfographicModal({ open, onClose, content, platform }: P
     setHtmlCode("");
     setResultMode(null);
     setSaved(false);
+    setQualityScore(null);
     savedRef.current = false; // New generation → allow a fresh single save
+
+    // Generation flow:
+    //   1. Try Gemini (image, 120s timeout)
+    //   2. If Gemini timeout → throw, NO fallback (user retries with shorter content)
+    //   3. If Gemini soft-fail (HTTP error / empty / no API key) → fallback to Claude HTML (60s)
+    //   4. On success → setStep("result") + explicit save (single, with fresh data)
+    //   5. On any failure → setStep("ready") + toast.error + EARLY RETURN (no save, no insert)
+    let result: { image?: string; html?: string; mode: "gemini" | "claude" } | null = null;
 
     try {
       const base64 = await generateWithGemini();
       if (base64) {
-        setImageBase64(base64);
-        setResultMode("gemini");
-        setStep("result");
-        return;
+        result = { image: base64, mode: "gemini" };
+      } else {
+        // Soft fallback to Claude
+        const rawHtml = await generateWithClaude();
+        const html = sanitizeInfographicHtml(postProcessHtml(rawHtml));
+        if (!html || html.trim().length < 100) {
+          throw new Error("Le contenu généré est vide ou trop court. Réessaie.");
+        }
+        result = { html, mode: "claude" };
       }
-      const rawHtml = await generateWithClaude();
-      const html = sanitizeInfographicHtml(postProcessHtml(rawHtml));
-      setHtmlCode(html);
-      setResultMode("claude");
-      setQualityScore(scoreInfographic(html, dims));
     } catch (err) {
-      const msg = friendlyError(err);
-      setHtmlCode(`<div style='padding:40px;color:#999;font-family:sans-serif;text-align:center'>${msg}</div>`);
+      console.error("[InfographicModal] Generation failed:", err);
+      const fallbackMsg = err instanceof Error ? err.message : "La génération a échoué";
+      const msg = friendlyError(err) || fallbackMsg;
+      setStep("ready"); // Back to ready — NO result, NO save, NO insert
+      toast.error(msg);
+      return;
+    }
+
+    // ─── Generation succeeded — apply state and save once ───
+    if (result.image) {
+      setImageBase64(result.image);
+      setResultMode("gemini");
+    } else if (result.html) {
+      setHtmlCode(result.html);
       setResultMode("claude");
+      setQualityScore(scoreInfographic(result.html, dims));
     }
     setStep("result");
+
+    // Explicit single save with fresh data — no stale closure on state
+    await handleSave({ image: result.image, html: result.html, mode: result.mode });
   }
 
   // ─── Downloads (PNG + JPEG only) ───
@@ -447,19 +498,32 @@ export default function InfographicModal({ open, onClose, content, platform }: P
   }
 
   // ─── Save ───
-  // Self-guarded via savedRef. Both auto-save (useEffect) and manual click use this.
-  // The synchronous ref reservation prevents StrictMode double-fires AND fast double-clicks.
+  // Called EXPLICITLY from handleGenerate after a verified success.
+  // Accepts fresh data via opts to avoid stale React state closures.
+  // savedRef provides synchronous duplicate protection.
 
-  async function handleSave() {
+  async function handleSave(opts?: { image?: string; html?: string; mode: "gemini" | "claude" }) {
     if (!user) return;
     if (savedRef.current) return; // Already reserved → drop the duplicate
+
+    // Prefer fresh data from opts; fall back to state for any leftover call sites.
+    const image = opts?.image ?? imageBase64;
+    const html = opts?.html ?? htmlCode;
+    const mode = opts?.mode ?? resultMode;
+
+    // Hard guard: nothing usable to save → no insert
+    if (!image && !html) {
+      console.warn("[InfographicModal] handleSave bailed — no image and no html");
+      return;
+    }
+
     savedRef.current = true; // Reserve the slot synchronously
     setSaving(true);
 
     try {
-      const saveContent = resultMode === "gemini"
+      const saveContent = mode === "gemini"
         ? `[Gemini Image] ${content.slice(0, 200)}`
-        : htmlCode.slice(0, 10000);
+        : (html || "").slice(0, 10000);
 
       const { error } = await supabase.from("generated_content").insert({
         user_id: user.id,
@@ -467,13 +531,13 @@ export default function InfographicModal({ open, onClose, content, platform }: P
         format: "Infographic",
         content: saveContent,
         viral_score: 85,
-        image_prompt: resultMode === "gemini" ? "Gemini generated image" : "HTML infographic",
+        image_prompt: mode === "gemini" ? "Gemini generated image" : "HTML infographic",
       });
 
       if (error) {
         console.error("[InfographicModal] Supabase save error:", error.message, error.details, error.hint);
         toast.error(`Erreur de sauvegarde : ${error.message}`);
-        savedRef.current = false; // Release slot → allow retry on failure
+        savedRef.current = false; // Release slot → allow retry on next generation
       } else {
         setSaved(true);
         toast.success("Infographie sauvegardée !");
@@ -481,7 +545,7 @@ export default function InfographicModal({ open, onClose, content, platform }: P
     } catch (err) {
       console.error("[InfographicModal] Network/unexpected error:", err);
       toast.error("Erreur réseau lors de la sauvegarde");
-      savedRef.current = false; // Release slot → allow retry on failure
+      savedRef.current = false; // Release slot → allow retry on next generation
     }
     setSaving(false);
   }
@@ -525,13 +589,13 @@ export default function InfographicModal({ open, onClose, content, platform }: P
           <div className="flex items-center justify-between px-6 py-4 border-b border-border/20">
             <div>
               <h3 className="text-lg font-bold">
-                {step === "ready" && "Create your infographic"}
-                {step === "generating" && "Generating..."}
-                {step === "result" && "Your infographic"}
+                {step === "ready" && "Crée ton infographie"}
+                {step === "generating" && "Génération en cours…"}
+                {step === "result" && "Ton infographie"}
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {step === "ready" && "AI will analyze your content and design automatically"}
-                {step === "generating" && "This may take 10-20 seconds"}
+                {step === "ready" && "L'IA analyse ton contenu et conçoit le design automatiquement"}
+                {step === "generating" && "Cela peut prendre jusqu'à 2 minutes — ne ferme pas la fenêtre"}
                 {step === "result" && (
                   <>
                     {platform} — {dims.width}x{dims.height}
@@ -632,7 +696,7 @@ export default function InfographicModal({ open, onClose, content, platform }: P
                       <Sparkles className="w-5 h-5 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                     </div>
                     <div className="w-full max-w-xs">
-                      <GenerationProgress isActive={step === "generating"} steps={INFOGRAPHIC_STEPS} estimatedSeconds={20} />
+                      <GenerationProgress isActive={step === "generating"} steps={INFOGRAPHIC_STEPS} estimatedSeconds={90} />
                     </div>
                   </div>
                 </div>

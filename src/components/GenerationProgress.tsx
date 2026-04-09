@@ -22,12 +22,12 @@ export const CONTENT_STEPS = [
 export const INFOGRAPHIC_STEPS = [
   "Analyse du contenu...",
   "Detection du type de contenu...",
-  "Selection du layout optimal...",
   "Construction de la structure...",
-  "Ajout des illustrations...",
-  "Application de la palette...",
+  "Application de la palette pastel...",
+  "Generation de l'image en cours...",
   "Ajustement typographique...",
-  "Presque pret...",
+  "Finalisation...",
+  "Cela peut prendre jusqu'a 2 minutes...",
 ];
 
 export default function GenerationProgress({ isActive, steps, estimatedSeconds = 20 }: Props) {
@@ -70,14 +70,18 @@ export default function GenerationProgress({ isActive, steps, estimatedSeconds =
     return () => cancelAnimationFrame(rafRef.current);
   }, [isActive, done, estimatedSeconds]);
 
-  // Rotate step messages
+  // Rotate step messages — interval scales with the estimated total time so
+  // each step roughly maps to a real progress moment instead of looping
+  // dozens of times. Clamp at the last step (don't loop) so long runs
+  // settle on the "almost done" message instead of restarting from step 0.
   useEffect(() => {
     if (!isActive || done) return;
+    const stepIntervalMs = Math.max(2000, Math.round((estimatedSeconds * 1000) / steps.length));
     const interval = setInterval(() => {
-      setStepIndex((prev) => (prev + 1) % steps.length);
-    }, 2500);
+      setStepIndex((prev) => Math.min(prev + 1, steps.length - 1));
+    }, stepIntervalMs);
     return () => clearInterval(interval);
-  }, [isActive, done, steps.length]);
+  }, [isActive, done, steps.length, estimatedSeconds]);
 
   // When generation finishes → animate to 100%
   useEffect(() => {
