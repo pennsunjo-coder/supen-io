@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
   X, RefreshCw, Download, Sparkles, Check,
-  ExternalLink, Save, Loader2, Copy, Maximize2, FileCode,
+  Loader2, Copy, Maximize2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -207,25 +207,25 @@ export default function InfographicModal({ open, onClose, content, platform }: P
     }
   }, [open, content]);
 
-  // Show confetti when result arrives + auto-save (with guard against duplicates)
-  const autoSaveTriggered = useRef(false);
+  // Hard guard against duplicate saves: ref is mutated synchronously,
+  // so even React StrictMode double-fires can't slip a second insert through.
+  // handleSave self-guards on this ref — both call sites just call handleSave().
+  const savedRef = useRef(false);
+
+  // Show confetti when result arrives + trigger the single auto-save
   useEffect(() => {
-    if (step === "result" && (imageBase64 || htmlCode)) {
+    if (step === "result" && (imageBase64 || htmlCode) && user) {
       setShowConfetti(true);
       const t = setTimeout(() => setShowConfetti(false), 1500);
-      // Auto-save once after generation (ref prevents duplicate calls)
-      if (!autoSaveTriggered.current && user) {
-        autoSaveTriggered.current = true;
-        handleSave();
-      }
+      handleSave(); // self-guarded by savedRef
       return () => clearTimeout(t);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, imageBase64, htmlCode]);
+  }, [step, imageBase64, htmlCode, user]);
 
-  // Reset auto-save guard when modal opens fresh
+  // Reset save guard when the modal opens fresh
   useEffect(() => {
-    if (open) autoSaveTriggered.current = false;
+    if (open) savedRef.current = false;
   }, [open]);
 
   // ─── Auto-analysis ───
@@ -297,6 +297,7 @@ export default function InfographicModal({ open, onClose, content, platform }: P
     setHtmlCode("");
     setResultMode(null);
     setSaved(false);
+    savedRef.current = false; // New generation → allow a fresh single save
 
     try {
       const base64 = await generateWithGemini();
@@ -319,86 +320,89 @@ export default function InfographicModal({ open, onClose, content, platform }: P
     setStep("result");
   }
 
-  // ─── Downloads ───
+  // ─── Downloads (PNG + JPEG only) ───
 
-  async function handleDownloadPng() {
-    if (resultMode === "gemini" && imageBase64) {
-      const link = document.createElement("a");
-      link.download = `supen-infographic-${Date.now()}.png`;
-      link.href = `data:image/png;base64,${imageBase64}`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast.success("PNG downloaded!");
-      return;
-    }
-
-    if (!htmlCode) return;
-    setDownloading(true);
-
-    try {
-      const container = document.createElement("div");
-      container.style.cssText = `
-        position: fixed; top: -9999px; left: -9999px;
-        width: ${dims.width}px; height: ${dims.height}px; overflow: hidden; z-index: -1;
-      `;
-      const styleMatch = htmlCode.match(/<style[\s\S]*?<\/style>/i);
-      const bodyMatch = htmlCode.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-      container.innerHTML = (styleMatch ? styleMatch[0] : "") + (bodyMatch ? bodyMatch[1] : htmlCode);
-
-      const bodyStyleMatch = htmlCode.match(/<body[^>]*style="([^"]*)"/i);
-      if (bodyStyleMatch) container.style.cssText += bodyStyleMatch[1];
-      container.style.width = `${dims.width}px`;
-      container.style.height = `${dims.height}px`;
-      container.style.overflow = "hidden";
-      container.style.fontFamily = "'Poppins', sans-serif";
-      container.style.background = "#FFF8F0";
-      container.style.padding = "48px";
-      container.style.boxSizing = "border-box";
-
-      document.body.appendChild(container);
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      const html2canvas = (await import("html2canvas")).default;
-      const canvas = await html2canvas(container, {
-        width: dims.width,
-        height: dims.height,
-        scale: 1,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: "#FFF8F0",
-        logging: false,
-      });
-
-      document.body.removeChild(container);
-
-      const link = document.createElement("a");
-      link.download = `supen-infographic-${Date.now()}.png`;
-      link.href = canvas.toDataURL("image/png", 1.0);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast.success(`PNG downloaded! (${dims.width}x${dims.height}px)`);
-    } catch (err) {
-      console.error("PNG download error:", err);
-      handleDownloadHtml();
-      toast.info("PNG failed — HTML downloaded instead.");
-    }
-    setDownloading(false);
+  function loadImageFromBase64(base64: string, mimeHint: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("Image decode failed"));
+      img.src = `data:${mimeHint};base64,${base64}`;
+    });
   }
 
-  function handleDownloadHtml() {
-    if (!htmlCode) return;
-    const blob = new Blob([htmlCode], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `supen-infographic-${Date.now()}.html`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    toast.success("HTML file downloaded!");
+  async function handleDownload(format: "png" | "jpeg") {
+    if (downloading) return;
+    if (!imageBase64 && !htmlCode) return;
+
+    setDownloading(true);
+    const ext = format === "jpeg" ? "jpg" : "png";
+    const mime = format === "jpeg" ? "image/jpeg" : "image/png";
+
+    try {
+      let canvas: HTMLCanvasElement;
+
+      if (resultMode === "gemini" && imageBase64) {
+        // Gemini returns PNG (responseMimeType: "image/png").
+        // Decode then re-encode in the target format via canvas.
+        const img = await loadImageFromBase64(imageBase64, "image/png");
+        canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) throw new Error("Canvas context unavailable");
+        // White background for JPEG to avoid black fringes on transparent pixels
+        if (format === "jpeg") {
+          ctx.fillStyle = "#FFFFFF";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        ctx.drawImage(img, 0, 0);
+      } else {
+        // Claude HTML → temp container + html2canvas
+        const container = document.createElement("div");
+        container.style.cssText = `position:fixed;top:-9999px;left:-9999px;width:${dims.width}px;height:${dims.height}px;overflow:hidden;z-index:-1;`;
+        const styleMatch = htmlCode.match(/<style[\s\S]*?<\/style>/i);
+        const bodyMatch = htmlCode.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+        container.innerHTML = (styleMatch ? styleMatch[0] : "") + (bodyMatch ? bodyMatch[1] : htmlCode);
+        const bodyStyleMatch = htmlCode.match(/<body[^>]*style="([^"]*)"/i);
+        if (bodyStyleMatch) container.style.cssText += bodyStyleMatch[1];
+        container.style.width = `${dims.width}px`;
+        container.style.height = `${dims.height}px`;
+        container.style.overflow = "hidden";
+        container.style.background = "#FFFFFF";
+        container.style.boxSizing = "border-box";
+        document.body.appendChild(container);
+        // Wait for fonts and styles to settle
+        await new Promise((r) => setTimeout(r, 1500));
+
+        const html2canvas = (await import("html2canvas")).default;
+        canvas = await html2canvas(container, {
+          width: dims.width,
+          height: dims.height,
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: "#FFFFFF",
+          logging: false,
+        });
+        document.body.removeChild(container);
+      }
+
+      const dataUrl = canvas.toDataURL(mime, format === "jpeg" ? 0.95 : undefined);
+      const link = document.createElement("a");
+      link.download = `supen-infographie-${Date.now()}.${ext}`;
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success(`${format.toUpperCase()} téléchargé !`);
+    } catch (err) {
+      console.error("[InfographicModal] Download error:", err);
+      toast.error("Erreur lors du téléchargement");
+    } finally {
+      setDownloading(false);
+    }
   }
 
   async function handleCopyImage() {
@@ -443,9 +447,13 @@ export default function InfographicModal({ open, onClose, content, platform }: P
   }
 
   // ─── Save ───
+  // Self-guarded via savedRef. Both auto-save (useEffect) and manual click use this.
+  // The synchronous ref reservation prevents StrictMode double-fires AND fast double-clicks.
 
   async function handleSave() {
-    if (!user || saved) return;
+    if (!user) return;
+    if (savedRef.current) return; // Already reserved → drop the duplicate
+    savedRef.current = true; // Reserve the slot synchronously
     setSaving(true);
 
     try {
@@ -465,6 +473,7 @@ export default function InfographicModal({ open, onClose, content, platform }: P
       if (error) {
         console.error("[InfographicModal] Supabase save error:", error.message, error.details, error.hint);
         toast.error(`Erreur de sauvegarde : ${error.message}`);
+        savedRef.current = false; // Release slot → allow retry on failure
       } else {
         setSaved(true);
         toast.success("Infographie sauvegardée !");
@@ -472,6 +481,7 @@ export default function InfographicModal({ open, onClose, content, platform }: P
     } catch (err) {
       console.error("[InfographicModal] Network/unexpected error:", err);
       toast.error("Erreur réseau lors de la sauvegarde");
+      savedRef.current = false; // Release slot → allow retry on failure
     }
     setSaving(false);
   }
@@ -642,7 +652,7 @@ export default function InfographicModal({ open, onClose, content, platform }: P
                       className="text-center mb-3"
                     >
                       <p className="text-sm font-semibold">
-                        Your infographic is ready! <span className="text-lg">🎉</span>
+                        Ton infographie est prête ! <span className="text-lg">🎉</span>
                       </p>
                       <div className="flex justify-center gap-1 mt-1 text-lg">
                         {["✨", "⭐", "✨", "⭐"].map((s, i) => (
@@ -702,57 +712,58 @@ export default function InfographicModal({ open, onClose, content, platform }: P
                   </button>
                 </motion.div>
 
-                {/* Primary actions */}
-                <div className="flex flex-wrap items-center gap-2 mb-3">
+                {/* Saved status banner */}
+                {saved && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-3 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-semibold"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    Infographie sauvegardée
+                  </motion.div>
+                )}
+                {!saved && saving && (
+                  <div className="mb-3 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-accent/30 text-muted-foreground text-xs font-medium">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Sauvegarde en cours…
+                  </div>
+                )}
+
+                {/* Primary actions — PNG + JPEG download */}
+                <div className="flex gap-2 mb-3">
                   <Button
-                    size="sm"
-                    className="h-10 gap-2 text-sm font-semibold"
-                    onClick={handleDownloadPng}
+                    onClick={() => handleDownload("png")}
+                    variant="outline"
+                    className="flex-1 gap-2 h-10 text-xs font-semibold"
                     disabled={downloading}
                   >
                     {downloading
-                      ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</>
-                      : <><Download className="w-4 h-4" /> Download PNG</>
+                      ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Génération…</>
+                      : <><Download className="w-3.5 h-3.5" /> PNG</>
                     }
                   </Button>
-
-                  <Button variant="outline" size="sm" className="h-9 gap-2 text-xs" onClick={handleCopyImage} disabled={downloading}>
-                    <Copy className="w-3.5 h-3.5" /> Copy Image
+                  <Button
+                    onClick={() => handleDownload("jpeg")}
+                    variant="outline"
+                    className="flex-1 gap-2 h-10 text-xs font-semibold"
+                    disabled={downloading}
+                  >
+                    {downloading
+                      ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Génération…</>
+                      : <><Download className="w-3.5 h-3.5" /> JPEG</>
+                    }
                   </Button>
-
-                  {resultMode === "claude" && (
-                    <Button variant="outline" size="sm" className="h-9 gap-2 text-xs" onClick={handleDownloadHtml}>
-                      <FileCode className="w-3.5 h-3.5" /> HTML
-                    </Button>
-                  )}
                 </div>
 
                 {/* Secondary actions */}
                 <div className="flex flex-wrap items-center gap-2 mb-3">
-                  <Button variant="outline" size="sm" className="h-9 gap-2 text-xs" onClick={handleGenerate}>
-                    <RefreshCw className="w-3.5 h-3.5" /> Regenerate
+                  <Button variant="outline" size="sm" className="h-9 gap-2 text-xs" onClick={handleGenerate} disabled={downloading}>
+                    <RefreshCw className="w-3.5 h-3.5" /> Régénérer
                   </Button>
 
-                  {resultMode === "claude" && (
-                    <Button variant="outline" size="sm" className="h-9 gap-2 text-xs" onClick={() => {
-                      const blob = new Blob([htmlCode], { type: "text/html" });
-                      window.open(URL.createObjectURL(blob), "_blank");
-                    }}>
-                      <ExternalLink className="w-3.5 h-3.5" /> Open in tab
-                    </Button>
-                  )}
-
-                  <Button
-                    variant={saved ? "ghost" : "outline"}
-                    size="sm"
-                    className={cn("h-9 gap-2 text-xs", saved && "text-green-400")}
-                    onClick={handleSave}
-                    disabled={saved || saving}
-                  >
-                    {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> :
-                     saved ? <Check className="w-3.5 h-3.5" /> :
-                     <Save className="w-3.5 h-3.5" />}
-                    {saved ? "Saved" : "Save"}
+                  <Button variant="outline" size="sm" className="h-9 gap-2 text-xs" onClick={handleCopyImage} disabled={downloading}>
+                    <Copy className="w-3.5 h-3.5" /> Copier
                   </Button>
                 </div>
 
