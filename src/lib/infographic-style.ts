@@ -516,96 +516,6 @@ function buildContenuAIntegrer(templateId: string, extraction: ExtractionResult)
   return lines.join("\n");
 }
 
-// Build the per-template "3 PANNEAUX" mapping (Master Prompt Rendu Industriel — Commande C).
-// Each template is translated into exactly 3 horizontal panels with their own solid pastel background.
-function build3PanelMapping(templateId: string, extraction: ExtractionResult): string {
-  const points = extraction.points;
-  const get = (i: number, field: "title" | "body"): string =>
-    points[i]?.[field] || "(à inférer du contenu source)";
-
-  switch (templateId) {
-    case "UI_CARDS":
-      return `Panneau 1 (haut, 33%, fond UNI #FFF0F0 — rouge très pâle) :
-  Étiquette « ✗ MAUVAIS » noir #1F2937 + concept court
-  Concept : ${get(0, "title")}
-  Détail : ${get(0, "body")}
-
-Panneau 2 (milieu, 33%, fond UNI #FFF9F0 — orange très pâle) :
-  Étiquette « ~ CORRECT » noir #1F2937 + concept court
-  Concept : ${get(1, "title")}
-  Détail : ${get(1, "body")}
-
-Panneau 3 (bas, 33%, fond UNI #F0FFF4 — vert très pâle) :
-  Étiquette « ✓ EXCELLENT » noir #1F2937 + concept court
-  Concept : ${get(2, "title")}
-  Détail : ${get(2, "body")}
-  Footer : "Créé avec Supen.io" en brand color #24A89B`;
-
-    case "WHITEBOARD":
-      return `Panneau 1 (haut, 33%, fond UNI #FFFFFF blanc pur) :
-  Titre principal en lettres CAPITALES géantes (≥80px), Sans-Serif noir #1F2937
-  1 ligne max, ≤6 mots, verbe d'action
-
-Panneau 2 (milieu, 33%, fond UNI #F0F8FF — bleu très pâle) :
-  Liste verticale des 4 conseils principaux en gros caractères noir
-  • ${get(0, "title")}
-  • ${get(1, "title")}
-  • ${get(2, "title")}
-  • ${get(3, "title")}
-
-Panneau 3 (bas, 33%, fond UNI #FFFEF0 — jaune très pâle) :
-  « ASTUCE PRO » en haut + takeaway final en gros texte noir
-  Texte : ${extraction.proTip}
-  Footer : "Créé avec Supen.io" en brand color #24A89B`;
-
-    case "FUNNEL":
-      return `Panneau 1 (haut, 33%, fond UNI #FFF0F0 — rouge très pâle) :
-  « ÉTAPES 1-2 — DÉCOUVERTE » en titre noir
-  Étape 1 : ${get(0, "title")}
-  Étape 2 : ${get(1, "title")}
-  Flèche épaisse vers le bas (geometric, pas dessinée à la main)
-
-Panneau 2 (milieu, 33%, fond UNI #FFF9F0 — orange très pâle) :
-  « ÉTAPE 3 — CONVERSION » en titre noir
-  Étape 3 : ${get(2, "title")}
-  Détail : ${get(2, "body")}
-  Flèche épaisse vers le bas
-
-Panneau 3 (bas, 33%, fond UNI #F0FFF4 — vert très pâle) :
-  « ÉTAPES 4-5 — VICTOIRE » en titre noir
-  Étape 4 : ${get(3, "title")}
-  Étape 5 : ${get(4, "title")}
-  CTA pleine largeur en brand color #24A89B : ${extraction.proTip}
-  Footer : "Créé avec Supen.io"`;
-
-    case "DATA_GRID":
-      return `Panneau 1 (haut, 33%, fond UNI #FFFFFF blanc pur) :
-  Titre principal en CAPITALES géantes (≥80px) noir #1F2937
-  En-tête de table : « ÉLÉMENT | DESCRIPTION | IDÉAL POUR »
-
-Panneau 2 (milieu, 33%, fond UNI #F0F8FF — bleu très pâle) :
-  4 lignes de données alignées en colonnes avec dots colorés à gauche :
-  • ${get(0, "title")} | ${get(0, "body")} | ${get(4, "title")}
-  • ${get(1, "title")} | ${get(1, "body")} | ${get(4, "body")}
-  • ${get(2, "title")} | ${get(2, "body")} | ${get(5, "title")}
-  • ${get(3, "title")} | ${get(3, "body")} | ${get(5, "body")}
-
-Panneau 3 (bas, 33%, fond UNI #F0FFF4 — vert très pâle) :
-  « À RETENIR » en titre noir + conclusion gigantesque
-  Texte : ${extraction.proTip}
-  Footer : "Créé avec Supen.io" en brand color #24A89B`;
-
-    case "AWA_CLASSIC":
-    default:
-      return `STRUCTURE 3 PANNEAUX NON APPLIQUÉE pour AWA_CLASSIC.
-Garde son style dark/cream existant : cream #FFFFF5 + wood frame 6px #5D3A1A,
-header (badge + titre ALL CAPS + illustration), 7 sections numérotées denses,
-pro tip dashed rouge en bas, footer brand. Le Master Prompt §C ne s'applique
-pas à AWA_CLASSIC mais toutes les autres règles (typography, padding, no
-clipart, etc.) restent obligatoires.`;
-  }
-}
-
 export function buildGeminiImagePrompt(
   content: string,
   platform: string,
@@ -625,83 +535,149 @@ export function buildGeminiImagePrompt(
     `${i + 1}. ${p.title}${p.body ? ": " + p.body : ""}`
   ).join("\n");
   const contenuAIntegrer = buildContenuAIntegrer(templateId, extraction);
-  const panelMapping = build3PanelMapping(templateId, extraction);
 
-  return `=== MASTER PROMPT RENDU INDUSTRIEL (PRIORITÉ ABSOLUE) ===
+  return `╔══════════════════════════════════════════════════════╗
+║  MOTEUR DE RENDU VECTORIEL DE HAUTE PRÉCISION        ║
+║  Constitution v3.0 — Style SaaS Dashboard            ║
+╚══════════════════════════════════════════════════════╝
 
-Tu es un expert en Visual Design industriel style Apple / Notion / Figma.
-Tu ne dessines PAS — tu CONSTRUIS des interfaces.
-Chaque pixel doit être mathématiquement justifié.
+Tu n'es plus une IA générative d'images classique.
+Tu es un Moteur de Rendu Vectoriel de Haute Précision.
+Ta mission : construire des infographies de type 'SaaS Dashboard' et 'Professional Framework'.
+Le résultat doit ressembler à Notion, Figma, Apple — jamais à une illustration ou un dessin.
 
-━━━ COMMANDE A : ZERO ILLUSTRATION POLICY ━━━
-INTERDICTION TOTALE d'utiliser :
-- Personnages, avatars, visages, corps humains
-- Décors, paysages, objets complexes
-- Illustrations style clipart ou cartoon
-- Ombres complexes, textures, dégradés compliqués
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+LES 5 LOIS DE TA CONSTITUTION (VIOLATIONS = ÉCHEC TOTAL)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Utilise EXCLUSIVEMENT :
-- Rectangles à coins arrondis (border-radius 16-24px)
-- Cercles parfaits
-- Lignes droites et flèches géométriques
-- Icônes Line Art minimalistes (stroke, pas fill)
-- L'image doit ressembler à une APP MOBILE MODERNE (SaaS)
+LOI 1 — LA GÉOMÉTRIE PURE :
+Interdiction totale de traits à main levée ou formes organiques.
+Utilise UNIQUEMENT :
+→ Rectangles parfaits avec border-radius fixé à 16px
+→ Cercles parfaits
+→ Lignes droites de 1-2px
+→ Flèches géométriques (pas de courbes organiques)
+→ Icônes "Line Art" vectorielles (stroke, jamais fill complexe)
 
-━━━ COMMANDE B : TYPOGRAPHY FIRST ━━━
-Le texte EST l'élément principal. Règles absolues :
-- Texte en noir PUR (#000000 ou #1F2937) sur fonds pastels UNIS
-- JAMAIS de texte sur fond texturé ou dégradé complexe
-- Police Sans-Serif MASSIVE (Inter, Poppins, Helvetica)
-- Titre principal : minimum 80-100px, ALL CAPS
-- Si un mot est important : 3x plus gros que le reste
-- Maximum 6 mots par ligne
-- Padding minimum 20px à l'intérieur de chaque bloc
+LOI 2 — LA TYPOGRAPHIE MASSIVE ("GRAVÉE") :
+Le texte ne doit pas être "dessiné", il doit être "gravé".
+→ Police SANS-SERIF épaisse : Inter Bold ou Roboto Bold
+→ Titre : occupe minimum 20% de la largeur du bloc
+→ Corps : maximum 5 mots par ligne, 1 idée = 1 ligne
+→ Interdiction de longs paragraphes
+→ Texte en noir pur (#000000 ou #1F2937) sur fond pastel uni
+→ JAMAIS de texte sur fond texturé
 
-━━━ COMMANDE C : THE GRID CONSTRAINT ━━━
-Structure OBLIGATOIRE en 3 panneaux horizontaux égaux :
-- Panneau 1 (Haut, 33%) : Fond blanc #FFFFFF — Titre GIGANTESQUE
-- Panneau 2 (Milieu, 33%) : Fond pastel coloré uni — Point principal
-- Panneau 3 (Bas, 33%) : Fond pastel différent — CTA / conclusion
-Chaque panneau a sa propre couleur de fond UNIE.
-AUCUN élément ne dépasse de son panneau.
+LOI 3 — L'ESPACE NÉGATIF (PADDING OBLIGATOIRE) :
+→ Padding minimum 40px à l'intérieur de chaque carte
+→ Si un élément touche un autre = DESIGN RATÉ
+→ Laisse respirer chaque bloc
+→ Chaque section doit avoir de l'air autour d'elle
 
-━━━ APPLICATION COMMANDE C POUR ${templateId} ━━━
+LOI 4 — LE RENDU FLAT UI (ZÉRO ORNEMENT) :
+→ Fonds UNIS et PASTELS uniquement
+→ Aucune texture, grain ou dégradé complexe
+→ Pas d'ombres portées noires
+→ Uniquement soft shadows : box-shadow 0 4px 16px rgba(0,0,0,0.06)
+→ Zéro bruit visuel
+→ Style vectoriel plat haute définition
 
-${panelMapping}
+LOI 5 — L'OCCUPATION TOTALE (FULL BLEED) :
+→ L'infographie s'étend jusqu'aux bords (Full Bleed)
+→ Pas de cadre externe blanc inutile
+→ Les blocs de couleur touchent les bords
+→ 85-95% de la surface doit être occupée par du contenu
 
-━━━ EXEMPLE DE STRUCTURE PARFAITE ━━━
-"Infographie technique ultra-minimaliste. Format vertical.
-Structure en 3 panneaux horizontaux massifs.
-Panneau 1 : Titre en lettres capitales géantes, noir sur blanc.
-Panneau 2 : Fond bleu ciel très pâle (#EBF5FB).
-  Texte à gauche en gras. Icône géométrique simple à droite.
-Panneau 3 : Fond vert menthe très pâle (#EAFAF1).
-  Texte à gauche en gras. Check vert géant à droite.
-Style : Rendu vectoriel pur, haute définition,
-  texte ultra-net, zéro ombre complexe, style Apple/Notion."
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STRUCTURE DE GRILLE OBLIGATOIRE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-━━━ INTERDICTIONS ABSOLUES ━━━
-✗ PAS de personnages ou illustrations complexes
-✗ PAS de texte flou ou en dessous de 14px
-✗ PAS de bordures noires épaisses
-✗ PAS de fond sombre (sauf AWA_CLASSIC)
-✗ PAS de texte en anglais — TOUT en FRANÇAIS
-✗ PAS de zones étouffées sans padding
-✗ PAS de style "dessin à main levée"
-✗ PAS de rendu "brouillon" ou "esquisse"
+SECTION HEADER (20% de la hauteur) :
+→ Fond blanc pur #FFFFFF
+→ Titre MASSIF en noir, ALL CAPS, Inter Bold
+→ En dessous : badge coloré pastel avec catégorie en majuscules
+→ Texte ultra-lisible à 2 mètres de distance
 
-━━━ CHECKLIST FINALE ━━━
-[ ] 3 panneaux horizontaux clairement définis
-[ ] Titre gigantesque et lisible à distance
-[ ] Texte noir sur fond pastel uni (jamais texturé)
-[ ] Formes géométriques pures uniquement
-[ ] Style Apple/Notion/Figma — pas cartoon
+SECTION BODY (70% de la hauteur) :
+→ Divisé en 3 cartes VERTICALES égales (ou N cartes selon template)
+→ Carte 1 : Fond Bleu Pastel (#EBF5FB) — texte noir + icône
+→ Carte 2 : Fond Orange Pastel (#FEF9E7) — texte noir + icône
+→ Carte 3 : Fond Vert Pastel (#EAFAF1) — texte noir + icône
+→ Chaque carte : padding 40px, border-radius 16px, soft shadow
+
+SECTION FOOTER (10% de la hauteur) :
+→ Fond gris très clair (#F8F9FA)
+→ Texte : "Créé avec Supen.io" en brand color #24A89B
+→ Séparateur ligne fine #E5E7EB en haut du footer
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ADAPTATION PAR TEMPLATE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+>>> TEMPLATE ACTIF POUR CETTE GÉNÉRATION : ${templateId} <<<
+(Lis SEULEMENT la section correspondant au template actif ci-dessous.)
+
+Si template = UI_CARDS :
+Header blanc / Carte 1 fond #FFF0F0 (rouge pastel) = "À éviter" /
+Carte 2 fond #FEF9E7 (orange pastel) = "Acceptable" /
+Carte 3 fond #EAFAF1 (vert pastel) = "Excellence"
+Chaque carte : étiquette couleur en haut + texte gras + icône large
+
+Si template = WHITEBOARD :
+Header blanc / Body fond #FAFBFF avec dot grid 24px /
+Texte style "notes manuscrites propres" mais SANS vraie écriture cursive /
+Surlignages jaunes #FFE066 sur mots-clés via rectangles plats
+
+Si template = FUNNEL :
+Header blanc / 5 barres horizontales décroissantes (Full Bleed) /
+Barre 1 la plus large (fond #FDECEA) → Barre 5 la plus étroite (fond #E8F5E9) /
+Numéro cerclé à gauche + texte gras à droite sur chaque barre /
+CTA final fond #24A89B texte blanc
+
+Si template = DATA_GRID :
+Header blanc / Tableau 4 lignes × 3 colonnes /
+En-tête colonnes fond #EBF5FB pastel bleu /
+Alternance lignes blanc / #F9FAFB /
+Dot coloré pastel par ligne
+
+Si template = AWA_CLASSIC :
+Garde le style dark existant — seule exception aux lois 4 et 5
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+INTERDICTIONS ABSOLUES (NEGATIVE PROMPT)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✗ AUCUN personnage, avatar, visage, corps humain
+✗ AUCUNE illustration clipart ou cartoon
+✗ AUCUN trait à main levée ou forme organique
+✗ AUCUN texte inférieur à 14px
+✗ AUCUNE bordure noire épaisse
+✗ AUCUN fond texturé ou dégradé complexe
+✗ AUCUN élément qui touche un autre sans padding
+✗ AUCUN texte en anglais — TOUT en FRANÇAIS
+✗ AUCUN style "brouillon" ou "esquisse"
+✗ AUCUNE ombre noire agressive
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CHECKLIST DE VALIDATION FINALE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[ ] Structure Header (20%) / Body (70%) / Footer (10%) visible
+[ ] Titre gigantesque et lisible à 2m de distance
+[ ] Formes géométriques pures uniquement (0 illustration)
+[ ] Chaque bloc a son padding de 40px
+[ ] Fonds pastels unis (0 texture)
+[ ] Maximum 5 mots par ligne dans le body
+[ ] Style Apple / Notion / Figma — jamais cartoon
 [ ] Tout le texte en FRANÇAIS
-[ ] Footer "Créé avec Supen.io" en brand color #24A89B
+[ ] Footer "Créé avec Supen.io" en #24A89B
+[ ] Qualité : Haute définition, rendu vectoriel plat, texte ultra-net, éclairage studio uniforme, zéro bruit visuel
 
-=== FIN DU MASTER PROMPT ===
+╔══════════════════════════════════════════════════════╗
+║  FIN DE LA CONSTITUTION v3.0                         ║
+╚══════════════════════════════════════════════════════╝
 
-(Le Master Prompt RENDU INDUSTRIEL ci-dessus EST PRIORITAIRE ABSOLUE. Toutes les sections suivantes sont des références secondaires. En cas de conflit avec une section ci-dessous, applique IMPÉRATIVEMENT le Master Prompt et IGNORE la directive contradictoire.)
+(La Constitution v3.0 ci-dessus EST LA LOI ABSOLUE. Toutes les sections suivantes sont des références secondaires conservées pour le contexte. En cas de conflit avec une section ci-dessous, applique IMPÉRATIVEMENT la Constitution et IGNORE la directive contradictoire.)
 
 ${"═".repeat(50)}
 === IDENTITÉ ===
