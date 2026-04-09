@@ -369,8 +369,9 @@ body{width:${w}px;height:${h}px;background:#FFFFF8;font-family:'Poppins',sans-se
 }
 
 // ─── TEMPLATE 9: UI_CARDS ───
-// Clean SaaS-style 3-tier comparison (Bad → Good → Great)
-// White space first. Pastel pills. Serif title. Inspired by reference IMG_4538-4542.
+// 3-tier Bad/Good/Great comparison with the official Supen pastel palette.
+// The Excellent card is visually elevated with a "★ Cible" badge and a green sidebar
+// of supporting reasons. Inspired by the meta-prompt visual grammar rules.
 export function uiCards(w: number, h: number): string {
   const isPortrait = h > 1100;
   return `<!DOCTYPE html>
@@ -378,40 +379,48 @@ export function uiCards(w: number, h: number): string {
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:${w}px;height:${h}px;overflow:hidden}
-body{background:#F8F9FA;font-family:'Inter',-apple-system,system-ui,sans-serif;padding:${isPortrait ? 40 : 36}px ${isPortrait ? 38 : 34}px;display:flex;flex-direction:column;color:#1A1A1A}
-.header{text-align:center;margin-bottom:${isPortrait ? 22 : 18}px}
-.kicker{display:inline-block;background:rgba(26,26,26,0.06);color:#4B5563;font-size:10px;font-weight:700;padding:5px 14px;border-radius:20px;margin-bottom:12px;letter-spacing:1.5px;text-transform:uppercase;font-style:normal}
-.title{font-family:'Playfair Display','Georgia',serif;font-size:${isPortrait ? 36 : 32}px;font-weight:900;color:#1A1A1A;line-height:1.15;letter-spacing:-0.5px;font-style:normal}
-.title span{color:#FF6B6B}
-.cards{display:flex;flex-direction:column;gap:${isPortrait ? 14 : 12}px;flex:1;min-height:0}
-.card{background:#FFFFFF;border-radius:14px;padding:${isPortrait ? 20 : 16}px ${isPortrait ? 24 : 20}px;box-shadow:0 2px 14px rgba(15,23,42,0.06),0 0 0 1px rgba(15,23,42,0.04);display:flex;flex-direction:column;flex:1;min-height:0}
-.card.l1{border-left:4px solid #FF6B6B}
-.card.l2{border-left:4px solid #FFB347}
-.card.l3{border-left:4px solid #51CF66}
+body{background:#F8F9FA;background-image:linear-gradient(rgba(0,0,0,0.018) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,0.018) 1px,transparent 1px);background-size:32px 32px;font-family:'Inter',-apple-system,system-ui,sans-serif;padding:${isPortrait ? 40 : 34}px ${isPortrait ? 38 : 32}px;display:flex;flex-direction:column;color:#1A1A1A}
+.header{text-align:center;margin-bottom:${isPortrait ? 20 : 16}px}
+.kicker{display:inline-block;background:#AEC6CF;color:#1F2937;font-size:10px;font-weight:800;padding:5px 14px;border-radius:20px;margin-bottom:10px;letter-spacing:1.5px;text-transform:uppercase;font-style:normal}
+.title{font-family:'Playfair Display','Georgia',serif;font-size:${isPortrait ? 36 : 30}px;font-weight:900;color:#1A1A1A;line-height:1.12;letter-spacing:-0.5px;font-style:normal}
+.title span{background:linear-gradient(180deg,transparent 58%,#FFE066 58%);padding:0 6px}
+.cards{display:flex;flex-direction:column;gap:${isPortrait ? 12 : 10}px;flex:1;min-height:0}
+.card{position:relative;background:#FFFFFF;border-radius:14px;padding:${isPortrait ? 18 : 14}px ${isPortrait ? 22 : 18}px;box-shadow:0 4px 18px rgba(15,23,42,0.07),0 0 0 1px rgba(15,23,42,0.04);display:flex;flex-direction:column;flex:1;min-height:0}
+.card.l1{border-left:5px solid #FFB3B3}
+.card.l2{border-left:5px solid #FFD4A3}
+.card.l3{border-left:5px solid #B3FFD1;box-shadow:0 6px 22px rgba(56,161,105,0.16),0 0 0 1px #B3FFD1}
 .label-pill{align-self:flex-start;display:inline-block;font-size:10px;font-weight:800;padding:4px 12px;border-radius:14px;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px;font-style:normal}
-.l1 .label-pill{background:#FFE5E5;color:#E03131}
-.l2 .label-pill{background:#FFF1DC;color:#D97706}
-.l3 .label-pill{background:#E5F7E8;color:#2BA84A}
-.card-title{font-family:'Playfair Display','Georgia',serif;font-size:${isPortrait ? 19 : 17}px;font-weight:700;color:#1A1A1A;margin-bottom:6px;line-height:1.2;font-style:normal}
+.l1 .label-pill{background:#FFB3B3;color:#9B1C1C}
+.l2 .label-pill{background:#FFD4A3;color:#92400E}
+.l3 .label-pill{background:#B3FFD1;color:#14532D}
+.target-badge{position:absolute;top:${isPortrait ? 18 : 14}px;right:${isPortrait ? 22 : 18}px;background:#16803C;color:#fff;font-size:9px;font-weight:800;padding:4px 10px;border-radius:12px;letter-spacing:1px;text-transform:uppercase;font-style:normal;display:flex;align-items:center;gap:4px}
+.target-badge::before{content:'★';font-size:11px;line-height:1}
+.card-title{font-family:'Playfair Display','Georgia',serif;font-size:${isPortrait ? 19 : 17}px;font-weight:700;color:#1A1A1A;margin-bottom:5px;line-height:1.2;padding-right:60px;font-style:normal}
 .card-body{font-size:${isPortrait ? 13 : 12}px;color:#4B5563;line-height:1.5;font-weight:400;font-style:normal}
 .card-body .a{font-weight:700;color:#1A1A1A;background:linear-gradient(180deg,transparent 60%,#FFE066 60%);padding:0 2px}
-.insights{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:${isPortrait ? 16 : 12}px}
-.insight{background:#FFFFFF;border-radius:10px;padding:10px 14px;border:1px solid rgba(15,23,42,0.06)}
-.insight-title{font-size:11px;font-weight:700;color:#1A1A1A;margin-bottom:2px;letter-spacing:0.2px;font-style:normal}
-.insight-body{font-size:10px;color:#6B7280;line-height:1.4;font-style:normal}
-.footer{text-align:center;margin-top:${isPortrait ? 16 : 12}px;padding-top:12px;border-top:1px solid rgba(15,23,42,0.08);font-size:10px;font-weight:600;color:#9CA3AF;letter-spacing:0.5px;font-style:normal}
+.why{margin-top:${isPortrait ? 14 : 11}px;background:#EAFBEF;border-radius:12px;padding:${isPortrait ? 14 : 11}px ${isPortrait ? 16 : 14}px;border:1px solid #B3FFD1}
+.why-title{font-size:10px;font-weight:800;color:#16803C;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:flex;align-items:center;gap:6px;font-style:normal}
+.why-title::before{content:'★';font-size:13px;line-height:1}
+.why-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.why-item{display:flex;align-items:flex-start;gap:6px;font-size:11px;color:#1F2937;line-height:1.4;font-style:normal}
+.why-item::before{content:'✓';color:#16803C;font-weight:900;flex-shrink:0;font-size:12px;line-height:1.3}
+.why-item .a{font-weight:700;color:#16803C}
+.footer{text-align:center;margin-top:${isPortrait ? 14 : 10}px;padding-top:10px;border-top:1px solid rgba(15,23,42,0.08);font-size:10px;font-weight:600;color:#24A89B;letter-spacing:0.5px;font-style:normal}
 </style></head><body>
 <div class="header"><div class="kicker">{{BADGE}}</div><div class="title">{{TITLE}}</div></div>
 <div class="cards">
 <div class="card l1"><div class="label-pill">Mauvais</div><div class="card-title">{{P1_TITLE}}</div><div class="card-body">{{P1_BODY}}</div></div>
 <div class="card l2"><div class="label-pill">Bon</div><div class="card-title">{{P2_TITLE}}</div><div class="card-body">{{P2_BODY}}</div></div>
-<div class="card l3"><div class="label-pill">Excellent</div><div class="card-title">{{P3_TITLE}}</div><div class="card-body">{{P3_BODY}}</div></div>
+<div class="card l3"><div class="target-badge">Cible</div><div class="label-pill">Excellent</div><div class="card-title">{{P3_TITLE}}</div><div class="card-body">{{P3_BODY}}</div></div>
 </div>
-<div class="insights">
-<div class="insight"><div class="insight-title">{{P4_TITLE}}</div><div class="insight-body">{{P4_BODY}}</div></div>
-<div class="insight"><div class="insight-title">{{P5_TITLE}}</div><div class="insight-body">{{P5_BODY}}</div></div>
-<div class="insight"><div class="insight-title">{{P6_TITLE}}</div><div class="insight-body">{{P6_BODY}}</div></div>
-<div class="insight"><div class="insight-title">{{P7_TITLE}}</div><div class="insight-body">{{PRO_TIP}}</div></div>
+<div class="why">
+<div class="why-title">Pourquoi le niveau Excellent fonctionne</div>
+<div class="why-grid">
+<div class="why-item">{{P4_BODY}}</div>
+<div class="why-item">{{P5_BODY}}</div>
+<div class="why-item">{{P6_BODY}}</div>
+<div class="why-item">{{P7_BODY}}</div>
+</div>
 </div>
 <div class="footer">{{FOOTER}}</div>
 </body></html>`;
@@ -419,22 +428,27 @@ body{background:#F8F9FA;font-family:'Inter',-apple-system,system-ui,sans-serif;p
 
 // ─── TEMPLATE 10: WHITEBOARD ───
 // Hand-drawn whiteboard / notebook page. Caveat handwritten font + yellow highlighter.
+// Includes inline doodle SVGs (brain in header, lightbulb in tip) + CTA manuscript footer.
 // Best for: tips, steps, how-tos, educational content. LinkedIn-friendly.
 export function whiteboard(w: number, h: number): string {
   const isPortrait = h > 1100;
+  const brainDoodle = `<svg viewBox="0 0 48 44" width="46" height="42" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#1F2937" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 22 C 10 18, 12 10, 20 9 C 22 6, 28 6, 30 9 C 38 10, 40 18, 36 22 C 40 26, 36 34, 28 33 C 26 36, 20 36, 18 33 C 10 34, 8 26, 14 22 Z"/><path d="M24 9 L 24 33"/><path d="M16 17 Q 19 15, 22 18"/><path d="M26 20 Q 30 18, 33 21"/><path d="M17 26 Q 20 24, 23 27"/><path d="M27 28 Q 30 26, 33 29"/></svg>`;
+  const bulbDoodle = `<svg viewBox="0 0 28 32" width="26" height="30" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#D97706" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4 C 8 4, 5 8, 5 13 C 5 17, 8 19, 9 22 L 19 22 C 20 19, 23 17, 23 13 C 23 8, 20 4, 14 4 Z" fill="#FFF8E1"/><line x1="10" y1="24" x2="18" y2="24"/><line x1="11" y1="27" x2="17" y2="27"/><line x1="13" y1="30" x2="15" y2="30"/><path d="M14 8 Q 10 10, 10 14"/></svg>`;
   return `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">${FONT_IMPORTS}
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:${w}px;height:${h}px;overflow:hidden}
 body{background:#FFFFFF;background-image:radial-gradient(circle,#E8EAED 0.8px,transparent 0.8px);background-size:24px 24px;font-family:'Inter',-apple-system,system-ui,sans-serif;padding:${isPortrait ? 36 : 32}px ${isPortrait ? 40 : 36}px;display:flex;flex-direction:column;color:#1F2937}
-.header{margin-bottom:${isPortrait ? 22 : 18}px;padding-bottom:14px;border-bottom:2px dashed #E5E7EB;text-align:center}
-.kicker{display:inline-block;font-size:10px;font-weight:700;color:#4DABF7;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;font-style:normal}
+.header{margin-bottom:${isPortrait ? 20 : 16}px;padding-bottom:12px;border-bottom:2px dashed #E5E7EB;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.header-text{flex:1;text-align:center}
+.header-doodle{flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.kicker{display:inline-block;font-size:10px;font-weight:700;color:#4DABF7;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;font-style:normal}
 .title{font-family:'Caveat',cursive;font-size:${isPortrait ? 48 : 42}px;font-weight:700;color:#1F2937;line-height:1;letter-spacing:0.5px;font-style:normal}
 .title span{color:#FF6B6B;position:relative;display:inline-block;padding:0 4px}
 .title span::after{content:'';position:absolute;left:0;right:0;bottom:6px;height:10px;background:#FFE066;z-index:-1;border-radius:4px}
 .sections{display:flex;flex-direction:column;flex:1;min-height:0}
-.section{display:flex;align-items:flex-start;gap:14px;padding:${isPortrait ? 11 : 9}px 4px;flex:1;min-height:0}
+.section{display:flex;align-items:flex-start;gap:14px;padding:${isPortrait ? 10 : 8}px 4px;flex:1;min-height:0}
 .section + .section{border-top:1px dashed #F1F3F5}
 .mark{font-family:'Caveat',cursive;font-size:30px;font-weight:700;line-height:1;flex-shrink:0;width:36px;text-align:center;font-style:normal}
 .s1 .mark,.s4 .mark,.s7 .mark{color:#4DABF7}
@@ -444,13 +458,14 @@ body{background:#FFFFFF;background-image:radial-gradient(circle,#E8EAED 0.8px,tr
 .st{font-family:'Caveat',cursive;font-size:24px;font-weight:700;color:#1F2937;line-height:1.05;margin-bottom:3px;font-style:normal}
 .sb{font-size:${isPortrait ? 13 : 12}px;color:#4B5563;line-height:1.45;font-style:normal}
 .sb .a{background:linear-gradient(180deg,transparent 55%,#FFE066 55%);font-weight:600;color:#1F2937;padding:0 2px}
-.tip{margin-top:12px;padding:14px 18px;background:#FFFAF0;border:2px dashed #FFB347;border-radius:10px;display:flex;gap:14px;align-items:flex-start}
-.tip-icon{font-family:'Caveat',cursive;font-size:34px;color:#FF6B6B;line-height:1;flex-shrink:0;font-weight:700;font-style:normal}
+.tip{margin-top:10px;padding:12px 16px;background:#FFFAF0;border:2px dashed #FFB347;border-radius:10px;display:flex;gap:12px;align-items:flex-start}
+.tip-icon{flex-shrink:0;display:flex;align-items:flex-start}
 .tip-body{flex:1;font-size:${isPortrait ? 13 : 12}px;color:#4B5563;line-height:1.4;font-style:normal}
-.tip-label{font-family:'Caveat',cursive;font-size:22px;color:#FF6B6B;display:block;line-height:1;margin-bottom:3px;font-weight:700;font-style:normal}
-.footer{text-align:center;margin-top:12px;padding-top:10px;border-top:1px dashed #E5E7EB;font-family:'Caveat',cursive;font-size:18px;color:#9CA3AF;font-style:normal}
+.tip-label{font-family:'Caveat',cursive;font-size:22px;color:#D97706;display:block;line-height:1;margin-bottom:3px;font-weight:700;font-style:normal}
+.footer{text-align:center;margin-top:10px;padding-top:10px;border-top:1px dashed #E5E7EB;font-family:'Caveat',cursive;font-size:22px;color:#24A89B;font-style:normal;font-weight:700}
+.footer::before{content:'→ '}
 </style></head><body>
-<div class="header"><div class="kicker">{{BADGE}}</div><div class="title">{{TITLE}}</div></div>
+<div class="header"><div class="header-text"><div class="kicker">{{BADGE}}</div><div class="title">{{TITLE}}</div></div><div class="header-doodle">${brainDoodle}</div></div>
 <div class="sections">
 <div class="section s1"><div class="mark">→</div><div class="sc"><div class="st">{{P1_TITLE}}</div><div class="sb">{{P1_BODY}}</div></div></div>
 <div class="section s2"><div class="mark">★</div><div class="sc"><div class="st">{{P2_TITLE}}</div><div class="sb">{{P2_BODY}}</div></div></div>
@@ -460,64 +475,127 @@ body{background:#FFFFFF;background-image:radial-gradient(circle,#E8EAED 0.8px,tr
 <div class="section s6"><div class="mark">✓</div><div class="sc"><div class="st">{{P6_TITLE}}</div><div class="sb">{{P6_BODY}}</div></div></div>
 <div class="section s7"><div class="mark">★</div><div class="sc"><div class="st">{{P7_TITLE}}</div><div class="sb">{{P7_BODY}}</div></div></div>
 </div>
-<div class="tip"><div class="tip-icon">!</div><div class="tip-body"><span class="tip-label">Astuce pro</span>{{PRO_TIP}}</div></div>
+<div class="tip"><div class="tip-icon">${bulbDoodle}</div><div class="tip-body"><span class="tip-label">Astuce pro</span>{{PRO_TIP}}</div></div>
 <div class="footer">{{FOOTER}}</div>
 </body></html>`;
 }
 
 // ─── TEMPLATE 11: FUNNEL ───
-// Vertical funnel/pyramid with 5 progressive stages + 2 side notes.
+// Vertical funnel with 5 progressive stages + cartoon character + CTA box.
 // Best for: processes, frameworks, conversion paths, strategies.
 export function funnel(w: number, h: number): string {
+  const isPortrait = h > 1100;
+  const characterSvg = `<svg viewBox="0 0 70 96" width="64" height="88" xmlns="http://www.w3.org/2000/svg"><circle cx="35" cy="20" r="13" fill="#24A89B"/><circle cx="30" cy="18" r="1.8" fill="#fff"/><circle cx="40" cy="18" r="1.8" fill="#fff"/><path d="M28 24 Q 35 28, 42 24" stroke="#fff" stroke-width="1.6" stroke-linecap="round" fill="none"/><path d="M16 60 Q 35 38, 54 60 L 54 86 L 16 86 Z" fill="#24A89B"/><rect x="22" y="62" width="26" height="3" rx="1.5" fill="rgba(255,255,255,0.4)"/><circle cx="47" cy="70" r="6" fill="#fff"/><path d="M44 70 L 46.5 73 L 50 67" stroke="#16803C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>`;
+  return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8">${FONT_IMPORTS}
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:${w}px;height:${h}px;overflow:hidden}
+body{background:linear-gradient(180deg,#FFF8F0 0%,#F0F4FF 100%);font-family:'Inter',-apple-system,system-ui,sans-serif;padding:${isPortrait ? 38 : 30}px ${isPortrait ? 40 : 32}px;display:flex;flex-direction:column;color:#1F2937}
+.header{text-align:center;margin-bottom:${isPortrait ? 20 : 14}px}
+.kicker{display:inline-block;background:#1F2937;color:#fff;font-size:10px;font-weight:800;padding:5px 14px;border-radius:14px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;font-style:normal}
+.title{font-family:'Inter',sans-serif;font-size:${isPortrait ? 32 : 28}px;font-weight:900;color:#1F2937;line-height:1.1;letter-spacing:-0.5px;text-transform:uppercase;font-style:normal}
+.title span{background:linear-gradient(180deg,transparent 60%,#FFE066 60%);padding:0 4px}
+.body-wrap{display:flex;align-items:stretch;gap:${isPortrait ? 16 : 12}px;flex:1;min-height:0}
+.funnel{display:flex;flex-direction:column;align-items:center;gap:${isPortrait ? 7 : 5}px;flex:1;min-height:0;justify-content:space-around}
+.character{flex-shrink:0;display:flex;align-items:center;justify-content:center;width:${isPortrait ? 80 : 72}px}
+.stage{position:relative;display:flex;align-items:center;justify-content:center;color:#fff;border-radius:10px;padding:${isPortrait ? 13 : 10}px 16px;box-shadow:0 6px 18px rgba(0,0,0,0.1),inset 0 1px 0 rgba(255,255,255,0.25);text-align:center;font-style:normal}
+.stage.s1{width:100%;background:linear-gradient(135deg,#FFB3B3,#F87171)}
+.stage.s2{width:88%;background:linear-gradient(135deg,#FFD4A3,#FB923C)}
+.stage.s3{width:76%;background:linear-gradient(135deg,#FFE9A3,#FBBF24)}
+.stage.s4{width:64%;background:linear-gradient(135deg,#B3FFD1,#34D399)}
+.stage.s5{width:52%;background:linear-gradient(135deg,#AEC6CF,#60A5FA)}
+.stage-content{display:flex;align-items:center;gap:11px;width:100%;justify-content:flex-start}
+.stage-num{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.28);font-size:13px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1.5px solid rgba(255,255,255,0.55);color:#fff;font-style:normal}
+.stage-check{position:absolute;right:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;border-radius:50%;background:rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:900;font-style:normal}
+.stage-text{flex:1;text-align:left;min-width:0;padding-right:22px}
+.stage-title{font-size:${isPortrait ? 14 : 12}px;font-weight:800;line-height:1.1;margin-bottom:1px;text-transform:uppercase;letter-spacing:0.3px;color:#1F2937;font-style:normal}
+.stage-body{font-size:${isPortrait ? 11 : 10}px;font-weight:600;line-height:1.3;color:rgba(31,41,55,0.85);font-style:normal}
+.arrow{font-size:13px;color:#9CA3AF;line-height:1;font-style:normal}
+.cta{margin-top:${isPortrait ? 14 : 10}px;padding:${isPortrait ? 14 : 11}px 18px;background:#24A89B;border-radius:12px;display:flex;align-items:center;gap:14px;box-shadow:0 6px 18px rgba(36,168,155,0.28)}
+.cta-icon{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:900;flex-shrink:0;font-style:normal}
+.cta-body{flex:1;color:#fff;font-style:normal}
+.cta-label{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;opacity:0.85;display:block;margin-bottom:1px;font-style:normal}
+.cta-text{font-size:${isPortrait ? 13 : 12}px;font-weight:700;line-height:1.3;font-style:normal}
+.cta-arrow{font-size:20px;color:#fff;flex-shrink:0;line-height:1;font-style:normal}
+.footer{text-align:center;margin-top:10px;padding-top:8px;border-top:1px solid rgba(0,0,0,0.08);font-size:11px;font-weight:600;color:#6B7280;letter-spacing:0.3px;font-style:normal}
+</style></head><body>
+<div class="header"><div class="kicker">{{BADGE}}</div><div class="title">{{TITLE}}</div></div>
+<div class="body-wrap">
+<div class="funnel">
+<div class="stage s1"><div class="stage-content"><div class="stage-num">1</div><div class="stage-text"><div class="stage-title">{{P1_TITLE}}</div><div class="stage-body">{{P1_BODY}}</div></div></div><div class="stage-check">✓</div></div>
+<div class="arrow">▼</div>
+<div class="stage s2"><div class="stage-content"><div class="stage-num">2</div><div class="stage-text"><div class="stage-title">{{P2_TITLE}}</div><div class="stage-body">{{P2_BODY}}</div></div></div><div class="stage-check">✓</div></div>
+<div class="arrow">▼</div>
+<div class="stage s3"><div class="stage-content"><div class="stage-num">3</div><div class="stage-text"><div class="stage-title">{{P3_TITLE}}</div><div class="stage-body">{{P3_BODY}}</div></div></div><div class="stage-check">✓</div></div>
+<div class="arrow">▼</div>
+<div class="stage s4"><div class="stage-content"><div class="stage-num">4</div><div class="stage-text"><div class="stage-title">{{P4_TITLE}}</div><div class="stage-body">{{P4_BODY}}</div></div></div><div class="stage-check">✓</div></div>
+<div class="arrow">▼</div>
+<div class="stage s5"><div class="stage-content"><div class="stage-num">5</div><div class="stage-text"><div class="stage-title">{{P5_TITLE}}</div><div class="stage-body">{{P5_BODY}}</div></div></div><div class="stage-check">✓</div></div>
+</div>
+<div class="character">${characterSvg}</div>
+</div>
+<div class="cta"><div class="cta-icon">★</div><div class="cta-body"><span class="cta-label">{{P6_TITLE}}</span><span class="cta-text">{{PRO_TIP}}</span></div><div class="cta-arrow">→</div></div>
+<div class="footer">{{FOOTER}}</div>
+</body></html>`;
+}
+
+// ─── TEMPLATE 12: DATA_GRID ───
+// Notebook-style framework table with 4 rows × 3 columns + bonus callout.
+// Pastel header row, alternating zebra rows, color-coded concept dots, brand-color tip.
+// Each row: concept name + description + use case. Bottom = bonus + main takeaway.
+export function dataGrid(w: number, h: number): string {
   const isPortrait = h > 1100;
   return `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">${FONT_IMPORTS}
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:${w}px;height:${h}px;overflow:hidden}
-body{background:linear-gradient(180deg,#FFF8F0 0%,#F0F4FF 100%);font-family:'Inter',-apple-system,system-ui,sans-serif;padding:${isPortrait ? 38 : 32}px ${isPortrait ? 40 : 36}px;display:flex;flex-direction:column;color:#1F2937}
-.header{text-align:center;margin-bottom:${isPortrait ? 22 : 18}px}
-.kicker{display:inline-block;background:#1F2937;color:#fff;font-size:10px;font-weight:700;padding:5px 14px;border-radius:14px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;font-style:normal}
-.title{font-family:'Inter',sans-serif;font-size:${isPortrait ? 32 : 28}px;font-weight:900;color:#1F2937;line-height:1.1;letter-spacing:-0.5px;text-transform:uppercase;font-style:normal}
-.title span{color:#F97316}
-.funnel{display:flex;flex-direction:column;align-items:center;gap:${isPortrait ? 8 : 6}px;flex:1;min-height:0;justify-content:space-around}
-.stage{position:relative;display:flex;align-items:center;justify-content:center;color:#fff;border-radius:10px;padding:${isPortrait ? 14 : 11}px 18px;box-shadow:0 4px 16px rgba(0,0,0,0.08);text-align:center;font-style:normal}
-.stage.s1{width:96%;background:linear-gradient(135deg,#F87171,#EF4444)}
-.stage.s2{width:84%;background:linear-gradient(135deg,#FB923C,#F97316)}
-.stage.s3{width:72%;background:linear-gradient(135deg,#FBBF24,#F59E0B)}
-.stage.s4{width:60%;background:linear-gradient(135deg,#34D399,#10B981)}
-.stage.s5{width:48%;background:linear-gradient(135deg,#60A5FA,#3B82F6)}
-.stage-content{display:flex;align-items:center;gap:12px;width:100%;justify-content:flex-start}
-.stage-num{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.22);font-size:14px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1.5px solid rgba(255,255,255,0.55);font-style:normal}
-.stage-text{flex:1;text-align:left;min-width:0}
-.stage-title{font-size:${isPortrait ? 15 : 13}px;font-weight:800;line-height:1.1;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.3px;font-style:normal}
-.stage-body{font-size:${isPortrait ? 12 : 11}px;font-weight:500;line-height:1.3;opacity:0.95;font-style:normal}
-.arrow{font-size:14px;color:#9CA3AF;line-height:1;font-style:normal}
-.notes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:${isPortrait ? 16 : 12}px}
-.note{background:#fff;border-radius:10px;padding:11px 14px;border-left:3px solid var(--c);box-shadow:0 1px 3px rgba(0,0,0,0.05)}
-.note.n1{--c:#9333EA}
-.note.n2{--c:#0891B2}
-.note-title{font-size:11px;font-weight:700;color:var(--c);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;font-style:normal}
-.note-body{font-size:11px;color:#4B5563;line-height:1.4;font-style:normal}
-.note-body .a{font-weight:700;color:var(--c)}
-.footer{text-align:center;margin-top:12px;padding-top:10px;border-top:1px solid rgba(0,0,0,0.08);font-size:11px;font-weight:600;color:#6B7280;letter-spacing:0.3px;font-style:normal}
+body{background:#FFFFFF;background-image:linear-gradient(rgba(0,0,0,0.018) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,0.018) 1px,transparent 1px);background-size:32px 32px;font-family:'Inter',-apple-system,system-ui,sans-serif;padding:${isPortrait ? 40 : 32}px ${isPortrait ? 38 : 30}px;display:flex;flex-direction:column;color:#1F2937}
+.header{text-align:center;margin-bottom:${isPortrait ? 20 : 14}px}
+.kicker{display:inline-block;background:#AEC6CF;color:#1F2937;font-size:10px;font-weight:800;padding:5px 14px;border-radius:14px;margin-bottom:10px;text-transform:uppercase;letter-spacing:1.2px;font-style:normal}
+.title{font-family:'Playfair Display',Georgia,serif;font-size:${isPortrait ? 32 : 28}px;font-weight:900;color:#1F2937;line-height:1.12;letter-spacing:-0.5px;font-style:normal}
+.title span{background:linear-gradient(180deg,transparent 60%,#FFE066 60%);padding:0 4px}
+.table{flex:1;display:flex;flex-direction:column;border-radius:12px;overflow:hidden;border:1px solid #E5E7EB;background:#fff;min-height:0;box-shadow:0 4px 18px rgba(15,23,42,0.05)}
+.row{display:grid;grid-template-columns:1.05fr 1.95fr 1.1fr;align-items:center;padding:${isPortrait ? 12 : 10}px ${isPortrait ? 16 : 14}px;font-size:${isPortrait ? 12 : 11}px;font-style:normal;gap:14px}
+.row.head{background:#EEF4F8;font-weight:800;color:#1F2937;border-bottom:2px solid #AEC6CF;font-size:10px;text-transform:uppercase;letter-spacing:0.8px;padding:${isPortrait ? 11 : 9}px ${isPortrait ? 16 : 14}px}
+.row.body{border-bottom:1px solid #F3F4F6;flex:1;min-height:0}
+.row.body:nth-child(even){background:#FAFBFC}
+.row.body:last-child{border-bottom:none}
+.cell-name{display:flex;align-items:center;gap:9px;font-weight:800;color:#1F2937;line-height:1.2;font-style:normal}
+.dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;border:1.5px solid rgba(0,0,0,0.06)}
+.r1 .dot{background:#FFB3B3}
+.r2 .dot{background:#FFD4A3}
+.r3 .dot{background:#B3FFD1}
+.r4 .dot{background:#D4B3FF}
+.cell-desc{color:#4B5563;line-height:1.4;font-style:normal}
+.cell-desc .a{font-weight:700;background:linear-gradient(180deg,transparent 60%,#FFE066 60%);padding:0 2px;color:#1F2937}
+.cell-use{color:#1F2937;font-weight:700;line-height:1.3;font-size:${isPortrait ? 11 : 10}px;display:flex;align-items:center;gap:6px;font-style:normal}
+.cell-use::before{content:'→';color:#24A89B;font-weight:900;flex-shrink:0}
+.bonus{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:${isPortrait ? 12 : 10}px}
+.bonus-card{background:#fff;border-radius:10px;padding:10px 14px;border:1px solid #E5E7EB;border-left:3px solid #AEC6CF;font-style:normal}
+.bonus-card.b2{border-left-color:#D4B3FF}
+.bonus-title{font-size:10px;font-weight:800;color:#1F2937;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;font-style:normal}
+.bonus-body{font-size:11px;color:#4B5563;line-height:1.35;font-style:normal}
+.tip{margin-top:${isPortrait ? 12 : 10}px;padding:${isPortrait ? 13 : 11}px ${isPortrait ? 18 : 16}px;background:#E8F8F6;border-radius:12px;border-left:4px solid #24A89B;display:flex;gap:12px;align-items:flex-start;font-style:normal}
+.tip-icon{width:28px;height:28px;border-radius:50%;background:#24A89B;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;flex-shrink:0;font-style:normal}
+.tip-body{flex:1;font-size:${isPortrait ? 12 : 11}px;color:#1F2937;line-height:1.4;font-style:normal}
+.tip-label{display:block;font-size:9px;font-weight:800;color:#24A89B;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;font-style:normal}
+.footer{text-align:center;margin-top:10px;padding-top:8px;border-top:1px solid #E5E7EB;font-size:10px;font-weight:600;color:#9CA3AF;letter-spacing:0.5px;font-style:normal}
 </style></head><body>
 <div class="header"><div class="kicker">{{BADGE}}</div><div class="title">{{TITLE}}</div></div>
-<div class="funnel">
-<div class="stage s1"><div class="stage-content"><div class="stage-num">1</div><div class="stage-text"><div class="stage-title">{{P1_TITLE}}</div><div class="stage-body">{{P1_BODY}}</div></div></div></div>
-<div class="arrow">▼</div>
-<div class="stage s2"><div class="stage-content"><div class="stage-num">2</div><div class="stage-text"><div class="stage-title">{{P2_TITLE}}</div><div class="stage-body">{{P2_BODY}}</div></div></div></div>
-<div class="arrow">▼</div>
-<div class="stage s3"><div class="stage-content"><div class="stage-num">3</div><div class="stage-text"><div class="stage-title">{{P3_TITLE}}</div><div class="stage-body">{{P3_BODY}}</div></div></div></div>
-<div class="arrow">▼</div>
-<div class="stage s4"><div class="stage-content"><div class="stage-num">4</div><div class="stage-text"><div class="stage-title">{{P4_TITLE}}</div><div class="stage-body">{{P4_BODY}}</div></div></div></div>
-<div class="arrow">▼</div>
-<div class="stage s5"><div class="stage-content"><div class="stage-num">5</div><div class="stage-text"><div class="stage-title">{{P5_TITLE}}</div><div class="stage-body">{{P5_BODY}}</div></div></div></div>
+<div class="table">
+<div class="row head"><div>Élément</div><div>Description</div><div>Idéal pour</div></div>
+<div class="row body r1"><div class="cell-name"><div class="dot"></div>{{P1_TITLE}}</div><div class="cell-desc">{{P1_BODY}}</div><div class="cell-use">{{P5_TITLE}}</div></div>
+<div class="row body r2"><div class="cell-name"><div class="dot"></div>{{P2_TITLE}}</div><div class="cell-desc">{{P2_BODY}}</div><div class="cell-use">{{P5_BODY}}</div></div>
+<div class="row body r3"><div class="cell-name"><div class="dot"></div>{{P3_TITLE}}</div><div class="cell-desc">{{P3_BODY}}</div><div class="cell-use">{{P6_TITLE}}</div></div>
+<div class="row body r4"><div class="cell-name"><div class="dot"></div>{{P4_TITLE}}</div><div class="cell-desc">{{P4_BODY}}</div><div class="cell-use">{{P6_BODY}}</div></div>
 </div>
-<div class="notes">
-<div class="note n1"><div class="note-title">{{P6_TITLE}}</div><div class="note-body">{{P6_BODY}}</div></div>
-<div class="note n2"><div class="note-title">{{P7_TITLE}}</div><div class="note-body">{{PRO_TIP}}</div></div>
+<div class="bonus">
+<div class="bonus-card"><div class="bonus-title">Bonus</div><div class="bonus-body">{{P7_TITLE}}</div></div>
+<div class="bonus-card b2"><div class="bonus-title">À noter</div><div class="bonus-body">{{P7_BODY}}</div></div>
 </div>
+<div class="tip"><div class="tip-icon">★</div><div class="tip-body"><span class="tip-label">À retenir</span>{{PRO_TIP}}</div></div>
 <div class="footer">{{FOOTER}}</div>
 </body></html>`;
 }
@@ -536,6 +614,7 @@ export const TEMPLATE_REGISTRY: Record<string, (w: number, h: number) => string>
   UI_CARDS: uiCards,
   WHITEBOARD: whiteboard,
   FUNNEL: funnel,
+  DATA_GRID: dataGrid,
 };
 
 export const TEMPLATE_IDS = Object.keys(TEMPLATE_REGISTRY) as string[];

@@ -48,14 +48,105 @@ interface Props {
 
 type ResultMode = "gemini" | "claude" | null;
 type Step = "ready" | "generating" | "result";
-type StyleChoice = "auto" | "AWA_CLASSIC" | "UI_CARDS" | "WHITEBOARD" | "FUNNEL";
+type StyleChoice = "auto" | "AWA_CLASSIC" | "UI_CARDS" | "WHITEBOARD" | "FUNNEL" | "DATA_GRID";
+
+// Tiny inline SVG previews — schematic mini-mockups (60×40 viewBox).
+const STYLE_PREVIEWS: Record<StyleChoice, JSX.Element> = {
+  auto: (
+    <svg viewBox="0 0 60 40" className="w-full h-full">
+      <rect x="2" y="2" width="56" height="36" rx="4" fill="url(#auto-grad)" />
+      <defs>
+        <linearGradient id="auto-grad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#24A89B" stopOpacity="0.2" />
+          <stop offset="100%" stopColor="#6366F1" stopOpacity="0.2" />
+        </linearGradient>
+      </defs>
+      <path d="M30 12 L32 18 L38 18 L33 22 L35 28 L30 24 L25 28 L27 22 L22 18 L28 18 Z" fill="#24A89B" />
+    </svg>
+  ),
+  AWA_CLASSIC: (
+    <svg viewBox="0 0 60 40" className="w-full h-full">
+      <rect x="2" y="2" width="56" height="36" rx="3" fill="#FFFFF5" stroke="#5D3A1A" strokeWidth="1.5" />
+      <rect x="6" y="5" width="20" height="3" rx="1" fill="#1A1A1A" />
+      <rect x="6" y="12" width="48" height="2.5" rx="0.8" fill="#E53E3E" />
+      <rect x="6" y="17" width="48" height="2.5" rx="0.8" fill="#3182CE" />
+      <rect x="6" y="22" width="48" height="2.5" rx="0.8" fill="#38A169" />
+      <rect x="6" y="27" width="48" height="2.5" rx="0.8" fill="#DD6B20" />
+      <rect x="6" y="32" width="48" height="2.5" rx="0.8" fill="#9B59B6" />
+    </svg>
+  ),
+  UI_CARDS: (
+    <svg viewBox="0 0 60 40" className="w-full h-full">
+      <rect x="0" y="0" width="60" height="40" rx="2" fill="#F8F9FA" />
+      <rect x="6" y="3" width="22" height="2.5" rx="1" fill="#1A1A1A" />
+      <rect x="5" y="9" width="50" height="8" rx="1.5" fill="#FFFFFF" stroke="#FFB3B3" strokeWidth="0.8" />
+      <circle cx="9" cy="13" r="1.5" fill="#FFB3B3" />
+      <rect x="5" y="19" width="50" height="8" rx="1.5" fill="#FFFFFF" stroke="#FFD4A3" strokeWidth="0.8" />
+      <circle cx="9" cy="23" r="1.5" fill="#FFD4A3" />
+      <rect x="5" y="29" width="50" height="8" rx="1.5" fill="#FFFFFF" stroke="#B3FFD1" strokeWidth="0.8" />
+      <circle cx="9" cy="33" r="1.5" fill="#B3FFD1" />
+    </svg>
+  ),
+  WHITEBOARD: (
+    <svg viewBox="0 0 60 40" className="w-full h-full">
+      <rect x="0" y="0" width="60" height="40" fill="#FFFFFF" />
+      <circle cx="6" cy="6" r="0.5" fill="#E8EAED" />
+      <circle cx="12" cy="6" r="0.5" fill="#E8EAED" />
+      <circle cx="18" cy="6" r="0.5" fill="#E8EAED" />
+      <circle cx="24" cy="6" r="0.5" fill="#E8EAED" />
+      <circle cx="30" cy="6" r="0.5" fill="#E8EAED" />
+      <circle cx="36" cy="6" r="0.5" fill="#E8EAED" />
+      <circle cx="42" cy="6" r="0.5" fill="#E8EAED" />
+      <circle cx="48" cy="6" r="0.5" fill="#E8EAED" />
+      <circle cx="54" cy="6" r="0.5" fill="#E8EAED" />
+      <text x="30" y="14" fontFamily="cursive" fontSize="6" fill="#1F2937" textAnchor="middle" fontWeight="700">Conseil</text>
+      <rect x="14" y="16" width="14" height="2" fill="#FFE066" />
+      <line x1="6" y1="22" x2="54" y2="22" stroke="#4DABF7" strokeWidth="0.8" />
+      <line x1="6" y1="27" x2="54" y2="27" stroke="#FF6B6B" strokeWidth="0.8" />
+      <line x1="6" y1="32" x2="54" y2="32" stroke="#51CF66" strokeWidth="0.8" />
+    </svg>
+  ),
+  FUNNEL: (
+    <svg viewBox="0 0 60 40" className="w-full h-full">
+      <rect x="0" y="0" width="60" height="40" fill="url(#funnel-bg)" />
+      <defs>
+        <linearGradient id="funnel-bg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#FFF8F0" />
+          <stop offset="100%" stopColor="#F0F4FF" />
+        </linearGradient>
+      </defs>
+      <rect x="4" y="6" width="52" height="5" rx="1" fill="#F87171" />
+      <rect x="8" y="13" width="44" height="5" rx="1" fill="#FB923C" />
+      <rect x="12" y="20" width="36" height="5" rx="1" fill="#FBBF24" />
+      <rect x="16" y="27" width="28" height="5" rx="1" fill="#34D399" />
+      <rect x="20" y="34" width="20" height="3.5" rx="1" fill="#60A5FA" />
+    </svg>
+  ),
+  DATA_GRID: (
+    <svg viewBox="0 0 60 40" className="w-full h-full">
+      <rect x="0" y="0" width="60" height="40" fill="#FFFFFF" />
+      <rect x="3" y="3" width="54" height="34" rx="2" fill="none" stroke="#E5E7EB" strokeWidth="0.8" />
+      <rect x="3" y="3" width="54" height="6" fill="#AEC6CF" />
+      <line x1="22" y1="3" x2="22" y2="37" stroke="#E5E7EB" strokeWidth="0.5" />
+      <line x1="42" y1="3" x2="42" y2="37" stroke="#E5E7EB" strokeWidth="0.5" />
+      <line x1="3" y1="16" x2="57" y2="16" stroke="#F3F4F6" strokeWidth="0.5" />
+      <line x1="3" y1="23" x2="57" y2="23" stroke="#F3F4F6" strokeWidth="0.5" />
+      <line x1="3" y1="30" x2="57" y2="30" stroke="#F3F4F6" strokeWidth="0.5" />
+      <circle cx="7" cy="12" r="1.4" fill="#FFB3B3" />
+      <circle cx="7" cy="19" r="1.4" fill="#FFD4A3" />
+      <circle cx="7" cy="26" r="1.4" fill="#B3FFD1" />
+      <circle cx="7" cy="33" r="1.4" fill="#D4B3FF" />
+    </svg>
+  ),
+};
 
 const STYLE_OPTIONS: { id: StyleChoice; label: string; desc: string }[] = [
-  { id: "auto", label: "Auto", desc: "L'IA choisit le meilleur style" },
-  { id: "AWA_CLASSIC", label: "Awa Classic", desc: "Viral dense, 7 sections" },
-  { id: "UI_CARDS", label: "UI Cards", desc: "Comparaison à 3 niveaux" },
-  { id: "WHITEBOARD", label: "Whiteboard", desc: "Tableau dessiné, conseils" },
-  { id: "FUNNEL", label: "Funnel", desc: "Entonnoir / framework" },
+  { id: "auto", label: "Auto", desc: "L'IA choisit" },
+  { id: "AWA_CLASSIC", label: "Awa Classic", desc: "Dense viral" },
+  { id: "UI_CARDS", label: "UI Cards", desc: "3 niveaux" },
+  { id: "WHITEBOARD", label: "Whiteboard", desc: "Tableau dessiné" },
+  { id: "FUNNEL", label: "Funnel", desc: "Entonnoir" },
+  { id: "DATA_GRID", label: "Data Grid", desc: "Tableau framework" },
 ];
 
 // ─── Component ───
@@ -451,10 +542,10 @@ export default function InfographicModal({ open, onClose, content, platform }: P
                   </div>
                 </div>
 
-                {/* Style selector */}
+                {/* Style selector with visual previews */}
                 <div className="space-y-2">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Choisis un style</p>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     {STYLE_OPTIONS.map((opt) => {
                       const active = styleChoice === opt.id;
                       return (
@@ -463,17 +554,20 @@ export default function InfographicModal({ open, onClose, content, platform }: P
                           type="button"
                           onClick={() => setStyleChoice(opt.id)}
                           className={cn(
-                            "text-left rounded-xl border px-3 py-2.5 transition-all",
+                            "group rounded-xl border p-2 transition-all flex flex-col gap-1.5",
                             active
                               ? "border-primary bg-primary/10 ring-1 ring-primary/40"
                               : "border-border/40 bg-accent/20 hover:border-border/70 hover:bg-accent/40",
                           )}
                         >
-                          <div className="flex items-center gap-1.5">
-                            <span className={cn("text-xs font-bold", active && "text-primary")}>{opt.label}</span>
-                            {active && <Check className="w-3 h-3 text-primary" />}
+                          <div className="aspect-[3/2] w-full rounded-md overflow-hidden bg-white/80 border border-border/30 flex items-center justify-center">
+                            {STYLE_PREVIEWS[opt.id]}
                           </div>
-                          <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{opt.desc}</p>
+                          <div className="flex items-center gap-1 px-0.5">
+                            <span className={cn("text-[11px] font-bold leading-tight", active && "text-primary")}>{opt.label}</span>
+                            {active && <Check className="w-3 h-3 text-primary flex-shrink-0" />}
+                          </div>
+                          <p className="text-[9px] text-muted-foreground leading-tight px-0.5">{opt.desc}</p>
                         </button>
                       );
                     })}

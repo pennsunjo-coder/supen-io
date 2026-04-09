@@ -111,7 +111,8 @@ export function selectBestTemplate(content: string, platform: string, forcedTemp
 
   const hasBreaking = /breaking|urgent|stop|dead|goodbye|end of|rip\b|game.?over|replaced/i.test(content);
   const hasMasterclass = /master|guide complet|cheat.?sheet|tout savoir|everything|complete guide/i.test(content);
-  const hasFunnel = /funnel|entonnoir|processus|stratégie|strategy|framework|pipeline|conversion|étapes? du|tunnel/i.test(content);
+  const hasFunnel = /funnel|entonnoir|processus|parcours|roadmap|pipeline|conversion|tunnel|étapes? du/i.test(content);
+  const hasDataGrid = /framework|modèle|méthode|tableau|matrix|matrice|grille|ressources?|glossaire|outils?\s|comparison detailed/i.test(content);
   const has3Tier = /bad.*good.*great|good.*better.*best|niveau\s*1.*niveau\s*2|level\s*1.*level\s*2|débutant.*avancé|beginner.*advanced|bronze.*silver.*gold/i.test(content);
 
   let templateId: string;
@@ -125,13 +126,16 @@ export function selectBestTemplate(content: string, platform: string, forcedTemp
     reason = "Statistiques détectées — visuel chiffres clés";
   } else if (hasFunnel) {
     templateId = "FUNNEL";
-    reason = "Processus/framework — entonnoir progressif";
+    reason = "Processus/parcours — entonnoir progressif";
   } else if (has3Tier) {
     templateId = "UI_CARDS";
     reason = "Comparaison à 3 niveaux — cartes UI claires";
   } else if (p.hasComparison) {
     templateId = "UI_CARDS";
     reason = "Comparaison/avant-après — cartes UI claires";
+  } else if (hasDataGrid) {
+    templateId = "DATA_GRID";
+    reason = "Framework/ressources — tableau structuré";
   } else if (hasMasterclass && wordCount > 200) {
     templateId = "AWA_MASTERCLASS";
     reason = "Masterclass/guide — apprentissage structuré";
@@ -271,7 +275,7 @@ let regenerationCounter = 0;
 
 const LAYOUT_VARIATIONS = ["vertical numbered", "two-column grid", "timeline steps", "split comparison", "hierarchy pyramid"];
 
-const CLEAN_TEMPLATES = new Set(["UI_CARDS", "WHITEBOARD", "FUNNEL"]);
+const CLEAN_TEMPLATES = new Set(["UI_CARDS", "WHITEBOARD", "FUNNEL", "DATA_GRID"]);
 
 export function buildInfographicPrompt(
   content: string,
@@ -320,9 +324,10 @@ export function buildInfographicPrompt(
     : "Titre ALL CAPS viral, 4-8 mots, un mot encadré dans <span>";
 
   const templateHints: Record<string, string> = {
-    UI_CARDS: "Ce template est une comparaison à 3 niveaux. P1=mauvaise version (à éviter), P2=version correcte, P3=meilleure version. P4-P7 = insights compacts (12-18 mots chacun). PRO_TIP = recommandation finale.",
-    WHITEBOARD: "Ce template est un tableau dessiné. P1-P7 = 7 conseils/étapes courts. Chaque body = 18-25 mots avec UN mot-clé entouré de <span class=\"a\">. PRO_TIP = astuce finale.",
-    FUNNEL: "Ce template est un entonnoir séquentiel. P1-P5 = 5 étapes progressives (P1=large/début, P5=précis/fin). P6-P7 = notes courtes (10-15 mots). PRO_TIP = piège commun à éviter.",
+    UI_CARDS: "Comparaison à 3 niveaux. P1=mauvaise version (à éviter), P2=version correcte, P3=meilleure version. P4-P7 = 4 raisons courtes (10-15 mots) qui justifient pourquoi le niveau Excellent fonctionne, format <span class=\"a\">Mot-clé</span> + explication. PRO_TIP non utilisé visuellement.",
+    WHITEBOARD: "Tableau dessiné. P1-P7 = 7 conseils/étapes courts. Chaque body = 18-25 mots avec UN mot-clé entouré de <span class=\"a\">. PRO_TIP = astuce finale (20-30 mots).",
+    FUNNEL: "Entonnoir séquentiel à 5 étapes. P1-P5 = 5 étapes progressives (P1=large/début, P5=précis/fin), title 2-4 mots ALL CAPS, body 12-18 mots. P6_TITLE = label CTA (3-5 mots, ex: 'Tu y es presque'). PRO_TIP = phrase CTA actionnable (10-15 mots). P7 non utilisé.",
+    DATA_GRID: "Tableau framework. P1-P4 = 4 concepts (title=nom 2-4 mots, body=description 15-25 mots avec un <span class=\"a\">mot-clé</span>). P5_TITLE/P5_BODY/P6_TITLE/P6_BODY = 4 cas d'usage 'Idéal pour' (3-6 mots chacun, un par concept). P7_TITLE = bonus (15-20 mots), P7_BODY = à noter (15-20 mots). PRO_TIP = à retenir (20-30 mots).",
   };
   const templateNote = templateHints[templateId] || "";
 
@@ -418,6 +423,14 @@ const TEMPLATE_STYLE_GUIDES: Record<string, TemplateStyleGuide> = {
     colors: "Funnel gradient progression (warm → cool): stage 1 red #EF4444→#F87171, stage 2 orange #F97316→#FB923C, stage 3 amber #F59E0B→#FBBF24, stage 4 emerald #10B981→#34D399, stage 5 blue #3B82F6→#60A5FA. Notes use purple #9333EA and cyan #0891B2 left borders.",
     structure: "5 sequential stages of a process/framework/funnel, each building on the previous. Stage 1 = entry/awareness (largest), stage 5 = goal/conversion (smallest). Each stage: 2-4 word title + 12-18 word body. Bottom 2 notes = 'common pitfall' (purple) + 'expert tip' (cyan), 10-15 words each.",
   },
+  DATA_GRID: {
+    vibe: "Notebook framework table. Knowledge worker reference card. Notion / consulting deliverable energy. Sober, structured, immediately scannable.",
+    background: "White #FFFFFF with very subtle 32px squared notebook grid (rgba(0,0,0,0.018)). NO heavy borders.",
+    layout: "Centered serif title (with one yellow-highlighted word) + small pastel-blue uppercase kicker. Below: a 4-row × 3-column table (Élément / Description / Idéal pour) with a pastel blue header row. Each row has a colored dot (red/orange/green/violet) next to the concept name. Bottom: 2 small bonus cards side-by-side. Below: a single brand-color #24A89B 'À retenir' tip box with star icon.",
+    typography: "Title in Playfair Display 900, 28-32px, sentence case. Kicker 10px Inter 800 uppercase. Header row 10px Inter 800 uppercase. Body cells 11-12px Inter 400 (description) / 700 (concept name and use case). NO italic.",
+    colors: "Header pill bg #AEC6CF (pastel blue) text #1F2937. Row dots: #FFB3B3 / #FFD4A3 / #B3FFD1 / #D4B3FF (rouge/orange/vert/violet pastels). Use case arrow #24A89B. Yellow #FFE066 highlighter underline behind one keyword per description. Tip box: brand #24A89B left border + #E8F8F6 background.",
+    structure: "Strict 4-row table. Each row = ONE framework concept (P1-P4). Column 1 = name (2-4 words). Column 2 = description (15-25 words, one bold keyword). Column 3 = 'Idéal pour' use case (3-6 words). Bottom: 2 tiny bonus cards using P7 + a brand-color tip box for the single most important takeaway.",
+  },
   AWA_CLASSIC: {
     vibe: "Awa K. Penn viral infographic. Dense, scannable, save-worthy. Cream paper with wood frame.",
     background: "Cream #FFFFF5 with 6px solid #5D3A1A wood-tone border.",
@@ -447,114 +460,160 @@ export function buildGeminiImagePrompt(
     `${i + 1}. ${p.title}${p.body ? ": " + p.body : ""}`
   ).join("\n");
 
-  return `You are a senior infographic designer specializing in CLEAN, PROFESSIONAL, READABLE social media graphics. Your designs win because they BREATHE — they are NOT cluttered viral spam.
+  return `=== IDENTITÉ ===
+
+Tu es un Directeur Artistique Senior spécialisé en Data-driven Design pour les réseaux sociaux professionnels (LinkedIn, Instagram, Twitter/X). Tu maîtrises le Minimalisme Informatif : chaque élément graphique doit servir la compréhension du texte. Le lecteur doit comprendre la valeur en moins de 3 secondes.
 
 ${"═".repeat(50)}
-NORTH STAR PRINCIPLES (apply to every design)
+=== RÈGLES DE GRAMMAIRE VISUELLE (NON-NÉGOCIABLES) ===
 ${"═".repeat(50)}
 
-1. CLARITY > DENSITY. Generous white space is your friend. Aim for ${isCleanTemplate ? "65-75%" : "85-92%"} canvas fill — NEVER 100%.
-2. HIERARCHY. The eye must travel naturally: headline → main message → supporting points. One thing dominates per zone.
-3. PASTEL PROFESSIONAL palette. Soft, sophisticated colors. NO neon, no eye-burning saturation.
-4. ONE-TWO TYPE PAIRING. Stick to a serif (Playfair Display) + sans (Inter/Poppins) pairing. No more than 2 font families.
-5. SHORT, PUNCHY copy. Every section is scannable in under 3 seconds. Cut filler ruthlessly.
-6. ZONED LAYOUT. Group content into clearly separated colored zones — NO walls of text.
-7. NO clipart, NO stock photos, NO realistic images, NO emoji. Only flat shapes, pills, cards, minimal stroke icons.
-8. NEVER italic. font-style is always normal.
+RÈGLE 1 — La Règle du Tiers Supérieur :
+Le titre principal doit être en haut, centré, typographie Serif élégante (Playfair Display ou Garamond) pour contraster avec le corps Sans-Serif. Encadré ou surligné par une couleur pastel douce (Vert Eau, Bleu Ciel, Jaune Paille).
+
+RÈGLE 2 — Hiérarchie Cognitive des Couleurs :
+JAMAIS de couleurs primaires agressives. Palette Pastel-Professionnelle officielle Supen :
+- Rouge Pastel  (#FFB3B3) = Mauvais / Erreur / À éviter
+- Orange Pastel (#FFD4A3) = Moyen / Attention
+- Vert Pastel   (#B3FFD1) = Excellent / Solution / Validé
+- Bleu Pastel   (#AEC6CF) = Information / Neutre
+- Violet Pastel (#D4B3FF) = Concept Avancé / Premium
+- Jaune         (#FFE066) = Surlignage de mots-clés UNIQUEMENT
+- Brand Supen   (#24A89B) = Accent CTA, footer, signature
+
+RÈGLE 3 — Architecture de l'Espace (White Space) :
+L'espace vide = clarté. Grille invisible. Marges généreuses. Le texte ne doit JAMAIS sembler étouffé. Le canvas respire à ${isCleanTemplate ? "65-75%" : "85-92%"} de remplissage maximum — JAMAIS 100%.
+
+RÈGLE 4 — Contraste Typographique :
+Maximum 2 familles de polices pour tout le visuel :
+- Serif (Playfair Display / Garamond) pour les TITRES
+- Sans-Serif (Inter / Poppins) pour le CORPS
+- Cursive (Caveat) UNIQUEMENT si le template est WHITEBOARD
+Gras + surlignage jaune pour les MOTS-CLÉS uniquement. font-style:italic est INTERDIT partout.
+
+RÈGLE 5 — Ancrages Visuels :
+Chaque point = icône minimaliste (Line Art / Flat Design plat) OU numéro cerclé. Guide l'œil de manière fluide. AUCUN emoji unicode, AUCUN clipart, AUCUNE photo réaliste. Uniquement formes plates, pills, cartes, traits stroke fins.
 
 ${"═".repeat(50)}
-TEMPLATE TO USE: ${templateId}
+=== STYLES DISPONIBLES (5 styles) ===
 ${"═".repeat(50)}
 
-VIBE: ${guide.vibe}
+STYLE "UI_CARDS" — Comparaisons et échelles de qualité.
+Utilise quand : niveaux Bad/Good/Great, avant/après, comparaisons à 3 niveaux.
+Structure : 3 cartes blanches verticales avec étiquettes pastel (rouge → orange → vert), un badge "★ Cible" sur la carte verte, sidebar verte explicative en bas listant les raisons. Fond #F8F9FA grille subtile.
 
-BACKGROUND:
-${guide.background}
+STYLE "WHITEBOARD" — Hand-drawn digital.
+Utilise quand : conseils, tips, processus pédagogiques, contenu authentique.
+Structure : fond blanc avec dot grid, typographie Caveat manuscrite, marqueurs colorés (bleu/rouge/vert), surlignages jaunes sur mots-clés, doodles SVG (cerveau, ampoule), CTA manuscrit brand color en signature.
 
-LAYOUT:
-${guide.layout}
+STYLE "FUNNEL" — Entonnoirs et roadmaps.
+Utilise quand : parcours utilisateur, étapes de vente, processus séquentiel, roadmap.
+Structure : entonnoir 5 étages dégradé pastel (rouge → bleu), checkmarks blancs sur chaque étage, personnage cartoon brand color sur le côté droit, CTA pleine largeur brand color en bas avec flèche.
 
-TYPOGRAPHY:
-${guide.typography}
+STYLE "DATA_GRID" — Modèles cognitifs et tables.
+Utilise quand : frameworks, comparaisons détaillées, ressources, glossaires, méthodes.
+Structure : tableau 4 lignes × 3 colonnes (Élément / Description / Idéal pour). En-tête bleu pastel, alternance zebra blanc/gris, dot coloré par rangée (rouge/orange/vert/violet), 2 callouts bonus + tip brand color "À retenir".
 
-COLORS:
-${guide.colors}
-
-STRUCTURE:
-${guide.structure}
-
-${"═".repeat(50)}
-CANVAS REQUIREMENTS (NON-NEGOTIABLE)
-${"═".repeat(50)}
-
-- Size: EXACTLY ${dimStr}px
-- Padding: ${isCleanTemplate ? "32-40px" : "22-28px"} on all sides
-- Margins between sections: ${isCleanTemplate ? "12-18px (generous breathing room)" : "7-9px (tight but readable)"}
-- Overflow: hidden
-- ${isCleanTemplate ? "The bottom 5-10% of canvas should be visually quiet — NOT packed." : "Content fills 85-92% of canvas — minimal dead space at bottom."}
-- Fonts loaded from Google Fonts: Playfair Display, Inter, Caveat, Poppins.
+STYLE "AWA_CLASSIC" — Dense viral.
+Utilise quand : contenu tech, premium, listes denses de 7 conseils.
+Structure : cream avec wood frame, 7 sections numérotées denses, illustration header, pro tip dashed.
 
 ${"═".repeat(50)}
-CONTENT TO TRANSFORM (FRENCH OUTPUT)
+=== SÉLECTION AUTOMATIQUE DU STYLE ===
 ${"═".repeat(50)}
 
-Topic: ${extraction.title}
-Badge/category: ${extraction.badge}
-Platform: ${platform}
+Mapping mots-clés → style :
+- "vs", "avant", "après", "compare", "bad", "good", "niveau"  → UI_CARDS
+- "étapes", "comment", "guide", "tips", "conseils", "astuce"  → WHITEBOARD
+- "processus", "funnel", "parcours", "roadmap", "tunnel"      → FUNNEL
+- "framework", "modèle", "tableau", "ressources", "glossaire" → DATA_GRID
+- "tech", "premium", liste de 7+ items denses                 → AWA_CLASSIC
 
-Key points extracted:
+${"═".repeat(50)}
+=== TEMPLATE IMPOSÉ POUR CETTE GÉNÉRATION : ${templateId} ===
+${"═".repeat(50)}
+
+VIBE        : ${guide.vibe}
+BACKGROUND  : ${guide.background}
+LAYOUT      : ${guide.layout}
+TYPOGRAPHY  : ${guide.typography}
+COLORS      : ${guide.colors}
+STRUCTURE   : ${guide.structure}
+
+${"═".repeat(50)}
+=== FORMAT DE SORTIE ===
+${"═".repeat(50)}
+
+- Dimensions exactes : ${dimStr}px (carré 1080×1080 ou portrait 1080×1350)
+- Sortie : image PNG UNIQUEMENT (aucun texte, aucun HTML dans la réponse)
+- Polices : Playfair Display + Inter/Poppins via Google Fonts (Caveat seulement si WHITEBOARD)
+- Couleur de marque Supen : #24A89B sur les CTAs, footer, signatures
+- Padding : ${isCleanTemplate ? "32-40px" : "22-28px"} sur tous les bords
+- Gap entre sections : ${isCleanTemplate ? "12-18px (respiration généreuse)" : "7-9px (compact mais lisible)"}
+- Footer en bas : "Créé avec Supen.io"
+- Tout le contenu rédigé en FRANÇAIS
+
+${"═".repeat(50)}
+=== CONTENU À TRANSFORMER ===
+${"═".repeat(50)}
+
+Sujet      : ${extraction.title}
+Catégorie  : ${extraction.badge}
+Plateforme : ${platform}
+
+Points clés extraits du contenu source :
 ${pointsText}
 
-Pro insight: ${extraction.proTip}
+Insight pro : ${extraction.proTip}
 
-Source content:
+Source intégrale (à reformuler, ne pas copier verbatim) :
 ${content.slice(0, 2500)}
 
-${customPrompt ? `User instructions: ${customPrompt}\n` : ""}
+${customPrompt ? `Instructions utilisateur additionnelles : ${customPrompt}\n` : ""}
 ${"═".repeat(50)}
-WRITING RULES (FRENCH)
-${"═".repeat(50)}
-
-- ALL text content in FRENCH (this is a French-language product)
-- Section titles: 3-6 words, specific and actionable. NO vague labels like "Important" or "Note".
-- Section bodies: ${isCleanTemplate ? "18-25 words MAX per section" : "30-50 words per section"}. Cut everything that doesn't earn its place.
-- Use ONE bold accent word per section (highlighted in the section's accent color).
-- Include at least one concrete data point (number, tool name, or percentage) somewhere in the infographic.
-- Title pattern: ${isCleanTemplate ? "clean and curiosity-driven, sentence case, NOT shouty" : "punchy ALL CAPS viral hook"}.
-- Footer text: "Créé avec Supen.io · Suivez pour plus"
-
-${"═".repeat(50)}
-WHAT KILLS YOUR DESIGN (ABSOLUTELY DO NOT)
+=== RÈGLES D'ÉCRITURE (FRANÇAIS) ===
 ${"═".repeat(50)}
 
-- Walls of text — break content into clear visual chunks with white space
-- More than 5 colors — pick a tight palette and stick to it
-- Italic fonts — never, anywhere (font-style must always be normal)
-- Dark backgrounds (unless template explicitly says so)
-- Tiny font sizes that strain the eye (never below 10px)
-- Cramped sections touching each other with no gap
-- Generic emoji, clipart, or stock photography
-- Filling every pixel — let the design breathe
-- English text (this is a French product — write in French)
+- TOUT le texte est rédigé en FRANÇAIS (le produit est francophone)
+- Titres de sections : 3-6 mots, spécifiques et actionnables. AUCUN label vague ("Important", "Note").
+- Bodies de section : ${isCleanTemplate ? "18-25 mots MAX par section" : "30-50 mots par section"}. Coupe tout ce qui n'apporte rien.
+- UN seul mot-clé par section surligné en jaune (#FFE066)
+- Au moins UNE donnée concrète dans tout le visuel (chiffre précis, nom d'outil, pourcentage)
+- Titre principal : ${isCleanTemplate ? "clair, curieux, sentence case (PAS de SHOUTING ALL CAPS)" : "ALL CAPS viral et percutant"}
+- Footer : "Créé avec Supen.io"
 
 ${"═".repeat(50)}
-FINAL CHECKLIST (verify before generating)
+=== INTERDICTIONS ABSOLUES ===
 ${"═".repeat(50)}
 
-[ ] Canvas exactly ${dimStr}px
-[ ] Title is the largest, most prominent element
-[ ] Each section has clear visual separation from neighbors
-[ ] White space is intentional and generous
-[ ] Colors are pastel-professional, not loud
-[ ] Body text is short (${isCleanTemplate ? "18-25" : "30-50"} words per section)
-[ ] Typography pairing is maintained (max 2 font families)
-[ ] Footer present at bottom: "Créé avec Supen.io · Suivez pour plus"
-[ ] Content is in FRENCH
-[ ] Content fills ${isCleanTemplate ? "65-75%" : "85-92%"} of canvas
-[ ] NO italic text anywhere
-[ ] NO emoji characters
+- Pavés de texte → aérez avec du blanc
+- Plus de 5 couleurs simultanées → palette serrée
+- font-style:italic → INTERDIT nulle part
+- Fonds sombres → sauf si le template l'exige explicitement
+- Tailles de police inférieures à 10px → illisible
+- Sections collées sans gap → toujours de la respiration
+- Emoji unicode 😀, clipart, photographies stock
+- Remplir 100% du canvas → laisse respirer
+- Texte en anglais → produit francophone
 
-Generate the infographic image now. Output ONLY the image, no text.`;
+${"═".repeat(50)}
+=== CHECKLIST FINALE (à valider AVANT génération) ===
+${"═".repeat(50)}
+
+[ ] Canvas exactement ${dimStr}px
+[ ] Titre = élément le plus proéminent (Règle du Tiers Supérieur)
+[ ] Hiérarchie cognitive des couleurs respectée (palette pastel pro)
+[ ] White space généreux (${isCleanTemplate ? "65-75%" : "85-92%"} de remplissage)
+[ ] Maximum 2 familles de polices (1 Serif + 1 Sans, ou + Caveat si Whiteboard)
+[ ] Bodies courts (${isCleanTemplate ? "18-25" : "30-50"} mots par section)
+[ ] Ancrages visuels présents (icônes ou numéros cerclés)
+[ ] Brand color #24A89B utilisée sur les CTAs / footer
+[ ] Footer "Créé avec Supen.io" en bas
+[ ] Tout le texte en FRANÇAIS
+[ ] AUCUN italique
+[ ] AUCUN emoji unicode
+
+Génère l'image maintenant. Sortie : UNIQUEMENT l'image, sans texte de réponse.`;
 }
 
 // ─── Post-process generated HTML ───
