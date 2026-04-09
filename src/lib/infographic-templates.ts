@@ -14,7 +14,7 @@
  * - Pro-tip / bonus section at bottom
  */
 
-const FONT_IMPORTS = `<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">`;
+const FONT_IMPORTS = `<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;900&family=Caveat:wght@500;700&display=swap" rel="stylesheet">`;
 
 // ─── TEMPLATE 1: AWA_CLASSIC ───
 // Bulletproof: CSS forces vertical fill. Claude ONLY replaces {{text}}.
@@ -368,6 +368,160 @@ body{width:${w}px;height:${h}px;background:#FFFFF8;font-family:'Poppins',sans-se
 </body></html>`;
 }
 
+// ─── TEMPLATE 9: UI_CARDS ───
+// Clean SaaS-style 3-tier comparison (Bad → Good → Great)
+// White space first. Pastel pills. Serif title. Inspired by reference IMG_4538-4542.
+export function uiCards(w: number, h: number): string {
+  const isPortrait = h > 1100;
+  return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8">${FONT_IMPORTS}
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:${w}px;height:${h}px;overflow:hidden}
+body{background:#F8F9FA;font-family:'Inter',-apple-system,system-ui,sans-serif;padding:${isPortrait ? 40 : 36}px ${isPortrait ? 38 : 34}px;display:flex;flex-direction:column;color:#1A1A1A}
+.header{text-align:center;margin-bottom:${isPortrait ? 22 : 18}px}
+.kicker{display:inline-block;background:rgba(26,26,26,0.06);color:#4B5563;font-size:10px;font-weight:700;padding:5px 14px;border-radius:20px;margin-bottom:12px;letter-spacing:1.5px;text-transform:uppercase;font-style:normal}
+.title{font-family:'Playfair Display','Georgia',serif;font-size:${isPortrait ? 36 : 32}px;font-weight:900;color:#1A1A1A;line-height:1.15;letter-spacing:-0.5px;font-style:normal}
+.title span{color:#FF6B6B}
+.cards{display:flex;flex-direction:column;gap:${isPortrait ? 14 : 12}px;flex:1;min-height:0}
+.card{background:#FFFFFF;border-radius:14px;padding:${isPortrait ? 20 : 16}px ${isPortrait ? 24 : 20}px;box-shadow:0 2px 14px rgba(15,23,42,0.06),0 0 0 1px rgba(15,23,42,0.04);display:flex;flex-direction:column;flex:1;min-height:0}
+.card.l1{border-left:4px solid #FF6B6B}
+.card.l2{border-left:4px solid #FFB347}
+.card.l3{border-left:4px solid #51CF66}
+.label-pill{align-self:flex-start;display:inline-block;font-size:10px;font-weight:800;padding:4px 12px;border-radius:14px;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px;font-style:normal}
+.l1 .label-pill{background:#FFE5E5;color:#E03131}
+.l2 .label-pill{background:#FFF1DC;color:#D97706}
+.l3 .label-pill{background:#E5F7E8;color:#2BA84A}
+.card-title{font-family:'Playfair Display','Georgia',serif;font-size:${isPortrait ? 19 : 17}px;font-weight:700;color:#1A1A1A;margin-bottom:6px;line-height:1.2;font-style:normal}
+.card-body{font-size:${isPortrait ? 13 : 12}px;color:#4B5563;line-height:1.5;font-weight:400;font-style:normal}
+.card-body .a{font-weight:700;color:#1A1A1A;background:linear-gradient(180deg,transparent 60%,#FFE066 60%);padding:0 2px}
+.insights{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:${isPortrait ? 16 : 12}px}
+.insight{background:#FFFFFF;border-radius:10px;padding:10px 14px;border:1px solid rgba(15,23,42,0.06)}
+.insight-title{font-size:11px;font-weight:700;color:#1A1A1A;margin-bottom:2px;letter-spacing:0.2px;font-style:normal}
+.insight-body{font-size:10px;color:#6B7280;line-height:1.4;font-style:normal}
+.footer{text-align:center;margin-top:${isPortrait ? 16 : 12}px;padding-top:12px;border-top:1px solid rgba(15,23,42,0.08);font-size:10px;font-weight:600;color:#9CA3AF;letter-spacing:0.5px;font-style:normal}
+</style></head><body>
+<div class="header"><div class="kicker">{{BADGE}}</div><div class="title">{{TITLE}}</div></div>
+<div class="cards">
+<div class="card l1"><div class="label-pill">Mauvais</div><div class="card-title">{{P1_TITLE}}</div><div class="card-body">{{P1_BODY}}</div></div>
+<div class="card l2"><div class="label-pill">Bon</div><div class="card-title">{{P2_TITLE}}</div><div class="card-body">{{P2_BODY}}</div></div>
+<div class="card l3"><div class="label-pill">Excellent</div><div class="card-title">{{P3_TITLE}}</div><div class="card-body">{{P3_BODY}}</div></div>
+</div>
+<div class="insights">
+<div class="insight"><div class="insight-title">{{P4_TITLE}}</div><div class="insight-body">{{P4_BODY}}</div></div>
+<div class="insight"><div class="insight-title">{{P5_TITLE}}</div><div class="insight-body">{{P5_BODY}}</div></div>
+<div class="insight"><div class="insight-title">{{P6_TITLE}}</div><div class="insight-body">{{P6_BODY}}</div></div>
+<div class="insight"><div class="insight-title">{{P7_TITLE}}</div><div class="insight-body">{{PRO_TIP}}</div></div>
+</div>
+<div class="footer">{{FOOTER}}</div>
+</body></html>`;
+}
+
+// ─── TEMPLATE 10: WHITEBOARD ───
+// Hand-drawn whiteboard / notebook page. Caveat handwritten font + yellow highlighter.
+// Best for: tips, steps, how-tos, educational content. LinkedIn-friendly.
+export function whiteboard(w: number, h: number): string {
+  const isPortrait = h > 1100;
+  return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8">${FONT_IMPORTS}
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:${w}px;height:${h}px;overflow:hidden}
+body{background:#FFFFFF;background-image:radial-gradient(circle,#E8EAED 0.8px,transparent 0.8px);background-size:24px 24px;font-family:'Inter',-apple-system,system-ui,sans-serif;padding:${isPortrait ? 36 : 32}px ${isPortrait ? 40 : 36}px;display:flex;flex-direction:column;color:#1F2937}
+.header{margin-bottom:${isPortrait ? 22 : 18}px;padding-bottom:14px;border-bottom:2px dashed #E5E7EB;text-align:center}
+.kicker{display:inline-block;font-size:10px;font-weight:700;color:#4DABF7;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;font-style:normal}
+.title{font-family:'Caveat',cursive;font-size:${isPortrait ? 48 : 42}px;font-weight:700;color:#1F2937;line-height:1;letter-spacing:0.5px;font-style:normal}
+.title span{color:#FF6B6B;position:relative;display:inline-block;padding:0 4px}
+.title span::after{content:'';position:absolute;left:0;right:0;bottom:6px;height:10px;background:#FFE066;z-index:-1;border-radius:4px}
+.sections{display:flex;flex-direction:column;flex:1;min-height:0}
+.section{display:flex;align-items:flex-start;gap:14px;padding:${isPortrait ? 11 : 9}px 4px;flex:1;min-height:0}
+.section + .section{border-top:1px dashed #F1F3F5}
+.mark{font-family:'Caveat',cursive;font-size:30px;font-weight:700;line-height:1;flex-shrink:0;width:36px;text-align:center;font-style:normal}
+.s1 .mark,.s4 .mark,.s7 .mark{color:#4DABF7}
+.s2 .mark,.s5 .mark{color:#FF6B6B}
+.s3 .mark,.s6 .mark{color:#51CF66}
+.sc{flex:1;min-width:0}
+.st{font-family:'Caveat',cursive;font-size:24px;font-weight:700;color:#1F2937;line-height:1.05;margin-bottom:3px;font-style:normal}
+.sb{font-size:${isPortrait ? 13 : 12}px;color:#4B5563;line-height:1.45;font-style:normal}
+.sb .a{background:linear-gradient(180deg,transparent 55%,#FFE066 55%);font-weight:600;color:#1F2937;padding:0 2px}
+.tip{margin-top:12px;padding:14px 18px;background:#FFFAF0;border:2px dashed #FFB347;border-radius:10px;display:flex;gap:14px;align-items:flex-start}
+.tip-icon{font-family:'Caveat',cursive;font-size:34px;color:#FF6B6B;line-height:1;flex-shrink:0;font-weight:700;font-style:normal}
+.tip-body{flex:1;font-size:${isPortrait ? 13 : 12}px;color:#4B5563;line-height:1.4;font-style:normal}
+.tip-label{font-family:'Caveat',cursive;font-size:22px;color:#FF6B6B;display:block;line-height:1;margin-bottom:3px;font-weight:700;font-style:normal}
+.footer{text-align:center;margin-top:12px;padding-top:10px;border-top:1px dashed #E5E7EB;font-family:'Caveat',cursive;font-size:18px;color:#9CA3AF;font-style:normal}
+</style></head><body>
+<div class="header"><div class="kicker">{{BADGE}}</div><div class="title">{{TITLE}}</div></div>
+<div class="sections">
+<div class="section s1"><div class="mark">→</div><div class="sc"><div class="st">{{P1_TITLE}}</div><div class="sb">{{P1_BODY}}</div></div></div>
+<div class="section s2"><div class="mark">★</div><div class="sc"><div class="st">{{P2_TITLE}}</div><div class="sb">{{P2_BODY}}</div></div></div>
+<div class="section s3"><div class="mark">✓</div><div class="sc"><div class="st">{{P3_TITLE}}</div><div class="sb">{{P3_BODY}}</div></div></div>
+<div class="section s4"><div class="mark">→</div><div class="sc"><div class="st">{{P4_TITLE}}</div><div class="sb">{{P4_BODY}}</div></div></div>
+<div class="section s5"><div class="mark">!</div><div class="sc"><div class="st">{{P5_TITLE}}</div><div class="sb">{{P5_BODY}}</div></div></div>
+<div class="section s6"><div class="mark">✓</div><div class="sc"><div class="st">{{P6_TITLE}}</div><div class="sb">{{P6_BODY}}</div></div></div>
+<div class="section s7"><div class="mark">★</div><div class="sc"><div class="st">{{P7_TITLE}}</div><div class="sb">{{P7_BODY}}</div></div></div>
+</div>
+<div class="tip"><div class="tip-icon">!</div><div class="tip-body"><span class="tip-label">Astuce pro</span>{{PRO_TIP}}</div></div>
+<div class="footer">{{FOOTER}}</div>
+</body></html>`;
+}
+
+// ─── TEMPLATE 11: FUNNEL ───
+// Vertical funnel/pyramid with 5 progressive stages + 2 side notes.
+// Best for: processes, frameworks, conversion paths, strategies.
+export function funnel(w: number, h: number): string {
+  const isPortrait = h > 1100;
+  return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8">${FONT_IMPORTS}
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:${w}px;height:${h}px;overflow:hidden}
+body{background:linear-gradient(180deg,#FFF8F0 0%,#F0F4FF 100%);font-family:'Inter',-apple-system,system-ui,sans-serif;padding:${isPortrait ? 38 : 32}px ${isPortrait ? 40 : 36}px;display:flex;flex-direction:column;color:#1F2937}
+.header{text-align:center;margin-bottom:${isPortrait ? 22 : 18}px}
+.kicker{display:inline-block;background:#1F2937;color:#fff;font-size:10px;font-weight:700;padding:5px 14px;border-radius:14px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;font-style:normal}
+.title{font-family:'Inter',sans-serif;font-size:${isPortrait ? 32 : 28}px;font-weight:900;color:#1F2937;line-height:1.1;letter-spacing:-0.5px;text-transform:uppercase;font-style:normal}
+.title span{color:#F97316}
+.funnel{display:flex;flex-direction:column;align-items:center;gap:${isPortrait ? 8 : 6}px;flex:1;min-height:0;justify-content:space-around}
+.stage{position:relative;display:flex;align-items:center;justify-content:center;color:#fff;border-radius:10px;padding:${isPortrait ? 14 : 11}px 18px;box-shadow:0 4px 16px rgba(0,0,0,0.08);text-align:center;font-style:normal}
+.stage.s1{width:96%;background:linear-gradient(135deg,#F87171,#EF4444)}
+.stage.s2{width:84%;background:linear-gradient(135deg,#FB923C,#F97316)}
+.stage.s3{width:72%;background:linear-gradient(135deg,#FBBF24,#F59E0B)}
+.stage.s4{width:60%;background:linear-gradient(135deg,#34D399,#10B981)}
+.stage.s5{width:48%;background:linear-gradient(135deg,#60A5FA,#3B82F6)}
+.stage-content{display:flex;align-items:center;gap:12px;width:100%;justify-content:flex-start}
+.stage-num{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.22);font-size:14px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1.5px solid rgba(255,255,255,0.55);font-style:normal}
+.stage-text{flex:1;text-align:left;min-width:0}
+.stage-title{font-size:${isPortrait ? 15 : 13}px;font-weight:800;line-height:1.1;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.3px;font-style:normal}
+.stage-body{font-size:${isPortrait ? 12 : 11}px;font-weight:500;line-height:1.3;opacity:0.95;font-style:normal}
+.arrow{font-size:14px;color:#9CA3AF;line-height:1;font-style:normal}
+.notes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:${isPortrait ? 16 : 12}px}
+.note{background:#fff;border-radius:10px;padding:11px 14px;border-left:3px solid var(--c);box-shadow:0 1px 3px rgba(0,0,0,0.05)}
+.note.n1{--c:#9333EA}
+.note.n2{--c:#0891B2}
+.note-title{font-size:11px;font-weight:700;color:var(--c);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;font-style:normal}
+.note-body{font-size:11px;color:#4B5563;line-height:1.4;font-style:normal}
+.note-body .a{font-weight:700;color:var(--c)}
+.footer{text-align:center;margin-top:12px;padding-top:10px;border-top:1px solid rgba(0,0,0,0.08);font-size:11px;font-weight:600;color:#6B7280;letter-spacing:0.3px;font-style:normal}
+</style></head><body>
+<div class="header"><div class="kicker">{{BADGE}}</div><div class="title">{{TITLE}}</div></div>
+<div class="funnel">
+<div class="stage s1"><div class="stage-content"><div class="stage-num">1</div><div class="stage-text"><div class="stage-title">{{P1_TITLE}}</div><div class="stage-body">{{P1_BODY}}</div></div></div></div>
+<div class="arrow">▼</div>
+<div class="stage s2"><div class="stage-content"><div class="stage-num">2</div><div class="stage-text"><div class="stage-title">{{P2_TITLE}}</div><div class="stage-body">{{P2_BODY}}</div></div></div></div>
+<div class="arrow">▼</div>
+<div class="stage s3"><div class="stage-content"><div class="stage-num">3</div><div class="stage-text"><div class="stage-title">{{P3_TITLE}}</div><div class="stage-body">{{P3_BODY}}</div></div></div></div>
+<div class="arrow">▼</div>
+<div class="stage s4"><div class="stage-content"><div class="stage-num">4</div><div class="stage-text"><div class="stage-title">{{P4_TITLE}}</div><div class="stage-body">{{P4_BODY}}</div></div></div></div>
+<div class="arrow">▼</div>
+<div class="stage s5"><div class="stage-content"><div class="stage-num">5</div><div class="stage-text"><div class="stage-title">{{P5_TITLE}}</div><div class="stage-body">{{P5_BODY}}</div></div></div></div>
+</div>
+<div class="notes">
+<div class="note n1"><div class="note-title">{{P6_TITLE}}</div><div class="note-body">{{P6_BODY}}</div></div>
+<div class="note n2"><div class="note-title">{{P7_TITLE}}</div><div class="note-body">{{PRO_TIP}}</div></div>
+</div>
+<div class="footer">{{FOOTER}}</div>
+</body></html>`;
+}
+
 // ─── Template registry ───
 
 export const TEMPLATE_REGISTRY: Record<string, (w: number, h: number) => string> = {
@@ -379,6 +533,9 @@ export const TEMPLATE_REGISTRY: Record<string, (w: number, h: number) => string>
   COMPARISON_VS: comparisonVs,
   AWA_BREAKING: awaBreaking,
   AWA_MASTERCLASS: awaMasterclass,
+  UI_CARDS: uiCards,
+  WHITEBOARD: whiteboard,
+  FUNNEL: funnel,
 };
 
 export const TEMPLATE_IDS = Object.keys(TEMPLATE_REGISTRY) as string[];

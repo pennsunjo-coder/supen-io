@@ -89,14 +89,19 @@ export function analyzeContent(content: string, _platform: string): ContentAnaly
 
 // ─── Template selection ───
 
-export function selectBestTemplate(content: string, platform: string): TemplateSelection {
+export function selectBestTemplate(content: string, platform: string, forcedTemplate?: string): TemplateSelection {
+  // User override takes precedence — no detection logic.
+  if (forcedTemplate && TEMPLATE_REGISTRY[forcedTemplate]) {
+    return { templateId: forcedTemplate, reason: "Style choisi manuellement" };
+  }
+
   const words = content.toLowerCase().split(/\s+/);
   const wordCount = words.length;
 
   const p = {
     hasNumberedList: /(\d+\.|①|②|③|étape|step|premier|first)/i.test(content),
     hasStats: /\d+[%km€$]|\d{4,}/i.test(content),
-    hasComparison: /\bvs\b|versus|contre|avant.*après|before.*after|plutôt|better than/i.test(content),
+    hasComparison: /\bvs\b|versus|contre|avant.*après|before.*after|plutôt|better than|bad.*good|good.*great|niveau|level|compare/i.test(content),
     hasHowTo: /comment|how to|étape|step|guide|tutorial/i.test(content),
     hasTips: /conseil|tip|astuce|hack|trick|secret/i.test(content),
     isTech: /\bai\b|tech|digital|code|app|software|chatgpt|claude|ia/i.test(content),
@@ -106,37 +111,42 @@ export function selectBestTemplate(content: string, platform: string): TemplateS
 
   const hasBreaking = /breaking|urgent|stop|dead|goodbye|end of|rip\b|game.?over|replaced/i.test(content);
   const hasMasterclass = /master|guide complet|cheat.?sheet|tout savoir|everything|complete guide/i.test(content);
+  const hasFunnel = /funnel|entonnoir|processus|stratégie|strategy|framework|pipeline|conversion|étapes? du|tunnel/i.test(content);
+  const has3Tier = /bad.*good.*great|good.*better.*best|niveau\s*1.*niveau\s*2|level\s*1.*level\s*2|débutant.*avancé|beginner.*advanced|bronze.*silver.*gold/i.test(content);
 
   let templateId: string;
   let reason: string;
 
   if (hasBreaking && wordCount < 200) {
     templateId = "AWA_BREAKING";
-    reason = "Breaking/urgent content — high-impact alert layout";
+    reason = "Contenu urgent — mise en page choc";
   } else if (p.hasStats && wordCount < 200) {
     templateId = "STATS_IMPACT";
-    reason = "Key statistics detected — large numbers visual";
+    reason = "Statistiques détectées — visuel chiffres clés";
+  } else if (hasFunnel) {
+    templateId = "FUNNEL";
+    reason = "Processus/framework — entonnoir progressif";
+  } else if (has3Tier) {
+    templateId = "UI_CARDS";
+    reason = "Comparaison à 3 niveaux — cartes UI claires";
   } else if (p.hasComparison) {
-    templateId = "COMPARISON_VS";
-    reason = "Comparison content — two-column VS layout";
+    templateId = "UI_CARDS";
+    reason = "Comparaison/avant-après — cartes UI claires";
   } else if (hasMasterclass && wordCount > 200) {
     templateId = "AWA_MASTERCLASS";
-    reason = "Masterclass/guide — structured learning layout";
-  } else if (p.hasHowTo || p.hasNumberedList) {
-    templateId = "AWA_CLASSIC";
-    reason = "How-to/steps — classic Awa Penn numbered sections";
-  } else if (p.hasTips && !p.isTech) {
-    templateId = "VIRAL_TIPS";
-    reason = "Tips content — clean modern numbered design";
+    reason = "Masterclass/guide — apprentissage structuré";
+  } else if (p.hasHowTo || p.hasTips || p.hasNumberedList) {
+    templateId = "WHITEBOARD";
+    reason = "Conseils/étapes — style tableau dessiné";
   } else if (p.isTech && !p.isMarketing) {
     templateId = "DARK_TECH";
-    reason = "Tech content — dark modern glassmorphism";
+    reason = "Contenu tech — glassmorphism sombre";
   } else if (wordCount > 300) {
     templateId = "CHEAT_SHEET";
-    reason = "Long content — multi-section grid cheat sheet";
+    reason = "Contenu long — grille cheat sheet";
   } else {
     templateId = "AWA_CLASSIC";
-    reason = "General content — Awa Penn viral style";
+    reason = "Contenu général — style viral Awa Penn";
   }
 
   return { templateId, reason };
@@ -146,14 +156,14 @@ export function selectBestTemplate(content: string, platform: string): TemplateS
 
 function detectBadge(content: string): string {
   const lower = content.toLowerCase();
-  if (/how to|comment/i.test(lower)) return "HOW-TO GUIDE";
-  if (/tip|astuce|conseil/i.test(lower)) return "TOP TIPS";
-  if (/\bvs\b|versus|compar/i.test(lower)) return "COMPARISON";
-  if (/\d+%|\d+k/i.test(lower)) return "KEY STATS";
-  if (/learn|education|cours/i.test(lower)) return "LEARNING";
-  if (/ai\b|tech|software/i.test(lower)) return "AI & TECH";
+  if (/how to|comment/i.test(lower)) return "GUIDE PRATIQUE";
+  if (/tip|astuce|conseil/i.test(lower)) return "TOP CONSEILS";
+  if (/\bvs\b|versus|compar/i.test(lower)) return "COMPARAISON";
+  if (/\d+%|\d+k/i.test(lower)) return "STATS CLÉS";
+  if (/learn|education|cours/i.test(lower)) return "APPRENTISSAGE";
+  if (/ai\b|tech|software/i.test(lower)) return "IA & TECH";
   if (/business|money|revenue/i.test(lower)) return "BUSINESS";
-  return "KEY INSIGHTS";
+  return "POINTS CLÉS";
 }
 
 export function extractKeyPoints(content: string): ExtractionResult {
@@ -261,15 +271,22 @@ let regenerationCounter = 0;
 
 const LAYOUT_VARIATIONS = ["vertical numbered", "two-column grid", "timeline steps", "split comparison", "hierarchy pyramid"];
 
-export function buildInfographicPrompt(content: string, platform: string, customInstructions?: string): string {
+const CLEAN_TEMPLATES = new Set(["UI_CARDS", "WHITEBOARD", "FUNNEL"]);
+
+export function buildInfographicPrompt(
+  content: string,
+  platform: string,
+  customInstructions?: string,
+  forcedTemplate?: string,
+): string {
   regenerationCounter++;
   const analysis = analyzeContent(content, platform);
   const dims = FORMAT_DIMS[analysis.format];
-  const selection = selectBestTemplate(content, platform);
+  const selection = selectBestTemplate(content, platform, forcedTemplate);
 
-  // On regeneration, rotate to a different template
+  // On regeneration, rotate to a different template — UNLESS the user forced a style.
   let templateId = selection.templateId;
-  if (regenerationCounter > 1) {
+  if (regenerationCounter > 1 && !forcedTemplate) {
     const alternatives = TEMPLATE_IDS.filter(id => id !== templateId);
     templateId = alternatives[(regenerationCounter - 2) % alternatives.length];
   }
@@ -278,7 +295,7 @@ export function buildInfographicPrompt(content: string, platform: string, custom
   let templateHtml = templateFn(dims.width, dims.height);
   const extraction = extractKeyPoints(content);
 
-  // Pre-fill SVG icons into the template (deterministic)
+  // Pre-fill SVG icons into the template (deterministic, no-op if no placeholder)
   const sectionColors = ["#E53E3E", "#3182CE", "#38A169", "#DD6B20", "#9B59B6", "#EC4899", "#00897B"];
   for (let i = 0; i < 7; i++) {
     const pointText = extraction.points[i]?.title || "";
@@ -295,8 +312,19 @@ export function buildInfographicPrompt(content: string, platform: string, custom
     templateHtml = templateHtml.replace("{{MAIN_ILLUSTRATION}}", illustSvg);
   }
 
-  const variationSeed = Math.random().toString(36).substring(2, 8);
-  const extra = customInstructions ? `\nUser instructions: ${customInstructions}` : "";
+  const extra = customInstructions ? `\nInstructions utilisateur : ${customInstructions}` : "";
+  const isCleanTemplate = CLEAN_TEMPLATES.has(templateId);
+  const bodyLength = isCleanTemplate ? "18-30 mots" : "30-50 mots";
+  const titleStyle = isCleanTemplate
+    ? "Titre clair, 4-8 mots, sentence case (PAS de ALL CAPS), un mot encadré dans <span>"
+    : "Titre ALL CAPS viral, 4-8 mots, un mot encadré dans <span>";
+
+  const templateHints: Record<string, string> = {
+    UI_CARDS: "Ce template est une comparaison à 3 niveaux. P1=mauvaise version (à éviter), P2=version correcte, P3=meilleure version. P4-P7 = insights compacts (12-18 mots chacun). PRO_TIP = recommandation finale.",
+    WHITEBOARD: "Ce template est un tableau dessiné. P1-P7 = 7 conseils/étapes courts. Chaque body = 18-25 mots avec UN mot-clé entouré de <span class=\"a\">. PRO_TIP = astuce finale.",
+    FUNNEL: "Ce template est un entonnoir séquentiel. P1-P5 = 5 étapes progressives (P1=large/début, P5=précis/fin). P6-P7 = notes courtes (10-15 mots). PRO_TIP = piège commun à éviter.",
+  };
+  const templateNote = templateHints[templateId] || "";
 
   const pointHints = extraction.points.map((p, i) =>
     `${i + 1}. "${p.title}" — ${p.body}`
@@ -314,6 +342,9 @@ Make it significantly better.\n`
 
   return `TASK: Find-and-replace {{PLACEHOLDERS}} in the HTML below. Output the complete HTML with replacements. Nothing else.
 ${regenInstruction}
+TEMPLATE: ${templateId}
+${templateNote}
+
 STRICT RULES:
 1. Output the ENTIRE HTML document from <!DOCTYPE html> to </html>
 2. ONLY replace text inside {{double curly braces}} — change NOTHING else
@@ -321,19 +352,20 @@ STRICT RULES:
 4. Do NOT add any new tags, styles, classes, or attributes
 5. Do NOT add emoji characters (no unicode emoji — the SVG icons are already embedded)
 6. Do NOT use font-style:italic anywhere
-7. Every {{Pn_BODY}} must be 30-50 words with " • " sub-points
+7. Every {{Pn_BODY}} must be ${bodyLength}
+8. Write all content in FRENCH (this is a French-language product)
 
 REPLACEMENTS:
 {{BADGE}} → "${extraction.badge}"
-{{TITLE}} → ALL CAPS viral title, max 50 chars, wrap ONE word in <span>THE_WORD</span>
-{{P1_TITLE}} through {{P7_TITLE}} → 3-6 word section header, specific and actionable
-{{P1_BODY}} through {{P7_BODY}} → 30-50 words each, structured as:
-  "<span class=\\"a\\">Key phrase</span> explanation detail • Second sub-point with specific number • Third specific detail with tool/metric name"
-{{PRO_TIP}} → 30-50 word actionable tip with specific recommendation
-{{FOOTER}} → "Created with Supen.io · Follow for more"
+{{TITLE}} → ${titleStyle}
+{{P1_TITLE}} through {{P7_TITLE}} → 3-6 word section header in French, specific and actionable
+{{P1_BODY}} through {{P7_BODY}} → ${bodyLength} each, structured as:
+  "<span class=\\"a\\">Phrase clé</span> détail explicatif${isCleanTemplate ? "" : " • Second sous-point avec un chiffre précis • Troisième détail concret avec nom d'outil"}"
+{{PRO_TIP}} → ${isCleanTemplate ? "20-30" : "30-50"} word actionable tip in French
+{{FOOTER}} → "Créé avec Supen.io · Suivez pour plus"
 
 BODY EXAMPLE:
-"<span class=\\"a\\">Claude + Cursor</span> write production code 10x faster than manual coding • Average developer saves 3.2 hours per day • 87% of YC 2025 startups use this exact AI stack for shipping"
+"<span class=\\"a\\">Claude + Cursor</span> écrivent du code 10x plus vite que le manuel${isCleanTemplate ? "" : " • Économise 3.2h par jour en moyenne • 87% des startups YC 2025 utilisent cette stack"}"
 
 KEY POINTS FROM SOURCE:
 ${pointHints}
@@ -352,216 +384,177 @@ OUTPUT: The complete filled HTML only. No explanation, no markdown fences.`;
 
 // ─── Gemini prompt builder ───
 
-const GEMINI_STYLE_GUIDES: Record<string, { layout: string; colors: string; illustration: string; density: string }> = {
-  howto: {
-    layout: "Vertical numbered steps with large colored circles (30px) and line icons (20px). Each step has a bold colored title + 2-3 detail lines below. Process flow arrows or numbered circles illustration in header.",
-    colors: "#FFFFF5 cream background, #5D3A1A wood border (6px), section colors rotating: #E53E3E, #3182CE, #38A169, #DD6B20, #9B59B6, #EC4899, #00897B",
-    illustration: "Simple process-flow diagram (3 circles connected by arrows) in the top-right header area, ~90px wide",
-    density: "7 steps, each with bold 6-word title + 25-40 word body with bullet sub-points using ' - '"
+interface TemplateStyleGuide {
+  vibe: string;
+  background: string;
+  layout: string;
+  typography: string;
+  colors: string;
+  structure: string;
+}
+
+const TEMPLATE_STYLE_GUIDES: Record<string, TemplateStyleGuide> = {
+  UI_CARDS: {
+    vibe: "Clean SaaS landing page meets editorial magazine. Apple/Notion/Linear aesthetic. Sophisticated, never loud.",
+    background: "Soft #F8F9FA off-white background. NO heavy borders, NO frames, NO patterns. Pure breathing room.",
+    layout: "Centered serif title at top with a small uppercase kicker label above. 3 stacked white cards taking the main vertical space (each card ~equal height, flex:1). Each card has a colored category pill at the top-left ('Mauvais' / 'Bon' / 'Excellent'), then a serif card title, then sans-serif body. 4-cell insight grid at the bottom for supporting points.",
+    typography: "Title in Playfair Display 900, 32px, sentence case (NOT all caps). Card titles in Playfair 700, 17px. Card bodies in Inter 400, 13px, color #4B5563, line-height 1.5. Insight titles 11px Inter 700. Generous white space.",
+    colors: "Pastel pills — red #FFE5E5/text #E03131 for 'Mauvais', amber #FFF1DC/text #D97706 for 'Bon', green #E5F7E8/text #2BA84A for 'Excellent'. Card left borders match (4px). Yellow #FFE066 highlighter underline behind one keyword per card body.",
+    structure: "Strict 3-tier comparison. Card 1 = the worst/wrong/bad version (red). Card 2 = the okay/standard version (orange). Card 3 = the best/expert version (green). Each card body 25-30 words MAX. Bottom 4 insights are short 'why it works' takeaways, 12-18 words each.",
   },
-  tips: {
-    layout: "Clean numbered list with colored circle numbers and icon boxes. White background, subtle gray section backgrounds (#F8FAFC). Gradient badge (purple→pink).",
-    colors: "White #FFFFFF background, no border. Section colors: #6366F1, #EC4899, #F59E0B, #10B981, #8B5CF6, #3B82F6, #EF4444",
-    illustration: "Checklist graphic (3 colored checkboxes with lines) in header, ~90px",
-    density: "7 tips, each with specific tool names, numbers, or percentages"
+  WHITEBOARD: {
+    vibe: "Friendly hand-drawn whiteboard. Smart consultant's notebook page. LinkedIn educator vibe. Approachable, not corporate.",
+    background: "Pure white #FFFFFF with very subtle dotted grid pattern (radial-gradient dots at 24px spacing, color #E8EAED). NO frames, NO heavy borders.",
+    layout: "Top header: small uppercase blue kicker + big handwritten title (with one keyword highlighted in yellow). 7 sections below in vertical flow, each = hand-drawn marker symbol on the left (→, ★, ✓, !) + content on the right. Dashed separators between sections. Bottom: 'Astuce pro' callout box with dashed orange border.",
+    typography: "Title in Caveat handwritten font, 42px, weight 700, normal style. Section titles in Caveat 24px, weight 700. Marker symbols in Caveat 30px. Body text in Inter 400, 13px, color #4B5563. The mix of handwritten + clean sans-serif = teacher's whiteboard energy.",
+    colors: "Marker accents rotating: blue #4DABF7, red #FF6B6B, green #51CF66. Yellow highlighter #FFE066 behind important words (linear-gradient bottom-half background trick). Subtle gray separators #F1F3F5. Pro tip box uses orange #FFB347 dashed border on #FFFAF0 background.",
+    structure: "7 short tips/steps. Each section: 3-6 word handwritten title + 18-25 word body in Inter. ONE keyword per section gets the yellow highlighter <span class='a'>treatment</span>. Pro tip at bottom is the single most actionable takeaway.",
   },
-  stats: {
-    layout: "2x2 grid of large hero numbers (44px bold) in bordered cards at top, followed by 3 detail rows below. Each stat card has an icon, the big number, and a label.",
-    colors: "#FFFFF5 cream background, #5D3A1A border. Stat card borders: #E53E3E, #3182CE, #38A169, #DD6B20",
-    illustration: "Bar chart or growth curve SVG in header area, ~90px",
-    density: "4 big stat cards (huge numbers) + 3 supporting detail rows + pro tip"
+  FUNNEL: {
+    vibe: "Modern strategy framework. McKinsey-meets-Linear. Visual progression that pulls the eye downward through sequential stages.",
+    background: "Soft vertical gradient from #FFF8F0 (warm top) to #F0F4FF (cool bottom). Clean, no border, no pattern.",
+    layout: "Centered uppercase title at top with a dark kicker pill above. 5 funnel stages stacked vertically, each progressively narrower (96%, 84%, 72%, 60%, 48% width). Each stage = colored gradient pill with a number circle on the left + uppercase stage title + body description. Small ▼ arrows between stages. Bottom: 2 side-by-side note cards (purple + cyan accents).",
+    typography: "Title in Inter 900, 28-32px, ALL CAPS, letter-spacing -0.5px. Stage titles in Inter 800, 13-15px, ALL CAPS. Stage bodies in Inter 500, 11-12px, opacity 0.95 on colored bg. Note titles 11px uppercase. All sans-serif, no italic.",
+    colors: "Funnel gradient progression (warm → cool): stage 1 red #EF4444→#F87171, stage 2 orange #F97316→#FB923C, stage 3 amber #F59E0B→#FBBF24, stage 4 emerald #10B981→#34D399, stage 5 blue #3B82F6→#60A5FA. Notes use purple #9333EA and cyan #0891B2 left borders.",
+    structure: "5 sequential stages of a process/framework/funnel, each building on the previous. Stage 1 = entry/awareness (largest), stage 5 = goal/conversion (smallest). Each stage: 2-4 word title + 12-18 word body. Bottom 2 notes = 'common pitfall' (purple) + 'expert tip' (cyan), 10-15 words each.",
   },
-  comparison: {
-    layout: "Two columns separated by a VS circle badge (36px black circle, white 'VS' text). Left column blue (#3182CE), right column red (#E53E3E). Column headers are full-width colored pills.",
-    colors: "#FFFFF5 background, #888 border. Left: blue tints. Right: red tints. VS badge: #1A1A1A",
-    illustration: "Before/After arrows comparison graphic in header",
-    density: "3 comparison rows per column + verdict box at bottom"
-  },
-  quote: {
-    layout: "Large decorative quotation marks in header, centered quote text in large font, attribution below, then 3-4 context points.",
-    colors: "#FFFFF5 background, #E53E3E accent for quote marks, #1A1A1A text",
-    illustration: "Large decorative opening quotation marks, ~80px",
-    density: "1 main quote + 4 supporting context points"
-  },
-  general: {
-    layout: "Awa K. Penn classic: badge pill + ALL CAPS title in header (left) with illustration (right). 7 numbered sections below with colored circle numbers, icon boxes, and text blocks. Pro tip box at bottom with dashed border.",
-    colors: "#FFFFF5 cream background, #5D3A1A wood-tone border (6px). Section colors rotating: #E53E3E, #3182CE, #38A169, #DD6B20, #9B59B6, #EC4899, #00897B. Header border-bottom: 3px solid #E53E3E.",
-    illustration: "Contextual SVG illustration (growth chart, brain circuit, or target) in header right, ~90px",
-    density: "7 sections with 25-40 words each, every section has specific data points and sub-bullets"
+  AWA_CLASSIC: {
+    vibe: "Awa K. Penn viral infographic. Dense, scannable, save-worthy. Cream paper with wood frame.",
+    background: "Cream #FFFFF5 with 6px solid #5D3A1A wood-tone border.",
+    layout: "Header: badge pill + ALL CAPS title (left) + contextual illustration (right). 7 numbered sections below in a tight vertical flow. Pro tip box at bottom with dashed border.",
+    typography: "Poppins. Title 28px weight 900 ALL CAPS letter-spacing -0.5px. Section headers 13px weight 700. Body 11px weight 400 line-height 1.35.",
+    colors: "Section colors rotating: #E53E3E, #3182CE, #38A169, #DD6B20, #9B59B6, #EC4899, #00897B. Pro tip uses red #E53E3E dashed border.",
+    structure: "7 dense sections, each 30-50 words with sub-bullets and one accent-colored bold keyword. Pro tip 30-50 words actionable.",
   },
 };
 
-export function buildGeminiImagePrompt(content: string, platform: string, customPrompt?: string): string {
+export function buildGeminiImagePrompt(
+  content: string,
+  platform: string,
+  customPrompt?: string,
+  forcedTemplate?: string,
+): string {
   const analysis = analyzeContent(content, platform);
   const dims = FORMAT_DIMS[analysis.format];
   const extraction = extractKeyPoints(content);
-  const guide = GEMINI_STYLE_GUIDES[analysis.contentType] || GEMINI_STYLE_GUIDES.general;
+  const selection = selectBestTemplate(content, platform, forcedTemplate);
+  const templateId = selection.templateId;
+  const guide = TEMPLATE_STYLE_GUIDES[templateId] || TEMPLATE_STYLE_GUIDES.AWA_CLASSIC;
+  const isCleanTemplate = CLEAN_TEMPLATES.has(templateId);
 
   const dimStr = `${dims.width}x${dims.height}`;
-  const isDark = analysis.colorTheme === "tech";
-
   const pointsText = extraction.points.slice(0, 7).map((p, i) =>
     `${i + 1}. ${p.title}${p.body ? ": " + p.body : ""}`
   ).join("\n");
 
-  return `You are the world's greatest viral infographic designer. Your work consistently achieves:
-- 26,000+ likes on Facebook
-- 1.7 MILLION+ views on Twitter/X
-- 5,000+ shares in 24 hours
-- 97% save rate on Instagram
-
-Your style is based on Awa K. Penn's viral methodology — the most-saved infographic creator on social media.
+  return `You are a senior infographic designer specializing in CLEAN, PROFESSIONAL, READABLE social media graphics. Your designs win because they BREATHE — they are NOT cluttered viral spam.
 
 ${"═".repeat(50)}
-CONTENT INTELLIGENCE REPORT
+NORTH STAR PRINCIPLES (apply to every design)
 ${"═".repeat(50)}
 
-Content Type: ${analysis.contentType.toUpperCase()}
+1. CLARITY > DENSITY. Generous white space is your friend. Aim for ${isCleanTemplate ? "65-75%" : "85-92%"} canvas fill — NEVER 100%.
+2. HIERARCHY. The eye must travel naturally: headline → main message → supporting points. One thing dominates per zone.
+3. PASTEL PROFESSIONAL palette. Soft, sophisticated colors. NO neon, no eye-burning saturation.
+4. ONE-TWO TYPE PAIRING. Stick to a serif (Playfair Display) + sans (Inter/Poppins) pairing. No more than 2 font families.
+5. SHORT, PUNCHY copy. Every section is scannable in under 3 seconds. Cut filler ruthlessly.
+6. ZONED LAYOUT. Group content into clearly separated colored zones — NO walls of text.
+7. NO clipart, NO stock photos, NO realistic images, NO emoji. Only flat shapes, pills, cards, minimal stroke icons.
+8. NEVER italic. font-style is always normal.
+
+${"═".repeat(50)}
+TEMPLATE TO USE: ${templateId}
+${"═".repeat(50)}
+
+VIBE: ${guide.vibe}
+
+BACKGROUND:
+${guide.background}
+
+LAYOUT:
+${guide.layout}
+
+TYPOGRAPHY:
+${guide.typography}
+
+COLORS:
+${guide.colors}
+
+STRUCTURE:
+${guide.structure}
+
+${"═".repeat(50)}
+CANVAS REQUIREMENTS (NON-NEGOTIABLE)
+${"═".repeat(50)}
+
+- Size: EXACTLY ${dimStr}px
+- Padding: ${isCleanTemplate ? "32-40px" : "22-28px"} on all sides
+- Margins between sections: ${isCleanTemplate ? "12-18px (generous breathing room)" : "7-9px (tight but readable)"}
+- Overflow: hidden
+- ${isCleanTemplate ? "The bottom 5-10% of canvas should be visually quiet — NOT packed." : "Content fills 85-92% of canvas — minimal dead space at bottom."}
+- Fonts loaded from Google Fonts: Playfair Display, Inter, Caveat, Poppins.
+
+${"═".repeat(50)}
+CONTENT TO TRANSFORM (FRENCH OUTPUT)
+${"═".repeat(50)}
+
+Topic: ${extraction.title}
+Badge/category: ${extraction.badge}
 Platform: ${platform}
-Format: ${dimStr}px (EXACT — no variation)
-Color Theme: ${analysis.colorTheme}
-Badge: "${extraction.badge}"
 
-Key Points Extracted:
+Key points extracted:
 ${pointsText}
 
-Pro Insight: ${extraction.proTip}
+Pro insight: ${extraction.proTip}
 
+Source content:
+${content.slice(0, 2500)}
+
+${customPrompt ? `User instructions: ${customPrompt}\n` : ""}
 ${"═".repeat(50)}
-MASTERCLASS DESIGN SPECIFICATIONS
-${"═".repeat(50)}
-
-CANVAS (mandatory):
-- Size: EXACTLY ${dimStr}px — this is non-negotiable
-- Background: ${isDark ? "dark navy gradient #0F172A→#1E293B" : guide.colors.split(",")[0]}
-- Border: ${isDark ? "none" : "6px solid #5D3A1A (warm wood-tone frame)"}
-- Padding: 24px on all sides (TIGHT — like reference images)
-- Font: Poppins from Google Fonts — weights 900, 700, 400 ONLY
-- Overflow: hidden
-- Content must fill 90-95% of canvas — ZERO empty space at bottom
-
-LAYOUT: ${guide.layout}
-
-HEADER (top 12-15% of canvas):
-- LEFT side: badge pill (10px uppercase, colored background, white text, rounded) + title below
-- Title: ALL CAPS, Poppins 900, ${analysis.format === "portrait" ? "32px" : "28px"}, letter-spacing -0.5px
-- ONE word in the title highlighted with accent color (most impactful word)
-- RIGHT side: contextual illustration — ${guide.illustration}
-- Bottom border: 3px solid accent color, 12px padding below
-
-SECTION DESIGN (7 sections — ALL required):
-- Each section: flex row with [circle number] [icon box] [text content]
-- Circle number: 30px diameter, solid accent color, white number 14px Poppins 900
-- Icon box: 32px, 8px border-radius, 10% opacity accent color background, containing a simple 20px stroke-based line icon (like Lucide/Feather icons — NOT filled, NOT clipart)
-- Section title: 14px Poppins 700, accent color matching the circle
-- Section body: 12px Poppins 400, color ${isDark ? "#94A3B8" : "#2D3748"}, line-height 1.3
-  - 25-40 words per body
-  - Sub-points separated by " • " for density
-  - One key phrase in BOLD matching section color
-  - At least one specific number, percentage, tool name, or metric
-- Section background: ${isDark ? "rgba(255,255,255,0.04) with 1px white/8% border" : "rgba(0,0,0,0.02)"}
-- Border-left: 3px solid section accent color
-- Border-radius: 8px
-- Padding: 10px 12px
-- Gap between sections: 7-8px ONLY (very tight)
-
-SECTION COLORS (must rotate in this exact order):
-1: #E53E3E (red)  2: #3182CE (blue)  3: #38A169 (green)
-4: #DD6B20 (orange)  5: #9B59B6 (purple)  6: #EC4899 (pink)  7: #00897B (teal)
-
-PRO TIP BOX (mandatory, after sections):
-- Dashed border: 2px dashed accent color
-- Background: 5% opacity accent color
-- Label: "PRO TIP:" in 11px uppercase Poppins 900, accent color
-- Body: specific actionable advice, 30-50 words
-- Border-radius: 8px
-- Padding: 10px 14px
-
-FOOTER (mandatory, at very bottom):
-- Border-top: 2px solid ${isDark ? "rgba(0,201,177,0.2)" : "#5D3A1A"}
-- Text: "Created with Supen.io · Follow for more"
-- Font: 12px Poppins 700, color ${isDark ? "#24A89B" : "#5D3A1A"}
-- Margin-top: 8px, padding-top: 10px
-
-${"═".repeat(50)}
-TYPOGRAPHY RULES (STRICT)
+WRITING RULES (FRENCH)
 ${"═".repeat(50)}
 
-- Title: Poppins 900, ALL CAPS, letter-spacing -0.5px
-- Section headers: Poppins 700, sentence case, colored
-- Body text: Poppins 400, sentence case, dark gray
-- Pro tip label: Poppins 900, uppercase, accent color
-- NEVER use italic — font-style must ALWAYS be normal
-- NEVER use decorative/script fonts
-- Line-height: 1.08 for titles, 1.3 for body
+- ALL text content in FRENCH (this is a French-language product)
+- Section titles: 3-6 words, specific and actionable. NO vague labels like "Important" or "Note".
+- Section bodies: ${isCleanTemplate ? "18-25 words MAX per section" : "30-50 words per section"}. Cut everything that doesn't earn its place.
+- Use ONE bold accent word per section (highlighted in the section's accent color).
+- Include at least one concrete data point (number, tool name, or percentage) somewhere in the infographic.
+- Title pattern: ${isCleanTemplate ? "clean and curiosity-driven, sentence case, NOT shouty" : "punchy ALL CAPS viral hook"}.
+- Footer text: "Créé avec Supen.io · Suivez pour plus"
 
 ${"═".repeat(50)}
-ICON & ILLUSTRATION GUIDE
+WHAT KILLS YOUR DESIGN (ABSOLUTELY DO NOT)
 ${"═".repeat(50)}
 
-Section icons (30x30px):
-- Style: stroke-based line art (1.5px stroke, no fill)
-- Like Lucide/Feather icon library
-- Color: matches section accent color
-- Background: 10% opacity colored rounded rectangle
-- Examples: lightbulb, target, zap, chart, brain, rocket, shield, book, users, code
-
-Header illustration (~90px):
-- Simple, elegant SVG-style graphic
-- Uses stroke lines (1.5px) and subtle fills (10-20% opacity)
-- Relevant to the content topic
-- Position: right side of header, vertically centered with title
-- NEVER use realistic images, photos, or complex clipart
+- Walls of text — break content into clear visual chunks with white space
+- More than 5 colors — pick a tight palette and stick to it
+- Italic fonts — never, anywhere (font-style must always be normal)
+- Dark backgrounds (unless template explicitly says so)
+- Tiny font sizes that strain the eye (never below 10px)
+- Cramped sections touching each other with no gap
+- Generic emoji, clipart, or stock photography
+- Filling every pixel — let the design breathe
+- English text (this is a French product — write in French)
 
 ${"═".repeat(50)}
-VIRAL CONTENT FORMULAS
+FINAL CHECKLIST (verify before generating)
 ${"═".repeat(50)}
 
-Title must use one of these proven patterns:
-- "[Number] [THINGS] THAT [BIG CLAIM]" → "7 AI TOOLS THAT REPLACE YOUR ENTIRE TEAM"
-- "STOP [DOING X]. [DO Y] INSTEAD." → "STOP USING CHATGPT WRONG. DO THIS INSTEAD."
-- "THE [ADJECTIVE] TRUTH ABOUT [TOPIC]" → "THE UGLY TRUTH ABOUT FREELANCING IN 2026"
-- "[X]% OF [PEOPLE] DON'T KNOW THIS" → "90% OF MARKETERS DON'T KNOW THIS HACK"
-- "HOW I [RESULT] IN [TIME]" → "HOW I MADE $10K IN 30 DAYS WITH AI"
-- "[THING] IS DEAD. HERE'S WHAT'S NEXT." → "SEO IS DEAD. HERE'S WHAT'S NEXT."
-
-Body text must:
-- Include specific tool names (Claude, Notion, Figma, etc.)
-- Include specific numbers (47%, 3x faster, $2K/month)
-- Answer "So what?" for every point
-- Use " • " to pack multiple sub-facts per section
-
-${"═".repeat(50)}
-CONTENT TO TRANSFORM
-${"═".repeat(50)}
-
-${content.slice(0, 3000)}
-
-Platform: ${platform}
-${customPrompt ? `\nSpecial instructions: ${customPrompt}` : ""}
-
-${"═".repeat(50)}
-FINAL QUALITY CHECKLIST
-${"═".repeat(50)}
-
-Before generating, verify ALL of these:
-[ ] Canvas is EXACTLY ${dimStr}px
-[ ] ALL 7 sections present and filled with 25-40 words each
-[ ] Header has: badge pill + ALL CAPS title + illustration
-[ ] Title uses a viral formula with ONE highlighted word
-[ ] Each section: colored circle number + icon + title + rich body
-[ ] Each body has at least one bold key phrase in accent color
-[ ] Each body has specific data (numbers, tool names, percentages)
-[ ] Pro tip box present with dashed border and actionable advice
-[ ] Footer present: "Created with Supen.io · Follow for more"
+[ ] Canvas exactly ${dimStr}px
+[ ] Title is the largest, most prominent element
+[ ] Each section has clear visual separation from neighbors
+[ ] White space is intentional and generous
+[ ] Colors are pastel-professional, not loud
+[ ] Body text is short (${isCleanTemplate ? "18-25" : "30-50"} words per section)
+[ ] Typography pairing is maintained (max 2 font families)
+[ ] Footer present at bottom: "Créé avec Supen.io · Suivez pour plus"
+[ ] Content is in FRENCH
+[ ] Content fills ${isCleanTemplate ? "65-75%" : "85-92%"} of canvas
 [ ] NO italic text anywhere
-[ ] NO emoji characters — only clean line-art SVG icons
-[ ] Content fills 90-95% of canvas — NO dead space at bottom
-[ ] Colors rotate: red→blue→green→orange→purple→pink→teal
-[ ] Gap between sections is 7-8px (very tight, no wasted space)
-[ ] Font is Poppins only — 900/700/400 weights
+[ ] NO emoji characters
 
-Generate the infographic image now. Output ONLY the image.`;
+Generate the infographic image now. Output ONLY the image, no text.`;
 }
 
 // ─── Post-process generated HTML ───
@@ -569,10 +562,10 @@ Generate the infographic image now. Output ONLY the image.`;
 export function postProcessHtml(html: string): string {
   let out = html;
 
-  // Ensure font link
+  // Ensure font link (covers all templates: Poppins, Inter, Playfair Display, Caveat)
   if (!out.includes("fonts.googleapis.com")) {
     out = out.replace("</head>",
-      '<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap" rel="stylesheet"></head>'
+      '<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;900&family=Caveat:wght@500;700&display=swap" rel="stylesheet"></head>'
     );
   }
 

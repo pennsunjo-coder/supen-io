@@ -48,6 +48,15 @@ interface Props {
 
 type ResultMode = "gemini" | "claude" | null;
 type Step = "ready" | "generating" | "result";
+type StyleChoice = "auto" | "AWA_CLASSIC" | "UI_CARDS" | "WHITEBOARD" | "FUNNEL";
+
+const STYLE_OPTIONS: { id: StyleChoice; label: string; desc: string }[] = [
+  { id: "auto", label: "Auto", desc: "L'IA choisit le meilleur style" },
+  { id: "AWA_CLASSIC", label: "Awa Classic", desc: "Viral dense, 7 sections" },
+  { id: "UI_CARDS", label: "UI Cards", desc: "Comparaison à 3 niveaux" },
+  { id: "WHITEBOARD", label: "Whiteboard", desc: "Tableau dessiné, conseils" },
+  { id: "FUNNEL", label: "Funnel", desc: "Entonnoir / framework" },
+];
 
 // ─── Component ───
 
@@ -67,6 +76,7 @@ export default function InfographicModal({ open, onClose, content, platform }: P
   const [customPrompt, setCustomPrompt] = useState("");
   const [showPrompt, setShowPrompt] = useState(false);
   const [qualityScore, setQualityScore] = useState<QualityScore | null>(null);
+  const [styleChoice, setStyleChoice] = useState<StyleChoice>("auto");
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   // Reset state when modal opens or content changes
@@ -82,6 +92,7 @@ export default function InfographicModal({ open, onClose, content, platform }: P
       setShowZoom(false);
       setShowConfetti(false);
       setQualityScore(null);
+      setStyleChoice("auto");
       resetRegenerationCounter();
     }
   }, [open, content]);
@@ -109,9 +120,10 @@ export default function InfographicModal({ open, onClose, content, platform }: P
 
   // ─── Auto-analysis ───
 
+  const forcedTemplate = styleChoice === "auto" ? undefined : styleChoice;
   const analysis = analyzeContent(content, platform);
   const dims = getFormatDimensions(analysis.format);
-  const templateSelection = selectBestTemplate(content, platform);
+  const templateSelection = selectBestTemplate(content, platform, forcedTemplate);
   const aspectRatio = dims.height / dims.width;
   // Scale infographic to fit ~480px wide modal content area
   const previewWidth = 480;
@@ -128,7 +140,7 @@ export default function InfographicModal({ open, onClose, content, platform }: P
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: buildGeminiImagePrompt(content, platform, customPrompt || undefined) }] }],
+            contents: [{ parts: [{ text: buildGeminiImagePrompt(content, platform, customPrompt || undefined, forcedTemplate) }] }],
             generationConfig: {
               responseModalities: ["IMAGE", "TEXT"],
               responseMimeType: "image/png",
@@ -155,7 +167,7 @@ export default function InfographicModal({ open, onClose, content, platform }: P
           max_tokens: 4096,
           messages: [{
             role: "user",
-            content: buildInfographicPrompt(content, platform, customPrompt || undefined),
+            content: buildInfographicPrompt(content, platform, customPrompt || undefined, forcedTemplate),
           }],
         }),
         45_000,
@@ -417,18 +429,18 @@ export default function InfographicModal({ open, onClose, content, platform }: P
           <div className="p-6">
             {/* ═══ State 1: Ready ═══ */}
             {step === "ready" && (
-              <div className="text-center space-y-6">
+              <div className="space-y-5">
                 {/* AI analysis preview */}
-                <div className="space-y-3">
+                <div className="text-center space-y-3">
                   <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
                     <Sparkles className="w-8 h-8 text-primary" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium mb-1">Our AI will automatically detect:</p>
+                    <p className="text-sm font-medium mb-1">Notre IA va générer :</p>
                     <div className="flex flex-wrap justify-center gap-2">
                       {[
-                        { label: `Template: ${templateSelection.templateId}`, color: "bg-blue-500/10 text-blue-400" },
-                        { label: `Theme: ${analysis.colorTheme}`, color: "bg-green-500/10 text-green-400" },
+                        { label: `Template : ${templateSelection.templateId}`, color: "bg-blue-500/10 text-blue-400" },
+                        { label: `Thème : ${analysis.colorTheme}`, color: "bg-green-500/10 text-green-400" },
                         { label: `${dims.width}x${dims.height}`, color: "bg-orange-500/10 text-orange-400" },
                       ].map((tag) => (
                         <span key={tag.label} className={cn("text-[10px] px-2 py-1 rounded-full font-medium", tag.color)}>
@@ -439,9 +451,38 @@ export default function InfographicModal({ open, onClose, content, platform }: P
                   </div>
                 </div>
 
+                {/* Style selector */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Choisis un style</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {STYLE_OPTIONS.map((opt) => {
+                      const active = styleChoice === opt.id;
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => setStyleChoice(opt.id)}
+                          className={cn(
+                            "text-left rounded-xl border px-3 py-2.5 transition-all",
+                            active
+                              ? "border-primary bg-primary/10 ring-1 ring-primary/40"
+                              : "border-border/40 bg-accent/20 hover:border-border/70 hover:bg-accent/40",
+                          )}
+                        >
+                          <div className="flex items-center gap-1.5">
+                            <span className={cn("text-xs font-bold", active && "text-primary")}>{opt.label}</span>
+                            {active && <Check className="w-3 h-3 text-primary" />}
+                          </div>
+                          <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{opt.desc}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 {/* Content preview */}
                 <div className="bg-accent/30 rounded-xl p-4">
-                  <p className="text-xs text-muted-foreground italic leading-relaxed">{contentPreview}</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{contentPreview}</p>
                 </div>
 
                 {/* Generate button */}
@@ -450,7 +491,7 @@ export default function InfographicModal({ open, onClose, content, platform }: P
                   onClick={handleGenerate}
                 >
                   <Sparkles className="w-5 h-5" />
-                  Generate Infographic
+                  Générer l'infographie
                 </Button>
               </div>
             )}
