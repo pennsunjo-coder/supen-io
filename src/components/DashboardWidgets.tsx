@@ -79,7 +79,7 @@ function TopContentCard({
       const response = await anthropic.messages.create({
         model: CLAUDE_MODEL,
         max_tokens: 300,
-        system: `Tu es expert en prompts pour générateurs d'images. Génère un prompt en anglais, optimisé pour ${item.platform}, qui illustre visuellement ce contenu. Format : style photographique + sujet + ambiance + couleurs + composition. Max 100 mots. Réponds UNIQUEMENT avec le prompt.`,
+        system: `You are an expert in image generation prompts. Generate a prompt in English, optimized for ${item.platform}, that visually illustrates this content. Format: photographic style + subject + mood + colors + composition. Max 100 words. Respond ONLY with the prompt.`,
         messages: [{ role: "user", content: item.content.slice(0, 600) }],
       });
       const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
@@ -100,15 +100,15 @@ function TopContentCard({
       const response = await anthropic.messages.create({
         model: CLAUDE_MODEL,
         max_tokens: 400,
-        system: `Tu es expert en design d'infographies virales. Crée une structure d'infographie pour ce contenu ${item.platform}. Format exact :
-TITRE: [titre accrocheur, max 8 mots]
-POINT 1: [texte court]
-POINT 2: [texte court]
-POINT 3: [texte court]
-POINT 4: [texte court, optionnel]
-POINT 5: [texte court, optionnel]
-CTA: [appel à l'action]
-En français. Réponds UNIQUEMENT avec la structure.`,
+        system: `You are an expert in viral infographic design. Create an infographic structure for this ${item.platform} content. Exact format:
+TITLE: [catchy title, max 8 words]
+POINT 1: [short text]
+POINT 2: [short text]
+POINT 3: [short text]
+POINT 4: [short text, optional]
+POINT 5: [short text, optional]
+CTA: [call to action]
+In English. Respond ONLY with the structure.`,
         messages: [{ role: "user", content: item.content.slice(0, 600) }],
       });
       const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
@@ -124,7 +124,7 @@ En français. Réponds UNIQUEMENT avec la structure.`,
       const response = await anthropic.messages.create({
         model: CLAUDE_MODEL,
         max_tokens: 300,
-        system: `Tu es expert en prompts pour générateurs d'images. Génère un prompt en anglais, optimisé pour ${item.platform}, qui illustre visuellement ce contenu. Format : style photographique + sujet + ambiance + couleurs + composition. Max 100 mots. Réponds UNIQUEMENT avec le prompt.`,
+        system: `You are an expert in image generation prompts. Generate a prompt in English, optimized for ${item.platform}, that visually illustrates this content. Format: photographic style + subject + mood + colors + composition. Max 100 words. Respond ONLY with the prompt.`,
         messages: [{ role: "user", content: item.content.slice(0, 600) }],
       });
       const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
@@ -322,7 +322,7 @@ function SessionVariationCard({
       const r = await anthropic.messages.create({
         model: CLAUDE_MODEL,
         max_tokens: 300,
-        system: `Tu es expert en prompts pour générateurs d'images. Génère un prompt en anglais, optimisé pour ${platform}, qui illustre visuellement ce contenu. Format : style photographique + sujet + ambiance + couleurs + composition. Max 100 mots. Réponds UNIQUEMENT avec le prompt.`,
+        system: `You are an expert in image generation prompts. Generate a prompt in English, optimized for ${platform}, that visually illustrates this content. Format: photographic style + subject + mood + colors + composition. Max 100 words. Respond ONLY with the prompt.`,
         messages: [{ role: "user", content: item.content.slice(0, 600) }],
       });
       const t = r.content.filter((b) => b.type === "text").map((b) => b.text).join("");
@@ -342,7 +342,7 @@ function SessionVariationCard({
       const r = await anthropic.messages.create({
         model: CLAUDE_MODEL,
         max_tokens: 300,
-        system: `Tu es expert en prompts pour générateurs d'images. Génère un prompt en anglais, optimisé pour ${platform}, qui illustre visuellement ce contenu. Format : style photographique + sujet + ambiance + couleurs + composition. Max 100 mots. Réponds UNIQUEMENT avec le prompt.`,
+        system: `You are an expert in image generation prompts. Generate a prompt in English, optimized for ${platform}, that visually illustrates this content. Format: photographic style + subject + mood + colors + composition. Max 100 words. Respond ONLY with the prompt.`,
         messages: [{ role: "user", content: item.content.slice(0, 600) }],
       });
       const t = r.content.filter((b) => b.type === "text").map((b) => b.text).join("");

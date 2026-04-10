@@ -179,7 +179,7 @@ function YouTubeTranscriber({ addNote }: { addNote: (title: string, content: str
       if (!data?.transcript) throw new Error("No transcript returned");
 
       setTranscript(data.transcript);
-      setTitle(data.title || "Video YouTube");
+      setTitle(data.title || "YouTube Video");
       toast.success("Transcript extracted!");
     } catch (err) {
       toast.error(friendlyError(err) || "Could not extract transcript. Make sure the video has subtitles.");
@@ -190,7 +190,7 @@ function YouTubeTranscriber({ addNote }: { addNote: (title: string, content: str
   async function handleAddToSources() {
     if (!transcript) return;
     setAdding(true);
-    const { error } = await addNote(`YouTube : ${title}`, transcript);
+    const { error } = await addNote(`YouTube: ${title}`, transcript);
     setAdding(false);
     if (error) {
       toast.error(`Error: ${error}`);
@@ -282,15 +282,15 @@ function HookGenerator({ profileNiche, profilePlatforms }: { profileNiche?: stri
         anthropic.messages.create({
           model: CLAUDE_MODEL,
           max_tokens: 1000,
-          system: `Tu es un expert en accroches virales pour les reseaux sociaux. Genere 10 hooks (accroches) puissants en francais pour ${platform}, niche ${niche || "creator"}.
+          system: `You are an expert in viral hooks for social media. Generate 10 powerful hooks in English for ${platform}, niche ${niche || "creator"}.
 
-Regles strictes :
-- Chaque hook fait MAX 12 mots
-- Aucune intro, juste les 10 hooks numerotes 1. a 10.
-- Variete de styles : question, statistique choquante, contrarian, confession, promesse, story, FOMO
-- Evite les cliches IA (jamais "delve", "tapestry", "in today's world")
-- Ton direct, percutant, francais naturel
-- Reponds UNIQUEMENT avec les 10 hooks numerotes, rien d'autre`,
+Strict rules:
+- Each hook is MAX 12 words
+- No intro, just the 10 numbered hooks 1. to 10.
+- Variety of styles: question, shocking stat, contrarian, confession, promise, story, FOMO
+- Avoid AI cliches (never "delve", "tapestry", "in today's world")
+- Direct, punchy, natural English tone
+- Respond ONLY with the 10 numbered hooks, nothing else`,
           messages: [{ role: "user", content: `Sujet : ${topic.trim()}` }],
         }),
         30_000,
@@ -422,17 +422,17 @@ function Humanizer() {
         anthropic.messages.create({
           model: CLAUDE_MODEL,
           max_tokens: 2000,
-          system: `Tu es un expert en reecriture anti-IA. Transforme ce texte en ecriture 100% humaine indetectable par les detecteurs d'IA.
+          system: `You are an expert in anti-AI rewriting. Transform this text into 100% human writing undetectable by AI detectors.
 
-Regles strictes :
-- Francais uniquement
-- Varie la longueur des phrases (courtes + longues melangees)
-- Tournures naturelles, imparfaites, parfois familieres
-- Aucun mot interdit IA : delve, tapestry, vibrant, garner, intricate, foster, leverage, robust, seamless
-- Aucune expression IA : "in today's world", "game changer", "embark on a journey"
-- Garde le sens et le message principal
-- Pas de markdown, pas de listes
-- Reponds UNIQUEMENT avec le texte reecrit, rien d'autre`,
+Strict rules:
+- English only
+- Vary sentence length (mix short + long)
+- Natural, imperfect, sometimes casual phrasing
+- No banned AI words: delve, tapestry, vibrant, garner, intricate, foster, leverage, robust, seamless
+- No AI expressions: "in today's world", "game changer", "embark on a journey"
+- Keep the meaning and main message
+- No markdown, no lists
+- Respond ONLY with the rewritten text, nothing else`,
           messages: [{ role: "user", content: input.trim() }],
         }),
         45_000,
@@ -515,19 +515,19 @@ function ViralAnalyzer() {
         anthropic.messages.create({
           model: CLAUDE_MODEL,
           max_tokens: 800,
-          system: `Tu es un expert en contenu viral. Analyse ce post et evalue son potentiel viral.
+          system: `You are an expert in viral content. Analyze this post and evaluate its viral potential.
 
-Reponds UNIQUEMENT avec ce JSON exact (pas de markdown, pas de backticks) :
+Respond ONLY with this exact JSON (no markdown, no backticks):
 {
-  "hookScore": N (0-100, force de l'accroche),
-  "structureScore": N (0-100, qualite de la structure),
-  "ctaScore": N (0-100, force du CTA),
-  "strengths": ["point fort 1", "point fort 2", "point fort 3"],
-  "weaknesses": ["point faible 1", "point faible 2"],
-  "improvements": ["amelioration 1", "amelioration 2", "amelioration 3"]
+  "hookScore": N (0-100, hook strength),
+  "structureScore": N (0-100, structure quality),
+  "ctaScore": N (0-100, CTA strength),
+  "strengths": ["strength 1", "strength 2", "strength 3"],
+  "weaknesses": ["weakness 1", "weakness 2"],
+  "improvements": ["improvement 1", "improvement 2", "improvement 3"]
 }
 
-Sois strict dans la notation. Tout en francais.`,
+Be strict in scoring. All in English.`,
           messages: [{ role: "user", content: input.trim() }],
         }),
         30_000,
@@ -679,7 +679,7 @@ function TrendsRadar({ profileNiche, addNote }: { profileNiche?: string; addNote
 
   function handleCreateContent(trend: Trend) {
     sessionStorage.setItem("supen_pending_idea", trend.title);
-    toast.success("Sujet selectionne, redirection vers le Studio...");
+    toast.success("Topic selected, redirecting to Studio...");
     navigate("/dashboard");
   }
 
@@ -687,7 +687,7 @@ function TrendsRadar({ profileNiche, addNote }: { profileNiche?: string; addNote
     <div className="rounded-xl border border-border/30 bg-card p-5">
       <div className="flex items-center gap-2 mb-3">
         <TrendingUp className="w-4 h-4 text-cyan-400" />
-        <h3 className="text-sm font-semibold">Radar de tendances</h3>
+        <h3 className="text-sm font-semibold">Trends Radar</h3>
       </div>
 
       <div className="flex gap-2 mb-3">
@@ -695,12 +695,12 @@ function TrendsRadar({ profileNiche, addNote }: { profileNiche?: string; addNote
           value={niche}
           onChange={(e) => setNiche(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && !loading && handleScan()}
-          placeholder="Ta niche (ex: marketing, IA, fitness...)"
+          placeholder="Your niche (e.g., marketing, AI, fitness...)"
           disabled={loading}
           className="bg-accent/30 border-border/30 h-10 text-sm"
         />
         <Button onClick={handleScan} disabled={loading || !niche.trim()} className="h-10 gap-2 text-xs font-semibold min-w-[120px]">
-          {loading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Scan...</> : <><TrendingUp className="w-3.5 h-3.5" /> Scanner</>}
+          {loading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Scanning...</> : <><TrendingUp className="w-3.5 h-3.5" /> Scan</>}
         </Button>
       </div>
 
@@ -733,13 +733,13 @@ function TrendsRadar({ profileNiche, addNote }: { profileNiche?: string; addNote
                     {addingIdx === idx ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> :
                      addedSet.has(idx) ? <Check className="w-2.5 h-2.5 text-emerald-400" /> :
                      <Plus className="w-2.5 h-2.5" />}
-                    {addedSet.has(idx) ? "Ajoute" : "Ajouter"}
+                    {addedSet.has(idx) ? "Added" : "Add"}
                   </button>
                   <button
                     onClick={() => handleCreateContent(trend)}
                     className="text-[10px] text-cyan-400/80 hover:text-cyan-400 font-medium px-2 py-1 rounded hover:bg-cyan-500/10 transition-all"
                   >
-                    Creer →
+                    Create →
                   </button>
                 </div>
               </div>

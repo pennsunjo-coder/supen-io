@@ -316,16 +316,16 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
       } catch { /* RAG indisponible */ }
 
       const modeLabel = isDocMode
-        ? "Voici des documents sources à transformer en contenu"
-        : sourceMode === "idea" ? "Voici une idée à développer" : "Voici un sujet / mot-clé";
+        ? "Here are source documents to transform into content"
+        : sourceMode === "idea" ? "Here is an idea to develop" : "Here is a topic / keyword";
 
       const userMessage = isDocMode
-        ? `${modeLabel}. Les sources sélectionnées sont : ${sanitized}. Génère du contenu basé UNIQUEMENT sur ces sources.`
-        : `${modeLabel} :\n\n${sanitized}`;
+        ? `${modeLabel}. The selected sources are: ${sanitized}. Generate content based ONLY on these sources.`
+        : `${modeLabel}:\n\n${sanitized}`;
 
       // === Instruction spéciale mode document ===
       const docInstruction = isDocMode
-        ? `\n11. Tu dois baser le contenu UNIQUEMENT sur les sources fournies en SECTION 2. Cite des faits, chiffres et idées qui viennent directement de ces sources. Ne génère PAS d'informations qui ne sont pas dans les sources.`
+        ? `\n11. You MUST base the content ONLY on the sources provided in SECTION 2. Cite facts, figures and ideas that come directly from these sources. Do NOT generate information that is not in the sources.`
         : "";
 
       // === SECTION 5 : Style utilisateur (mémoire) ===
@@ -339,29 +339,29 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
       } catch { /* memory is non-critical */ }
 
       // === PROMPT STRUCTURÉ ===
-      const systemPrompt = `## SECTION 1 — IDENTITÉ
-Tu es un expert en création de contenu viral pour les réseaux sociaux. Tu crées du contenu qui génère de l'engagement, des partages et de la croissance organique.${userSection}${viralSection}${styleSection}
+      const systemPrompt = `## SECTION 1 — IDENTITY
+You are an expert in viral content creation for social media. You create content that drives engagement, shares, and organic growth.${userSection}${viralSection}${styleSection}
 
-## SECTION 4 — INSTRUCTIONS DE GÉNÉRATION
-Plateforme : ${selectedPlatform.name}
-Format : ${selectedFormat}
+## SECTION 4 — GENERATION INSTRUCTIONS
+Platform: ${selectedPlatform.name}
+Format: ${selectedFormat}
 
-Règles strictes :
-1. Génère exactement 5 variations DISTINCTES, séparées par le marqueur ---VARIATION--- sur une ligne seule.
-2. Chaque variation doit avoir un ANGLE DIFFÉRENT dans cet ordre :
-   - Variation 1 : Éducatif (enseigne quelque chose de concret)
-   - Variation 2 : Storytelling (raconte une histoire, un vécu)
-   - Variation 3 : Provocation (challenge une croyance, opinion contraire)
-   - Variation 4 : Pratique (liste actionnable, étapes concrètes)
-   - Variation 5 : Débat (pose une question ouverte, invite à commenter)
-3. Chaque variation DOIT commencer par un hook ultra fort de max 10 mots. La première ligne accroche ou meurt.
-4. Si des sources utilisateur sont fournies, ancre le contenu dans ces sources. Cite des faits, chiffres ou idées qui en viennent.
-5. Écriture directe, humaine, niveau CM2. Phrases courtes. Pas de jargon.
-6. JAMAIS de formules enthousiastes artificielles ("Parfait !", "Absolument !", "Excellent !").
-7. Pas de markdown (pas de gras, pas d'italique, pas de titres) sauf si le format le demande.
-8. Adapte le ton et la longueur à ${selectedPlatform.name} + ${selectedFormat}.
-9. Réponds UNIQUEMENT avec les 5 variations séparées par ---VARIATION---. Rien d'autre.
-10. Réponds toujours en français.${docInstruction}`;
+Strict rules:
+1. Generate exactly 5 DISTINCT variations, separated by the marker ---VARIATION--- on its own line.
+2. Each variation must have a DIFFERENT ANGLE in this order:
+   - Variation 1: Educational (teach something concrete)
+   - Variation 2: Storytelling (tell a story, a lived experience)
+   - Variation 3: Provocative (challenge a belief, contrarian opinion)
+   - Variation 4: Practical (actionable list, concrete steps)
+   - Variation 5: Debate (ask an open question, invite comments)
+3. Each variation MUST start with an ultra-strong hook of max 10 words. The first line hooks or dies.
+4. If user sources are provided, anchor the content in those sources. Cite facts, figures or ideas from them.
+5. Direct, human writing. Grade 5 reading level. Short sentences. No jargon.
+6. NEVER use artificially enthusiastic phrases ("Perfect!", "Absolutely!", "Excellent!").
+7. No markdown (no bold, no italic, no headings) unless the format requires it.
+8. Adapt tone and length to ${selectedPlatform.name} + ${selectedFormat}.
+9. Respond ONLY with the 5 variations separated by ---VARIATION---. Nothing else.
+10. Write ALL content in ENGLISH only.${docInstruction}`;
 
       assertOnline();
 
@@ -512,9 +512,9 @@ Règles strictes :
       const response = await anthropic.messages.create({
         model: CLAUDE_MODEL,
         max_tokens: 2048,
-        system: `Tu es un expert en réécriture de contenu. Rends ce texte indétectable par les détecteurs d'IA tout en gardant le même message.
-Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Varie la longueur des phrases. Garde le format adapté à ${selectedPlatform.name}. Réponds uniquement avec le texte réécrit.`,
-        messages: [{ role: "user", content: `Humanise ce contenu :\n\n${original.content}` }],
+        system: `You are an expert in content rewriting. Make this text undetectable by AI detectors while keeping the same message.
+Rules: English only. Natural, imperfect, human phrasing. Vary sentence length. Keep the format adapted to ${selectedPlatform.name}. Respond only with the rewritten text.`,
+        messages: [{ role: "user", content: `Humanize this content:\n\n${original.content}` }],
       });
       const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
       setVariations((prev) => prev.map((v, i) => i === idx ? { ...v, content: text, words: wordCount(text) } : v));
@@ -629,7 +629,7 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
       const response = await anthropic.messages.create({
         model: CLAUDE_MODEL,
         max_tokens: 400,
-        system: `Tu es expert en design d'infographies virales. Crée une structure d'infographie pour ce contenu ${selectedPlatform?.name || ""}. Format : TITRE: [max 8 mots]\nPOINT 1: [texte court]\nPOINT 2: [texte court]\nPOINT 3: [texte court]\nCTA: [appel à l'action]\nEn français. Réponds UNIQUEMENT avec la structure.`,
+        system: `You are an expert in viral infographic design. Create an infographic structure for this ${selectedPlatform?.name || ""} content. Format: TITLE: [max 8 words]\nPOINT 1: [short text]\nPOINT 2: [short text]\nPOINT 3: [short text]\nCTA: [call to action]\nIn English. Respond ONLY with the structure.`,
         messages: [{ role: "user", content: variations[idx].content.slice(0, 600) }],
       });
       setInfraContent(response.content.filter((b) => b.type === "text").map((b) => b.text).join(""));

@@ -150,28 +150,28 @@ const Studio = () => {
 
       const modeLabel =
         sourceMode === "document"
-          ? "Voici un document source à transformer"
+          ? "Here is a source document to transform"
           : sourceMode === "idea"
-            ? "Voici une idée à développer"
-            : "Voici un sujet / mot-clé";
+            ? "Here is an idea to develop"
+            : "Here is a topic / keyword";
 
       const response = await anthropic.messages.create({
         model: CLAUDE_MODEL,
         max_tokens: 4096,
-        system: `Tu es un expert en création de contenu viral pour les réseaux sociaux. Tu génères du contenu prêt à publier, engageant et optimisé pour chaque plateforme.
+        system: `You are an expert in viral content creation for social media. You generate ready-to-publish, engaging content optimized for each platform.
 
-Règles :
-- Réponds toujours en français.
-- Génère exactement 5 variations numérotées (1. 2. 3. 4. 5.), chacune avec un angle ou un hook différent.
-- Sépare chaque variation par une ligne vide et le numéro.
-- Écriture directe, humaine, niveau CM2. Phrases courtes.
-- Pas de formules enthousiastes artificielles.
-- Adapte le ton à ${selectedPlatform.name}.
-- Format demandé : ${selectedFormat}.${viralContext}`,
+Rules:
+- Always respond in English.
+- Generate exactly 5 numbered variations (1. 2. 3. 4. 5.), each with a different angle or hook.
+- Separate each variation with a blank line and the number.
+- Direct, human writing. Short sentences.
+- No artificially enthusiastic phrases.
+- Adapt the tone to ${selectedPlatform.name}.
+- Requested format: ${selectedFormat}.${viralContext}`,
         messages: [
           {
             role: "user",
-            content: `${modeLabel} :\n\n${sanitized}\n\nGénère 5 variations de type "${selectedFormat}" pour ${selectedPlatform.name}.`,
+            content: `${modeLabel}:\n\n${sanitized}\n\nGenerate 5 "${selectedFormat}" variations for ${selectedPlatform.name}.`,
           },
         ],
       });

@@ -63,43 +63,43 @@ function buildCoachPrompt(
   lastContent?: string,
   styleMemory?: string,
 ): string {
-  const firstName = profile?.first_name || "ce createur";
-  const niche = profile?.niche || "Non renseignee";
-  const platforms = profile?.platforms?.join(", ") || "Non renseignees";
+  const firstName = profile?.first_name || "this creator";
+  const niche = profile?.niche || "Not specified";
+  const platforms = profile?.platforms?.join(", ") || "Not specified";
 
-  let prompt = `Tu es le Coach IA personnel de ${firstName}.
+  let prompt = `You are the personal AI Coach of ${firstName}.
 ${SYSTEM_PROMPT}
 
-## PROFIL DE L'UTILISATEUR
-Prenom : ${firstName}
-Niche : ${niche}
-Plateformes : ${platforms}
+## USER PROFILE
+Name: ${firstName}
+Niche: ${niche}
+Platforms: ${platforms}
 
-## TON ROLE
-Tu es un coach bienveillant, direct et expert.
-Tu connais les tendances, les algorithmes et ce qui performe.
-Tu proposes des ameliorations concretes et actionnables.
-Tu t'adaptes au niveau et au style de l'utilisateur.
+## YOUR ROLE
+You are a supportive, direct, and expert coach.
+You know the trends, algorithms, and what performs well.
+You propose concrete and actionable improvements.
+You adapt to the user's level and style.
 
-## INSTRUCTIONS SPECIFIQUES
-1. Reponds TOUJOURS en francais
-2. Sois direct et concis — max 150 mots par reponse
-3. Propose des exemples concrets adaptes a la niche ${niche}
-4. Si tu vois le dernier contenu genere, analyse-le et propose des ameliorations
-5. Pose UNE question de suivi pertinente a la fin de chaque reponse
-6. Adapte tes conseils aux plateformes : ${platforms}`;
+## SPECIFIC INSTRUCTIONS
+1. ALWAYS respond in ENGLISH only
+2. Be direct and concise — max 150 words per response
+3. Propose concrete examples tailored to the ${niche} niche
+4. If you see the last generated content, analyze it and propose improvements
+5. Ask ONE relevant follow-up question at the end of each response
+6. Adapt your advice to these platforms: ${platforms}`;
 
   if (sources.length > 0) {
-    prompt += `\n\n## SOURCES DISPONIBLES (${sources.length})`;
+    prompt += `\n\n## AVAILABLE SOURCES (${sources.length})`;
     for (const source of sources.slice(0, 5)) {
-      const typeLabel = source.type === "url" ? "Lien" : source.type === "pdf" ? "PDF" : "Note";
+      const typeLabel = source.type === "url" ? "Link" : source.type === "pdf" ? "PDF" : "Note";
       prompt += `\n### [${typeLabel}] ${source.title}\n${(source.content || "").slice(0, 2000)}\n`;
     }
-    prompt += "\nUtilise ces sources pour repondre. Cite-les quand c'est pertinent.";
+    prompt += "\nUse these sources to respond. Cite them when relevant.";
   }
 
   if (lastContent) {
-    prompt += `\n\n## DERNIER CONTENU GENERE\n${lastContent.slice(0, 1500)}\n\nTu peux l'aider a l'ameliorer, le reformuler, trouver un meilleur hook, ou adapter le ton.`;
+    prompt += `\n\n## LAST GENERATED CONTENT\n${lastContent.slice(0, 1500)}\n\nHelp improve it, rephrase it, find a better hook, or adjust the tone.`;
   }
 
   if (styleMemory) {
