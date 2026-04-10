@@ -12,7 +12,6 @@ import GenerationProgress, { INFOGRAPHIC_STEPS } from "@/components/GenerationPr
 import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic";
 import {
   buildInfographicPrompt,
-  buildGeminiImagePrompt,
   analyzeContent,
   getFormatDimensions,
   selectBestTemplate,
@@ -26,9 +25,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { assertOnline, withTimeout, sanitizeInfographicHtml, friendlyError } from "@/lib/resilience";
 
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-
-const FONT_LINK = '<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">';
+const FONT_LINK = '<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">';
 
 function injectFontsInHtml(html: string): string {
   if (html.includes("fonts.googleapis.com")) return html;
@@ -49,7 +46,7 @@ interface Props {
   onGenerated?: (html: string) => void; // Callback after successful generation
 }
 
-type ResultMode = "gemini" | "claude" | null;
+type ResultMode = "claude" | null;
 type Step = "ready" | "generating" | "result";
 type StyleChoice = "auto" | "AWA_CLASSIC" | "UI_CARDS" | "WHITEBOARD" | "FUNNEL" | "DATA_GRID";
 
@@ -179,7 +176,6 @@ export default function InfographicModal({ open, onClose, content, platform, con
 
   const [step, setStep] = useState<Step>("ready");
   const [resultMode, setResultMode] = useState<ResultMode>(null);
-  const [imageBase64, setImageBase64] = useState("");
   const [htmlCode, setHtmlCode] = useState("");
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -218,13 +214,11 @@ export default function InfographicModal({ open, onClose, content, platform, con
         // Pre-existing infographic — show directly, no generation, no save
         setStep("result");
         setHtmlCode(existingHtml);
-        setImageBase64("");
         setResultMode("claude");
         setSaved(true);
       } else {
         setStep("ready");
         setHtmlCode("");
-        setImageBase64("");
         setResultMode(null);
         setSaved(false);
       }
@@ -240,12 +234,12 @@ export default function InfographicModal({ open, onClose, content, platform, con
 
   // Visual confetti only — save is handled explicitly in handleGenerate
   useEffect(() => {
-    if (step === "result" && (imageBase64 || htmlCode)) {
+    if (step === "result" && htmlCode) {
       setShowConfetti(true);
       const t = setTimeout(() => setShowConfetti(false), 1500);
       return () => clearTimeout(t);
     }
-  }, [step, imageBase64, htmlCode]);
+  }, [step, htmlCode]);
 
   // Reset save guard when the modal opens fresh
   useEffect(() => {
@@ -263,74 +257,10 @@ export default function InfographicModal({ open, onClose, content, platform, con
   const previewWidth = 480;
   const iframeScale = previewWidth / dims.width;
 
-  // ─── Generation ───
-
-  // Single Gemini attempt, 30s timeout. On ANY failure → return null → Claude fallback.
-  // No retry — if 529, the UI shows a manual countdown button via handleGenerate's catch.
-  async function generateWithGemini(): Promise<string | null> {
-    if (!GEMINI_API_KEY) return null;
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30_000);
-
-    try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: buildGeminiImagePrompt(content, platform, customPrompt || undefined, forcedTemplate) }] }],
-            generationConfig: {
-              responseModalities: ["IMAGE", "TEXT"],
-              responseMimeType: "image/png",
-            },
-          }),
-          signal: controller.signal,
-        },
-      );
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        console.warn("[Gemini] HTTP", response.status);
-        return null;
-      }
-
-      const data = await response.json();
-      return data.candidates?.[0]?.content?.parts
-        ?.find((p: { inlineData?: { data: string } }) => p.inlineData)
-        ?.inlineData?.data || null;
-    } catch (err) {
-      clearTimeout(timeoutId);
-      console.warn("[Gemini] Soft-fail →", err instanceof Error ? err.message : "unknown");
-      return null;
-    }
-  }
-
-  // Single Claude call, 60s timeout. No retry — on 529 the UI shows a manual countdown.
-  async function generateWithClaude(): Promise<string> {
-    assertOnline();
-    const response = await withTimeout(
-      anthropic.messages.create({
-        model: CLAUDE_MODEL,
-        max_tokens: 4096,
-        messages: [{
-          role: "user",
-          content: buildInfographicPrompt(content, platform, customPrompt || undefined, forcedTemplate),
-        }],
-      }),
-      60_000,
-    );
-    const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
-    const htmlMatch = text.match(/<!DOCTYPE html>[\s\S]*<\/html>/i)
-      || text.match(/<html[\s\S]*<\/html>/i)
-      || text.match(/<div[\s\S]*<\/div>/);
-    return htmlMatch ? htmlMatch[0] : text;
-  }
+  // ─── Generation (Claude HTML only — Gemini disabled) ───
 
   async function handleGenerate() {
     setStep("generating");
-    setImageBase64("");
     setHtmlCode("");
     setResultMode(null);
     setSaved(false);
@@ -338,51 +268,47 @@ export default function InfographicModal({ open, onClose, content, platform, con
     setGenerationError(null);
     setRetryCountdown(0);
     if (retryIntervalRef.current) { clearInterval(retryIntervalRef.current); retryIntervalRef.current = null; }
-    savedRef.current = false; // New generation → allow a fresh single save
-
-    // Generation flow:
-    //   1. Try Gemini (image, 30s timeout — fast fail)
-    //   2. If Gemini fails for ANY reason → automatic fallback to Claude HTML (60s)
-    //   3. On success (either path) → setStep("result") + explicit save
-    //   4. On both paths failed → setStep("ready") + toast.error + EARLY RETURN (no save)
-    let result: { image?: string; html?: string; mode: "gemini" | "claude" } | null = null;
+    savedRef.current = false;
 
     try {
-      const base64 = await generateWithGemini();
-      if (base64) {
-        result = { image: base64, mode: "gemini" };
-      } else {
-        // Soft fallback to Claude
-        const rawHtml = await generateWithClaude();
-        const html = sanitizeInfographicHtml(postProcessHtml(rawHtml));
-        if (!html || html.trim().length < 100) {
-          throw new Error("Le contenu généré est vide ou trop court. Réessaie.");
-        }
-        result = { html, mode: "claude" };
+      assertOnline();
+      const response = await withTimeout(
+        anthropic.messages.create({
+          model: CLAUDE_MODEL,
+          max_tokens: 4096,
+          messages: [{
+            role: "user",
+            content: buildInfographicPrompt(content, platform, customPrompt || undefined, forcedTemplate),
+          }],
+        }),
+        60_000,
+      );
+
+      const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
+      const htmlMatch = text.match(/<!DOCTYPE html>[\s\S]*<\/html>/i)
+        || text.match(/<html[\s\S]*<\/html>/i)
+        || text.match(/<div[\s\S]*<\/div>/);
+      const rawHtml = htmlMatch ? htmlMatch[0] : text;
+      const html = sanitizeInfographicHtml(postProcessHtml(rawHtml));
+
+      if (!html || html.trim().length < 100) {
+        throw new Error("Le contenu généré est vide ou trop court. Réessaie.");
       }
+
+      setHtmlCode(html);
+      setResultMode("claude");
+      setQualityScore(scoreInfographic(html, dims));
+      setStep("result");
+
+      await handleSave({ html, mode: "claude" });
     } catch (err) {
       console.error("[InfographicModal] Generation failed:", err);
       const fallbackMsg = err instanceof Error ? err.message : "La génération a échoué";
       const msg = friendlyError(err) || fallbackMsg;
-      setStep("ready"); // Back to ready — NO result, NO save, NO insert
+      setStep("ready");
       setGenerationError(msg);
       toast.error(msg);
-      return;
     }
-
-    // ─── Generation succeeded — apply state and save once ───
-    if (result.image) {
-      setImageBase64(result.image);
-      setResultMode("gemini");
-    } else if (result.html) {
-      setHtmlCode(result.html);
-      setResultMode("claude");
-      setQualityScore(scoreInfographic(result.html, dims));
-    }
-    setStep("result");
-
-    // Explicit single save with fresh data — no stale closure on state
-    await handleSave({ image: result.image, html: result.html, mode: result.mode });
   }
 
   // ─── Retry on 529 / overloaded ───
@@ -402,74 +328,46 @@ export default function InfographicModal({ open, onClose, content, platform, con
     }, 1000);
   }
 
-  // ─── Downloads (PNG + JPEG only) ───
+  // ─── Downloads (PNG + JPEG from HTML via html2canvas) ───
 
-  function loadImageFromBase64(base64: string, mimeHint: string): Promise<HTMLImageElement> {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => resolve(img);
-      img.onerror = () => reject(new Error("Image decode failed"));
-      img.src = `data:${mimeHint};base64,${base64}`;
+  async function renderHtmlToCanvas(): Promise<HTMLCanvasElement> {
+    const container = document.createElement("div");
+    container.style.cssText = `position:fixed;top:-9999px;left:-9999px;width:${dims.width}px;height:${dims.height}px;overflow:hidden;z-index:-1;`;
+    const styleMatch = htmlCode.match(/<style[\s\S]*?<\/style>/i);
+    const bodyMatch = htmlCode.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+    container.innerHTML = (styleMatch ? styleMatch[0] : "") + (bodyMatch ? bodyMatch[1] : htmlCode);
+    const bodyStyleMatch = htmlCode.match(/<body[^>]*style="([^"]*)"/i);
+    if (bodyStyleMatch) container.style.cssText += bodyStyleMatch[1];
+    container.style.width = `${dims.width}px`;
+    container.style.height = `${dims.height}px`;
+    container.style.overflow = "hidden";
+    container.style.background = "#FDFDF9";
+    container.style.boxSizing = "border-box";
+    document.body.appendChild(container);
+    await new Promise((r) => setTimeout(r, 1500));
+
+    const html2canvas = (await import("html2canvas")).default;
+    const canvas = await html2canvas(container, {
+      width: dims.width,
+      height: dims.height,
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: "#FDFDF9",
+      logging: false,
     });
+    document.body.removeChild(container);
+    return canvas;
   }
 
   async function handleDownload(format: "png" | "jpeg") {
-    if (downloading) return;
-    if (!imageBase64 && !htmlCode) return;
-
+    if (downloading || !htmlCode) return;
     setDownloading(true);
-    const ext = format === "jpeg" ? "jpg" : "png";
-    const mime = format === "jpeg" ? "image/jpeg" : "image/png";
 
     try {
-      let canvas: HTMLCanvasElement;
-
-      if (resultMode === "gemini" && imageBase64) {
-        // Gemini returns PNG (responseMimeType: "image/png").
-        // Decode then re-encode in the target format via canvas.
-        const img = await loadImageFromBase64(imageBase64, "image/png");
-        canvas = document.createElement("canvas");
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) throw new Error("Canvas context unavailable");
-        // White background for JPEG to avoid black fringes on transparent pixels
-        if (format === "jpeg") {
-          ctx.fillStyle = "#FFFFFF";
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
-        ctx.drawImage(img, 0, 0);
-      } else {
-        // Claude HTML → temp container + html2canvas
-        const container = document.createElement("div");
-        container.style.cssText = `position:fixed;top:-9999px;left:-9999px;width:${dims.width}px;height:${dims.height}px;overflow:hidden;z-index:-1;`;
-        const styleMatch = htmlCode.match(/<style[\s\S]*?<\/style>/i);
-        const bodyMatch = htmlCode.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-        container.innerHTML = (styleMatch ? styleMatch[0] : "") + (bodyMatch ? bodyMatch[1] : htmlCode);
-        const bodyStyleMatch = htmlCode.match(/<body[^>]*style="([^"]*)"/i);
-        if (bodyStyleMatch) container.style.cssText += bodyStyleMatch[1];
-        container.style.width = `${dims.width}px`;
-        container.style.height = `${dims.height}px`;
-        container.style.overflow = "hidden";
-        container.style.background = "#FFFFFF";
-        container.style.boxSizing = "border-box";
-        document.body.appendChild(container);
-        // Wait for fonts and styles to settle
-        await new Promise((r) => setTimeout(r, 1500));
-
-        const html2canvas = (await import("html2canvas")).default;
-        canvas = await html2canvas(container, {
-          width: dims.width,
-          height: dims.height,
-          scale: 2,
-          useCORS: true,
-          allowTaint: true,
-          backgroundColor: "#FFFFFF",
-          logging: false,
-        });
-        document.body.removeChild(container);
-      }
-
+      const canvas = await renderHtmlToCanvas();
+      const mime = format === "jpeg" ? "image/jpeg" : "image/png";
+      const ext = format === "jpeg" ? "jpg" : "png";
       const dataUrl = canvas.toDataURL(mime, format === "jpeg" ? 0.95 : undefined);
       const link = document.createElement("a");
       link.download = `supen-infographie-${Date.now()}.${ext}`;
@@ -477,7 +375,6 @@ export default function InfographicModal({ open, onClose, content, platform, con
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-
       toast.success(`${format.toUpperCase()} téléchargé !`);
     } catch (err) {
       console.error("[InfographicModal] Download error:", err);
@@ -488,42 +385,19 @@ export default function InfographicModal({ open, onClose, content, platform, con
   }
 
   async function handleCopyImage() {
+    if (!htmlCode) return;
+    setDownloading(true);
     try {
-      if (resultMode === "gemini" && imageBase64) {
-        const res = await fetch(`data:image/png;base64,${imageBase64}`);
-        const blob = await res.blob();
-        await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-        toast.success("Image copied to clipboard!");
-        return;
-      }
-      if (!htmlCode) return;
-      setDownloading(true);
-
-      const container = document.createElement("div");
-      container.style.cssText = `position:fixed;top:-9999px;left:-9999px;width:${dims.width}px;height:${dims.height}px;overflow:hidden;z-index:-1;`;
-      const styleMatch = htmlCode.match(/<style[\s\S]*?<\/style>/i);
-      const bodyMatch = htmlCode.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-      container.innerHTML = (styleMatch ? styleMatch[0] : "") + (bodyMatch ? bodyMatch[1] : htmlCode);
-      container.style.fontFamily = "'Poppins', sans-serif";
-      container.style.background = "#FFF8F0";
-      container.style.padding = "48px";
-      container.style.boxSizing = "border-box";
-      document.body.appendChild(container);
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      const html2canvas = (await import("html2canvas")).default;
-      const canvas = await html2canvas(container, { width: dims.width, height: dims.height, scale: 1, useCORS: true, backgroundColor: "#FFF8F0", logging: false });
-      document.body.removeChild(container);
-
+      const canvas = await renderHtmlToCanvas();
       canvas.toBlob(async (blob) => {
         if (blob) {
           await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-          toast.success("Image copied to clipboard!");
+          toast.success("Image copiée !");
         }
+        setDownloading(false);
       }, "image/png");
-      setDownloading(false);
     } catch {
-      toast.error("Copy failed — your browser may not support this.");
+      toast.error("Copie échouée — ton navigateur ne le supporte peut-être pas.");
       setDownloading(false);
     }
   }
@@ -533,27 +407,20 @@ export default function InfographicModal({ open, onClose, content, platform, con
   // Accepts fresh data via opts to avoid stale React state closures.
   // savedRef provides synchronous duplicate protection.
 
-  async function handleSave(opts?: { image?: string; html?: string; mode: "gemini" | "claude" }) {
+  async function handleSave(opts?: { html?: string; mode?: "claude" }) {
     if (!user) return;
-    if (savedRef.current) return; // Already reserved → drop the duplicate
+    if (savedRef.current) return;
 
-    // Prefer fresh data from opts; fall back to state for any leftover call sites.
-    const image = opts?.image ?? imageBase64;
     const html = opts?.html ?? htmlCode;
-    const mode = opts?.mode ?? resultMode;
-
-    // Hard guard: nothing usable to save → no insert
-    if (!image && !html) {
-      console.warn("[InfographicModal] handleSave bailed — no image and no html");
+    if (!html) {
+      console.warn("[InfographicModal] handleSave bailed — no html");
       return;
     }
 
-    savedRef.current = true; // Reserve the slot synchronously
+    savedRef.current = true;
     setSaving(true);
 
     try {
-      const infographicHtml = html || (mode === "gemini" ? `[Gemini Image] ${content.slice(0, 200)}` : "");
-
       let error: { message: string; details?: string; hint?: string } | null = null;
 
       if (contentId) {
@@ -561,7 +428,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
         const res = await supabase
           .from("generated_content")
           .update({
-            infographic_html: infographicHtml,
+            infographic_html: html,
             infographic_generated_at: new Date().toISOString(),
           })
           .eq("id", contentId);
@@ -572,9 +439,9 @@ export default function InfographicModal({ open, onClose, content, platform, con
           user_id: user.id,
           platform,
           format: "Infographic",
-          content: infographicHtml,
+          content: html,
           viral_score: 85,
-          image_prompt: mode === "gemini" ? "Gemini generated image" : "HTML infographic",
+          image_prompt: "HTML infographic",
         });
         error = res.error;
       }
@@ -594,19 +461,6 @@ export default function InfographicModal({ open, onClose, content, platform, con
       savedRef.current = false;
     }
     setSaving(false);
-  }
-
-  // ─── Reset ───
-
-  function handleReset() {
-    setStep("ready");
-    setImageBase64("");
-    setHtmlCode("");
-    setResultMode(null);
-    setCustomPrompt("");
-    setShowPrompt(false);
-    setSaved(false);
-    setShowZoom(false);
   }
 
   if (!open) return null;
@@ -642,13 +496,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
               <p className="text-xs text-muted-foreground mt-0.5">
                 {step === "ready" && "L'IA analyse ton contenu et conçoit le design automatiquement"}
                 {step === "generating" && "Cela peut prendre 30 à 60 secondes — ne ferme pas la fenêtre"}
-                {step === "result" && (
-                  <>
-                    {platform} — {dims.width}x{dims.height}
-                    {resultMode === "gemini" && <span className="ml-2 text-[9px] bg-primary/15 text-primary px-1.5 py-0.5 rounded-full">Gemini</span>}
-                    {resultMode === "claude" && <span className="ml-2 text-[9px] bg-orange-500/15 text-orange-400 px-1.5 py-0.5 rounded-full">Claude</span>}
-                  </>
-                )}
+                {step === "result" && `${platform} — ${dims.width}x${dims.height}`}
               </p>
             </div>
             <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all">
@@ -807,30 +655,22 @@ export default function InfographicModal({ open, onClose, content, platform, con
                   transition={{ duration: 0.4, ease: "easeOut" }}
                   className="rounded-xl overflow-hidden border border-border/30 bg-white mb-4 relative group"
                 >
-                  {resultMode === "gemini" && imageBase64 ? (
-                    <img
-                      src={`data:image/png;base64,${imageBase64}`}
-                      alt="Generated infographic"
-                      className="w-full h-auto"
+                  <div className="relative w-full" style={{ paddingBottom: `${aspectRatio * 100}%` }}>
+                    <iframe
+                      ref={iframeRef}
+                      srcDoc={injectFontsInHtml(htmlCode)}
+                      className="absolute inset-0 w-full h-full"
+                      style={{
+                        border: "none",
+                        transform: `scale(${iframeScale})`,
+                        transformOrigin: "top left",
+                        width: `${100 / iframeScale}%`,
+                        height: `${100 / iframeScale}%`,
+                      }}
+                      sandbox="allow-same-origin"
+                      title="Infographic preview"
                     />
-                  ) : (
-                    <div className="relative w-full" style={{ paddingBottom: `${aspectRatio * 100}%` }}>
-                      <iframe
-                        ref={iframeRef}
-                        srcDoc={injectFontsInHtml(htmlCode)}
-                        className="absolute inset-0 w-full h-full"
-                        style={{
-                          border: "none",
-                          transform: `scale(${iframeScale})`,
-                          transformOrigin: "top left",
-                          width: `${100 / iframeScale}%`,
-                          height: `${100 / iframeScale}%`,
-                        }}
-                        sandbox="allow-same-origin"
-                        title="Infographic preview"
-                      />
-                    </div>
-                  )}
+                  </div>
 
                   {/* Zoom overlay */}
                   <button
@@ -977,20 +817,12 @@ export default function InfographicModal({ open, onClose, content, platform, con
                 className="max-w-[95vw] max-h-[95vh] overflow-auto"
                 onClick={(e) => e.stopPropagation()}
               >
-                {resultMode === "gemini" && imageBase64 ? (
-                  <img
-                    src={`data:image/png;base64,${imageBase64}`}
-                    alt="Infographic full view"
-                    className="max-w-full max-h-[95vh] object-contain"
-                  />
-                ) : (
-                  <iframe
-                    srcDoc={injectFontsInHtml(htmlCode)}
-                    style={{ width: dims.width, height: dims.height, border: "none", background: "#FFF8F0" }}
-                    sandbox="allow-same-origin"
-                    title="Infographic full view"
-                  />
-                )}
+                <iframe
+                  srcDoc={injectFontsInHtml(htmlCode)}
+                  style={{ width: dims.width, height: dims.height, border: "none", background: "#FDFDF9" }}
+                  sandbox="allow-same-origin"
+                  title="Infographic full view"
+                />
               </motion.div>
               <button
                 onClick={() => setShowZoom(false)}

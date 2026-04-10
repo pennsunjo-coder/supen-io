@@ -277,114 +277,188 @@ const LAYOUT_VARIATIONS = ["vertical numbered", "two-column grid", "timeline ste
 
 const CLEAN_TEMPLATES = new Set(["UI_CARDS", "WHITEBOARD", "FUNNEL", "DATA_GRID"]);
 
+// ─── Template-specific instructions for Claude HTML generation ───
+
+function getTemplateInstructions(
+  templateId: string,
+  extraction: ExtractionResult,
+  dims: { width: number; height: number },
+): string {
+  const bodyH = Math.round(dims.height * 0.70);
+  const cardPad = Math.round(dims.width * 0.037);
+  const iconSize = Math.round(dims.width * 0.074);
+
+  switch (templateId) {
+    case "UI_CARDS":
+      return `Structure : 3 cartes verticales empilées dans le body (${bodyH}px).
+Chaque carte = ${Math.round(bodyH / 3 - 16)}px de hauteur.
+Carte 1 : fond #FFF0F0, label "À ÉVITER" rouge, titre + corps
+Carte 2 : fond #FEF9E7, label "CORRECT" orange, titre + corps
+Carte 3 : fond #F0FFF4, label "EXCELLENT" vert, titre + corps
+Chaque carte : padding ${cardPad}px, border-radius 20px, display flex, align-items center`;
+
+    case "WHITEBOARD":
+      return `Structure : Liste verticale de 5-7 points dans le body.
+Fond du body : #FAFBFF
+Chaque point : icône circulaire colorée à gauche + texte à droite
+Icône : width/height ${iconSize}px, border-radius 50%
+Séparateur fin #E5E7EB entre chaque point
+Police : Inter, style notes propres et lisibles`;
+
+    case "FUNNEL":
+      return `Structure : 5 barres horizontales décroissantes.
+Barre 1 (100% largeur) : fond #FDECEA, numéro cerclé + texte
+Barre 2 (85%) : fond #FEF3E2
+Barre 3 (70%) : fond #FEF9E7
+Barre 4 (55%) : fond #E8F5E9
+Barre 5 (40%) : fond #E8F4FD, texte gras = résultat final
+Flèche vers le bas entre chaque barre
+CTA final : fond #24A89B, texte blanc, border-radius 12px`;
+
+    case "DATA_GRID":
+      return `Structure : Tableau 4 lignes × 3 colonnes.
+En-tête : fond #EBF5FB, Inter 800, uppercase, letter-spacing 1px
+Colonnes : "Concept" | "Description" | "Idéal pour"
+Lignes alternées : blanc / #F9FAFB
+Dot coloré devant chaque concept
+Dernière colonne : texte court, Inter 700, couleur #24A89B`;
+
+    default: // AWA_CLASSIC
+      return `Structure : 7 sections numérotées verticalement.
+Fond : #FFFFF5 (crème)
+Bordure externe : 6px solid #5D3A1A
+Numéros cerclés colorés : rouge/bleu/vert/orange/violet/rose/cyan
+Chaque section : numéro + titre gras + description courte
+Pro tip : bordure pointillée rouge, fond #FFF5F5`;
+  }
+}
+
+// ─── Claude HTML prompt builder (generates complete HTML/CSS) ───
+
 export function buildInfographicPrompt(
   content: string,
   platform: string,
   customInstructions?: string,
   forcedTemplate?: string,
 ): string {
-  regenerationCounter++;
   const analysis = analyzeContent(content, platform);
   const dims = FORMAT_DIMS[analysis.format];
   const selection = selectBestTemplate(content, platform, forcedTemplate);
-
-  // On regeneration, rotate to a different template — UNLESS the user forced a style.
-  let templateId = selection.templateId;
-  if (regenerationCounter > 1 && !forcedTemplate) {
-    const alternatives = TEMPLATE_IDS.filter(id => id !== templateId);
-    templateId = alternatives[(regenerationCounter - 2) % alternatives.length];
-  }
-
-  const templateFn = TEMPLATE_REGISTRY[templateId];
-  let templateHtml = templateFn(dims.width, dims.height);
+  const templateId = selection.templateId;
   const extraction = extractKeyPoints(content);
 
-  // Pre-fill SVG icons into the template (deterministic, no-op if no placeholder)
-  const sectionColors = ["#E53E3E", "#3182CE", "#38A169", "#DD6B20", "#9B59B6", "#EC4899", "#00897B"];
-  for (let i = 0; i < 7; i++) {
-    const pointText = extraction.points[i]?.title || "";
-    const iconName = selectIcon(pointText, i);
-    const color = sectionColors[i % sectionColors.length];
-    const iconSvg = getIconSvg(iconName, color, 20);
-    templateHtml = templateHtml.replace(`{{P${i + 1}_ICON}}`, iconSvg);
-  }
+  const safePad = Math.round(dims.width * 0.05);
+  const titleSize = Math.round(dims.width * 0.06);
+  const bodySize = Math.round(dims.width * 0.018);
+  const subtitleSize = Math.round(dims.width * 0.028);
+  const cardPad = Math.round(dims.width * 0.037);
+  const headerH = Math.round(dims.height * 0.20);
+  const bodyH = Math.round(dims.height * 0.70);
+  const footerH = Math.round(dims.height * 0.10);
 
-  // Pre-fill main illustration into header (if template supports it)
-  if (templateHtml.includes("{{MAIN_ILLUSTRATION}}")) {
-    const illustName = selectIllustration(analysis.contentType, templateId, content);
-    const illustSvg = getIllustrationSvg(illustName, 100);
-    templateHtml = templateHtml.replace("{{MAIN_ILLUSTRATION}}", illustSvg);
-  }
-
-  const extra = customInstructions ? `\nInstructions utilisateur : ${customInstructions}` : "";
-  const isCleanTemplate = CLEAN_TEMPLATES.has(templateId);
-  const bodyLength = isCleanTemplate ? "18-30 mots" : "30-50 mots";
-  const titleStyle = isCleanTemplate
-    ? "Titre clair, 4-8 mots, sentence case (PAS de ALL CAPS), un mot encadré dans <span>"
-    : "Titre ALL CAPS viral, 4-8 mots, un mot encadré dans <span>";
-
-  const templateHints: Record<string, string> = {
-    UI_CARDS: "Constitution v3.0 — Comparaison à 3 cartes verticales. P1=mauvaise version (carte rouge pastel 'Mauvais'), P2=version correcte (carte orange pastel 'Acceptable'), P3=meilleure version (carte verte pastel 'Excellence'). Chaque title = 4-6 mots punchy. Chaque body = 18-25 mots avec UN mot-clé dans <span class=\"a\">. ⚠️ P4-P7 + PRO_TIP NE SONT PAS RENDUS visuellement — laisse-les VIDES (chaîne vide) pour économiser des tokens.",
-    WHITEBOARD: "Constitution v3.0 — 3 conseils en 3 cartes verticales sur fond dot grid. P1=Conseil 1, P2=Conseil 2, P3=Conseil 3. Chaque title = 4-6 mots, chaque body = 18-25 mots avec UN mot-clé dans <span class=\"a\">. ⚠️ P4-P7 + PRO_TIP NE SONT PAS RENDUS visuellement — laisse-les VIDES.",
-    FUNNEL: "Constitution v3.0 — 3 étapes en 3 cartes verticales numérotées. P1=Étape 1 (départ), P2=Étape 2 (intermédiaire), P3=Étape 3 (finale). Chaque title = 4-6 mots, chaque body = 18-25 mots avec UN mot-clé dans <span class=\"a\">. ⚠️ P4-P7 + PRO_TIP NE SONT PAS RENDUS visuellement — laisse-les VIDES.",
-    DATA_GRID: "Constitution v3.0 — 3 concepts en 3 cartes verticales avec dot indicators. P1=Concept 1, P2=Concept 2, P3=Concept 3. Chaque title = 2-4 mots, chaque body = 18-25 mots avec UN mot-clé dans <span class=\"a\">. ⚠️ P4-P7 + PRO_TIP NE SONT PAS RENDUS visuellement — laisse-les VIDES.",
-  };
-  const templateNote = templateHints[templateId] || "";
-
-  const pointHints = extraction.points.map((p, i) =>
-    `${i + 1}. "${p.title}" — ${p.body}`
+  const pointsText = extraction.points.map((p, i) =>
+    `${i + 1}. ${p.title} — ${p.body}`
   ).join("\n");
 
-  // Regeneration variation instruction
-  const regenInstruction = regenerationCounter > 1
-    ? `\n\nREGENERATION #${regenerationCounter}
-The previous design was rejected. You MUST use a COMPLETELY DIFFERENT approach:
-- Different title angle and wording
-- Different emphasis on content points
-- Suggested layout style: ${LAYOUT_VARIATIONS[(regenerationCounter - 1) % LAYOUT_VARIATIONS.length]}
-Make it significantly better.\n`
-    : "";
+  return `Tu es un développeur front-end expert en design d'infographies.
+Génère un fichier HTML/CSS COMPLET et AUTONOME pour une infographie de niveau professionnel LinkedIn.
 
-  return `TASK: Find-and-replace {{PLACEHOLDERS}} in the HTML below. Output the complete HTML with replacements. Nothing else.
-${regenInstruction}
-TEMPLATE: ${templateId}
-${templateNote}
+${"═".repeat(40)}
+SPÉCIFICATIONS TECHNIQUES OBLIGATOIRES
+${"═".repeat(40)}
 
-STRICT RULES:
-1. Output the ENTIRE HTML document from <!DOCTYPE html> to </html>
-2. ONLY replace text inside {{double curly braces}} — change NOTHING else
-3. Do NOT delete any HTML tags, divs, sections, or SVG elements
-4. Do NOT add any new tags, styles, classes, or attributes
-5. Do NOT add emoji characters (no unicode emoji — the SVG icons are already embedded)
-6. Do NOT use font-style:italic anywhere
-7. Every {{Pn_BODY}} must be ${bodyLength}
-8. Write all content in FRENCH (this is a French-language product)
+FORMAT : ${dims.width}×${dims.height}px — Format ${dims.width === dims.height ? "carré 1:1" : "portrait 4:5"}
+TEMPLATE : ${templateId}
 
-REPLACEMENTS:
-{{BADGE}} → "${extraction.badge}"
-{{TITLE}} → ${titleStyle}
-{{P1_TITLE}} through {{P7_TITLE}} → 3-6 word section header in French, specific and actionable
-{{P1_BODY}} through {{P7_BODY}} → ${bodyLength} each, structured as:
-  "<span class=\\"a\\">Phrase clé</span> détail explicatif${isCleanTemplate ? "" : " • Second sous-point avec un chiffre précis • Troisième détail concret avec nom d'outil"}"
-{{PRO_TIP}} → ${isCleanTemplate ? "20-30" : "30-50"} word actionable tip in French
-{{FOOTER}} → "Créé avec Supen.io · Suivez pour plus"
+CSS OBLIGATOIRE :
+- html, body { width: ${dims.width}px; height: ${dims.height}px; overflow: hidden; margin: 0; padding: 0; }
+- body { background: #FDFDF9; font-family: 'Inter', sans-serif; display: flex; flex-direction: column; }
+- Padding global : ${safePad}px sur tous les côtés
+- JAMAIS de overflow visible — tout doit tenir dans ${dims.height}px
 
-BODY EXAMPLE:
-"<span class=\\"a\\">Claude + Cursor</span> écrivent du code 10x plus vite que le manuel${isCleanTemplate ? "" : " • Économise 3.2h par jour en moyenne • 87% des startups YC 2025 utilisent cette stack"}"
+POLICES (charger depuis Google Fonts) :
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 
-KEY POINTS FROM SOURCE:
-${pointHints}
-Pro tip hint: ${extraction.proTip}
+STRUCTURE HTML OBLIGATOIRE :
 
-SOURCE CONTENT:
-${content.slice(0, 2500)}
+<!-- HEADER : 20% de la hauteur = ${headerH}px -->
+<div class="header" style="height: ${headerH}px; flex-shrink: 0;">
+  Badge catégorie + Titre principal en Playfair Display
+</div>
 
-Platform: ${platform}${extra}
+<!-- BODY : 70% de la hauteur = ${bodyH}px -->
+<div class="body" style="flex: 1; overflow: hidden;">
+  Contenu principal selon le template
+</div>
 
-HTML TO FILL:
-${templateHtml}
+<!-- FOOTER : 10% de la hauteur = ${footerH}px -->
+<div class="footer" style="height: ${footerH}px; flex-shrink: 0;">
+  "Créé avec Supen.io" en #24A89B
+</div>
 
-OUTPUT: The complete filled HTML only. No explanation, no markdown fences.`;
+${"═".repeat(40)}
+RÈGLES CSS ANTI-DÉFAUT (OBLIGATOIRES)
+${"═".repeat(40)}
+
+1. SAFE ZONE : padding ${safePad}px sur tous les côtés
+   → Aucun texte ne touche les bords
+
+2. TYPOGRAPHIE :
+   → Titre : font-family: 'Playfair Display'; font-size: ${titleSize}px; font-weight: 900;
+   → Corps : font-family: 'Inter'; font-size: ${bodySize}px; font-weight: 600;
+   → Sous-titres : font-size: ${subtitleSize}px; font-weight: 800;
+
+3. COULEURS OBLIGATOIRES :
+   → Fond principal : #FDFDF9
+   → Texte principal : #1A1A1A
+   → Accent 1 (orange) : #FF7A59
+   → Accent 2 (bleu) : #4285F4
+   → Accent 3 (vert) : #34A853
+   → Brand Supen : #24A89B
+
+4. CARTES :
+   → border-radius: 20px
+   → padding: ${cardPad}px
+   → box-shadow: 0 4px 16px rgba(0,0,0,0.06)
+   → background: fond pastel uni (jamais transparent)
+
+5. REMPLISSAGE :
+   → Le body doit être rempli à 90% minimum
+   → Si peu de contenu : augmenter font-size et padding
+   → line-height: 1.6 minimum
+
+6. Z-INDEX :
+   → Texte toujours au premier plan
+   → Fond toujours derrière
+
+${"═".repeat(40)}
+TEMPLATE ${templateId} — STRUCTURE SPÉCIFIQUE
+${"═".repeat(40)}
+
+${getTemplateInstructions(templateId, extraction, dims)}
+
+${"═".repeat(40)}
+CONTENU À INTÉGRER
+${"═".repeat(40)}
+
+Titre : ${extraction.title}
+Badge : ${extraction.badge}
+Points :
+${pointsText}
+Pro tip : ${extraction.proTip}
+Footer : Créé avec Supen.io
+
+${customInstructions ? `Instructions supplémentaires : ${customInstructions}` : ""}
+
+${"═".repeat(40)}
+FORMAT DE SORTIE
+${"═".repeat(40)}
+
+Génère UNIQUEMENT le code HTML complet.
+Commence par <!DOCTYPE html> et termine par </html>.
+Aucun texte avant ou après le HTML.
+Aucun markdown, aucun backtick.
+Tout le texte visible doit être en FRANÇAIS.`;
 }
 
 // ─── Gemini prompt builder ───
