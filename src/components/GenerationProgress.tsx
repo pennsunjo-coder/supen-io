@@ -8,26 +8,26 @@ interface Props {
 }
 
 export const CONTENT_STEPS = [
-  "Analyse de tes sources...",
-  "Comprehension du sujet...",
-  "Recherche d'angles viraux...",
-  "Ecriture de la variation 1...",
-  "Ecriture de la variation 2...",
-  "Ecriture de la variation 3...",
-  "Optimisation pour la viralite...",
-  "Calcul des scores viraux...",
-  "Presque fini...",
+  "Analyzing your sources...",
+  "Understanding the topic...",
+  "Finding viral angles...",
+  "Writing variation 1...",
+  "Writing variation 2...",
+  "Writing variation 3...",
+  "Optimizing for virality...",
+  "Calculating viral scores...",
+  "Almost done...",
 ];
 
 export const INFOGRAPHIC_STEPS = [
-  "Analyse du contenu...",
-  "Detection du type de contenu...",
-  "Construction de la structure...",
-  "Application de la palette pastel...",
-  "Generation de l'image en cours...",
-  "Ajustement typographique...",
-  "Finalisation...",
-  "Cela peut prendre jusqu'a 2 minutes...",
+  "Analyzing content...",
+  "Detecting content type...",
+  "Building the structure...",
+  "Applying the color palette...",
+  "Generating the design...",
+  "Typography adjustments...",
+  "Finalizing...",
+  "This may take up to 60 seconds...",
 ];
 
 export default function GenerationProgress({ isActive, steps, estimatedSeconds = 20 }: Props) {

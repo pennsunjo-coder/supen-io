@@ -26,30 +26,30 @@ function getSuggestions(profile: UserProfile | null, lastContent?: string): stri
   const suggestions: string[] = [];
 
   if (lastContent) {
-    suggestions.push("Analyse mon dernier contenu genere");
-    suggestions.push("Comment ameliorer mon accroche ?");
+    suggestions.push("Analyze my latest generated content");
+    suggestions.push("How can I improve my hook?");
   }
 
   if (niche.includes("Marketing")) {
-    suggestions.push("3 hooks viraux pour le marketing digital");
-    suggestions.push("Comment augmenter mon engagement ?");
+    suggestions.push("3 viral hooks for digital marketing");
+    suggestions.push("How to increase my engagement?");
   } else if (niche.includes("Tech") || niche.includes("IA")) {
-    suggestions.push("Quels formats marchent le mieux en Tech ?");
-    suggestions.push("Comment vulgariser un concept technique ?");
+    suggestions.push("Which formats work best in Tech?");
+    suggestions.push("How to simplify a technical concept?");
   } else if (niche.includes("Business") || niche.includes("Entrepreneur")) {
-    suggestions.push("Partager mon expertise sans paraitre pretentieux");
-    suggestions.push("Les meilleurs hooks pour LinkedIn");
+    suggestions.push("Share my expertise without sounding pretentious");
+    suggestions.push("Best hooks for LinkedIn");
   } else if (niche.includes("Finance")) {
-    suggestions.push("Comment rendre la finance accessible ?");
-    suggestions.push("Hooks pour du contenu finance");
+    suggestions.push("How to make finance accessible?");
+    suggestions.push("Hooks for finance content");
   } else {
-    suggestions.push(`Meilleures pratiques pour ${platforms[0] || "Instagram"}`);
-    suggestions.push("Comment trouver des idees de contenu ?");
+    suggestions.push(`Best practices for ${platforms[0] || "Instagram"}`);
+    suggestions.push("How to find content ideas?");
   }
 
   if (!lastContent) {
-    suggestions.push("Resume mes sources");
-    suggestions.push("Genere des hooks viraux");
+    suggestions.push("Summarize my sources");
+    suggestions.push("Generate viral hooks");
   }
 
   return suggestions.slice(0, 4);
@@ -184,7 +184,7 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
     if (!content) return;
     if (!rateLimiter.canProceed()) {
       const wait = Math.ceil(rateLimiter.getRemainingTime() / 1000);
-      setError(`Limite : ${RATE_LIMIT_MAX} msg/min. Reessaie dans ${wait}s.`);
+      setError(`Limit: ${RATE_LIMIT_MAX} msg/min. Try again in ${wait}s.`);
       return;
     }
 
@@ -240,7 +240,7 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
           <Sparkles className="w-3 h-3 text-primary" />
         </div>
         <div className="flex items-center gap-1.5">
-          <h2 className="text-xs font-semibold">Coach IA</h2>
+          <h2 className="text-xs font-semibold">AI Coach</h2>
           {profile?.niche && (
             <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary/70">
               {profile.niche.split(" ")[0]}
@@ -263,7 +263,7 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
               <Brain className="w-2.5 h-2.5 text-primary/50" />
             )}
             <div className={cn("w-1.5 h-1.5 rounded-full", isLoading ? "bg-amber-400/80 animate-pulse" : "bg-emerald-400/80")} />
-            <span className="text-[10px] text-muted-foreground">{isLoading ? "Reflexion..." : "En ligne"}</span>
+            <span className="text-[10px] text-muted-foreground">{isLoading ? "Thinking..." : "Online"}</span>
           </div>
         </div>
       </div>
@@ -280,15 +280,15 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
               <Sparkles className="w-4 h-4 text-primary/70" />
             </div>
             <p className="text-xs font-medium text-foreground mb-0.5">
-              {profile?.first_name ? `Salut ${profile.first_name}` : "Coach IA"}
+              {profile?.first_name ? `Hey ${profile.first_name}` : "AI Coach"}
             </p>
             <p className="text-[11px] text-muted-foreground text-center mb-4 leading-relaxed">
               {profile?.niche
-                ? `Expert ${profile.niche}. Pose-moi une question ou demande un feedback.`
-                : "Pose-moi une question sur tes sources, demande des hooks viraux, ou un feedback."}
+                ? `Expert in ${profile.niche}. Ask me a question or request feedback.`
+                : "Ask me about your sources, request viral hooks, or get feedback."}
             </p>
             {sources.length > 0 && (
-              <p className="text-[10px] text-primary/70 mb-3">{sources.length} source{sources.length > 1 ? "s" : ""} chargee{sources.length > 1 ? "s" : ""}</p>
+              <p className="text-[10px] text-primary/70 mb-3">{sources.length} source{sources.length > 1 ? "s" : ""} loaded</p>
             )}
             <div className="grid grid-cols-1 gap-1.5 w-full">
               {suggestions.map((prompt) => (
@@ -333,7 +333,7 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
                   {streamingContent || (
                     <div className="flex items-center gap-1.5 text-muted-foreground">
                       <Loader2 className="w-3 h-3 animate-spin" />
-                      <span className="text-[10px]">Reflexion...</span>
+                      <span className="text-[10px]">Thinking...</span>
                     </div>
                   )}
                 </div>
@@ -357,7 +357,7 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
-            placeholder="Demande au coach..."
+            placeholder="Ask the coach..."
             maxLength={MAX_MESSAGE_LENGTH}
             disabled={isLoading}
             className="flex-1 bg-accent/30 border border-border/30 rounded-lg px-3 py-2.5 md:py-2 text-[14px] md:text-[13px] placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:opacity-50"

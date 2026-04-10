@@ -53,7 +53,7 @@ const Dashboard = () => {
   useEffect(() => {
     if (searchParams.get("upgraded") === "true") {
       const plan = searchParams.get("plan") || "Pro";
-      toast.success(`Bienvenue sur ${plan.charAt(0).toUpperCase() + plan.slice(1)} ! Ton compte a ete mis a jour.`);
+      toast.success(`Welcome to ${plan.charAt(0).toUpperCase() + plan.slice(1)}! Your account has been updated.`);
       searchParams.delete("upgraded");
       searchParams.delete("plan");
       setSearchParams(searchParams, { replace: true });
@@ -119,10 +119,10 @@ const Dashboard = () => {
             fallback={
               <div className="flex-1 flex items-center justify-center p-6">
                 <div className="text-center max-w-sm">
-                  <p className="text-sm font-medium mb-2">Le Studio a rencontre une erreur</p>
-                  <p className="text-xs text-muted-foreground mb-4">Tes donnees sont en securite. Recharge pour reessayer.</p>
+                  <p className="text-sm font-medium mb-2">The Studio encountered an error</p>
+                  <p className="text-xs text-muted-foreground mb-4">Your data is safe. Reload to try again.</p>
                   <Button onClick={() => window.location.reload()} size="sm" variant="outline">
-                    Recharger
+                    Reload
                   </Button>
                 </div>
               </div>
@@ -149,7 +149,7 @@ const Dashboard = () => {
           <ErrorBoundary
             fallback={
               <div className="flex-1 flex items-center justify-center p-4">
-                <p className="text-xs text-muted-foreground text-center">Le Coach a rencontre une erreur. Recharge la page.</p>
+                <p className="text-xs text-muted-foreground text-center">The Coach encountered an error. Reload the page.</p>
               </div>
             }
           >

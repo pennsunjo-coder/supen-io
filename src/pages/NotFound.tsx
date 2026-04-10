@@ -68,13 +68,13 @@ const NotFound = () => {
           >
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 mb-4">
               <Compass className="w-3 h-3 text-amber-400" />
-              <span className="text-[11px] font-semibold text-amber-400 uppercase tracking-wider">Page introuvable</span>
+              <span className="text-[11px] font-semibold text-amber-400 uppercase tracking-wider">Page not found</span>
             </div>
             <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
-              Tu t'es perdu en route ?
+              Lost your way?
             </h2>
             <p className="text-sm text-muted-foreground mb-2 leading-relaxed">
-              La page que tu cherches n'existe pas ou a ete deplacee.
+              The page you're looking for doesn't exist or has been moved.
             </p>
             {location.pathname && location.pathname !== "/" && (
               <code className="text-[11px] text-muted-foreground/60 block mb-8 break-all">
@@ -92,11 +92,11 @@ const NotFound = () => {
           >
             <Button onClick={() => navigate("/")} className="gap-2 h-11 px-6">
               <Home className="w-4 h-4" />
-              Retour a l'accueil
+              Back to home
             </Button>
             <Button onClick={() => navigate("/dashboard")} variant="outline" className="gap-2 h-11 px-6">
               <ArrowLeft className="w-4 h-4" />
-              Aller au dashboard
+              Go to dashboard
             </Button>
           </motion.div>
         </div>

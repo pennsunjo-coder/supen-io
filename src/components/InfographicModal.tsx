@@ -160,12 +160,12 @@ const STYLE_PREVIEWS: Record<StyleChoice, JSX.Element> = {
 };
 
 const STYLE_OPTIONS: { id: StyleChoice; label: string; desc: string }[] = [
-  { id: "auto", label: "Auto", desc: "L'IA choisit" },
+  { id: "auto", label: "Auto", desc: "AI picks" },
   { id: "AWA_CLASSIC", label: "Awa Classic", desc: "Dense viral" },
-  { id: "UI_CARDS", label: "UI Cards", desc: "3 niveaux" },
-  { id: "WHITEBOARD", label: "Whiteboard", desc: "Tableau dessiné" },
-  { id: "FUNNEL", label: "Funnel", desc: "Entonnoir" },
-  { id: "DATA_GRID", label: "Data Grid", desc: "Tableau framework" },
+  { id: "UI_CARDS", label: "UI Cards", desc: "3 levels" },
+  { id: "WHITEBOARD", label: "Whiteboard", desc: "Whiteboard" },
+  { id: "FUNNEL", label: "Funnel", desc: "Funnel" },
+  { id: "DATA_GRID", label: "Data Grid", desc: "Framework table" },
 ];
 
 // ─── Component ───
@@ -292,7 +292,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
       const html = sanitizeInfographicHtml(postProcessHtml(rawHtml));
 
       if (!html || html.trim().length < 100) {
-        throw new Error("Le contenu généré est vide ou trop court. Réessaie.");
+        throw new Error("Generated content is empty or too short. Try again.");
       }
 
       setHtmlCode(html);
@@ -303,7 +303,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
       await handleSave({ html, mode: "claude" });
     } catch (err) {
       console.error("[InfographicModal] Generation failed:", err);
-      const fallbackMsg = err instanceof Error ? err.message : "La génération a échoué";
+      const fallbackMsg = err instanceof Error ? err.message : "Generation failed";
       const msg = friendlyError(err) || fallbackMsg;
       setStep("ready");
       setGenerationError(msg);
@@ -375,10 +375,10 @@ export default function InfographicModal({ open, onClose, content, platform, con
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      toast.success(`${format.toUpperCase()} téléchargé !`);
+      toast.success(`${format.toUpperCase()} downloaded!`);
     } catch (err) {
       console.error("[InfographicModal] Download error:", err);
-      toast.error("Erreur lors du téléchargement");
+      toast.error("Download error");
     } finally {
       setDownloading(false);
     }
@@ -392,12 +392,12 @@ export default function InfographicModal({ open, onClose, content, platform, con
       canvas.toBlob(async (blob) => {
         if (blob) {
           await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-          toast.success("Image copiée !");
+          toast.success("Image copied!");
         }
         setDownloading(false);
       }, "image/png");
     } catch {
-      toast.error("Copie échouée — ton navigateur ne le supporte peut-être pas.");
+      toast.error("Copy failed — your browser may not support this.");
       setDownloading(false);
     }
   }
@@ -448,16 +448,16 @@ export default function InfographicModal({ open, onClose, content, platform, con
 
       if (error) {
         console.error("[InfographicModal] Supabase save error:", error.message, error.details, error.hint);
-        toast.error(`Erreur de sauvegarde : ${error.message}`);
+        toast.error(`Save error: ${error.message}`);
         savedRef.current = false;
       } else {
         setSaved(true);
-        toast.success("Infographie sauvegardée !");
+        toast.success("Infographic saved!");
         if (onGenerated && infographicHtml) onGenerated(infographicHtml);
       }
     } catch (err) {
       console.error("[InfographicModal] Network/unexpected error:", err);
-      toast.error("Erreur réseau lors de la sauvegarde");
+      toast.error("Network error while saving");
       savedRef.current = false;
     }
     setSaving(false);
@@ -489,13 +489,13 @@ export default function InfographicModal({ open, onClose, content, platform, con
           <div className="flex items-center justify-between px-6 py-4 border-b border-border/20">
             <div>
               <h3 className="text-lg font-bold">
-                {step === "ready" && "Crée ton infographie"}
-                {step === "generating" && "Génération en cours…"}
-                {step === "result" && "Ton infographie"}
+                {step === "ready" && "Create your infographic"}
+                {step === "generating" && "Generating..."}
+                {step === "result" && "Your infographic"}
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {step === "ready" && "L'IA analyse ton contenu et conçoit le design automatiquement"}
-                {step === "generating" && "Cela peut prendre 30 à 60 secondes — ne ferme pas la fenêtre"}
+                {step === "ready" && "AI analyzes your content and designs automatically"}
+                {step === "generating" && "This may take 30-60 seconds — don't close this window"}
                 {step === "result" && `${platform} — ${dims.width}x${dims.height}`}
               </p>
             </div>
@@ -514,11 +514,11 @@ export default function InfographicModal({ open, onClose, content, platform, con
                     <Sparkles className="w-8 h-8 text-primary" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium mb-1">Notre IA va générer :</p>
+                    <p className="text-sm font-medium mb-1">Our AI will generate:</p>
                     <div className="flex flex-wrap justify-center gap-2">
                       {[
-                        { label: `Template : ${templateSelection.templateId}`, color: "bg-blue-500/10 text-blue-400" },
-                        { label: `Thème : ${analysis.colorTheme}`, color: "bg-green-500/10 text-green-400" },
+                        { label: `Template: ${templateSelection.templateId}`, color: "bg-blue-500/10 text-blue-400" },
+                        { label: `Theme: ${analysis.colorTheme}`, color: "bg-green-500/10 text-green-400" },
                         { label: `${dims.width}x${dims.height}`, color: "bg-orange-500/10 text-orange-400" },
                       ].map((tag) => (
                         <span key={tag.label} className={cn("text-[10px] px-2 py-1 rounded-full font-medium", tag.color)}>
@@ -531,7 +531,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
 
                 {/* Style selector with visual previews */}
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Choisis un style</p>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Choose a style</p>
                   <div className="grid grid-cols-3 gap-2">
                     {STYLE_OPTIONS.map((opt) => {
                       const active = styleChoice === opt.id;
@@ -565,15 +565,15 @@ export default function InfographicModal({ open, onClose, content, platform, con
                 {generationError && (
                   <div className="rounded-xl border border-destructive/20 bg-destructive/10 p-4 space-y-2">
                     <p className="text-xs text-destructive font-medium">{generationError}</p>
-                    {(generationError.includes("surchargé") || generationError.includes("529")) && (
+                    {(generationError.includes("overloaded") || generationError.includes("529")) && (
                       retryCountdown > 0 ? (
                         <p className="text-xs text-muted-foreground font-mono">
-                          Réessai automatique dans {retryCountdown}s…
+                          Auto-retry in {retryCountdown}s...
                         </p>
                       ) : (
                         <Button size="sm" variant="outline" className="h-8 gap-2 text-xs" onClick={handleRetryWithDelay}>
                           <RefreshCw className="w-3.5 h-3.5" />
-                          Réessayer dans 30s
+                          Retry in 30s
                         </Button>
                       )
                     )}
@@ -592,7 +592,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
                   disabled={retryCountdown > 0}
                 >
                   <Sparkles className="w-5 h-5" />
-                  {retryCountdown > 0 ? `Réessai dans ${retryCountdown}s…` : "Générer l'infographie"}
+                  {retryCountdown > 0 ? `Retry in ${retryCountdown}s...` : "Generate infographic"}
                 </Button>
               </div>
             )}
@@ -630,7 +630,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
                       className="text-center mb-3"
                     >
                       <p className="text-sm font-semibold">
-                        Ton infographie est prête ! <span className="text-lg">🎉</span>
+                        Your infographic is ready! <span className="text-lg">🎉</span>
                       </p>
                       <div className="flex justify-center gap-1 mt-1 text-lg">
                         {["✨", "⭐", "✨", "⭐"].map((s, i) => (
@@ -690,13 +690,13 @@ export default function InfographicModal({ open, onClose, content, platform, con
                     className="mb-3 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-semibold"
                   >
                     <Check className="w-3.5 h-3.5" />
-                    Infographie sauvegardée
+                    Infographic saved
                   </motion.div>
                 )}
                 {!saved && saving && (
                   <div className="mb-3 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-accent/30 text-muted-foreground text-xs font-medium">
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    Sauvegarde en cours…
+                    Saving...
                   </div>
                 )}
 
@@ -709,7 +709,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
                     disabled={downloading}
                   >
                     {downloading
-                      ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Génération…</>
+                      ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating...</>
                       : <><Download className="w-3.5 h-3.5" /> PNG</>
                     }
                   </Button>
@@ -720,7 +720,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
                     disabled={downloading}
                   >
                     {downloading
-                      ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Génération…</>
+                      ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating...</>
                       : <><Download className="w-3.5 h-3.5" /> JPEG</>
                     }
                   </Button>
@@ -729,11 +729,11 @@ export default function InfographicModal({ open, onClose, content, platform, con
                 {/* Secondary actions */}
                 <div className="flex flex-wrap items-center gap-2 mb-3">
                   <Button variant="outline" size="sm" className="h-9 gap-2 text-xs" onClick={handleGenerate} disabled={downloading}>
-                    <RefreshCw className="w-3.5 h-3.5" /> Régénérer
+                    <RefreshCw className="w-3.5 h-3.5" /> Regenerate
                   </Button>
 
                   <Button variant="outline" size="sm" className="h-9 gap-2 text-xs" onClick={handleCopyImage} disabled={downloading}>
-                    <Copy className="w-3.5 h-3.5" /> Copier
+                    <Copy className="w-3.5 h-3.5" /> Copy
                   </Button>
                 </div>
 

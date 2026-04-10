@@ -63,7 +63,7 @@ interface Platform {
 
 const platforms: Platform[] = [
   { id: "instagram", name: "Instagram", icon: IconInstagram, formats: ["Post", "Carrousel", "Reel (script)"] },
-  { id: "tiktok", name: "TikTok", icon: IconTikTok, formats: ["Caption", "Script vidéo"] },
+  { id: "tiktok", name: "TikTok", icon: IconTikTok, formats: ["Caption", "Video script"] },
   { id: "linkedin", name: "LinkedIn", icon: IconLinkedIn, formats: ["Post", "Thread"] },
   { id: "facebook", name: "Facebook", icon: IconFacebook, formats: ["Post", "Thread"] },
   { id: "x", name: "X (Twitter)", icon: IconX, formats: ["Tweet", "Thread"] },
@@ -185,13 +185,13 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
         scheduled_at: scheduledAt,
       });
       if (error) {
-        toast.error(`Erreur : ${error}`);
+        toast.error(`Error: ${error}`);
       } else {
-        toast.success("Post planifie !");
+        toast.success("Post scheduled!");
         setScheduleIdx(null);
       }
     } catch {
-      toast.error("Erreur lors de la planification");
+      toast.error("Scheduling error");
     }
     setScheduling(false);
   }
@@ -210,7 +210,7 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
     setTrends(fetched);
     setTrendsLoading(false);
     if (fetched.length === 0) {
-      toast.error("Impossible de charger les tendances. Reessaie plus tard.");
+      toast.error("Could not load trends. Try again later.");
     }
   }
 
@@ -375,7 +375,7 @@ Règles strictes :
           messages: [{ role: "user", content: userMessage }],
         }),
         60_000,
-        "La génération a pris trop de temps (60s). Réessaie avec un sujet plus court.",
+        "Generation took too long (60s). Try with shorter content.",
       );
 
       setError(null);
@@ -538,7 +538,7 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
     const v = variations[idx];
     navigator.clipboard.writeText(v.content);
     setCopiedIdx(idx);
-    toast.success(`Contenu copie ! Pret a publier sur ${selectedPlatform?.name || "ta plateforme"}.`);
+    toast.success(`Content copied! Ready to post on ${selectedPlatform?.name || "your platform"}.`);
     setTimeout(() => setCopiedIdx(null), 2000);
 
     // Track interaction for style memory
@@ -578,7 +578,7 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
 
       if (newRating === "liked") {
         saveInteraction(u.id, v.content, selectedPlatform?.name || "", v.angle, v.score, "liked");
-        toast.success("Note ! On adapte les prochaines generations a ton style.");
+        toast.success("Noted! We'll adapt future generations to your style.");
       }
     } catch { /* non-critical */ }
   }
@@ -606,13 +606,13 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
 
       if (base64) {
         setGeneratedImages((prev) => ({ ...prev, [idx]: base64 }));
-        toast.success("Image générée !");
+        toast.success("Image generated!");
       } else {
-        toast.error("Impossible de générer l'image. Réessaie.");
+        toast.error("Could not generate image. Try again.");
         setImagePanel(null);
       }
     } catch {
-      toast.error("Erreur lors de la génération d'image");
+      toast.error("Image generation error");
       setImagePanel(null);
     }
 
@@ -635,7 +635,7 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
       setInfraContent(response.content.filter((b) => b.type === "text").map((b) => b.text).join(""));
     } catch (err) {
       console.error("Infographic error:", err);
-      toast.error("Erreur lors de la generation de l'infographie");
+      toast.error("Infographic generation error");
       setGenInfra(false);
     }
     setGenInfra(false);
@@ -683,7 +683,7 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                 </div>
                 <div className={cn("flex items-center gap-1.5", activeSourceIds.length > 0 ? "text-primary/60" : "text-muted-foreground/40")}>
                   <Globe className="w-3 h-3" />
-                  <span className="text-[10px]">{activeSourceIds.length > 0 ? `${activeSourceIds.length} source${activeSourceIds.length > 1 ? "s" : ""}` : "6 plateformes"}</span>
+                  <span className="text-[10px]">{activeSourceIds.length > 0 ? `${activeSourceIds.length} source${activeSourceIds.length > 1 ? "s" : ""}` : "6 platforms"}</span>
                 </div>
               </div>
 
@@ -691,16 +691,16 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
               <div className="mt-6 max-w-md mx-auto px-4 py-3 rounded-xl bg-gradient-to-br from-amber-500/[0.05] to-orange-500/[0.03] border border-amber-500/15">
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-[9px] font-medium text-amber-400/70 uppercase tracking-wider flex items-center gap-1">
-                    <Lightbulb className="w-2.5 h-2.5" /> Hook du jour
+                    <Lightbulb className="w-2.5 h-2.5" /> Hook of the day
                   </span>
                   <span className="text-[8px] text-muted-foreground/40 uppercase">{dailyHook.type}</span>
                 </div>
                 <p className="text-[12px] text-foreground/85 leading-relaxed text-left mb-2">"{dailyHook.text}"</p>
                 <button
-                  onClick={() => { navigator.clipboard.writeText(dailyHook.text); toast.success("Hook copie !"); }}
+                  onClick={() => { navigator.clipboard.writeText(dailyHook.text); toast.success("Hook copied!"); }}
                   className="text-[10px] text-amber-400/70 hover:text-amber-400 transition-colors flex items-center gap-1"
                 >
-                  <Copy className="w-2.5 h-2.5" /> Copier ce hook
+                  <Copy className="w-2.5 h-2.5" /> Copy this hook
                 </button>
               </div>
 
@@ -711,7 +711,7 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                   className="w-full flex items-center gap-2 px-4 py-3 text-left"
                 >
                   <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="text-[11px] font-semibold text-emerald-400/90 flex-1">Tendances dans ta niche</span>
+                  <span className="text-[11px] font-semibold text-emerald-400/90 flex-1">Trends in your niche</span>
                   {trendsLoading ? (
                     <RefreshCw className="w-3 h-3 animate-spin text-emerald-400/60" />
                   ) : (
@@ -733,7 +733,7 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                               onClick={() => useTrend(trend)}
                               className="text-[10px] text-emerald-400/80 hover:text-emerald-400 font-medium flex items-center gap-1"
                             >
-                              Creer du contenu <ArrowRight className="w-2.5 h-2.5" />
+                              Create content <ArrowRight className="w-2.5 h-2.5" />
                             </button>
                           </div>
                         </div>
@@ -742,7 +742,7 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                   )}
                   {trendsOpen && !trendsLoading && trends.length === 0 && (
                     <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} className="px-4 pb-3 text-[10px] text-muted-foreground/50 text-center">
-                      Aucune tendance trouvee. Reessaie plus tard.
+                      No trends found. Try again later.
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -913,7 +913,7 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                       {/* Hook suggestions for idea/keyword modes */}
                       {(sourceMode === "idea" || sourceMode === "keyword") && sourceText.trim().length > 3 && suggestedHooks.length > 0 && (
                         <div className="mt-3 space-y-1">
-                          <p className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">Accroches suggerees</p>
+                          <p className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">Suggested hooks</p>
                           {suggestedHooks.map((hook, i) => (
                             <button
                               key={i}
@@ -935,13 +935,13 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                         }
                         className="w-full h-11 mt-4 glow-sm gap-2 font-semibold text-sm"
                       >
-                        {isGenerating ? (<><RefreshCw className="w-4 h-4 animate-spin" /> Generation en cours...</>) : (<><Sparkles className="w-4 h-4" /> Generer 5 variations</>)}
+                        {isGenerating ? (<><RefreshCw className="w-4 h-4 animate-spin" /> Generating...</>) : (<><Sparkles className="w-4 h-4" /> Generate 5 variations</>)}
                       </Button>
 
                       {styleMemoryActive && !isGenerating && (
                         <div className="flex items-center justify-center gap-1.5 mt-3 text-[10px] text-primary/60">
                           <Brain className="w-3 h-3" />
-                          <span>Adapte a ton style</span>
+                          <span>Adapted to your style</span>
                         </div>
                       )}
 
@@ -993,10 +993,10 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                         <div className="flex items-center gap-2 mb-2.5">
                           <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded-full", angleColor)}>{v.angle}</span>
                           {isSelected && <span className="text-[9px] text-primary/70 flex items-center gap-0.5"><Check className="w-2.5 h-2.5" /> Selected</span>}
-                          <span className="text-[10px] text-muted-foreground/50 ml-auto">{v.words} mots</span>
+                          <span className="text-[10px] text-muted-foreground/50 ml-auto">{v.words} words</span>
                           <div className="flex items-center gap-1.5 group/score relative">
                             {v.scoring ? (
-                              <span className="text-[9px] text-muted-foreground/50 animate-pulse">Analyse...</span>
+                              <span className="text-[9px] text-muted-foreground/50 animate-pulse">Analyzing...</span>
                             ) : (
                               <>
                                 <div className="w-12 h-1.5 rounded-full bg-accent/30 overflow-hidden">
@@ -1016,9 +1016,9 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                                   <div className="absolute right-0 top-full mt-1 z-50 hidden group-hover/score:block">
                                     <div className="bg-card border border-border/30 rounded-lg shadow-xl p-3 w-52 text-[10px]">
                                       <div className="space-y-1.5 mb-2">
-                                        <div className="flex justify-between"><span className="text-muted-foreground">Accroche</span><span className="font-semibold">{v.scoreDetails.hook}/20</span></div>
+                                        <div className="flex justify-between"><span className="text-muted-foreground">Hook</span><span className="font-semibold">{v.scoreDetails.hook}/20</span></div>
                                         <div className="flex justify-between"><span className="text-muted-foreground">Emotion</span><span className="font-semibold">{v.scoreDetails.emotion}/20</span></div>
-                                        <div className="flex justify-between"><span className="text-muted-foreground">Specificite</span><span className="font-semibold">{v.scoreDetails.specificity}/20</span></div>
+                                        <div className="flex justify-between"><span className="text-muted-foreground">Specificity</span><span className="font-semibold">{v.scoreDetails.specificity}/20</span></div>
                                         <div className="flex justify-between"><span className="text-muted-foreground">Actionable</span><span className="font-semibold">{v.scoreDetails.actionable}/20</span></div>
                                         <div className="flex justify-between"><span className="text-muted-foreground">CTA</span><span className="font-semibold">{v.scoreDetails.cta}/20</span></div>
                                       </div>
@@ -1036,7 +1036,7 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
 
                         {/* Like/Dislike feedback */}
                         <div className="flex items-center gap-2 mt-2.5 pt-2 border-t border-border/10">
-                          <span className="text-[9px] text-muted-foreground/40 mr-1">Ce contenu te plait ?</span>
+                          <span className="text-[9px] text-muted-foreground/40 mr-1">Like this content?</span>
                           <button
                             onClick={(e) => { e.stopPropagation(); handleFeedback(idx, "liked"); }}
                             className={cn(
@@ -1047,7 +1047,7 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                             )}
                           >
                             <ThumbsUp className="w-2.5 h-2.5" />
-                            {feedback[idx] === "liked" ? "Aime" : "J'aime"}
+                            {feedback[idx] === "liked" ? "Liked" : "Like"}
                           </button>
                           <button
                             onClick={(e) => { e.stopPropagation(); handleFeedback(idx, "disliked"); }}
@@ -1059,11 +1059,11 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                             )}
                           >
                             <ThumbsDown className="w-2.5 h-2.5" />
-                            {feedback[idx] === "disliked" ? "Pas pour moi" : "Pas top"}
+                            {feedback[idx] === "disliked" ? "Not for me" : "Not great"}
                           </button>
                           {feedback[idx] === "liked" && (
                             <span className="text-[9px] text-primary/50 ml-auto flex items-center gap-1">
-                              <Brain className="w-2.5 h-2.5" /> Style memorise
+                              <Brain className="w-2.5 h-2.5" /> Style saved
                             </span>
                           )}
                         </div>
@@ -1081,13 +1081,13 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                             </Button>
                             <Button variant="ghost" size="sm" className={cn("h-7 text-[11px] gap-1.5 px-2.5", imagePanel === idx ? "text-primary" : generatedImages[idx] ? "text-emerald-400" : "text-muted-foreground hover:text-foreground")} disabled={imageGenerating !== null && imageGenerating !== idx} onClick={(e) => { e.stopPropagation(); handleGenerateImage(idx); }}>
                               {imageGenerating === idx ? <Loader2 className="w-3 h-3 animate-spin" /> : <ImagePlus className="w-3 h-3" />}
-                              {generatedImages[idx] ? (imagePanel === idx ? "Masquer" : "Voir image") : imageGenerating === idx ? "Génération..." : "Image"}
+                              {generatedImages[idx] ? (imagePanel === idx ? "Hide" : "View image") : imageGenerating === idx ? "Generating..." : "Image"}
                             </Button>
                             <Button variant="ghost" size="sm" className={cn("h-7 text-[11px] gap-1.5 px-2.5", infraPanel === idx ? "text-primary" : "text-muted-foreground hover:text-foreground")} onClick={(e) => { e.stopPropagation(); handleInfraPrompt(idx); }}>
                               <Layers className="w-3 h-3" /> Infographic
                             </Button>
                             <Button variant="ghost" size="sm" className="h-7 text-[11px] gap-1.5 px-2.5 text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); setScheduleIdx(idx); setScheduleDate(new Date().toISOString().slice(0, 10)); }}>
-                              <CalendarDays className="w-3 h-3" /> Planifier
+                              <CalendarDays className="w-3 h-3" /> Schedule
                             </Button>
                           </motion.div>
                         )}
@@ -1099,21 +1099,21 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.15 }}>
                             <div className="mt-1 p-3 rounded-lg bg-accent/20 border border-border/15">
                               {imageGenerating === idx ? (
-                                <div className="flex items-center justify-center gap-2 py-8"><Loader2 className="w-4 h-4 animate-spin text-primary" /><span className="text-[11px] text-muted-foreground">Génération de l'image en cours…</span></div>
+                                <div className="flex items-center justify-center gap-2 py-8"><Loader2 className="w-4 h-4 animate-spin text-primary" /><span className="text-[11px] text-muted-foreground">Generating image...</span></div>
                               ) : generatedImages[idx] ? (
                                 <>
                                   <div className="relative rounded-xl overflow-hidden">
-                                    <img src={`data:image/jpeg;base64,${generatedImages[idx]}`} alt="Image générée" className="w-full rounded-xl" />
+                                    <img src={`data:image/jpeg;base64,${generatedImages[idx]}`} alt="Generated image" className="w-full rounded-xl" />
                                     <div className="absolute bottom-2 right-2 flex gap-2">
                                       <button onClick={(e) => { e.stopPropagation(); const link = document.createElement("a"); link.href = `data:image/jpeg;base64,${generatedImages[idx]}`; link.download = `supen-image-${Date.now()}.jpg`; link.click(); }} className="bg-black/60 backdrop-blur-sm text-white text-[11px] px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:bg-black/80 transition-all">
-                                        <Download className="w-3 h-3" /> Télécharger
+                                        <Download className="w-3 h-3" /> Download
                                       </button>
                                       <button onClick={(e) => { e.stopPropagation(); handleGenerateImage(idx, true); }} className="bg-black/60 backdrop-blur-sm text-white text-[11px] px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:bg-black/80 transition-all">
-                                        <RefreshCw className="w-3 h-3" /> Régénérer
+                                        <RefreshCw className="w-3 h-3" /> Regenerate
                                       </button>
                                     </div>
                                   </div>
-                                  <p className="text-[10px] text-muted-foreground/50 mt-2 text-center">Image générée par IA — adaptée au contenu de ce post</p>
+                                  <p className="text-[10px] text-muted-foreground/50 mt-2 text-center">AI-generated image — adapted to this post's content</p>
                                 </>
                               ) : null}
                             </div>
@@ -1208,11 +1208,11 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
         <div className="mx-5 mb-3 px-3 py-2 rounded-lg bg-destructive/10 border border-destructive/20 shrink-0 space-y-1.5">
           {error && <p className="text-[11px] text-destructive">{error}</p>}
           {retryCountdown > 0 && (
-            <p className="text-[11px] text-muted-foreground font-mono">Réessai automatique dans {retryCountdown}s…</p>
+            <p className="text-[11px] text-muted-foreground font-mono">Auto-retry in {retryCountdown}s...</p>
           )}
-          {error && (error.includes("surchargé") || error.includes("529")) && retryCountdown === 0 && (
+          {error && (error.includes("overloaded") || error.includes("529")) && retryCountdown === 0 && (
             <button onClick={handleRetryWithDelay} className="text-[11px] text-primary hover:underline font-medium">
-              Réessayer dans 30s
+              Retry in 30s
             </button>
           )}
         </div>
@@ -1250,7 +1250,7 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
             >
               <div className="flex items-center gap-2 mb-4">
                 <CalendarDays className="w-4 h-4 text-primary" />
-                <h3 className="text-sm font-bold">Planifier ce post</h3>
+                <h3 className="text-sm font-bold">Schedule this post</h3>
               </div>
               <div className="bg-accent/20 border border-border/20 rounded-lg p-3 mb-4 max-h-24 overflow-y-auto">
                 <p className="text-[11px] text-muted-foreground line-clamp-3 leading-snug">
@@ -1269,7 +1269,7 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-medium text-muted-foreground mb-1 block">Heure</label>
+                    <label className="text-[10px] font-medium text-muted-foreground mb-1 block">Time</label>
                     <input
                       type="time"
                       value={scheduleTime}
@@ -1279,16 +1279,16 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                   </div>
                 </div>
                 <div className="text-[10px] text-muted-foreground/60 text-center">
-                  Sera publie sur <span className="text-foreground font-medium">{selectedPlatform?.name}</span>
+                  Will be posted on <span className="text-foreground font-medium">{selectedPlatform?.name}</span>
                 </div>
               </div>
               <div className="flex gap-2 mt-4">
                 <Button variant="outline" onClick={() => setScheduleIdx(null)} className="flex-1 h-9 text-xs">
-                  Annuler
+                  Cancel
                 </Button>
                 <Button onClick={handleSchedule} disabled={scheduling} className="flex-1 h-9 gap-1.5 text-xs font-semibold">
                   {scheduling ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
-                  Planifier
+                  Schedule
                 </Button>
               </div>
             </motion.div>

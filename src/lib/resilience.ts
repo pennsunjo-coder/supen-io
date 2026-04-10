@@ -11,7 +11,7 @@ export function isOffline(): boolean {
 
 export function assertOnline(): void {
   if (isOffline()) {
-    throw new Error("Pas de connexion internet. Verifie ta connexion et reessaie.");
+    throw new Error("No internet connection. Check your connection and try again.");
   }
 }
 
@@ -70,7 +70,7 @@ export async function withRetry<T>(
 export function withTimeout<T>(
   promise: Promise<T>,
   timeoutMs: number,
-  message = "La requete a pris trop de temps. Reessaie.",
+  message = "The request took too long. Try again.",
 ): Promise<T> {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error(message)), timeoutMs);
@@ -108,33 +108,33 @@ export function sanitizeInfographicHtml(html: string): string {
 
 export function assertUserId(userId: string | undefined | null, context: string): asserts userId is string {
   if (!userId) {
-    throw new Error(`Utilisateur non connecte (${context}). Reconnecte-toi.`);
+    throw new Error(`Not logged in (${context}). Please sign in again.`);
   }
 }
 
 // ─── Friendly error messages ───
 
 export function friendlyError(err: unknown): string {
-  if (!(err instanceof Error)) return "Erreur inconnue. Reessaie.";
+  if (!(err instanceof Error)) return "Unknown error. Try again.";
 
   const msg = err.message.toLowerCase();
 
   if (msg.includes("429") || msg.includes("rate") || msg.includes("too many")) {
-    return "Trop de requetes. Attends quelques secondes et reessaie.";
+    return "Too many requests. Wait a few seconds and try again.";
   }
   if (msg.includes("401") || msg.includes("unauthorized") || msg.includes("invalid api key")) {
-    return "Erreur d'authentification API. Contacte le support.";
+    return "API authentication error. Contact support.";
   }
   if (msg.includes("overloaded") || msg.includes("529")) {
-    return "Serveurs surchargés — attends 30 secondes et réessaie.";
+    return "Servers overloaded — try again in 30 seconds.";
   }
-  if (msg.includes("timeout") || msg.includes("pris trop de temps")) {
-    return "La generation a pris trop de temps. Reessaie avec un sujet plus court.";
+  if (msg.includes("timeout") || msg.includes("pris trop de temps") || msg.includes("took too long")) {
+    return "Generation took too long. Try again with shorter content.";
   }
   if (msg.includes("network") || msg.includes("fetch") || msg.includes("load failed")) {
-    return "Erreur reseau. Verifie ta connexion internet.";
+    return "Network error. Check your internet connection.";
   }
-  if (msg.includes("connexion internet")) {
+  if (msg.includes("internet connection") || msg.includes("connexion internet")) {
     return err.message;
   }
 

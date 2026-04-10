@@ -28,7 +28,7 @@ const platformIcons: Record<string, React.FC> = {
   "YouTube": IconYouTube,
 };
 
-const platformFilters = ["Tout", "Instagram", "TikTok", "LinkedIn", "Facebook", "X (Twitter)", "YouTube"];
+const platformFilters = ["All", "Instagram", "TikTok", "LinkedIn", "Facebook", "X (Twitter)", "YouTube"];
 
 function truncate(text: string, words: number): string {
   const w = text.split(/\s+/);
@@ -60,13 +60,13 @@ function HistoryCard({ item }: { item: GeneratedItem }) {
   function handleCopy() {
     navigator.clipboard.writeText(item.content);
     setCopied(true);
-    toast.success(`Contenu copie ! Pret a publier sur ${item.platform}.`);
+    toast.success(`Content copied! Ready to post on ${item.platform}.`);
     setTimeout(() => setCopied(false), 2000);
   }
 
   function handleReuse() {
     navigate("/dashboard");
-    toast("Ouvre le Studio pour creer du nouveau contenu.");
+    toast("Open the Studio to create new content.");
   }
 
   return (
@@ -91,7 +91,7 @@ function HistoryCard({ item }: { item: GeneratedItem }) {
           </div>
           {!expanded && (
             <p className="text-[11px] text-muted-foreground/70 mt-0.5 truncate">
-              {isInfographicHtml(item.content) ? "Infographie" : truncate(item.content, 15)}
+              {isInfographicHtml(item.content) ? "Infographic" : truncate(item.content, 15)}
             </p>
           )}
         </div>
@@ -113,8 +113,8 @@ function HistoryCard({ item }: { item: GeneratedItem }) {
             <div className="mt-3 pt-3 border-t border-border/15">
               {isInfographicHtml(item.content) ? (
                 <div className="relative w-full rounded-lg overflow-hidden bg-white mb-3" style={{ height: "300px" }}>
-                  <iframe srcDoc={item.content} className="absolute top-0 left-0 origin-top-left pointer-events-none" style={{ width: "1080px", height: "1350px", transform: "scale(0.278)", border: "none" }} sandbox="allow-same-origin" title="Infographie" />
-                  <div className="absolute inset-0 flex items-end p-2"><span className="text-[10px] bg-black/40 text-white px-2 py-0.5 rounded-full backdrop-blur-sm">Infographie</span></div>
+                  <iframe srcDoc={item.content} className="absolute top-0 left-0 origin-top-left pointer-events-none" style={{ width: "1080px", height: "1350px", transform: "scale(0.278)", border: "none" }} sandbox="allow-same-origin" title="Infographic" />
+                  <div className="absolute inset-0 flex items-end p-2"><span className="text-[10px] bg-black/40 text-white px-2 py-0.5 rounded-full backdrop-blur-sm">Infographic</span></div>
                 </div>
               ) : (
                 <p className="text-[13px] leading-relaxed whitespace-pre-wrap text-foreground/85">
@@ -142,7 +142,7 @@ function HistoryCard({ item }: { item: GeneratedItem }) {
                   </Button>
                 )}
                 <span className="text-[10px] text-muted-foreground/40 ml-auto">
-                  {isInfographicHtml(item.content) ? "Infographie HTML" : `${item.content.split(/\s+/).length} words`}
+                  {isInfographicHtml(item.content) ? "HTML Infographic" : `${item.content.split(/\s+/).length} words`}
                 </span>
               </div>
             </div>
@@ -157,13 +157,13 @@ function HistoryCard({ item }: { item: GeneratedItem }) {
 
 const History = () => {
   const { grouped, loading } = useHistory();
-  const [filter, setFilter] = useState("Tout");
+  const [filter, setFilter] = useState("All");
 
   const filteredGroups = useMemo(
     () => grouped
       .map((group) => ({
         ...group,
-        items: filter === "Tout" ? group.items : group.items.filter((i) => i.platform === filter),
+        items: filter === "All" ? group.items : group.items.filter((i) => i.platform === filter),
       }))
       .filter((group) => group.items.length > 0),
     [grouped, filter]
@@ -185,9 +185,9 @@ const History = () => {
               <Clock className="w-4 h-4 text-primary" />
             </div>
             <div>
-              <h1 className="text-lg font-bold">Historique</h1>
+              <h1 className="text-lg font-bold">History</h1>
               <p className="text-xs text-muted-foreground">
-                {loading ? "Chargement..." : `${totalCount} contenu${totalCount > 1 ? "s" : ""} genere${totalCount > 1 ? "s" : ""}`}
+                {loading ? "Loading..." : `${totalCount} item${totalCount > 1 ? "s" : ""} generated`}
               </p>
             </div>
           </div>
@@ -221,11 +221,11 @@ const History = () => {
               <div className="w-14 h-14 rounded-2xl bg-accent/40 flex items-center justify-center mb-4">
                 <Clock className="w-6 h-6 text-muted-foreground/50" />
               </div>
-              <p className="text-sm font-medium text-muted-foreground mb-1">Aucun contenu</p>
+              <p className="text-sm font-medium text-muted-foreground mb-1">No content</p>
               <p className="text-xs text-muted-foreground/60">
-                {filter === "Tout"
-                  ? "Genere du contenu dans le Studio pour le retrouver ici."
-                  : `Aucun contenu ${filter} trouve.`}
+                {filter === "All"
+                  ? "Generate content in the Studio to find it here."
+                  : `No ${filter} content found.`}
               </p>
             </div>
           ) : (

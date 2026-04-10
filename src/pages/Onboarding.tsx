@@ -46,21 +46,21 @@ const PLATFORMS = [
 ];
 
 const NICHES: { id: string; icon: React.FC<{ className?: string }> }[] = [
-  { id: "Business & Entrepreneuriat", icon: Briefcase },
-  { id: "Marketing Digital", icon: Megaphone },
-  { id: "Tech & IA", icon: Cpu },
-  { id: "Finance & Investissement", icon: TrendingUp },
-  { id: "Education & Formation", icon: GraduationCap },
-  { id: "Sante & Bien-etre", icon: Heart },
-  { id: "Creativite & Design", icon: Palette },
+  { id: "Business & Entrepreneurship", icon: Briefcase },
+  { id: "Digital Marketing", icon: Megaphone },
+  { id: "Tech & AI", icon: Cpu },
+  { id: "Finance & Investment", icon: TrendingUp },
+  { id: "Education & Training", icon: GraduationCap },
+  { id: "Health & Wellness", icon: Heart },
+  { id: "Creativity & Design", icon: Palette },
   { id: "E-commerce", icon: ShoppingBag },
-  { id: "Ecriture & Copywriting", icon: PenTool },
+  { id: "Writing & Copywriting", icon: PenTool },
   { id: "Photo & Video", icon: Camera },
 ];
 
 const SOURCES = [
-  "Reseaux sociaux", "Un ami / collegue", "Recherche Google",
-  "Newsletter", "YouTube", "Autre",
+  "Social media", "A friend / colleague", "Google search",
+  "Newsletter", "YouTube", "Other",
 ];
 
 const TOTAL_STEPS = 4;
@@ -129,16 +129,16 @@ const Onboarding = () => {
     setSaving(true);
     setSaveError(null);
 
-    const finalNiche = niche === "Autre" ? customNiche || "Autre" : niche;
+    const finalNiche = niche === "Other" ? customNiche || "Other" : niche;
     const payload = {
       first_name: firstName.trim(),
       platforms: selectedPlatforms,
-      source_platform: sourcePlatform || "Non precise",
+      source_platform: sourcePlatform || "Not specified",
       niche: finalNiche,
       onboarding_completed: true,
     };
 
-    let result = { success: false, error: "Non connecte" as string | null };
+    let result = { success: false, error: "Not connected" as string | null };
     for (let attempt = 0; attempt < 3; attempt++) {
       if (!user && attempt < 2) {
         await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -155,7 +155,7 @@ const Onboarding = () => {
 
     setSaving(false);
     if (!result.success) {
-      setSaveError(result.error || "Erreur de sauvegarde. Reessayez.");
+      setSaveError(result.error || "Save error. Please try again.");
       return;
     }
 
@@ -194,13 +194,13 @@ const Onboarding = () => {
           <div className="flex items-center justify-between px-6 py-3">
             {step > 1 ? (
               <button onClick={goBack} className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70 transition-colors">
-                <ArrowLeft className="w-3.5 h-3.5" /> Retour
+                <ArrowLeft className="w-3.5 h-3.5" /> Back
               </button>
             ) : (
               <div />
             )}
             <span className="text-[11px] text-white/30 font-medium">
-              Etape {progressStep} sur {TOTAL_STEPS}
+              Step {progressStep} of {TOTAL_STEPS}
             </span>
           </div>
         </div>
@@ -237,7 +237,7 @@ const Onboarding = () => {
                 transition={{ delay: 0.2, duration: 0.4 }}
                 className="text-3xl font-bold text-white mb-3"
               >
-                Bienvenue sur Supen.io
+                Welcome to Supen.io
               </motion.h1>
 
               <motion.p
@@ -246,8 +246,8 @@ const Onboarding = () => {
                 transition={{ delay: 0.35, duration: 0.4 }}
                 className="text-white/50 text-sm mb-10 leading-relaxed"
               >
-                Configurons ton compte en 60 secondes.<br />
-                Tu seras pret a creer du contenu viral.
+                Let's set up your account in 60 seconds.<br />
+                You'll be ready to create viral content.
               </motion.p>
 
               {/* Step previews */}
@@ -258,10 +258,10 @@ const Onboarding = () => {
                 className="flex items-center justify-center gap-6 mb-10"
               >
                 {[
-                  { num: "1", label: "Prenom" },
-                  { num: "2", label: "Plateformes" },
+                  { num: "1", label: "First name" },
+                  { num: "2", label: "Platforms" },
                   { num: "3", label: "Niche" },
-                  { num: "4", label: "Decouverte" },
+                  { num: "4", label: "Discovery" },
                 ].map((s, i) => (
                   <div key={i} className="flex flex-col items-center gap-1.5">
                     <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs font-bold text-white/40">
@@ -282,7 +282,7 @@ const Onboarding = () => {
                   className="h-13 px-10 text-base font-semibold gap-2.5 rounded-xl"
                   size="lg"
                 >
-                  C'est parti <ArrowRight className="w-5 h-5" />
+                  Let's go <ArrowRight className="w-5 h-5" />
                 </Button>
               </motion.div>
             </motion.div>
@@ -300,20 +300,20 @@ const Onboarding = () => {
               transition={{ duration: 0.3, ease: "easeOut" }}
             >
               <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-8 backdrop-blur-sm">
-                <h1 className="text-2xl font-bold text-white mb-2">Comment tu t'appelles ?</h1>
-                <p className="text-sm text-white/40 mb-8">On personnalise tout pour toi.</p>
+                <h1 className="text-2xl font-bold text-white mb-2">What's your name?</h1>
+                <p className="text-sm text-white/40 mb-8">We personalize everything for you.</p>
 
                 <Input
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="Ton prenom"
+                  placeholder="Your first name"
                   autoFocus
                   className="h-14 text-lg bg-white/5 border-white/10 text-white placeholder:text-white/20 focus-visible:ring-primary/50"
                   onKeyDown={(e) => e.key === "Enter" && firstName.trim().length >= 2 && goNext()}
                 />
 
                 {firstName.length > 0 && firstName.trim().length < 2 && (
-                  <p className="text-xs text-amber-400/60 mt-2">Minimum 2 caracteres</p>
+                  <p className="text-xs text-amber-400/60 mt-2">Minimum 2 characters</p>
                 )}
 
                 <Button
@@ -321,7 +321,7 @@ const Onboarding = () => {
                   disabled={firstName.trim().length < 2}
                   className="w-full h-12 mt-6 gap-2 font-semibold rounded-xl"
                 >
-                  Continuer <ArrowRight className="w-4 h-4" />
+                  Continue <ArrowRight className="w-4 h-4" />
                 </Button>
               </div>
             </motion.div>
@@ -339,8 +339,8 @@ const Onboarding = () => {
               transition={{ duration: 0.3, ease: "easeOut" }}
             >
               <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-8 backdrop-blur-sm">
-                <h1 className="text-2xl font-bold text-white mb-2">Ou crees-tu du contenu ?</h1>
-                <p className="text-sm text-white/40 mb-6">Selectionne toutes tes plateformes.</p>
+                <h1 className="text-2xl font-bold text-white mb-2">Where do you create content?</h1>
+                <p className="text-sm text-white/40 mb-6">Select all your platforms.</p>
 
                 <div className="grid grid-cols-2 gap-3">
                   {PLATFORMS.map((p) => {
@@ -377,11 +377,11 @@ const Onboarding = () => {
                   disabled={selectedPlatforms.length === 0}
                   className="w-full h-12 mt-6 gap-2 font-semibold rounded-xl"
                 >
-                  Continuer <ArrowRight className="w-4 h-4" />
+                  Continue <ArrowRight className="w-4 h-4" />
                 </Button>
 
                 {selectedPlatforms.length === 0 && (
-                  <p className="text-xs text-white/25 text-center mt-3">Selectionne au moins 1 plateforme</p>
+                  <p className="text-xs text-white/25 text-center mt-3">Select at least 1 platform</p>
                 )}
               </div>
             </motion.div>
@@ -399,8 +399,8 @@ const Onboarding = () => {
               transition={{ duration: 0.3, ease: "easeOut" }}
             >
               <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-8 backdrop-blur-sm">
-                <h1 className="text-2xl font-bold text-white mb-2">Quelle est ta niche ?</h1>
-                <p className="text-sm text-white/40 mb-6">On adapte les suggestions a ton domaine.</p>
+                <h1 className="text-2xl font-bold text-white mb-2">What's your niche?</h1>
+                <p className="text-sm text-white/40 mb-6">We'll adapt suggestions to your domain.</p>
 
                 <div className="grid grid-cols-2 gap-2 max-h-[320px] overflow-y-auto pr-1">
                   {NICHES.map((n) => {
@@ -422,24 +422,24 @@ const Onboarding = () => {
                     );
                   })}
                   <button
-                    onClick={() => setNiche("Autre")}
+                    onClick={() => setNiche("Other")}
                     className={cn(
                       "flex items-center gap-2.5 px-3.5 py-3 rounded-xl border text-left text-sm font-medium transition-all col-span-2",
-                      niche === "Autre"
+                      niche === "Other"
                         ? "border-primary/50 bg-primary/10 text-white"
                         : "border-white/8 bg-white/[0.02] text-white/50 hover:text-white/70 hover:bg-white/[0.04]",
                     )}
                   >
-                    <Plus className={cn("w-4 h-4 shrink-0", niche === "Autre" ? "text-primary" : "text-white/30")} />
-                    Autre domaine
+                    <Plus className={cn("w-4 h-4 shrink-0", niche === "Other" ? "text-primary" : "text-white/30")} />
+                    Other domain
                   </button>
                 </div>
 
-                {niche === "Autre" && (
+                {niche === "Other" && (
                   <Input
                     value={customNiche}
                     onChange={(e) => setCustomNiche(e.target.value)}
-                    placeholder="Precise ton domaine..."
+                    placeholder="Specify your domain..."
                     className="mt-3 h-11 bg-white/5 border-white/10 text-white placeholder:text-white/20"
                     autoFocus
                   />
@@ -447,10 +447,10 @@ const Onboarding = () => {
 
                 <Button
                   onClick={goNext}
-                  disabled={!niche || (niche === "Autre" && !customNiche.trim())}
+                  disabled={!niche || (niche === "Other" && !customNiche.trim())}
                   className="w-full h-12 mt-6 gap-2 font-semibold rounded-xl"
                 >
-                  Continuer <ArrowRight className="w-4 h-4" />
+                  Continue <ArrowRight className="w-4 h-4" />
                 </Button>
               </div>
             </motion.div>
@@ -468,8 +468,8 @@ const Onboarding = () => {
               transition={{ duration: 0.3, ease: "easeOut" }}
             >
               <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-8 backdrop-blur-sm">
-                <h1 className="text-2xl font-bold text-white mb-2">Comment as-tu decouvert Supen.io ?</h1>
-                <p className="text-sm text-white/40 mb-6">Optionnel — ca nous aide a grandir.</p>
+                <h1 className="text-2xl font-bold text-white mb-2">How did you discover Supen.io?</h1>
+                <p className="text-sm text-white/40 mb-6">Optional — helps us grow.</p>
 
                 <div className="flex flex-wrap gap-2.5">
                   {SOURCES.map((s) => (
@@ -499,14 +499,14 @@ const Onboarding = () => {
                     disabled={saving}
                     className="flex-1 h-12 font-medium rounded-xl border-white/10 text-white/60 hover:text-white bg-white/[0.03]"
                   >
-                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Passer"}
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Skip"}
                   </Button>
                   <Button
                     onClick={() => { if (sourcePlatform) handleComplete(); }}
                     disabled={!sourcePlatform || saving}
                     className="flex-1 h-12 gap-2 font-semibold rounded-xl"
                   >
-                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Terminer <Sparkles className="w-4 h-4" /></>}
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Finish <Sparkles className="w-4 h-4" /></>}
                   </Button>
                 </div>
               </div>
@@ -549,7 +549,7 @@ const Onboarding = () => {
                   transition={{ delay: 0.4, duration: 0.4 }}
                   className="text-3xl font-bold text-white mb-3"
                 >
-                  C'est pret, {firstName} !
+                  You're all set, {firstName}!
                 </motion.h1>
 
                 <motion.p
@@ -558,7 +558,7 @@ const Onboarding = () => {
                   transition={{ delay: 0.6, duration: 0.4 }}
                   className="text-white/40 text-sm leading-relaxed mb-10 max-w-sm mx-auto"
                 >
-                  Ton espace est configure. Supen.io va t'aider a creer du contenu viral pour {selectedPlatforms.slice(0, 3).join(", ")}{selectedPlatforms.length > 3 ? ` et ${selectedPlatforms.length - 3} autres` : ""}.
+                  Your workspace is ready. Supen.io will help you create viral content for {selectedPlatforms.slice(0, 3).join(", ")}{selectedPlatforms.length > 3 ? ` and ${selectedPlatforms.length - 3} more` : ""}.
                 </motion.p>
 
                 <AnimatePresence>
@@ -573,7 +573,7 @@ const Onboarding = () => {
                         className="h-14 px-10 text-base font-bold rounded-xl gap-3"
                         size="lg"
                       >
-                        <Sparkles className="w-5 h-5" /> Commencer a creer
+                        <Sparkles className="w-5 h-5" /> Start creating
                       </Button>
                     </motion.div>
                   )}
