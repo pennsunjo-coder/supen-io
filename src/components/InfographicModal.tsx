@@ -265,14 +265,13 @@ export default function InfographicModal({ open, onClose, content, platform, con
 
   // ─── Generation ───
 
-  // Image generation can be slow — give Gemini up to 2 minutes before aborting.
-  // On abort: throw a clear French error (caught by handleGenerate, no fallback).
-  // On HTTP error or empty response: return null → fallback to Claude.
+  // Try Gemini for 30s max. On ANY failure (timeout, 529, network, empty) → return null
+  // so handleGenerate falls through to Claude HTML automatically. Never throw.
   async function generateWithGemini(): Promise<string | null> {
     if (!GEMINI_API_KEY) return null;
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 120_000); // 120s
+    const timeoutId = setTimeout(() => controller.abort(), 30_000); // 30s then fallback
 
     try {
       const response = await fetch(
@@ -295,7 +294,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
       if (!response.ok) {
         const errorText = await response.text().catch(() => "");
         console.warn("[Gemini] HTTP", response.status, errorText.slice(0, 200));
-        return null;
+        return null; // → fallback Claude
       }
 
       const data = await response.json();
@@ -305,15 +304,14 @@ export default function InfographicModal({ open, onClose, content, platform, con
 
       if (!base64) {
         console.warn("[Gemini] No image in response");
-        return null;
+        return null; // → fallback Claude
       }
       return base64;
     } catch (err) {
       clearTimeout(timeoutId);
-      if (err instanceof Error && err.name === "AbortError") {
-        throw new Error("La génération d'image a dépassé 2 minutes. Réessaie avec un contenu plus court.");
-      }
-      console.warn("[Gemini] Network error:", err);
+      // Timeout, 529, overloaded, network — all soft-fail to Claude fallback
+      const reason = err instanceof Error ? err.name === "AbortError" ? "timeout 30s" : err.message : "unknown";
+      console.warn("[Gemini] Soft-fail →", reason, "→ falling back to Claude HTML");
       return null;
     }
   }
@@ -354,11 +352,10 @@ export default function InfographicModal({ open, onClose, content, platform, con
     savedRef.current = false; // New generation → allow a fresh single save
 
     // Generation flow:
-    //   1. Try Gemini (image, 120s timeout)
-    //   2. If Gemini timeout → throw, NO fallback (user retries with shorter content)
-    //   3. If Gemini soft-fail (HTTP error / empty / no API key) → fallback to Claude HTML (60s)
-    //   4. On success → setStep("result") + explicit save (single, with fresh data)
-    //   5. On any failure → setStep("ready") + toast.error + EARLY RETURN (no save, no insert)
+    //   1. Try Gemini (image, 30s timeout — fast fail)
+    //   2. If Gemini fails for ANY reason → automatic fallback to Claude HTML (60s)
+    //   3. On success (either path) → setStep("result") + explicit save
+    //   4. On both paths failed → setStep("ready") + toast.error + EARLY RETURN (no save)
     let result: { image?: string; html?: string; mode: "gemini" | "claude" } | null = null;
 
     try {
@@ -655,7 +652,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {step === "ready" && "L'IA analyse ton contenu et conçoit le design automatiquement"}
-                {step === "generating" && "Cela peut prendre jusqu'à 2 minutes — ne ferme pas la fenêtre"}
+                {step === "generating" && "Cela peut prendre 30 à 60 secondes — ne ferme pas la fenêtre"}
                 {step === "result" && (
                   <>
                     {platform} — {dims.width}x{dims.height}
@@ -776,7 +773,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
                       <Sparkles className="w-5 h-5 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                     </div>
                     <div className="w-full max-w-xs">
-                      <GenerationProgress isActive={step === "generating"} steps={INFOGRAPHIC_STEPS} estimatedSeconds={90} />
+                      <GenerationProgress isActive={step === "generating"} steps={INFOGRAPHIC_STEPS} estimatedSeconds={50} />
                     </div>
                   </div>
                 </div>
