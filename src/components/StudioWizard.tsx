@@ -365,24 +365,17 @@ Règles strictes :
 
       assertOnline();
 
-      const response = await withRetry(
-        () => withTimeout(
-          anthropic.messages.create({
-            model: CLAUDE_MODEL,
-            max_tokens: 4096,
-            system: systemPrompt,
-            messages: [{ role: "user", content: userMessage }],
-          }),
-          45_000,
-          "La generation a pris trop de temps (45s). Reessaie avec un sujet plus court."
-        ),
-        {
-          maxRetries: 1,
-          baseDelayMs: 3000,
-          onRetry: (attempt, delay) => {
-            setError(`Serveur surcharge, nouvel essai dans ${Math.round(delay / 1000)}s... (tentative ${attempt + 1})`);
-          },
-        }
+      // Single call — no retry. SDK maxRetries is already 0.
+      // On 529, the catch block shows a manual countdown button.
+      const response = await withTimeout(
+        anthropic.messages.create({
+          model: CLAUDE_MODEL,
+          max_tokens: 4096,
+          system: systemPrompt,
+          messages: [{ role: "user", content: userMessage }],
+        }),
+        60_000,
+        "La génération a pris trop de temps (60s). Réessaie avec un sujet plus court.",
       );
 
       setError(null);

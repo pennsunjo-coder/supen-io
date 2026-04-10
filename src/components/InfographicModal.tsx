@@ -24,7 +24,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { assertOnline, withRetry, withTimeout, sanitizeInfographicHtml, friendlyError } from "@/lib/resilience";
+import { assertOnline, withTimeout, sanitizeInfographicHtml, friendlyError } from "@/lib/resilience";
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
@@ -192,7 +192,6 @@ export default function InfographicModal({ open, onClose, content, platform, con
   const [styleChoice, setStyleChoice] = useState<StyleChoice>("auto");
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [retryCountdown, setRetryCountdown] = useState(0);
-  const [retryMessage, setRetryMessage] = useState("");
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const retryIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -266,127 +265,67 @@ export default function InfographicModal({ open, onClose, content, platform, con
 
   // ─── Generation ───
 
-  // Try Gemini with up to 3 attempts on 529/overloaded. On timeout or non-529 error → return null
-  // immediately (falls through to Claude). Never throws.
+  // Single Gemini attempt, 30s timeout. On ANY failure → return null → Claude fallback.
+  // No retry — if 529, the UI shows a manual countdown button via handleGenerate's catch.
   async function generateWithGemini(): Promise<string | null> {
     if (!GEMINI_API_KEY) return null;
 
-    const MAX_ATTEMPTS = 3;
-    const RETRY_DELAYS = [5000, 10000]; // between attempts
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30_000);
 
-    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30_000);
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: buildGeminiImagePrompt(content, platform, customPrompt || undefined, forcedTemplate) }] }],
+            generationConfig: {
+              responseModalities: ["IMAGE", "TEXT"],
+              responseMimeType: "image/png",
+            },
+          }),
+          signal: controller.signal,
+        },
+      );
+      clearTimeout(timeoutId);
 
-      try {
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: buildGeminiImagePrompt(content, platform, customPrompt || undefined, forcedTemplate) }] }],
-              generationConfig: {
-                responseModalities: ["IMAGE", "TEXT"],
-                responseMimeType: "image/png",
-              },
-            }),
-            signal: controller.signal,
-          },
-        );
-        clearTimeout(timeoutId);
-
-        if (!response.ok) {
-          const status = response.status;
-          const errorText = await response.text().catch(() => "");
-          console.warn("[Gemini] HTTP", status, errorText.slice(0, 200));
-
-          // 529/overloaded → retry if not last attempt
-          if ((status === 529 || errorText.includes("overloaded")) && attempt < MAX_ATTEMPTS - 1) {
-            const delay = RETRY_DELAYS[attempt];
-            setRetryMessage(`Gemini surchargé — retry ${attempt + 2}/${MAX_ATTEMPTS} dans ${delay / 1000}s…`);
-            await new Promise((r) => setTimeout(r, delay));
-            continue;
-          }
-          return null; // other HTTP error → fallback Claude
-        }
-
-        setRetryMessage("");
-        const data = await response.json();
-        const base64 = data.candidates?.[0]?.content?.parts
-          ?.find((p: { inlineData?: { data: string } }) => p.inlineData)
-          ?.inlineData?.data;
-
-        if (!base64) {
-          console.warn("[Gemini] No image in response");
-          return null;
-        }
-        return base64;
-      } catch (err) {
-        clearTimeout(timeoutId);
-
-        // Timeout → no retry, fall back to Claude immediately
-        if (err instanceof Error && err.name === "AbortError") {
-          console.warn("[Gemini] Timeout 30s → falling back to Claude");
-          return null;
-        }
-
-        // Network error with overloaded → retry
-        const msg = err instanceof Error ? err.message : "";
-        if ((msg.includes("529") || msg.includes("overloaded")) && attempt < MAX_ATTEMPTS - 1) {
-          const delay = RETRY_DELAYS[attempt];
-          setRetryMessage(`Gemini surchargé — retry ${attempt + 2}/${MAX_ATTEMPTS} dans ${delay / 1000}s…`);
-          await new Promise((r) => setTimeout(r, delay));
-          continue;
-        }
-
-        console.warn("[Gemini] Soft-fail →", msg || "unknown", "→ Claude fallback");
+      if (!response.ok) {
+        console.warn("[Gemini] HTTP", response.status);
         return null;
       }
+
+      const data = await response.json();
+      return data.candidates?.[0]?.content?.parts
+        ?.find((p: { inlineData?: { data: string } }) => p.inlineData)
+        ?.inlineData?.data || null;
+    } catch (err) {
+      clearTimeout(timeoutId);
+      console.warn("[Gemini] Soft-fail →", err instanceof Error ? err.message : "unknown");
+      return null;
     }
-    return null; // all attempts exhausted → Claude fallback
   }
 
-  // Claude with 4 total attempts (1 initial + 3 retries on 529) and exponential backoff.
+  // Single Claude call, 60s timeout. No retry — on 529 the UI shows a manual countdown.
   async function generateWithClaude(): Promise<string> {
     assertOnline();
-
-    const MAX_ATTEMPTS = 4;
-    const RETRY_DELAYS = [5000, 10000, 20000]; // 5s, 10s, 20s
-
-    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-      try {
-        const response = await withTimeout(
-          anthropic.messages.create({
-            model: CLAUDE_MODEL,
-            max_tokens: 4096,
-            messages: [{
-              role: "user",
-              content: buildInfographicPrompt(content, platform, customPrompt || undefined, forcedTemplate),
-            }],
-          }),
-          60_000,
-        );
-        setRetryMessage("");
-        const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
-        const htmlMatch = text.match(/<!DOCTYPE html>[\s\S]*<\/html>/i)
-          || text.match(/<html[\s\S]*<\/html>/i)
-          || text.match(/<div[\s\S]*<\/div>/);
-        return htmlMatch ? htmlMatch[0] : text;
-      } catch (err) {
-        const msg = err instanceof Error ? err.message.toLowerCase() : "";
-        const isOverloaded = msg.includes("529") || msg.includes("overloaded") || msg.includes("surchargé");
-
-        if (isOverloaded && attempt < MAX_ATTEMPTS - 1) {
-          const delay = RETRY_DELAYS[attempt];
-          setRetryMessage(`Serveur surchargé — tentative ${attempt + 2}/${MAX_ATTEMPTS} dans ${delay / 1000}s…`);
-          await new Promise((r) => setTimeout(r, delay));
-          continue;
-        }
-        throw err; // Non-retryable or last attempt
-      }
-    }
-    throw new Error("Génération impossible après 4 tentatives");
+    const response = await withTimeout(
+      anthropic.messages.create({
+        model: CLAUDE_MODEL,
+        max_tokens: 4096,
+        messages: [{
+          role: "user",
+          content: buildInfographicPrompt(content, platform, customPrompt || undefined, forcedTemplate),
+        }],
+      }),
+      60_000,
+    );
+    const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
+    const htmlMatch = text.match(/<!DOCTYPE html>[\s\S]*<\/html>/i)
+      || text.match(/<html[\s\S]*<\/html>/i)
+      || text.match(/<div[\s\S]*<\/div>/);
+    return htmlMatch ? htmlMatch[0] : text;
   }
 
   async function handleGenerate() {
@@ -398,7 +337,6 @@ export default function InfographicModal({ open, onClose, content, platform, con
     setQualityScore(null);
     setGenerationError(null);
     setRetryCountdown(0);
-    setRetryMessage("");
     if (retryIntervalRef.current) { clearInterval(retryIntervalRef.current); retryIntervalRef.current = null; }
     savedRef.current = false; // New generation → allow a fresh single save
 
@@ -826,9 +764,6 @@ export default function InfographicModal({ open, onClose, content, platform, con
                     <div className="w-full max-w-xs">
                       <GenerationProgress isActive={step === "generating"} steps={INFOGRAPHIC_STEPS} estimatedSeconds={50} />
                     </div>
-                    {retryMessage && (
-                      <p className="text-xs text-amber-400/80 text-center mt-2 animate-pulse">{retryMessage}</p>
-                    )}
                   </div>
                 </div>
               </div>

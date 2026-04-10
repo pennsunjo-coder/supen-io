@@ -11,6 +11,7 @@ if (!apiKey) {
 export const anthropic = new Anthropic({
   apiKey,
   dangerouslyAllowBrowser: true,
+  maxRetries: 0, // Disable SDK built-in retries — the UI handles 529 with a manual countdown
 });
 
 export const CLAUDE_MODEL = "claude-sonnet-4-20250514";
