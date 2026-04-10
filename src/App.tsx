@@ -43,8 +43,13 @@ const App = () => {
     function handleRejection(event: PromiseRejectionEvent) {
       console.error("[Unhandled Promise Rejection]", event.reason);
       const msg = event.reason?.message || "";
-      // Skip silent errors (aborts, network cancellations)
-      if (msg && !/abort|cancel|aborterror/i.test(msg)) {
+      // Skip errors already handled locally (529/overloaded in StudioWizard/InfographicModal,
+      // network retries, and normal abort/cancel from AbortController timeouts)
+      const isSilent =
+        /abort|cancel|aborterror/i.test(msg) ||
+        /529|overloaded|surcharge/i.test(msg) ||
+        /network|fetch|load failed/i.test(msg);
+      if (msg && !isSilent) {
         toast.error("Une erreur inattendue s'est produite");
       }
     }
