@@ -555,7 +555,7 @@ export default function InfographicModal({ open, onClose, content, platform }: P
     try {
       const saveContent = mode === "gemini"
         ? `[Gemini Image] ${content.slice(0, 200)}`
-        : (html || "").slice(0, 10000);
+        : html || ""; // Full HTML — no truncation so the iframe preview works in dashboard
 
       const { error } = await supabase.from("generated_content").insert({
         user_id: user.id,

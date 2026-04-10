@@ -36,6 +36,14 @@ function truncate(text: string, words: number): string {
   return w.slice(0, words).join(" ") + "...";
 }
 
+function isInfographicHtml(content: string): boolean {
+  return (
+    content.startsWith("<!DOCTYPE html>") ||
+    content.startsWith("<html") ||
+    (content.includes("<style>") && content.includes("font-family"))
+  );
+}
+
 function formatTime(dateStr: string): string {
   const d = new Date(dateStr);
   return d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
@@ -83,7 +91,7 @@ function HistoryCard({ item }: { item: GeneratedItem }) {
           </div>
           {!expanded && (
             <p className="text-[11px] text-muted-foreground/70 mt-0.5 truncate">
-              {truncate(item.content, 15)}
+              {isInfographicHtml(item.content) ? "Infographie" : truncate(item.content, 15)}
             </p>
           )}
         </div>
@@ -103,9 +111,16 @@ function HistoryCard({ item }: { item: GeneratedItem }) {
             transition={{ duration: 0.2 }}
           >
             <div className="mt-3 pt-3 border-t border-border/15">
-              <p className="text-[13px] leading-relaxed whitespace-pre-wrap text-foreground/85">
-                {item.content}
-              </p>
+              {isInfographicHtml(item.content) ? (
+                <div className="relative w-full rounded-lg overflow-hidden bg-white mb-3" style={{ height: "300px" }}>
+                  <iframe srcDoc={item.content} className="absolute top-0 left-0 origin-top-left pointer-events-none" style={{ width: "1080px", height: "1350px", transform: "scale(0.278)", border: "none" }} sandbox="allow-same-origin" title="Infographie" />
+                  <div className="absolute inset-0 flex items-end p-2"><span className="text-[10px] bg-black/40 text-white px-2 py-0.5 rounded-full backdrop-blur-sm">Infographie</span></div>
+                </div>
+              ) : (
+                <p className="text-[13px] leading-relaxed whitespace-pre-wrap text-foreground/85">
+                  {item.content}
+                </p>
+              )}
               <div className="flex items-center gap-2 mt-3">
                 <Button
                   variant="ghost"
@@ -116,16 +131,18 @@ function HistoryCard({ item }: { item: GeneratedItem }) {
                   {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                   {copied ? "Copied" : "Copy"}
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-[11px] gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
-                  onClick={(e) => { e.stopPropagation(); handleReuse(); }}
-                >
-                  <RotateCcw className="w-3 h-3" /> Reuse
-                </Button>
+                {!isInfographicHtml(item.content) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-[11px] gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
+                    onClick={(e) => { e.stopPropagation(); handleReuse(); }}
+                  >
+                    <RotateCcw className="w-3 h-3" /> Reuse
+                  </Button>
+                )}
                 <span className="text-[10px] text-muted-foreground/40 ml-auto">
-                  {item.content.split(/\s+/).length} words
+                  {isInfographicHtml(item.content) ? "Infographie HTML" : `${item.content.split(/\s+/).length} words`}
                 </span>
               </div>
             </div>

@@ -13,6 +13,16 @@ import { toast } from "sonner";
 import type { DashboardContent, ContentSession } from "@/hooks/use-dashboard";
 import InfographicModal from "@/components/InfographicModal";
 
+/* ─── Helpers ─── */
+
+function isInfographicHtml(content: string): boolean {
+  return (
+    content.startsWith("<!DOCTYPE html>") ||
+    content.startsWith("<html") ||
+    (content.includes("<style>") && content.includes("font-family"))
+  );
+}
+
 /* ─── Platform icons ─── */
 
 const platformIcons: Record<string, React.FC<{ className?: string }>> = {
@@ -148,7 +158,14 @@ En français. Réponds UNIQUEMENT avec la structure.`,
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.2 }}>
             <div className="px-3 pb-3 pt-0">
               <div className="pt-2 border-t border-border/15">
-                <p className="text-xs leading-relaxed whitespace-pre-wrap text-foreground/85 mb-3">{item.content}</p>
+                {isInfographicHtml(item.content) ? (
+                  <div className="relative w-full rounded-lg overflow-hidden bg-white mb-3" style={{ height: "200px" }}>
+                    <iframe srcDoc={item.content} className="absolute top-0 left-0 origin-top-left pointer-events-none" style={{ width: "1080px", height: "1350px", transform: "scale(0.185)", border: "none" }} sandbox="allow-same-origin" title="Infographie" />
+                    <div className="absolute inset-0 flex items-end p-2"><span className="text-[10px] bg-black/40 text-white px-2 py-0.5 rounded-full backdrop-blur-sm">Infographie</span></div>
+                  </div>
+                ) : (
+                  <p className="text-xs leading-relaxed whitespace-pre-wrap text-foreground/85 mb-3">{item.content}</p>
+                )}
 
                 {/* 3 buttons */}
                 <div className="flex items-center gap-1.5">
@@ -347,7 +364,14 @@ function SessionVariationCard({
       </div>
 
       {/* Content */}
-      <p className="text-xs leading-relaxed text-foreground/85 whitespace-pre-wrap mb-2">{item.content}</p>
+      {isInfographicHtml(item.content) ? (
+        <div className="relative w-full rounded-lg overflow-hidden bg-white mb-2" style={{ height: "160px" }}>
+          <iframe srcDoc={item.content} className="absolute top-0 left-0 origin-top-left pointer-events-none" style={{ width: "1080px", height: "1350px", transform: "scale(0.148)", border: "none" }} sandbox="allow-same-origin" title="Infographie" />
+          <div className="absolute inset-0 flex items-end p-2"><span className="text-[10px] bg-black/40 text-white px-2 py-0.5 rounded-full backdrop-blur-sm">Infographie</span></div>
+        </div>
+      ) : (
+        <p className="text-xs leading-relaxed text-foreground/85 whitespace-pre-wrap mb-2">{item.content}</p>
+      )}
 
       {/* Actions */}
       <div className="flex flex-wrap items-center gap-1">

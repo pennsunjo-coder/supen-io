@@ -42,9 +42,14 @@ function groupIntoSessions(items: DashboardContent[]): ContentSession[] {
   return sessions;
 }
 
+function isInfographicHtml(s: string): boolean {
+  return s.startsWith("<!DOCTYPE html>") || s.startsWith("<html") || (s.includes("<style>") && s.includes("font-family"));
+}
+
 function buildSession(items: DashboardContent[]): ContentSession {
   const best = items.reduce((max, i) => ((i.viral_score || 0) > max ? (i.viral_score || 0) : max), 0);
-  const preview = items[0].content.split(/\s+/).slice(0, 15).join(" ");
+  const raw = items[0].content;
+  const preview = isInfographicHtml(raw) ? "Infographie" : raw.split(/\s+/).slice(0, 15).join(" ");
   return {
     id: items[0].id,
     platform: items[0].platform,
