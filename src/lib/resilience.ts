@@ -126,7 +126,7 @@ export function friendlyError(err: unknown): string {
     return "Erreur d'authentification API. Contacte le support.";
   }
   if (msg.includes("overloaded") || msg.includes("529")) {
-    return "Le serveur IA est surcharge. Reessaie dans quelques secondes.";
+    return "Le serveur IA est momentanément surchargé. Réessaie dans 30 secondes.";
   }
   if (msg.includes("timeout") || msg.includes("pris trop de temps")) {
     return "La generation a pris trop de temps. Reessaie avec un sujet plus court.";

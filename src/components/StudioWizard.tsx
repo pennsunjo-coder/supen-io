@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -158,6 +158,8 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
   const [isHumanizing, setIsHumanizing] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "failed">("idle");
   const [error, setError] = useState<string | null>(null);
+  const [retryCountdown, setRetryCountdown] = useState(0);
+  const retryIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [showInfographic, setShowInfographic] = useState(false);
   const [styleMemoryActive, setStyleMemoryActive] = useState(false);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
@@ -412,6 +414,29 @@ Règles strictes :
     } finally {
       setIsGenerating(false);
     }
+  }
+
+  // ─── Retry on 529 / overloaded ───
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => { if (retryIntervalRef.current) clearInterval(retryIntervalRef.current); };
+  }, []);
+
+  function handleRetryWithDelay() {
+    if (retryIntervalRef.current) { clearInterval(retryIntervalRef.current); retryIntervalRef.current = null; }
+    setRetryCountdown(30);
+    setError(null);
+    retryIntervalRef.current = setInterval(() => {
+      setRetryCountdown((prev) => {
+        if (prev <= 1) {
+          if (retryIntervalRef.current) { clearInterval(retryIntervalRef.current); retryIntervalRef.current = null; }
+          handleGenerate();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
   }
 
   async function saveVariations(parsed: ParsedVariation[]): Promise<boolean> {
@@ -1163,8 +1188,18 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
         )}
       </AnimatePresence>
 
-      {error && (
-        <div className="mx-5 mb-3 px-3 py-2 rounded-lg bg-destructive/10 border border-destructive/20 text-[11px] text-destructive shrink-0">{error}</div>
+      {(error || retryCountdown > 0) && (
+        <div className="mx-5 mb-3 px-3 py-2 rounded-lg bg-destructive/10 border border-destructive/20 shrink-0 space-y-1.5">
+          {error && <p className="text-[11px] text-destructive">{error}</p>}
+          {retryCountdown > 0 && (
+            <p className="text-[11px] text-muted-foreground font-mono">Réessai automatique dans {retryCountdown}s…</p>
+          )}
+          {error && (error.includes("surchargé") || error.includes("529")) && retryCountdown === 0 && (
+            <button onClick={handleRetryWithDelay} className="text-[11px] text-primary hover:underline font-medium">
+              Réessayer dans 30s
+            </button>
+          )}
+        </div>
       )}
 
       <InfographicModal

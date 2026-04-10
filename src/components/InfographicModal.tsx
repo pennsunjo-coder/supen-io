@@ -187,7 +187,15 @@ export default function InfographicModal({ open, onClose, content, platform }: P
   const [showPrompt, setShowPrompt] = useState(false);
   const [qualityScore, setQualityScore] = useState<QualityScore | null>(null);
   const [styleChoice, setStyleChoice] = useState<StyleChoice>("auto");
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [retryCountdown, setRetryCountdown] = useState(0);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const retryIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Cleanup retry interval on unmount
+  useEffect(() => {
+    return () => { if (retryIntervalRef.current) clearInterval(retryIntervalRef.current); };
+  }, []);
 
   // Reset state when modal opens or content changes
   useEffect(() => {
@@ -203,6 +211,9 @@ export default function InfographicModal({ open, onClose, content, platform }: P
       setShowConfetti(false);
       setQualityScore(null);
       setStyleChoice("auto");
+      setGenerationError(null);
+      setRetryCountdown(0);
+      if (retryIntervalRef.current) { clearInterval(retryIntervalRef.current); retryIntervalRef.current = null; }
       resetRegenerationCounter();
     }
   }, [open, content]);
@@ -324,6 +335,9 @@ export default function InfographicModal({ open, onClose, content, platform }: P
     setResultMode(null);
     setSaved(false);
     setQualityScore(null);
+    setGenerationError(null);
+    setRetryCountdown(0);
+    if (retryIntervalRef.current) { clearInterval(retryIntervalRef.current); retryIntervalRef.current = null; }
     savedRef.current = false; // New generation → allow a fresh single save
 
     // Generation flow:
@@ -352,6 +366,7 @@ export default function InfographicModal({ open, onClose, content, platform }: P
       const fallbackMsg = err instanceof Error ? err.message : "La génération a échoué";
       const msg = friendlyError(err) || fallbackMsg;
       setStep("ready"); // Back to ready — NO result, NO save, NO insert
+      setGenerationError(msg);
       toast.error(msg);
       return;
     }
@@ -369,6 +384,23 @@ export default function InfographicModal({ open, onClose, content, platform }: P
 
     // Explicit single save with fresh data — no stale closure on state
     await handleSave({ image: result.image, html: result.html, mode: result.mode });
+  }
+
+  // ─── Retry on 529 / overloaded ───
+
+  function handleRetryWithDelay() {
+    if (retryIntervalRef.current) { clearInterval(retryIntervalRef.current); retryIntervalRef.current = null; }
+    setRetryCountdown(30);
+    retryIntervalRef.current = setInterval(() => {
+      setRetryCountdown((prev) => {
+        if (prev <= 1) {
+          if (retryIntervalRef.current) { clearInterval(retryIntervalRef.current); retryIntervalRef.current = null; }
+          handleGenerate();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
   }
 
   // ─── Downloads (PNG + JPEG only) ───
@@ -667,6 +699,25 @@ export default function InfographicModal({ open, onClose, content, platform }: P
                   </div>
                 </div>
 
+                {/* Error banner + retry */}
+                {generationError && (
+                  <div className="rounded-xl border border-destructive/20 bg-destructive/10 p-4 space-y-2">
+                    <p className="text-xs text-destructive font-medium">{generationError}</p>
+                    {(generationError.includes("surchargé") || generationError.includes("529")) && (
+                      retryCountdown > 0 ? (
+                        <p className="text-xs text-muted-foreground font-mono">
+                          Réessai automatique dans {retryCountdown}s…
+                        </p>
+                      ) : (
+                        <Button size="sm" variant="outline" className="h-8 gap-2 text-xs" onClick={handleRetryWithDelay}>
+                          <RefreshCw className="w-3.5 h-3.5" />
+                          Réessayer dans 30s
+                        </Button>
+                      )
+                    )}
+                  </div>
+                )}
+
                 {/* Content preview */}
                 <div className="bg-accent/30 rounded-xl p-4">
                   <p className="text-xs text-muted-foreground leading-relaxed">{contentPreview}</p>
@@ -676,9 +727,10 @@ export default function InfographicModal({ open, onClose, content, platform }: P
                 <Button
                   className="w-full h-14 text-base font-bold gap-3"
                   onClick={handleGenerate}
+                  disabled={retryCountdown > 0}
                 >
                   <Sparkles className="w-5 h-5" />
-                  Générer l'infographie
+                  {retryCountdown > 0 ? `Réessai dans ${retryCountdown}s…` : "Générer l'infographie"}
                 </Button>
               </div>
             )}
