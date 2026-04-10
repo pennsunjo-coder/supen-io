@@ -209,16 +209,16 @@ Rules:
       const response = await anthropic.messages.create({
         model: CLAUDE_MODEL,
         max_tokens: 2048,
-        system: `Tu es un expert en réécriture de contenu. Ta mission : rendre ce texte indétectable par les détecteurs d'IA tout en gardant le même message.
+        system: `You are an expert in content rewriting. Your mission: make this text undetectable by AI detectors while keeping the same message.
 
-Règles :
-- Français uniquement.
-- Utilise des tournures naturelles, imparfaites, humaines.
-- Varie la longueur des phrases. Ajoute des hésitations, des expressions familières si approprié.
-- Garde le format adapté à ${selectedPlatform.name}.
-- Réponds uniquement avec le texte réécrit, rien d'autre.`,
+Rules:
+- English only.
+- Use natural, imperfect, human phrasing.
+- Vary sentence length. Add hesitations, casual expressions if appropriate.
+- Keep the format adapted to ${selectedPlatform.name}.
+- Respond only with the rewritten text, nothing else.`,
         messages: [
-          { role: "user", content: `Humanise ce contenu :\n\n${original}` },
+          { role: "user", content: `Humanize this content:\n\n${original}` },
         ],
       });
 
