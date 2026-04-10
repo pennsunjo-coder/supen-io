@@ -49,7 +49,7 @@ export function useCalendar() {
 
   const schedulePost = useCallback(
     async (post: Omit<ScheduledPost, "id" | "status">): Promise<{ error: string | null }> => {
-      if (!user) return { error: "Non connecte" };
+      if (!user) return { error: "Not logged in" };
       const { error } = await supabase.from("scheduled_posts").insert({
         ...post,
         user_id: user.id,

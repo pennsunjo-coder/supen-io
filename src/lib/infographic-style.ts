@@ -393,7 +393,7 @@ STRUCTURE HTML OBLIGATOIRE :
 
 <!-- FOOTER : 10% de la hauteur = ${footerH}px -->
 <div class="footer" style="height: ${footerH}px; flex-shrink: 0;">
-  "Créé avec Supen.io" en #24A89B
+  "Created with Supen.io" en #24A89B
 </div>
 
 ${"═".repeat(40)}
@@ -446,7 +446,7 @@ Badge : ${extraction.badge}
 Points :
 ${pointsText}
 Pro tip : ${extraction.proTip}
-Footer : Créé avec Supen.io
+Footer : Created with Supen.io
 
 ${customInstructions ? `Instructions supplémentaires : ${customInstructions}` : ""}
 
@@ -458,7 +458,7 @@ Génère UNIQUEMENT le code HTML complet.
 Commence par <!DOCTYPE html> et termine par </html>.
 Aucun texte avant ou après le HTML.
 Aucun markdown, aucun backtick.
-Tout le texte visible doit être en FRANÇAIS.`;
+All visible text must be in ENGLISH.`;
 }
 
 // ─── Gemini prompt builder ───
@@ -797,7 +797,7 @@ RELIEF ET PROFONDEUR DE L'ENTONNOIR :
 ━━━ 5. SIGNATURE VISUELLE (Branding / Footer) ━━━
 
 Footer très PROPRE :
-- Mention "Créé avec Supen.io" en brand color #24A89B
+- Mention "Created with Supen.io" en brand color #24A89B
 - Police minuscule et grise (10-11px, couleur #999999)
 - Centrée ou alignée à droite
 - NE DISTRAIT PAS du message principal
@@ -818,7 +818,7 @@ Aucun élément ne touche le bord sans marge.
 ✗ Polices décoratives ou handwriting
 ✗ Plus de 2 familles de polices simultanées
 ✗ Texte trop petit (jamais sous 11px)
-✗ Texte anglais (tout en FRANÇAIS)
+✗ Texte anglais (tout in ENGLISH)
 ✗ Effets de texture ou grain sur le fond
 ✗ Personnages complexes ou réalistes
 ✗ Dégradés complexes multi-couleurs sur les fonds de cartes
@@ -913,7 +913,7 @@ SECTION BODY (70% de la hauteur) :
 
 SECTION FOOTER (10% de la hauteur) :
 → Fond gris très clair (#F8F9FA)
-→ Texte : "Créé avec Supen.io" en brand color #24A89B
+→ Texte : "Created with Supen.io" en brand color #24A89B
 → Séparateur ligne fine #E5E7EB en haut du footer
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -960,7 +960,7 @@ INTERDICTIONS ABSOLUES (NEGATIVE PROMPT)
 ✗ AUCUNE bordure noire épaisse
 ✗ AUCUN fond texturé ou dégradé complexe
 ✗ AUCUN élément qui touche un autre sans padding
-✗ AUCUN texte en anglais — TOUT en FRANÇAIS
+✗ AUCUN texte en anglais — TOUT in ENGLISH
 ✗ AUCUN style "brouillon" ou "esquisse"
 ✗ AUCUNE ombre noire agressive
 
@@ -975,8 +975,8 @@ CHECKLIST DE VALIDATION FINALE
 [ ] Fonds pastels unis (0 texture)
 [ ] Maximum 5 mots par ligne dans le body
 [ ] Style Apple / Notion / Figma — jamais cartoon
-[ ] Tout le texte en FRANÇAIS
-[ ] Footer "Créé avec Supen.io" en #24A89B
+[ ] Tout le texte in ENGLISH
+[ ] Footer "Created with Supen.io" en #24A89B
 [ ] Qualité : Haute définition, rendu vectoriel plat, texte ultra-net, éclairage studio uniforme, zéro bruit visuel
 
 ╔══════════════════════════════════════════════════════╗
@@ -1080,8 +1080,8 @@ ${"═".repeat(50)}
 - Padding par bloc : ≥ 20px (Master Prompt §4), idéalement ${isCleanTemplate ? "24-32px" : "20-26px"}
 - Coins arrondis : 16-24px sur les cards (Master Prompt §3)
 - Ombres : box-shadow douce 0 8px 32px rgba(0,0,0,0.08), JAMAIS de bordures noires épaisses
-- Footer en bas : "Créé avec Supen.io"
-- Tout le contenu rédigé en FRANÇAIS
+- Footer en bas : "Created with Supen.io"
+- Tout le contenu rédigé in ENGLISH
 
 ${"═".repeat(50)}
 === CONTENU À TRANSFORMER ===
@@ -1109,16 +1109,16 @@ ${contenuAIntegrer}
 (Chaque "Bloc" ci-dessus correspond à une zone visuelle distincte de l'infographie. Respecte l'ordre, les couleurs pastel indiquées, et la séparation par bloc.)
 
 ${"═".repeat(50)}
-=== RÈGLES D'ÉCRITURE (FRANÇAIS) ===
+=== WRITING RULES (ENGLISH) ===
 ${"═".repeat(50)}
 
-- TOUT le texte est rédigé en FRANÇAIS (le produit est francophone)
+- ALL text must be written in ENGLISH
 - Titres de sections : 3-6 mots, spécifiques et actionnables. AUCUN label vague ("Important", "Note").
 - Bodies de section : ${isCleanTemplate ? "18-25 mots MAX par section" : "30-50 mots par section"}. Coupe tout ce qui n'apporte rien.
 - UN seul mot-clé par section surligné en jaune (#FFE066)
 - Au moins UNE donnée concrète dans tout le visuel (chiffre précis, nom d'outil, pourcentage)
 - Titre principal : ${isCleanTemplate ? "clair, curieux, sentence case (PAS de SHOUTING ALL CAPS)" : "ALL CAPS viral et percutant"}
-- Footer : "Créé avec Supen.io"
+- Footer : "Created with Supen.io"
 
 ${"═".repeat(50)}
 === INTERDICTIONS ABSOLUES ===
@@ -1132,7 +1132,7 @@ ${"═".repeat(50)}
 - Sections collées sans gap → toujours de la respiration
 - Emoji unicode 😀, clipart, photographies stock
 - Remplir 100% du canvas → laisse respirer
-- Texte en anglais → produit francophone
+- English text (this is an English-language product)
 
 ${"═".repeat(50)}
 === CHECKLIST FINALE (à valider AVANT génération) ===
@@ -1149,8 +1149,8 @@ ${"═".repeat(50)}
 [ ] Bodies courts (${isCleanTemplate ? "18-25" : "30-50"} mots par section)
 [ ] Ancrages visuels présents (icônes Line Art 48-64px ou numéros cerclés)
 [ ] Brand color #24A89B utilisée sur les CTAs / footer
-[ ] Footer "Créé avec Supen.io" en bas
-[ ] Tout le texte en FRANÇAIS — JAMAIS d'anglais (Master Prompt §4)
+[ ] Footer "Created with Supen.io" en bas
+[ ] Tout le texte in ENGLISH — JAMAIS d'anglais (Master Prompt §4)
 [ ] AUCUN italique — AUCUN emoji unicode
 [ ] Texte ≥ 14px partout (Master Prompt §4)
 

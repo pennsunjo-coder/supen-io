@@ -31,35 +31,35 @@ const TOOLS: Array<{
   {
     id: "transcriber",
     title: "YouTube Transcriber",
-    description: "Extrais le transcript d'une video YouTube et ajoute-le a tes sources.",
+    description: "Extract the transcript from a YouTube video and add it to your sources.",
     icon: Youtube,
     color: "text-red-400 bg-red-500/10",
   },
   {
     id: "hooks",
-    title: "Generateur de hooks viraux",
-    description: "10 accroches percutantes prets a utiliser pour ta niche.",
+    title: "Viral Hook Generator",
+    description: "10 powerful hooks ready to use for your niche.",
     icon: Lightbulb,
     color: "text-amber-400 bg-amber-500/10",
   },
   {
     id: "humanizer",
-    title: "Reformulateur Anti-IA",
-    description: "Transforme un texte IA en ecriture 100% humaine.",
+    title: "Anti-AI Humanizer",
+    description: "Transform AI text into 100% human writing.",
     icon: Wand2,
     color: "text-purple-400 bg-purple-500/10",
   },
   {
     id: "analyzer",
-    title: "Analyseur viral",
-    description: "Analyse un post concurrent et decouvre ce qui le rend viral.",
+    title: "Viral Analyzer",
+    description: "Analyze a competitor's post and discover what makes it viral.",
     icon: BarChart3,
     color: "text-emerald-400 bg-emerald-500/10",
   },
   {
     id: "trends",
-    title: "Radar de tendances",
-    description: "Decouvre les sujets qui buzzent dans ta niche en temps reel.",
+    title: "Trends Radar",
+    description: "Discover trending topics in your niche in real-time.",
     icon: TrendingUp,
     color: "text-cyan-400 bg-cyan-500/10",
   },
@@ -82,10 +82,10 @@ const Tools = () => {
               <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
                 <Wrench className="w-4 h-4 text-primary" />
               </div>
-              <h1 className="text-xl font-bold">Boite a outils</h1>
+              <h1 className="text-xl font-bold">Toolbox</h1>
             </div>
             <p className="text-sm text-muted-foreground ml-12">
-              Des utilitaires gratuits pour accelerer ton workflow.
+              Free utilities to speed up your workflow.
             </p>
           </div>
 
@@ -176,13 +176,13 @@ function YouTubeTranscriber({ addNote }: { addNote: (title: string, content: str
         body: { url: url.trim() },
       });
       if (error) throw new Error(error.message);
-      if (!data?.transcript) throw new Error("Aucune transcription retournee");
+      if (!data?.transcript) throw new Error("No transcript returned");
 
       setTranscript(data.transcript);
       setTitle(data.title || "Video YouTube");
-      toast.success("Transcription extraite !");
+      toast.success("Transcript extracted!");
     } catch (err) {
-      toast.error(friendlyError(err) || "Impossible d'extraire la transcription. Verifie que la video a des sous-titres.");
+      toast.error(friendlyError(err) || "Could not extract transcript. Make sure the video has subtitles.");
     }
     setLoading(false);
   }
@@ -193,16 +193,16 @@ function YouTubeTranscriber({ addNote }: { addNote: (title: string, content: str
     const { error } = await addNote(`YouTube : ${title}`, transcript);
     setAdding(false);
     if (error) {
-      toast.error(`Erreur : ${error}`);
+      toast.error(`Error: ${error}`);
     } else {
       setAdded(true);
-      toast.success("Transcription ajoutee a tes sources !");
+      toast.success("Transcript added to your sources!");
     }
   }
 
   function handleCopy() {
     navigator.clipboard.writeText(transcript);
-    toast.success("Transcription copiee !");
+    toast.success("Transcript copied!");
   }
 
   return (
@@ -222,7 +222,7 @@ function YouTubeTranscriber({ addNote }: { addNote: (title: string, content: str
           className="bg-accent/30 border-border/30 h-10 text-sm"
         />
         <Button onClick={handleTranscribe} disabled={loading || !url.trim()} className="h-10 gap-2 text-xs font-semibold min-w-[120px]">
-          {loading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Extraction...</> : "Transcrire"}
+          {loading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Extracting...</> : "Transcribe"}
         </Button>
       </div>
 
@@ -230,19 +230,19 @@ function YouTubeTranscriber({ addNote }: { addNote: (title: string, content: str
         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}>
           <div className="mb-2 flex items-center justify-between">
             <p className="text-xs font-medium text-muted-foreground truncate flex-1">{title}</p>
-            <span className="text-[10px] text-muted-foreground/60 ml-2">{transcript.split(/\s+/).length} mots</span>
+            <span className="text-[10px] text-muted-foreground/60 ml-2">{transcript.split(/\s+/).length} words</span>
           </div>
           <div className="bg-accent/20 border border-border/20 rounded-lg p-3 mb-3 max-h-64 overflow-y-auto">
             <p className="text-[12px] leading-relaxed text-foreground/85 whitespace-pre-wrap">{transcript}</p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={handleCopy} className="h-9 gap-1.5 text-xs">
-              <Copy className="w-3 h-3" /> Copier
+              <Copy className="w-3 h-3" /> Copy
             </Button>
             <Button onClick={handleAddToSources} disabled={adding || added} size="sm" className="h-9 gap-1.5 text-xs flex-1">
               {adding ? <Loader2 className="w-3 h-3 animate-spin" /> :
                added ? <Check className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
-              {added ? "Ajoute aux sources" : "Ajouter aux sources"}
+              {added ? "Added to sources" : "Add to sources"}
             </Button>
           </div>
         </motion.div>
@@ -267,7 +267,7 @@ function HookGenerator({ profileNiche, profilePlatforms }: { profileNiche?: stri
   function copyLocalHook(text: string, idx: number) {
     navigator.clipboard.writeText(text);
     setCopiedLocal(idx);
-    toast.success("Hook copie !");
+    toast.success("Hook copied!");
     setTimeout(() => setCopiedLocal(null), 2000);
   }
 
@@ -302,9 +302,9 @@ Regles strictes :
         .map((line) => line.replace(/^\d+[\.\)]\s*/, "").trim())
         .filter((line) => line.length > 5 && line.length < 200);
 
-      if (parsed.length === 0) throw new Error("Aucun hook genere");
+      if (parsed.length === 0) throw new Error("No hooks generated");
       setHooks(parsed.slice(0, 10));
-      toast.success(`${parsed.length} hooks generes !`);
+      toast.success(`${parsed.length} hooks generated!`);
     } catch (err) {
       toast.error(friendlyError(err));
     }
@@ -314,7 +314,7 @@ Regles strictes :
   function copyHook(idx: number) {
     navigator.clipboard.writeText(hooks[idx]);
     setCopiedIdx(idx);
-    toast.success("Hook copie !");
+    toast.success("Hook copied!");
     setTimeout(() => setCopiedIdx(null), 2000);
   }
 
@@ -322,14 +322,14 @@ Regles strictes :
     <div className="rounded-xl border border-border/30 bg-card p-5">
       <div className="flex items-center gap-2 mb-3">
         <Lightbulb className="w-4 h-4 text-amber-400" />
-        <h3 className="text-sm font-semibold">Generateur de hooks viraux</h3>
+        <h3 className="text-sm font-semibold">Viral Hook Generator</h3>
       </div>
 
       <div className="space-y-2 mb-3">
         <Input
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
-          placeholder="Ton sujet (ex: productivite, IA, fitness...)"
+          placeholder="Your topic (e.g., productivity, AI, fitness...)"
           disabled={loading}
           className="bg-accent/30 border-border/30 h-10 text-sm"
         />
@@ -337,7 +337,7 @@ Regles strictes :
           <Input
             value={niche}
             onChange={(e) => setNiche(e.target.value)}
-            placeholder="Ta niche"
+            placeholder="Your niche"
             disabled={loading}
             className="bg-accent/30 border-border/30 h-10 text-sm"
           />
@@ -351,7 +351,7 @@ Regles strictes :
           </select>
         </div>
         <Button onClick={handleGenerate} disabled={loading || !topic.trim()} className="w-full h-10 gap-2 text-xs font-semibold">
-          {loading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generation IA...</> : <>Generer 10 hooks IA personnalises</>}
+          {loading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> AI generating...</> : <>Generate 10 custom AI hooks</>}
         </Button>
       </div>
 
@@ -360,7 +360,7 @@ Regles strictes :
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
             <p className="text-[10px] font-medium text-muted-foreground/70 uppercase tracking-wider">
-              Bibliotheque
+              Library
             </p>
             <span className="text-[9px] text-muted-foreground/40">{localHooks.length} hooks</span>
           </div>
@@ -383,7 +383,7 @@ Regles strictes :
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <div className="flex items-center justify-between mb-2">
             <p className="text-[10px] font-medium text-primary/70 uppercase tracking-wider">
-              Personnalises IA pour "{topic}"
+              AI-generated for "{topic}"
             </p>
           </div>
           <div className="space-y-1.5">
@@ -440,7 +440,7 @@ Regles strictes :
 
       const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
       setOutput(text.trim());
-      toast.success("Texte humanise !");
+      toast.success("Text humanized!");
     } catch (err) {
       toast.error(friendlyError(err));
     }
@@ -450,7 +450,7 @@ Regles strictes :
   function handleCopy() {
     navigator.clipboard.writeText(output);
     setCopied(true);
-    toast.success("Copie !");
+    toast.success("Copied!");
     setTimeout(() => setCopied(false), 2000);
   }
 
@@ -458,29 +458,29 @@ Regles strictes :
     <div className="rounded-xl border border-border/30 bg-card p-5">
       <div className="flex items-center gap-2 mb-3">
         <Wand2 className="w-4 h-4 text-purple-400" />
-        <h3 className="text-sm font-semibold">Reformulateur Anti-IA</h3>
+        <h3 className="text-sm font-semibold">Anti-AI Humanizer</h3>
       </div>
 
       <Textarea
         value={input}
         onChange={(e) => setInput(e.target.value)}
-        placeholder="Colle ici le texte a humaniser..."
+        placeholder="Paste the text to humanize here..."
         disabled={loading}
         className="bg-accent/30 border-border/30 text-sm min-h-[120px] resize-none mb-2"
       />
       <Button onClick={handleHumanize} disabled={loading || !input.trim()} className="w-full h-10 gap-2 text-xs font-semibold mb-3">
-        {loading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Humanisation...</> : <><Wand2 className="w-3.5 h-3.5" /> Humaniser</>}
+        {loading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Humanizing...</> : <><Wand2 className="w-3.5 h-3.5" /> Humanize</>}
       </Button>
 
       {output && (
         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}>
-          <p className="text-[10px] font-medium text-muted-foreground/60 mb-1.5">Resultat humanise</p>
+          <p className="text-[10px] font-medium text-muted-foreground/60 mb-1.5">Humanized result</p>
           <div className="bg-accent/20 border border-border/20 rounded-lg p-3 mb-2 max-h-64 overflow-y-auto">
             <p className="text-[12px] leading-relaxed text-foreground/90 whitespace-pre-wrap">{output}</p>
           </div>
           <Button variant="outline" size="sm" onClick={handleCopy} className="h-9 gap-1.5 text-xs">
             {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-            {copied ? "Copie" : "Copier le texte"}
+            {copied ? "Copied!" : "Copy text"}
           </Button>
         </motion.div>
       )}
@@ -537,9 +537,9 @@ Sois strict dans la notation. Tout en francais.`,
       const cleaned = text.replace(/```json?/g, "").replace(/```/g, "").trim();
       const parsed = JSON.parse(cleaned) as ViralAnalysis;
       setAnalysis(parsed);
-      toast.success("Analyse terminee !");
+      toast.success("Analysis complete!");
     } catch (err) {
-      toast.error(friendlyError(err) || "Impossible d'analyser le contenu");
+      toast.error(friendlyError(err) || "Could not analyze the content");
     }
     setLoading(false);
   }
@@ -560,18 +560,18 @@ Sois strict dans la notation. Tout en francais.`,
     <div className="rounded-xl border border-border/30 bg-card p-5">
       <div className="flex items-center gap-2 mb-3">
         <BarChart3 className="w-4 h-4 text-emerald-400" />
-        <h3 className="text-sm font-semibold">Analyseur viral</h3>
+        <h3 className="text-sm font-semibold">Viral Analyzer</h3>
       </div>
 
       <Textarea
         value={input}
         onChange={(e) => setInput(e.target.value)}
-        placeholder="Colle un post a analyser..."
+        placeholder="Paste a post to analyze..."
         disabled={loading}
         className="bg-accent/30 border-border/30 text-sm min-h-[120px] resize-none mb-2"
       />
       <Button onClick={handleAnalyze} disabled={loading || !input.trim()} className="w-full h-10 gap-2 text-xs font-semibold mb-4">
-        {loading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Analyse...</> : <><BarChart3 className="w-3.5 h-3.5" /> Analyser</>}
+        {loading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Analyzing...</> : <><BarChart3 className="w-3.5 h-3.5" /> Analyze</>}
       </Button>
 
       {analysis && (
@@ -579,7 +579,7 @@ Sois strict dans la notation. Tout en francais.`,
           {/* Scores */}
           <div className="grid grid-cols-3 gap-2">
             {[
-              { label: "Accroche", value: analysis.hookScore },
+              { label: "Hook", value: analysis.hookScore },
               { label: "Structure", value: analysis.structureScore },
               { label: "CTA", value: analysis.ctaScore },
             ].map((s) => (
@@ -595,7 +595,7 @@ Sois strict dans la notation. Tout en francais.`,
 
           {/* Strengths */}
           <div>
-            <p className="text-[10px] font-semibold text-emerald-400 uppercase mb-1.5">Points forts</p>
+            <p className="text-[10px] font-semibold text-emerald-400 uppercase mb-1.5">Strengths</p>
             <ul className="space-y-1">
               {analysis.strengths.map((s, i) => (
                 <li key={i} className="text-[12px] text-foreground/85 flex items-start gap-1.5">
@@ -607,7 +607,7 @@ Sois strict dans la notation. Tout en francais.`,
 
           {/* Weaknesses */}
           <div>
-            <p className="text-[10px] font-semibold text-red-400 uppercase mb-1.5">Points faibles</p>
+            <p className="text-[10px] font-semibold text-red-400 uppercase mb-1.5">Weaknesses</p>
             <ul className="space-y-1">
               {analysis.weaknesses.map((w, i) => (
                 <li key={i} className="text-[12px] text-foreground/85 flex items-start gap-1.5">
@@ -619,7 +619,7 @@ Sois strict dans la notation. Tout en francais.`,
 
           {/* Improvements */}
           <div>
-            <p className="text-[10px] font-semibold text-primary uppercase mb-1.5">Suggestions</p>
+            <p className="text-[10px] font-semibold text-primary uppercase mb-1.5">Improvements</p>
             <ul className="space-y-1">
               {analysis.improvements.map((imp, i) => (
                 <li key={i} className="text-[12px] text-foreground/85 flex items-start gap-1.5">
@@ -653,27 +653,27 @@ function TrendsRadar({ profileNiche, addNote }: { profileNiche?: string; addNote
     try {
       const fetched = await fetchTrends(niche, 8);
       if (fetched.length === 0) {
-        toast.error("Aucune tendance trouvee. Verifie ta connexion ou la configuration Tavily.");
+        toast.error("No trends found. Check your connection or the Tavily configuration.");
       } else {
         setTrends(fetched);
-        toast.success(`${fetched.length} tendances trouvees !`);
+        toast.success(`${fetched.length} trends found!`);
       }
     } catch (err) {
-      toast.error("Erreur lors du scan des tendances");
+      toast.error("Error scanning trends");
     }
     setLoading(false);
   }
 
   async function handleAddTrend(trend: Trend, idx: number) {
     setAddingIdx(idx);
-    const noteContent = `${trend.title}\n\nSource : ${trend.source} (${trend.url})\n\n${trend.snippet}`;
-    const { error } = await addNote(`Tendance : ${trend.title.slice(0, 100)}`, noteContent);
+    const noteContent = `${trend.title}\n\nSource: ${trend.source} (${trend.url})\n\n${trend.snippet}`;
+    const { error } = await addNote(`Trend: ${trend.title.slice(0, 100)}`, noteContent);
     setAddingIdx(null);
     if (error) {
-      toast.error(`Erreur : ${error}`);
+      toast.error(`Error: ${error}`);
     } else {
       setAddedSet((prev) => new Set(prev).add(idx));
-      toast.success("Tendance ajoutee aux sources !");
+      toast.success("Trend added to sources!");
     }
   }
 

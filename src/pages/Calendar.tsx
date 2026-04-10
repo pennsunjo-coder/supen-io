@@ -31,8 +31,8 @@ const PLATFORM_TEXT_COLORS: Record<string, string> = {
 };
 
 const PLATFORMS = ["Instagram", "TikTok", "LinkedIn", "Facebook", "X (Twitter)", "YouTube"];
-const DAYS_FR = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
-const MONTHS_FR = ["Janvier", "Fevrier", "Mars", "Avril", "Mai", "Juin", "Juillet", "Aout", "Septembre", "Octobre", "Novembre", "Decembre"];
+const DAYS_FR = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const MONTHS_FR = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 function getMonthDays(year: number, month: number): Date[] {
   const firstDay = new Date(year, month, 1);
@@ -114,7 +114,7 @@ const Calendar = () => {
 
   async function handleSchedule() {
     if (!content.trim()) {
-      toast.error("Le contenu ne peut pas etre vide");
+      toast.error("Content cannot be empty");
       return;
     }
     setSaving(true);
@@ -127,9 +127,9 @@ const Calendar = () => {
     });
     setSaving(false);
     if (error) {
-      toast.error(`Erreur : ${error}`);
+      toast.error(`Error: ${error}`);
     } else {
-      toast.success("Post planifie !");
+      toast.success("Post scheduled!");
       setShowModal(false);
     }
   }
@@ -156,9 +156,9 @@ const Calendar = () => {
                 <CalendarDays className="w-4 h-4 text-primary" />
               </div>
               <div>
-                <h1 className="text-lg font-bold">Calendrier de publication</h1>
+                <h1 className="text-lg font-bold">Publication Calendar</h1>
                 <p className="text-xs text-muted-foreground">
-                  {posts.length} post{posts.length > 1 ? "s" : ""} planifie{posts.length > 1 ? "s" : ""}
+                  {posts.length} post{posts.length > 1 ? "s" : ""} scheduled
                 </p>
               </div>
             </div>
@@ -169,17 +169,17 @@ const Calendar = () => {
                   onClick={() => setView("calendar")}
                   className={cn("px-2.5 py-1 rounded-md text-[11px] font-medium transition-all flex items-center gap-1.5", view === "calendar" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground")}
                 >
-                  <Grid3x3 className="w-3 h-3" /> Calendrier
+                  <Grid3x3 className="w-3 h-3" /> Calendar
                 </button>
                 <button
                   onClick={() => setView("list")}
                   className={cn("px-2.5 py-1 rounded-md text-[11px] font-medium transition-all flex items-center gap-1.5", view === "list" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground")}
                 >
-                  <List className="w-3 h-3" /> Liste
+                  <List className="w-3 h-3" /> List
                 </button>
               </div>
               <Button onClick={() => openSchedule()} size="sm" className="h-9 gap-1.5 text-xs font-semibold">
-                <Plus className="w-3.5 h-3.5" /> Planifier
+                <Plus className="w-3.5 h-3.5" /> Schedule
               </Button>
             </div>
           </div>
@@ -264,18 +264,18 @@ const Calendar = () => {
               {/* Sidebar: selected day details */}
               <div className="rounded-xl border border-border/30 bg-card p-4 h-fit">
                 <h3 className="text-xs font-bold mb-1">
-                  {selectedDate.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}
+                  {selectedDate.toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long" })}
                 </h3>
                 <p className="text-[10px] text-muted-foreground mb-4">
-                  {selectedDayPosts.length} post{selectedDayPosts.length > 1 ? "s" : ""} planifie{selectedDayPosts.length > 1 ? "s" : ""}
+                  {selectedDayPosts.length} post{selectedDayPosts.length > 1 ? "s" : ""} scheduled
                 </p>
 
                 {selectedDayPosts.length === 0 ? (
                   <div className="text-center py-8">
                     <CalendarDays className="w-6 h-6 text-muted-foreground/30 mx-auto mb-2" />
-                    <p className="text-[11px] text-muted-foreground/60 mb-3">Aucun post planifie ce jour</p>
+                    <p className="text-[11px] text-muted-foreground/60 mb-3">No posts scheduled for this day</p>
                     <Button onClick={() => openSchedule(selectedDate)} size="sm" variant="outline" className="h-8 text-[11px] gap-1">
-                      <Plus className="w-3 h-3" /> Planifier
+                      <Plus className="w-3 h-3" /> Schedule
                     </Button>
                   </div>
                 ) : (
@@ -284,7 +284,7 @@ const Calendar = () => {
                       <PostCard key={post.id} post={post} onPublished={markPublished} onCancel={cancelPost} onDelete={deletePost} />
                     ))}
                     <Button onClick={() => openSchedule(selectedDate)} size="sm" variant="outline" className="w-full h-8 text-[11px] gap-1 mt-2">
-                      <Plus className="w-3 h-3" /> Ajouter un post
+                      <Plus className="w-3 h-3" /> Add a post
                     </Button>
                   </div>
                 )}
@@ -296,10 +296,10 @@ const Calendar = () => {
               {upcomingPosts.length === 0 ? (
                 <div className="rounded-xl border border-border/30 bg-card p-8 text-center">
                   <CalendarDays className="w-8 h-8 text-muted-foreground/30 mx-auto mb-3" />
-                  <p className="text-sm font-medium text-muted-foreground mb-1">Aucun post a venir</p>
-                  <p className="text-xs text-muted-foreground/60 mb-4">Planifie ton premier post pour commencer.</p>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">No upcoming posts</p>
+                  <p className="text-xs text-muted-foreground/60 mb-4">Schedule your first post to get started.</p>
                   <Button onClick={() => openSchedule()} size="sm" className="gap-1.5">
-                    <Plus className="w-3.5 h-3.5" /> Planifier un post
+                    <Plus className="w-3.5 h-3.5" /> Schedule a post
                   </Button>
                 </div>
               ) : (
@@ -332,7 +332,7 @@ const Calendar = () => {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-5">
-                <h3 className="text-sm font-bold">Planifier un post</h3>
+                <h3 className="text-sm font-bold">Schedule a Post</h3>
                 <button onClick={() => setShowModal(false)} className="text-muted-foreground hover:text-foreground">
                   <X className="w-4 h-4" />
                 </button>
@@ -340,17 +340,17 @@ const Calendar = () => {
 
               <div className="space-y-3">
                 <div>
-                  <label className="text-[11px] font-medium text-muted-foreground mb-1.5 block">Contenu</label>
+                  <label className="text-[11px] font-medium text-muted-foreground mb-1.5 block">Content</label>
                   <Textarea
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
-                    placeholder="Le contenu de ton post..."
+                    placeholder="Your post content..."
                     className="bg-accent/30 border-border/30 text-sm min-h-[100px] resize-none"
                   />
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-medium text-muted-foreground mb-1.5 block">Plateforme</label>
+                  <label className="text-[11px] font-medium text-muted-foreground mb-1.5 block">Platform</label>
                   <select
                     value={platform}
                     onChange={(e) => setPlatform(e.target.value)}
@@ -371,7 +371,7 @@ const Calendar = () => {
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] font-medium text-muted-foreground mb-1.5 block">Heure</label>
+                    <label className="text-[11px] font-medium text-muted-foreground mb-1.5 block">Time</label>
                     <input
                       type="time"
                       value={scheduleTime}
@@ -382,11 +382,11 @@ const Calendar = () => {
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-medium text-muted-foreground mb-1.5 block">Notes (optionnel)</label>
+                  <label className="text-[11px] font-medium text-muted-foreground mb-1.5 block">Notes (optional)</label>
                   <input
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Ex: Tester l'accroche, ajouter des hashtags..."
+                    placeholder="E.g., Test the hook, add hashtags..."
                     className="w-full bg-accent/30 border border-border/30 rounded-lg h-10 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary/30"
                   />
                 </div>
@@ -394,11 +394,11 @@ const Calendar = () => {
 
               <div className="flex gap-2 mt-5">
                 <Button variant="outline" onClick={() => setShowModal(false)} className="flex-1 h-10 text-xs">
-                  Annuler
+                  Cancel
                 </Button>
                 <Button onClick={handleSchedule} disabled={saving || !content.trim()} className="flex-1 h-10 gap-1.5 text-xs font-semibold">
                   {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                  Planifier
+                  Schedule
                 </Button>
               </div>
             </motion.div>
@@ -424,8 +424,8 @@ function PostCard({
   const textColor = PLATFORM_TEXT_COLORS[post.platform] || "text-muted-foreground";
   const time = new Date(post.scheduled_at);
   const isPast = time < new Date();
-  const timeStr = time.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
-  const dateStr = time.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
+  const timeStr = time.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+  const dateStr = time.toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short" });
 
   return (
     <div className={cn("rounded-lg border border-border/20 bg-accent/10 p-2.5", post.status === "published" && "opacity-60")}>
@@ -439,7 +439,7 @@ function PostCard({
               {expanded ? `${dateStr} · ${timeStr}` : timeStr}
             </span>
             {post.status === "published" && (
-              <span className="text-[8px] text-emerald-400/80 ml-auto">Publie</span>
+              <span className="text-[8px] text-emerald-400/80 ml-auto">Published</span>
             )}
           </div>
           <p className={cn("text-[11px] text-foreground/85 leading-snug", !expanded && "line-clamp-2")}>{post.content}</p>
@@ -452,11 +452,11 @@ function PostCard({
         <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border/15">
           {isPast && (
             <button onClick={() => onPublished(post.id)} className="text-[9px] text-emerald-400 hover:text-emerald-300 px-1.5 py-0.5 rounded hover:bg-emerald-500/10 transition-all flex items-center gap-1">
-              <Check className="w-2.5 h-2.5" /> Marquer publie
+              <Check className="w-2.5 h-2.5" /> Mark as published
             </button>
           )}
           <button onClick={() => onCancel(post.id)} className="text-[9px] text-muted-foreground/60 hover:text-foreground px-1.5 py-0.5 rounded hover:bg-accent/50 transition-all">
-            Annuler
+            Cancel
           </button>
           <button onClick={() => onDelete(post.id)} className="text-[9px] text-muted-foreground/60 hover:text-red-400 px-1.5 py-0.5 rounded hover:bg-red-500/10 transition-all ml-auto">
             <Trash2 className="w-2.5 h-2.5" />

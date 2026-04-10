@@ -20,17 +20,17 @@ import type { DistributionItem } from "@/hooks/use-admin-stats";
 type Section = "overview" | "users" | "contents" | "analytics" | "revenue";
 
 const NAV_ITEMS: { id: Section; label: string; icon: typeof LayoutDashboard }[] = [
-  { id: "overview", label: "Vue d'ensemble", icon: LayoutDashboard },
-  { id: "users", label: "Utilisateurs", icon: Users },
-  { id: "contents", label: "Contenus générés", icon: FileText },
+  { id: "overview", label: "Overview", icon: LayoutDashboard },
+  { id: "users", label: "Users", icon: Users },
+  { id: "contents", label: "Generated Content", icon: FileText },
   { id: "analytics", label: "Analytics", icon: BarChart3 },
-  { id: "revenue", label: "Revenus", icon: CreditCard },
+  { id: "revenue", label: "Revenue", icon: CreditCard },
 ];
 
 /* ─── Helpers ─── */
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("fr-FR", {
+  return new Date(iso).toLocaleDateString("en-US", {
     day: "2-digit", month: "short", year: "numeric",
   });
 }
@@ -76,7 +76,7 @@ export default function Admin() {
           className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          Retour au dashboard
+          Back to dashboard
         </button>
         <div className="ml-auto flex items-center gap-2">
           <span className="text-[10px] font-mono bg-red-500/15 text-red-400 px-2 py-0.5 rounded-full">ADMIN</span>
@@ -113,9 +113,9 @@ export default function Admin() {
           {section === "overview" && (
             <>
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold">Vue d'ensemble</h2>
+                <h2 className="text-lg font-bold">Overview</h2>
                 <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs" onClick={refetchStats} disabled={statsLoading}>
-                  <RefreshCw className={cn("w-3 h-3", statsLoading && "animate-spin")} /> Actualiser
+                  <RefreshCw className={cn("w-3 h-3", statsLoading && "animate-spin")} /> Refresh
                 </Button>
               </div>
 
@@ -127,23 +127,23 @@ export default function Admin() {
                 <>
                   {/* Row 1 — Main stats */}
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                    <StatCard icon={Users} label="Inscrits" value={stats.totalUsers} />
-                    <StatCard icon={Zap} label="Actifs (7j)" value={stats.activeUsers} accent />
-                    <StatCard icon={FileText} label="Contenus total" value={stats.totalContent} />
-                    <StatCard icon={Calendar} label="Ce mois" value={stats.monthContent} />
+                    <StatCard icon={Users} label="Registered" value={stats.totalUsers} />
+                    <StatCard icon={Zap} label="Active (7d)" value={stats.activeUsers} accent />
+                    <StatCard icon={FileText} label="Total Content" value={stats.totalContent} />
+                    <StatCard icon={Calendar} label="This Month" value={stats.monthContent} />
                   </div>
 
                   {/* Row 2 — Revenue + extras */}
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                    <StatCard icon={DollarSign} label="Revenus total" value={0} suffix="$" muted />
-                    <StatCard icon={Crown} label="Abonnés Premium" value={0} muted />
-                    <StatCard icon={TrendingUp} label="Contenus aujourd'hui" value={stats.todayContent} accent />
-                    <StatCard icon={BarChart3} label="Score viral moy." value={stats.avgViral} suffix="/100" />
+                    <StatCard icon={DollarSign} label="Total Revenue" value={0} suffix="$" muted />
+                    <StatCard icon={Crown} label="Premium Subscribers" value={0} muted />
+                    <StatCard icon={TrendingUp} label="Content Today" value={stats.todayContent} accent />
+                    <StatCard icon={BarChart3} label="Avg Viral Score" value={stats.avgViral} suffix="/100" />
                   </div>
 
                   {/* 30-day chart */}
                   <div className="bg-card border border-border/20 rounded-xl p-5">
-                    <h3 className="text-sm font-semibold mb-4">Activité — 30 derniers jours</h3>
+                    <h3 className="text-sm font-semibold mb-4">Activity — Last 30 Days</h3>
                     <ResponsiveContainer width="100%" height={180}>
                       <BarChart data={stats.dailyCounts}>
                         <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 14% 18%)" />
@@ -165,9 +165,9 @@ export default function Admin() {
                             borderRadius: 8,
                             fontSize: 11,
                           }}
-                          labelFormatter={(v) => `Date : ${v}`}
+                          labelFormatter={(v) => `Date: ${v}`}
                         />
-                        <Bar dataKey="count" name="Contenus" fill="hsl(174 65% 40%)" radius={[3, 3, 0, 0]} />
+                        <Bar dataKey="count" name="Content" fill="hsl(174 65% 40%)" radius={[3, 3, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -175,20 +175,20 @@ export default function Admin() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Niche distribution */}
                     <div className="bg-card border border-border/20 rounded-xl p-5">
-                      <h3 className="text-sm font-semibold mb-3">Répartition par niche</h3>
+                      <h3 className="text-sm font-semibold mb-3">Distribution by Niche</h3>
                       <DistributionList items={stats.nicheDistribution} total={stats.totalUsers} colors={NICHE_COLORS} />
                     </div>
 
                     {/* Platform distribution */}
                     <div className="bg-card border border-border/20 rounded-xl p-5">
-                      <h3 className="text-sm font-semibold mb-3">Répartition par plateforme</h3>
+                      <h3 className="text-sm font-semibold mb-3">Distribution by Platform</h3>
                       <DistributionList items={stats.platformDistribution} total={stats.totalContent} colors={NICHE_COLORS} />
                     </div>
                   </div>
 
                   {/* Recent users table */}
                   <div className="bg-card border border-border/20 rounded-xl p-5">
-                    <h3 className="text-sm font-semibold mb-3">Derniers inscrits</h3>
+                    <h3 className="text-sm font-semibold mb-3">Latest Signups</h3>
                     <div className="overflow-x-auto">
                       <table className="w-full text-xs">
                         <thead>
@@ -219,15 +219,15 @@ export default function Admin() {
 
                   {/* Recent content table */}
                   <div className="bg-card border border-border/20 rounded-xl p-5">
-                    <h3 className="text-sm font-semibold mb-3">Derniers contenus</h3>
+                    <h3 className="text-sm font-semibold mb-3">Latest Content</h3>
                     <div className="overflow-x-auto">
                       <table className="w-full text-xs">
                         <thead>
                           <tr className="text-muted-foreground border-b border-border/20">
-                            <th className="text-left py-2 pr-3 font-medium">Plateforme</th>
+                            <th className="text-left py-2 pr-3 font-medium">Platform</th>
                             <th className="text-left py-2 pr-3 font-medium">Format</th>
                             <th className="text-left py-2 pr-3 font-medium">Score</th>
-                            <th className="text-left py-2 pr-3 font-medium">Aperçu</th>
+                            <th className="text-left py-2 pr-3 font-medium">Preview</th>
                             <th className="text-left py-2 font-medium">Date</th>
                           </tr>
                         </thead>
@@ -256,14 +256,14 @@ export default function Admin() {
           {section === "users" && (
             <>
               <div className="flex items-center justify-between gap-4">
-                <h2 className="text-lg font-bold shrink-0">Utilisateurs ({filteredUsers.length})</h2>
+                <h2 className="text-lg font-bold shrink-0">Users ({filteredUsers.length})</h2>
                 <div className="flex items-center gap-2 flex-1 max-w-sm">
                   <div className="relative flex-1">
                     <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                     <Input
                       value={userSearch}
                       onChange={(e) => setUserSearch(e.target.value)}
-                      placeholder="Rechercher par prénom, niche, ID..."
+                      placeholder="Search by name, niche, ID..."
                       className="h-8 text-xs pl-8"
                     />
                   </div>
@@ -287,8 +287,8 @@ export default function Admin() {
                         <th className="text-left py-2 pr-3 font-medium">Niche</th>
                         <th className="text-left py-2 pr-3 font-medium">Platforms</th>
                         <th className="text-left py-2 pr-3 font-medium">Onboarding</th>
-                        <th className="text-left py-2 pr-3 font-medium">Contenus</th>
-                        <th className="text-left py-2 font-medium">Inscription</th>
+                        <th className="text-left py-2 pr-3 font-medium">Content</th>
+                        <th className="text-left py-2 font-medium">Signup</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -307,7 +307,7 @@ export default function Admin() {
                   </table>
                   {filteredUsers.length === 0 && (
                     <p className="text-center text-muted-foreground text-xs py-8">
-                      {userSearch ? "Aucun résultat" : "Aucun utilisateur"}
+                      {userSearch ? "No results" : "No users"}
                     </p>
                   )}
                 </div>
@@ -321,7 +321,7 @@ export default function Admin() {
           {section === "contents" && (
             <>
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold">Contenus générés</h2>
+                <h2 className="text-lg font-bold">Generated Content</h2>
                 <div className="flex items-center gap-2">
                   <Button
                     variant="outline" size="sm" className="h-8 w-8 p-0"
@@ -351,10 +351,10 @@ export default function Admin() {
                     <thead>
                       <tr className="text-muted-foreground border-b border-border/20">
                         <th className="text-left py-2 pr-3 font-medium">User</th>
-                        <th className="text-left py-2 pr-3 font-medium">Plateforme</th>
+                        <th className="text-left py-2 pr-3 font-medium">Platform</th>
                         <th className="text-left py-2 pr-3 font-medium">Format</th>
                         <th className="text-left py-2 pr-3 font-medium">Score</th>
-                        <th className="text-left py-2 pr-3 font-medium">Aperçu</th>
+                        <th className="text-left py-2 pr-3 font-medium">Preview</th>
                         <th className="text-left py-2 font-medium">Date</th>
                       </tr>
                     </thead>
@@ -384,7 +384,7 @@ export default function Admin() {
           {/* ═══════════════════════════════════════════════ */}
           {section === "analytics" && (
             <>
-              <h2 className="text-lg font-bold">Analytics (30 derniers jours)</h2>
+              <h2 className="text-lg font-bold">Analytics (Last 30 Days)</h2>
 
               {statsLoading && !stats ? (
                 <div className="flex justify-center py-16">
@@ -394,7 +394,7 @@ export default function Admin() {
                 <>
                   {/* BarChart */}
                   <div className="bg-card border border-border/20 rounded-xl p-5">
-                    <h3 className="text-sm font-semibold mb-4">Contenus par jour</h3>
+                    <h3 className="text-sm font-semibold mb-4">Content per Day</h3>
                     <ResponsiveContainer width="100%" height={220}>
                       <BarChart data={stats.dailyCounts}>
                         <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 14% 18%)" />
@@ -412,9 +412,9 @@ export default function Admin() {
                             borderRadius: 8,
                             fontSize: 11,
                           }}
-                          labelFormatter={(v) => `Date : ${v}`}
+                          labelFormatter={(v) => `Date: ${v}`}
                         />
-                        <Bar dataKey="count" name="Contenus" fill="hsl(174 65% 40%)" radius={[3, 3, 0, 0]} />
+                        <Bar dataKey="count" name="Content" fill="hsl(174 65% 40%)" radius={[3, 3, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -422,19 +422,19 @@ export default function Admin() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* Top platforms */}
                     <div className="bg-card border border-border/20 rounded-xl p-5">
-                      <h3 className="text-sm font-semibold mb-3">Top plateformes</h3>
+                      <h3 className="text-sm font-semibold mb-3">Top Platforms</h3>
                       <DistributionBars items={stats.platformDistribution} />
                     </div>
 
                     {/* Top formats */}
                     <div className="bg-card border border-border/20 rounded-xl p-5">
-                      <h3 className="text-sm font-semibold mb-3">Top formats</h3>
+                      <h3 className="text-sm font-semibold mb-3">Top Formats</h3>
                       <DistributionBars items={stats.formatDistribution} />
                     </div>
 
                     {/* Avg viral score */}
                     <div className="bg-card border border-border/20 rounded-xl p-5">
-                      <h3 className="text-sm font-semibold mb-3">Score viral moyen</h3>
+                      <h3 className="text-sm font-semibold mb-3">Average Viral Score</h3>
                       <div className="flex items-baseline gap-2 mt-4">
                         <span className="text-4xl font-bold text-primary">{stats.avgViral}</span>
                         <span className="text-sm text-muted-foreground">/ 100</span>
@@ -457,16 +457,16 @@ export default function Admin() {
           {/* ═══════════════════════════════════════════════ */}
           {section === "revenue" && (
             <>
-              <h2 className="text-lg font-bold">Revenus</h2>
+              <h2 className="text-lg font-bold">Revenue</h2>
 
               <div className="bg-card border border-border/20 rounded-xl p-8 text-center">
                 <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
                   <CreditCard className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="text-lg font-bold mb-2">Intégration Stripe à venir</h3>
+                <h3 className="text-lg font-bold mb-2">Stripe Integration Coming Soon</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed max-w-md mx-auto mb-6">
-                  Connecte Stripe pour voir tes revenus, abonnés Premium et Business en temps réel.
-                  Les plans Free, Pro ($10/mois) et Business ($29/mois) seront trackés ici.
+                  Connect Stripe to view your revenue, Premium and Business subscribers in real time.
+                  Free, Pro ($10/mo) and Business ($29/mo) plans will be tracked here.
                 </p>
                 <div className="grid grid-cols-3 gap-4 max-w-sm mx-auto mb-6">
                   <div className="bg-accent/30 rounded-lg p-3">
@@ -475,15 +475,15 @@ export default function Admin() {
                   </div>
                   <div className="bg-accent/30 rounded-lg p-3">
                     <p className="text-xl font-bold text-muted-foreground">0</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">Abonnés Pro</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Pro Subscribers</p>
                   </div>
                   <div className="bg-accent/30 rounded-lg p-3">
                     <p className="text-xl font-bold text-muted-foreground">0</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">Abonnés Business</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Business Subscribers</p>
                   </div>
                 </div>
                 <Button className="h-10 gap-2 text-sm" disabled>
-                  <Crown className="w-4 h-4" /> Configurer Stripe
+                  <Crown className="w-4 h-4" /> Configure Stripe
                 </Button>
               </div>
             </>
@@ -515,9 +515,9 @@ function StatCard({ icon: Icon, label, value, suffix, accent, muted }: {
         <Icon className="w-3.5 h-3.5 text-muted-foreground" />
       </div>
       <p className={cn("text-2xl font-bold", accent && "text-primary")}>
-        {suffix === "$" && "$"}{value.toLocaleString("fr-FR")}{suffix && suffix !== "$" && <span className="text-sm font-normal text-muted-foreground ml-1">{suffix}</span>}
+        {suffix === "$" && "$"}{value.toLocaleString("en-US")}{suffix && suffix !== "$" && <span className="text-sm font-normal text-muted-foreground ml-1">{suffix}</span>}
       </p>
-      {muted && <p className="text-[10px] text-muted-foreground mt-1">Bientôt disponible</p>}
+      {muted && <p className="text-[10px] text-muted-foreground mt-1">Coming Soon</p>}
     </div>
   );
 }
@@ -528,7 +528,7 @@ function Badge({ ok }: { ok: boolean }) {
       "px-1.5 py-0.5 rounded text-[10px] font-medium",
       ok ? "bg-green-500/15 text-green-400" : "bg-orange-500/15 text-orange-400",
     )}>
-      {ok ? "Complété" : "En cours"}
+      {ok ? "Completed" : "In Progress"}
     </span>
   );
 }
@@ -548,7 +548,7 @@ function ViralBadge({ score }: { score: number | null }) {
 }
 
 function DistributionList({ items, total, colors }: { items: DistributionItem[]; total: number; colors: string[] }) {
-  if (items.length === 0) return <p className="text-xs text-muted-foreground">Aucune donnée</p>;
+  if (items.length === 0) return <p className="text-xs text-muted-foreground">No data</p>;
   return (
     <div className="space-y-2.5">
       {items.slice(0, 8).map((item, i) => {
@@ -570,7 +570,7 @@ function DistributionList({ items, total, colors }: { items: DistributionItem[];
 }
 
 function DistributionBars({ items }: { items: DistributionItem[] }) {
-  if (items.length === 0) return <p className="text-xs text-muted-foreground">Aucune donnée</p>;
+  if (items.length === 0) return <p className="text-xs text-muted-foreground">No data</p>;
   const max = Math.max(...items.map((i) => i.count), 1);
   return (
     <div className="space-y-2.5">

@@ -400,9 +400,9 @@ body{background:#FFFFFF;font-family:'Inter',sans-serif;display:flex;flex-directi
 </style></head><body>
 <div class="header"><div class="title">{{TITLE}}</div><div class="badge">{{BADGE}}</div></div>
 <div class="body">
-<div class="card c1"><div class="card-label">Mauvais</div><div class="card-title">{{P1_TITLE}}</div><div class="card-body">{{P1_BODY}}</div></div>
-<div class="card c2"><div class="card-label">Acceptable</div><div class="card-title">{{P2_TITLE}}</div><div class="card-body">{{P2_BODY}}</div></div>
-<div class="card c3"><div class="card-label">Excellence</div><div class="card-title">{{P3_TITLE}}</div><div class="card-body">{{P3_BODY}}</div></div>
+<div class="card c1"><div class="card-label">Bad</div><div class="card-title">{{P1_TITLE}}</div><div class="card-body">{{P1_BODY}}</div></div>
+<div class="card c2"><div class="card-label">OK</div><div class="card-title">{{P2_TITLE}}</div><div class="card-body">{{P2_BODY}}</div></div>
+<div class="card c3"><div class="card-label">Excellent</div><div class="card-title">{{P3_TITLE}}</div><div class="card-body">{{P3_BODY}}</div></div>
 </div>
 <div class="footer">{{FOOTER}}</div>
 </body></html>`;
@@ -441,9 +441,9 @@ body{background:#FFFFFF;font-family:'Inter',sans-serif;display:flex;flex-directi
 </style></head><body>
 <div class="header"><div class="title">{{TITLE}}</div><div class="badge">{{BADGE}}</div></div>
 <div class="body">
-<div class="card c1"><div class="card-label">Conseil 1</div><div class="card-title">{{P1_TITLE}}</div><div class="card-body">{{P1_BODY}}</div></div>
-<div class="card c2"><div class="card-label">Conseil 2</div><div class="card-title">{{P2_TITLE}}</div><div class="card-body">{{P2_BODY}}</div></div>
-<div class="card c3"><div class="card-label">Conseil 3</div><div class="card-title">{{P3_TITLE}}</div><div class="card-body">{{P3_BODY}}</div></div>
+<div class="card c1"><div class="card-label">Tip 1</div><div class="card-title">{{P1_TITLE}}</div><div class="card-body">{{P1_BODY}}</div></div>
+<div class="card c2"><div class="card-label">Tip 2</div><div class="card-title">{{P2_TITLE}}</div><div class="card-body">{{P2_BODY}}</div></div>
+<div class="card c3"><div class="card-label">Tip 3</div><div class="card-title">{{P3_TITLE}}</div><div class="card-body">{{P3_BODY}}</div></div>
 </div>
 <div class="footer">{{FOOTER}}</div>
 </body></html>`;
@@ -482,9 +482,9 @@ body{background:#FFFFFF;font-family:'Inter',sans-serif;display:flex;flex-directi
 </style></head><body>
 <div class="header"><div class="title">{{TITLE}}</div><div class="badge">{{BADGE}}</div></div>
 <div class="body">
-<div class="card c1"><div class="card-label"><span class="step-num">1</span>Étape</div><div class="card-title">{{P1_TITLE}}</div><div class="card-body">{{P1_BODY}}</div></div>
-<div class="card c2"><div class="card-label"><span class="step-num">2</span>Étape</div><div class="card-title">{{P2_TITLE}}</div><div class="card-body">{{P2_BODY}}</div></div>
-<div class="card c3"><div class="card-label"><span class="step-num">3</span>Étape</div><div class="card-title">{{P3_TITLE}}</div><div class="card-body">{{P3_BODY}}</div></div>
+<div class="card c1"><div class="card-label"><span class="step-num">1</span>Step</div><div class="card-title">{{P1_TITLE}}</div><div class="card-body">{{P1_BODY}}</div></div>
+<div class="card c2"><div class="card-label"><span class="step-num">2</span>Step</div><div class="card-title">{{P2_TITLE}}</div><div class="card-body">{{P2_BODY}}</div></div>
+<div class="card c3"><div class="card-label"><span class="step-num">3</span>Step</div><div class="card-title">{{P3_TITLE}}</div><div class="card-body">{{P3_BODY}}</div></div>
 </div>
 <div class="footer">{{FOOTER}}</div>
 </body></html>`;

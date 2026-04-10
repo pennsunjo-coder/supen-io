@@ -80,13 +80,13 @@ const sourceModes: { id: SourceMode; label: string; placeholder: string; icon: R
 
 /* ─── Angles & scores ─── */
 
-const ANGLE_LABELS = ["Éducatif", "Storytelling", "Provocation", "Pratique", "Débat"] as const;
+const ANGLE_LABELS = ["Educational", "Storytelling", "Provocative", "Practical", "Debate"] as const;
 const ANGLE_COLORS: Record<string, string> = {
-  "Éducatif": "bg-blue-500/15 text-blue-400",
+  "Educational": "bg-blue-500/15 text-blue-400",
   "Storytelling": "bg-purple-500/15 text-purple-400",
-  "Provocation": "bg-red-500/15 text-red-400",
-  "Pratique": "bg-emerald-500/15 text-emerald-400",
-  "Débat": "bg-amber-500/15 text-amber-400",
+  "Provocative": "bg-red-500/15 text-red-400",
+  "Practical": "bg-emerald-500/15 text-emerald-400",
+  "Debate": "bg-amber-500/15 text-amber-400",
 };
 
 function wordCount(text: string): number {
