@@ -152,6 +152,7 @@ export function useDashboard() {
         .from("generated_content")
         .select("id, platform, format, content, viral_score, image_prompt, created_at")
         .eq("user_id", user.id)
+        .neq("format", "Infographic")
         .order("created_at", { ascending: false })
         .limit(25);
 
@@ -161,6 +162,7 @@ export function useDashboard() {
           .from("generated_content")
           .select("id, platform, format, content, created_at")
           .eq("user_id", user.id)
+          .neq("format", "Infographic")
           .order("created_at", { ascending: false })
           .limit(25);
         if (topErr2) {

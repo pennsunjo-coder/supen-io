@@ -64,6 +64,7 @@ export function useHistory() {
         .from("generated_content")
         .select("*")
         .eq("user_id", user.id)
+        .neq("format", "Infographic")
         .order("created_at", { ascending: false })
         .limit(200);
 
