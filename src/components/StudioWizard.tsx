@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import {
   Sparkles, Copy, Check, RefreshCw, ChevronLeft, ArrowRight,
-  FileText, Lightbulb, Hash, ImagePlus, Wand2,
+  FileText, Lightbulb, Hash, ImagePlus, Wand2, Download, Loader2,
   Shield, Layers, Globe, ClipboardList, Save, ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -534,12 +534,11 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
   }
 
   const [imagePanel, setImagePanel] = useState<number | null>(null);
-  const [imagePrompt, setImagePrompt] = useState("");
+  const [imageGenerating, setImageGenerating] = useState<number | null>(null);
+  const [generatedImages, setGeneratedImages] = useState<Record<number, string>>({});
   const [infraPanel, setInfraPanel] = useState<number | null>(null);
   const [infraContent, setInfraContent] = useState("");
-  const [genImage, setGenImage] = useState(false);
   const [genInfra, setGenInfra] = useState(false);
-  const [promptCopied, setPromptCopied] = useState(false);
   const [infraCopied, setInfraCopied] = useState(false);
 
   function handleCopy(idx: number) {
@@ -591,26 +590,40 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
     } catch { /* non-critical */ }
   }
 
-  async function handleImagePrompt(idx: number) {
-    if (imagePanel === idx && imagePrompt) { setImagePanel(null); return; }
+  async function handleGenerateImage(idx: number, forceRegenerate = false) {
+    if (imageGenerating !== null) return;
+
+    // If already generated and not forcing regen → toggle panel visibility
+    if (generatedImages[idx] && !forceRegenerate) {
+      setImagePanel(imagePanel === idx ? null : idx);
+      return;
+    }
+
+    setImageGenerating(idx);
     setImagePanel(idx);
     setInfraPanel(null);
-    setImagePrompt("");
-    setGenImage(true);
+
     try {
-      const response = await anthropic.messages.create({
-        model: CLAUDE_MODEL,
-        max_tokens: 300,
-        system: `Tu es expert en prompts pour générateurs d'images. Génère un prompt en anglais, optimisé pour ${selectedPlatform?.name || "les réseaux sociaux"}, qui illustre visuellement ce contenu. Format : style photographique + sujet + ambiance + couleurs + composition. Max 100 mots. Réponds UNIQUEMENT avec le prompt.`,
-        messages: [{ role: "user", content: variations[idx].content.slice(0, 600) }],
-      });
-      setImagePrompt(response.content.filter((b) => b.type === "text").map((b) => b.text).join(""));
-    } catch (err) {
-      console.error("Image prompt error:", err);
-      toast.error("Erreur lors de la generation du prompt image");
-      setGenImage(false);
+      const { generateContentImage } = await import("@/lib/image-generator");
+      const base64 = await generateContentImage(
+        variations[idx].content,
+        selectedPlatform?.name || "Instagram",
+        profile?.niche,
+      );
+
+      if (base64) {
+        setGeneratedImages((prev) => ({ ...prev, [idx]: base64 }));
+        toast.success("Image générée !");
+      } else {
+        toast.error("Impossible de générer l'image. Réessaie.");
+        setImagePanel(null);
+      }
+    } catch {
+      toast.error("Erreur lors de la génération d'image");
+      setImagePanel(null);
     }
-    setGenImage(false);
+
+    setImageGenerating(null);
   }
 
   async function handleInfraPrompt(idx: number) {
@@ -1073,8 +1086,9 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                               {isHumanizing ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
                               Humanize
                             </Button>
-                            <Button variant="ghost" size="sm" className={cn("h-7 text-[11px] gap-1.5 px-2.5", imagePanel === idx ? "text-primary" : "text-muted-foreground hover:text-foreground")} onClick={(e) => { e.stopPropagation(); handleImagePrompt(idx); }}>
-                              <ImagePlus className="w-3 h-3" /> Image
+                            <Button variant="ghost" size="sm" className={cn("h-7 text-[11px] gap-1.5 px-2.5", imagePanel === idx ? "text-primary" : generatedImages[idx] ? "text-emerald-400" : "text-muted-foreground hover:text-foreground")} disabled={imageGenerating !== null && imageGenerating !== idx} onClick={(e) => { e.stopPropagation(); handleGenerateImage(idx); }}>
+                              {imageGenerating === idx ? <Loader2 className="w-3 h-3 animate-spin" /> : <ImagePlus className="w-3 h-3" />}
+                              {generatedImages[idx] ? (imagePanel === idx ? "Masquer" : "Voir image") : imageGenerating === idx ? "Génération..." : "Image"}
                             </Button>
                             <Button variant="ghost" size="sm" className={cn("h-7 text-[11px] gap-1.5 px-2.5", infraPanel === idx ? "text-primary" : "text-muted-foreground hover:text-foreground")} onClick={(e) => { e.stopPropagation(); handleInfraPrompt(idx); }}>
                               <Layers className="w-3 h-3" /> Infographic
@@ -1091,21 +1105,24 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
                         {imagePanel === idx && isSelected && (
                           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.15 }}>
                             <div className="mt-1 p-3 rounded-lg bg-accent/20 border border-border/15">
-                              <p className="text-[10px] font-medium text-muted-foreground/70 mb-2">Image prompt</p>
-                              {genImage ? (
-                                <div className="flex items-center gap-2 py-2"><RefreshCw className="w-3 h-3 animate-spin text-muted-foreground" /><span className="text-[10px] text-muted-foreground">Generating...</span></div>
-                              ) : (
+                              {imageGenerating === idx ? (
+                                <div className="flex items-center justify-center gap-2 py-8"><Loader2 className="w-4 h-4 animate-spin text-primary" /><span className="text-[11px] text-muted-foreground">Génération de l'image en cours…</span></div>
+                              ) : generatedImages[idx] ? (
                                 <>
-                                  <textarea value={imagePrompt} onChange={(e) => setImagePrompt(e.target.value)} className="w-full bg-background/50 border border-border/20 rounded-md px-2.5 py-2 text-[11px] min-h-[50px] resize-none focus:outline-none focus:ring-1 focus:ring-primary/30 mb-2" />
-                                  <div className="flex items-center gap-1.5">
-                                    <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 px-2 text-muted-foreground" onClick={() => { navigator.clipboard.writeText(imagePrompt); setPromptCopied(true); toast.success("Prompt copied. Paste it in Midjourney, DALL-E or Nano Banana."); setTimeout(() => setPromptCopied(false), 2000); }}>
-                                      {promptCopied ? <Check className="w-2.5 h-2.5 text-emerald-400" /> : <Copy className="w-2.5 h-2.5" />}
-                                      {promptCopied ? "Copied" : "Copy prompt"}
-                                    </Button>
+                                  <div className="relative rounded-xl overflow-hidden">
+                                    <img src={`data:image/jpeg;base64,${generatedImages[idx]}`} alt="Image générée" className="w-full rounded-xl" />
+                                    <div className="absolute bottom-2 right-2 flex gap-2">
+                                      <button onClick={(e) => { e.stopPropagation(); const link = document.createElement("a"); link.href = `data:image/jpeg;base64,${generatedImages[idx]}`; link.download = `supen-image-${Date.now()}.jpg`; link.click(); }} className="bg-black/60 backdrop-blur-sm text-white text-[11px] px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:bg-black/80 transition-all">
+                                        <Download className="w-3 h-3" /> Télécharger
+                                      </button>
+                                      <button onClick={(e) => { e.stopPropagation(); handleGenerateImage(idx, true); }} className="bg-black/60 backdrop-blur-sm text-white text-[11px] px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:bg-black/80 transition-all">
+                                        <RefreshCw className="w-3 h-3" /> Régénérer
+                                      </button>
+                                    </div>
                                   </div>
-                                  <p className="text-[9px] text-muted-foreground/40 mt-1">Paste this prompt in Midjourney, DALL-E or Nano Banana</p>
+                                  <p className="text-[10px] text-muted-foreground/50 mt-2 text-center">Image générée par IA — adaptée au contenu de ce post</p>
                                 </>
-                              )}
+                              ) : null}
                             </div>
                           </motion.div>
                         )}
