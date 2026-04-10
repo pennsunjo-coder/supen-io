@@ -536,7 +536,159 @@ export function buildGeminiImagePrompt(
   ).join("\n");
   const contenuAIntegrer = buildContenuAIntegrer(templateId, extraction);
 
-  return `╔══════════════════════════════════════════════════════╗
+  return `${"═".repeat(63)}
+CAHIER DES CHARGES DESIGN — RÉFÉRENCE ABSOLUE
+Style : UI Design Professionnel / Diagramme Technique Premium
+${"═".repeat(63)}
+
+Tu es un expert en UI Design et Architecture de l'Information.
+Tu ne crées PAS d'illustrations. Tu construis des diagrammes techniques professionnels de niveau agence de design premium.
+
+━━━ 1. ARCHITECTURE ET COMPOSITION (Layout) ━━━
+
+Format : Portrait vertical 4:5 (${dimStr}px).
+Structure verticale rigoureusement organisée autour d'un axe central.
+
+PIÈCE MAÎTRESSE selon le type de contenu :
+
+Si FUNNEL/PROCESSUS (template actif = ${templateId}) :
+- Entonnoir isométrique 3D "flat design"
+- 5 segments horizontaux distincts qui rétrécissent vers le bas
+- PAS une forme plane — il possède une ÉPAISSEUR et une PERSPECTIVE légère qui lui donne de la profondeur (effet 3D isométrique flat)
+- À GAUCHE et à DROITE de l'entonnoir : blocs de texte disposés de manière ASYMÉTRIQUE MAIS ÉQUILIBRÉE
+- Reliés aux segments par des LIGNES DE RAPPEL ultra-fines (1px) se terminant par des points d'ancrage (petits cercles)
+- Un personnage minimaliste en bas à droite (style "présentateur") pour diriger le regard vers le point final de l'entonnoir
+
+Si COMPARAISON/NIVEAUX :
+- 3 cartes verticales empilées avec profondeur
+- Chaque carte : fond pastel uni, étiquette colorée en haut
+- Ombres très douces (soft shadow uniquement, jamais noire)
+
+Si CONSEILS/TIPS :
+- Grille organisée autour d'un axe central
+- Icônes circulaires bicolores à gauche de chaque point
+- Lignes de connexion fines entre les éléments
+
+━━━ 2. SYSTÈME TYPOGRAPHIQUE (Typography) ━━━
+
+RÈGLE ABSOLUE : Mélange Serif + Sans-Serif UNIQUEMENT.
+
+EN-TÊTE (Titre principal) :
+- Police SERIF premium : Playfair Display ou Garamond
+- Couleur : noir profond (#1A1A1A)
+- Centré
+- Aspect autoritaire et élégant
+- Taille : grande, dominante
+
+BADGE (Au-dessus du titre) :
+- Rectangle à coins arrondis
+- Fond couleur vive (selon la thématique)
+- Texte Sans-Serif EN MAJUSCULES
+- Très petite taille, GRAND espacement de lettres (letter-spacing large)
+- Sert à catégoriser le contenu
+
+CORPS DE TEXTE :
+- Police Sans-Serif géométrique moderne : Inter ou Montserrat
+- Titres de sections : GRAS (Bold)
+- Descriptions : graisse régulière
+- Listes avec CHECKMARKS (coches) vertes circulaires ✓
+
+━━━ 3. PALETTE DE COULEURS ET DÉGRADÉ COGNITIF ━━━
+
+FOND : Blanc cassé / crème très pâle (#FDFDF9)
+→ JAMAIS blanc pur — donne un aspect papier haut de gamme
+→ Évite l'agressivité du blanc pur
+
+TEXTE : Gris-noir anthracite (#1A1A1A)
+→ Contraste parfait sans être "lourd"
+
+PROGRESSION CHROMATIQUE DE L'ENTONNOIR (du haut vers le bas) :
+→ HAUT (large, entrée) : Orange tangerine (#FF8C42 ou #F4845F)
+  Psychologie : Capture l'attention, représente l'entrée de données
+→ MILIEU HAUT : Transition orange → bleu ciel (#87CEEB)
+  Psychologie : Début du processus, logique
+→ MILIEU : Bleu ciel (#5BA4CF)
+  Psychologie : Processus, fiabilité
+→ MILIEU BAS : Bleu pétrole (#2E86AB)
+  Psychologie : Profondeur, expertise
+→ BAS (étroit, sortie) : Vert émeraude saturé (#2ECC71 ou #27AE60)
+  Psychologie : Résultat positif, validation, SUCCÈS
+
+ICÔNES CIRCULAIRES :
+- Fond : version très claire de la couleur du segment correspondant (ex: segment orange → icône sur fond orange très pâle #FFF0E8)
+- Bicolores : fond clair + icône dans la couleur principale
+
+━━━ 4. DÉTAILS GRAPHIQUES ET FINITIONS ━━━
+
+ICÔNES :
+- Chaque bloc de texte latéral = icône vectorielle circulaire
+- Bicolores (fond clair de la couleur du segment + icône principale)
+- Style vectoriel plat, pas d'illustration complexe
+
+LIGNES DE FLUX (Connecteurs) :
+- Épaisseur CONSTANTE : exactement 1px
+- Couleur : gris très clair (#CCCCCC) ou couleur du segment
+- Se terminent par de petits cercles (points d'ancrage)
+- Aspect "diagramme technique professionnel"
+
+RELIEF ET PROFONDEUR DE L'ENTONNOIR :
+- AUCUNE ombre portée noire
+- Relief créé par VARIATIONS DE TEINTES uniquement :
+  → Face avant : couleur principale du segment
+  → Face supérieure : version plus claire (+20% luminosité)
+  → Face latérale : version plus sombre (-20% luminosité)
+  → Simule une source de lumière venant du HAUT À GAUCHE
+- Effet 3D isométrique "flat" = géométrie précise + variations de teinte
+
+━━━ 5. SIGNATURE VISUELLE (Branding / Footer) ━━━
+
+Footer très PROPRE :
+- Mention "Créé avec Supen.io" en brand color #24A89B
+- Police minuscule et grise (10-11px, couleur #999999)
+- Centrée ou alignée à droite
+- NE DISTRAIT PAS du message principal
+- Assure la propriété intellectuelle
+
+━━━ 6. RÈGLES DE GRILLE ET ALIGNEMENT ━━━
+
+TOUT doit être aligné sur une grille invisible.
+Marges et espacements CONSTANTS et MATHÉMATIQUES.
+Padding minimum 24px à l'intérieur de chaque conteneur.
+Aucun élément ne touche le bord sans marge.
+
+━━━ 7. CE QUE TU NE DOIS JAMAIS FAIRE ━━━
+
+✗ Style "illustration" ou "dessin"
+✗ Blanc pur #FFFFFF comme fond principal
+✗ Ombres portées noires
+✗ Polices décoratives ou handwriting
+✗ Plus de 2 familles de polices simultanées
+✗ Texte trop petit (jamais sous 11px)
+✗ Texte anglais (tout en FRANÇAIS)
+✗ Effets de texture ou grain sur le fond
+✗ Personnages complexes ou réalistes
+✗ Dégradés complexes multi-couleurs sur les fonds de cartes
+✗ Clipart ou illustrations stock
+
+━━━ 8. RÉSUMÉ MENTAL AVANT GÉNÉRATION ━━━
+
+Pose-toi ces questions avant de générer :
+1. Est-ce que ça ressemble à une UI d'application premium ou à une illustration ?
+   → Si illustration : RECOMMENCE
+2. Est-ce que le titre est en Serif et le corps en Sans-Serif ?
+   → Si non : CORRIGE
+3. Est-ce que le fond est crème #FDFDF9 (pas blanc pur) ?
+   → Si blanc pur : CHANGE
+4. Est-ce que la progression de couleurs guide l'œil vers le bas ?
+   → Si les couleurs sont aléatoires : CORRIGE
+5. Est-ce que les lignes de connexion font exactement 1px ?
+   → Si épaisses ou absentes : CORRIGE
+
+${"═".repeat(63)}
+FIN DU CAHIER DES CHARGES — CE BLOC EST PRIORITAIRE SUR TOUT
+${"═".repeat(63)}
+
+╔══════════════════════════════════════════════════════╗
 ║  MOTEUR DE RENDU VECTORIEL DE HAUTE PRÉCISION        ║
 ║  Constitution v3.0 — Style SaaS Dashboard            ║
 ╚══════════════════════════════════════════════════════╝
