@@ -44,6 +44,9 @@ interface Props {
   onClose: () => void;
   content: string;
   platform: string;
+  contentId?: string;        // ID of the parent variation row in generated_content
+  existingHtml?: string;     // Pre-generated infographic HTML (skip generation)
+  onGenerated?: (html: string) => void; // Callback after successful generation
 }
 
 type ResultMode = "gemini" | "claude" | null;
@@ -170,7 +173,7 @@ const STYLE_OPTIONS: { id: StyleChoice; label: string; desc: string }[] = [
 
 // ─── Component ───
 
-export default function InfographicModal({ open, onClose, content, platform }: Props) {
+export default function InfographicModal({ open, onClose, content, platform, contentId, existingHtml, onGenerated }: Props) {
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -200,11 +203,6 @@ export default function InfographicModal({ open, onClose, content, platform }: P
   // Reset state when modal opens or content changes
   useEffect(() => {
     if (open) {
-      setStep("ready");
-      setHtmlCode("");
-      setImageBase64("");
-      setResultMode(null);
-      setSaved(false);
       setCustomPrompt("");
       setShowPrompt(false);
       setShowZoom(false);
@@ -215,8 +213,23 @@ export default function InfographicModal({ open, onClose, content, platform }: P
       setRetryCountdown(0);
       if (retryIntervalRef.current) { clearInterval(retryIntervalRef.current); retryIntervalRef.current = null; }
       resetRegenerationCounter();
+
+      if (existingHtml) {
+        // Pre-existing infographic — show directly, no generation, no save
+        setStep("result");
+        setHtmlCode(existingHtml);
+        setImageBase64("");
+        setResultMode("claude");
+        setSaved(true);
+      } else {
+        setStep("ready");
+        setHtmlCode("");
+        setImageBase64("");
+        setResultMode(null);
+        setSaved(false);
+      }
     }
-  }, [open, content]);
+  }, [open, content, existingHtml]);
 
   // Hard guard against duplicate saves: ref is mutated synchronously,
   // so even React StrictMode double-fires can't slip a second insert through.
@@ -553,31 +566,46 @@ export default function InfographicModal({ open, onClose, content, platform }: P
     setSaving(true);
 
     try {
-      const saveContent = mode === "gemini"
-        ? `[Gemini Image] ${content.slice(0, 200)}`
-        : html || ""; // Full HTML — no truncation so the iframe preview works in dashboard
+      const infographicHtml = html || (mode === "gemini" ? `[Gemini Image] ${content.slice(0, 200)}` : "");
 
-      const { error } = await supabase.from("generated_content").insert({
-        user_id: user.id,
-        platform,
-        format: "Infographic",
-        content: saveContent,
-        viral_score: 85,
-        image_prompt: mode === "gemini" ? "Gemini generated image" : "HTML infographic",
-      });
+      let error: { message: string; details?: string; hint?: string } | null = null;
+
+      if (contentId) {
+        // UPDATE the parent variation row — no new row created
+        const res = await supabase
+          .from("generated_content")
+          .update({
+            infographic_html: infographicHtml,
+            infographic_generated_at: new Date().toISOString(),
+          })
+          .eq("id", contentId);
+        error = res.error;
+      } else {
+        // Legacy INSERT fallback (no parent variation to link to)
+        const res = await supabase.from("generated_content").insert({
+          user_id: user.id,
+          platform,
+          format: "Infographic",
+          content: infographicHtml,
+          viral_score: 85,
+          image_prompt: mode === "gemini" ? "Gemini generated image" : "HTML infographic",
+        });
+        error = res.error;
+      }
 
       if (error) {
         console.error("[InfographicModal] Supabase save error:", error.message, error.details, error.hint);
         toast.error(`Erreur de sauvegarde : ${error.message}`);
-        savedRef.current = false; // Release slot → allow retry on next generation
+        savedRef.current = false;
       } else {
         setSaved(true);
         toast.success("Infographie sauvegardée !");
+        if (onGenerated && infographicHtml) onGenerated(infographicHtml);
       }
     } catch (err) {
       console.error("[InfographicModal] Network/unexpected error:", err);
       toast.error("Erreur réseau lors de la sauvegarde");
-      savedRef.current = false; // Release slot → allow retry on next generation
+      savedRef.current = false;
     }
     setSaving(false);
   }

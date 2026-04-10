@@ -98,6 +98,7 @@ interface ParsedVariation {
   content: string;
   words: number;
   score: number;
+  dbId?: string; // ID from generated_content after save
   scoreDetails?: ScoreDetails;
   scoring?: boolean;
 }
@@ -161,6 +162,7 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
   const [retryCountdown, setRetryCountdown] = useState(0);
   const retryIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [showInfographic, setShowInfographic] = useState(false);
+  const [infographics, setInfographics] = useState<Record<number, string>>({});
   const [styleMemoryActive, setStyleMemoryActive] = useState(false);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<Record<number, "liked" | "disliked" | null>>({});
@@ -456,10 +458,14 @@ Règles strictes :
         image_prompt: v.scoreDetails ? JSON.stringify(v.scoreDetails) : null,
         source_ids: allSourceIds,
       }));
-      const { error: saveErr } = await supabase.from("generated_content").insert(inserts).select();
+      const { data: savedRows, error: saveErr } = await supabase.from("generated_content").insert(inserts).select("id");
       if (saveErr) {
         setSaveStatus("failed");
         return false;
+      }
+      // Merge returned IDs into variations so InfographicModal can UPDATE the correct row
+      if (savedRows && savedRows.length === parsed.length) {
+        setVariations((prev) => prev.map((v, i) => ({ ...v, dbId: savedRows[i]?.id })));
       }
       setSaveStatus("saved");
       if (onGenerationComplete) onGenerationComplete();
@@ -1207,6 +1213,12 @@ Règles : Français uniquement. Tournures naturelles, imparfaites, humaines. Var
         onClose={() => setShowInfographic(false)}
         content={variations[selectedVariation ?? 0]?.content || ""}
         platform={selectedPlatform?.name || ""}
+        contentId={variations[selectedVariation ?? 0]?.dbId}
+        existingHtml={infographics[selectedVariation ?? 0]}
+        onGenerated={(html) => {
+          const idx = selectedVariation ?? 0;
+          setInfographics((prev) => ({ ...prev, [idx]: html }));
+        }}
       />
 
       {/* Schedule mini-modal */}

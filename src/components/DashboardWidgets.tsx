@@ -176,8 +176,8 @@ En français. Réponds UNIQUEMENT avec la structure.`,
                   <Button variant="ghost" size="sm" className={cn("h-7 text-[10px] gap-1.5 px-2.5", panel === "image" ? "text-primary" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); handleGenerateImage(); }}>
                     <ImagePlus className="w-3 h-3" /> Image
                   </Button>
-                  <Button variant="ghost" size="sm" className={cn("h-7 text-[10px] gap-1.5 px-2.5", infographicModalOpen ? "text-primary" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); setInfographicModalOpen(true); }}>
-                    <LayoutGrid className="w-3 h-3" /> Infographic
+                  <Button variant="ghost" size="sm" className={cn("h-7 text-[10px] gap-1.5 px-2.5", infographicModalOpen ? "text-primary" : item.infographic_html ? "text-emerald-400" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); setInfographicModalOpen(true); }}>
+                    <LayoutGrid className="w-3 h-3" /> {item.infographic_html ? "Voir infographie" : "Infographic"}
                   </Button>
                 </div>
               </div>
@@ -231,6 +231,8 @@ En français. Réponds UNIQUEMENT avec la structure.`,
         onClose={() => setInfographicModalOpen(false)}
         content={item.content}
         platform={item.platform}
+        contentId={item.id}
+        existingHtml={item.infographic_html || undefined}
       />
     </div>
   );
@@ -382,8 +384,8 @@ function SessionVariationCard({
         <Button variant="ghost" size="sm" className={cn("h-6 text-[10px] gap-1 px-2", panel === "image" ? "text-primary" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); genImage(); }}>
           <ImagePlus className="w-2.5 h-2.5" /> {imagePrompt ? "Image" : "Image"}
         </Button>
-        <Button variant="ghost" size="sm" className={cn("h-6 text-[10px] gap-1 px-2", infographicModalOpen ? "text-primary" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); setInfographicModalOpen(true); }}>
-          <LayoutGrid className="w-2.5 h-2.5" /> Infographic
+        <Button variant="ghost" size="sm" className={cn("h-6 text-[10px] gap-1 px-2", infographicModalOpen ? "text-primary" : item.infographic_html ? "text-emerald-400" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); setInfographicModalOpen(true); }}>
+          <LayoutGrid className="w-2.5 h-2.5" /> {item.infographic_html ? "Voir" : "Infographic"}
         </Button>
       </div>
 
@@ -422,6 +424,8 @@ function SessionVariationCard({
         onClose={() => setInfographicModalOpen(false)}
         content={item.content}
         platform={platform}
+        contentId={item.id}
+        existingHtml={item.infographic_html || undefined}
       />
     </div>
   );

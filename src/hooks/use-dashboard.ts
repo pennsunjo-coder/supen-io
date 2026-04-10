@@ -9,6 +9,8 @@ export interface DashboardContent {
   content: string;
   viral_score: number;
   image_prompt: string;
+  infographic_html?: string | null;
+  infographic_generated_at?: string | null;
   created_at: string;
 }
 
@@ -150,7 +152,7 @@ export function useDashboard() {
       let topData: DashboardContent[] | null = null;
       const { data: td1, error: topErr1 } = await supabase
         .from("generated_content")
-        .select("id, platform, format, content, viral_score, image_prompt, created_at")
+        .select("id, platform, format, content, viral_score, image_prompt, infographic_html, infographic_generated_at, created_at")
         .eq("user_id", user.id)
         .neq("format", "Infographic")
         .order("created_at", { ascending: false })
