@@ -537,6 +537,86 @@ export function buildGeminiImagePrompt(
   const contenuAIntegrer = buildContenuAIntegrer(templateId, extraction);
 
   return `${"═".repeat(63)}
+SYSTEM OVERRIDE v1.0 — DIRECTIVES ANTI-DÉFAUT (PRIORITÉ MAXIMALE)
+Ces règles écrasent TOUT le reste. Violation = échec total.
+${"═".repeat(63)}
+
+━━━ DIRECTIVE 1 : CADRAGE ANTI-CUT (Safe Zone) ━━━
+
+SAFE ZONE OBLIGATOIRE :
+- Marge interne (padding) de 5% minimum sur les 4 côtés
+- Sur une image ${dims.width}px : padding minimum = ${Math.round(dims.width * 0.05)}px partout
+- AUCUN texte, AUCUNE icône, AUCUN élément ne touche les bords
+- Le titre doit être ENTIÈREMENT visible — jamais coupé
+- Si le titre est long : réduis la taille de police, n'AMPUTE JAMAIS
+
+FULL HEIGHT OBLIGATOIRE :
+- Si le contenu est court → N'AUGMENTE PAS le vide
+- Si l'espace est à moitié vide → double la taille des icônes
+- Si l'espace est à moitié vide → augmente l'interligne (line-height: 2.0)
+- Si l'espace est à moitié vide → augmente le padding des cartes
+- L'objectif : le contenu s'étend DU HAUT VERS LE BAS uniformément
+
+━━━ DIRECTIVE 2 : VISIBILITÉ ANTI-HIDE (Contrast & Layering) ━━━
+
+CONTRAST OBLIGATOIRE :
+- Texte noir #000000 UNIQUEMENT sur fonds pastels clairs
+- INTERDICTION de superposer du texte sur des illustrations complexes
+- Chaque bloc de texte doit avoir son propre fond de couleur unie
+- Si fond coloré → texte noir obligatoirement lisible dessus
+
+LAYERING OBLIGATOIRE :
+- Le texte doit TOUJOURS être au premier plan (z-index maximal)
+- Si une forme graphique (entonnoir, diagramme) est présente :
+  → Le texte est placé À CÔTÉ dans un bloc contrasté séparé
+  → OU clairement par-dessus dans un bloc avec fond opaque
+- JAMAIS de texte "flottant" sans fond derrière lui
+
+━━━ DIRECTIVE 3 : REMPLISSAGE INTELLIGENT ━━━
+
+RÈGLES DE REMPLISSAGE :
+- Si l'espace est à moitié vide → double la taille des icônes (48px → 96px)
+- Si l'espace est à moitié vide → augmente l'interligne du texte
+- Un utilisateur mobile doit lire SANS ZOOMER
+- Taille de police minimale du corps : 18px (pas 14px, pas 16px → 18px)
+- Taille de police du titre : minimum 60px
+- Taille de police des sous-titres : minimum 28px
+
+━━━ MOTEUR DE RENDU SQL → INFOGRAPHIE ━━━
+
+Agis comme un moteur de rendu SQL vers Infographie.
+Input reçu :
+- format: "Portrait 4:5 — ${dimStr}px"
+- content: [contenu fourni ci-dessous]
+- style: "UI Clean, ${templateId}"
+
+Règles de rendu STRICTES :
+1. HEADER (20% hauteur) : Titre massif Serif, centré, padding 5%, JAMAIS coupé, occupe 20% de la largeur minimum
+2. BODY (70% hauteur) : Cards avec border-radius 20px, icône à gauche + texte à droite dans chaque card, padding interne 40px minimum par card
+3. COLORS : Codes Hex stricts uniquement :
+   - Orange : #FF7A59
+   - Blue : #4285F4
+   - Green : #34A853
+   - Fond : #FDFDF9
+   - Texte : #1A1A1A
+4. OUTPUT : Rendu vectoriel ultra-net, zéro flou, zéro texte coupé, zéro espace vide non justifié
+
+━━━ CHECKLIST ANTI-DÉFAUT (valider AVANT génération) ━━━
+
+[ ] Padding 5% appliqué sur les 4 côtés → aucun élément aux bords
+[ ] Titre ENTIÈREMENT visible, non coupé
+[ ] Aucun texte sur fond complexe ou illustration
+[ ] Espace vide < 20% du canvas total
+[ ] Taille police corps ≥ 18px
+[ ] Taille police titre ≥ 60px
+[ ] Chaque bloc de texte a son propre fond opaque
+[ ] Lisible sur mobile sans zoom
+
+${"═".repeat(63)}
+FIN DU SYSTEM OVERRIDE — PRIORITÉ ABSOLUE SUR TOUT LE RESTE
+${"═".repeat(63)}
+
+${"═".repeat(63)}
 CAHIER DES CHARGES DESIGN — RÉFÉRENCE ABSOLUE
 Style : UI Design Professionnel / Diagramme Technique Premium
 ${"═".repeat(63)}
