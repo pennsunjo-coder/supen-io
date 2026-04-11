@@ -290,12 +290,13 @@ function getTemplateInstructions(
 
   switch (templateId) {
     case "UI_CARDS":
-      return `Structure : 3 cartes verticales empilées dans le body (${bodyH}px).
-Chaque carte = ${Math.round(bodyH / 3 - 16)}px de hauteur.
-Carte 1 : fond #FFF0F0, label "À ÉVITER" rouge, titre + corps
-Carte 2 : fond #FEF9E7, label "CORRECT" orange, titre + corps
-Carte 3 : fond #F0FFF4, label "EXCELLENT" vert, titre + corps
-Chaque carte : padding ${cardPad}px, border-radius 20px, display flex, align-items center`;
+      return `Structure: 3 horizontal cards stacked vertically in the body (${bodyH}px).
+Each card has a circular icon on the left + text content on the right.
+Card 1: bg #FFF0F0, border #FFCCCC, icon "✗" red, label "Avoid", title + body
+Card 2: bg #FEF9E7, border #FFE5A0, icon "~" orange, label "Better", title + body
+Card 3: bg #F0FFF4, border #B3EED0, icon "✓" green, label "Best", title + body
+Each card: padding proportional, border-radius 20px, display flex, align-items center.
+Title font: Playfair Display 700. Body font: Inter 500. Background: cream #FDFDF9.`;
 
     case "WHITEBOARD":
       return `Structure : Liste verticale de 5-7 points dans le body.

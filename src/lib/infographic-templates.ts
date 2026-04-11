@@ -369,42 +369,66 @@ body{width:${w}px;height:${h}px;background:#FFFFF8;font-family:'Poppins',sans-se
 }
 
 // ─── TEMPLATE 9: UI_CARDS ───
-// Constitution v3.0 — SaaS Dashboard 3-tier comparison.
-// Header (20%) / Body (70%) with 3 vertical cards / Footer (10%).
-// Inter font only, padding 40px per card, border-radius 16px, soft shadow.
+// Pixel-perfect 3-tier comparison (Bad → Better → Best).
+// Dynamic sizing: all dimensions computed from w/h for any aspect ratio.
+// Playfair Display titles + Inter body. Circular icon per card. Cream background.
 export function uiCards(w: number, h: number): string {
-  const isPortrait = h > 1100;
+  const pad = Math.round(w * 0.055);
+  const cardGap = Math.round(h * 0.018);
+  const cardRadius = 20;
+  const headerH = Math.round(h * 0.20);
+  const bodyH = Math.round(h * 0.68);
+  const footerH = h - headerH - bodyH;
+  const cardH = Math.round((bodyH - cardGap * 4) / 3);
+  const titleSize = Math.round(w * 0.052);
+  const badgeSize = Math.round(w * 0.013);
+  const cardTitleSize = Math.round(w * 0.028);
+  const cardBodySize = Math.round(w * 0.019);
+  const iconSize = Math.round(w * 0.065);
+  const labelSize = Math.round(w * 0.011);
+
   return `<!DOCTYPE html>
-<html><head><meta charset="UTF-8">${FONT_IMPORTS}
+<html><head><meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{width:${w}px;height:${h}px;overflow:hidden}
-body{background:#FFFFFF;font-family:'Inter',sans-serif;display:flex;flex-direction:column;color:#1F2937}
-.header{flex:0 0 20%;background:#FFFFFF;padding:32px 40px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:16px;min-height:0}
-.title{font-family:'Inter',sans-serif;font-size:${isPortrait ? 88 : 72}px;font-weight:900;color:#1F2937;text-transform:uppercase;letter-spacing:-1.8px;line-height:1;font-style:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:100%}
-.title span{color:#1F2937;background:linear-gradient(180deg,transparent 60%,#FFE066 60%);padding:0 8px}
-.badge{display:inline-block;padding:8px 22px;background:#EBF5FB;color:#1F2937;font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;border-radius:16px;font-style:normal;flex-shrink:0}
-.body{flex:1 1 70%;padding:24px 40px;display:flex;flex-direction:column;gap:16px;min-height:0}
-.card{flex:1 1 0;border-radius:16px;padding:40px;box-shadow:0 4px 16px rgba(0,0,0,0.06);display:flex;flex-direction:column;justify-content:center;font-style:normal;min-height:0;overflow:hidden}
-.card.c1{background:#FFF0F0}
-.card.c2{background:#FEF9E7}
-.card.c3{background:#EAFAF1}
-.card-label{display:inline-block;align-self:flex-start;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:1.8px;margin-bottom:14px;padding:6px 14px;border-radius:16px;font-style:normal}
-.c1 .card-label{background:#FFB3B3;color:#1F2937}
-.c2 .card-label{background:#FFD4A3;color:#1F2937}
-.c3 .card-label{background:#B3FFD1;color:#1F2937}
-.card-title{font-family:'Inter',sans-serif;font-size:${isPortrait ? 32 : 28}px;font-weight:900;color:#1F2937;line-height:1.1;margin-bottom:10px;font-style:normal;max-width:600px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.card-body{font-size:${isPortrait ? 18 : 16}px;font-weight:600;color:#1F2937;line-height:1.4;font-style:normal;max-width:520px;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
-.card-body .a{color:#1F2937;background:linear-gradient(180deg,transparent 60%,#FFE066 60%);padding:0 2px;font-weight:800}
-.footer{flex:0 0 10%;background:#F8F9FA;border-top:1px solid #E5E7EB;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#24A89B;font-style:normal;letter-spacing:0.5px;min-height:0}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+html,body{width:${w}px;height:${h}px;overflow:hidden;background:#FDFDF9}
+body{font-family:'Inter',sans-serif;display:flex;flex-direction:column;color:#1A1A1A}
+.header{height:${headerH}px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${Math.round(pad*0.8)}px ${pad}px;gap:${Math.round(h*0.012)}px;background:#FDFDF9}
+.badge{display:inline-flex;align-items:center;gap:6px;background:#1A1A1A;color:#FDFDF9;font-family:'Inter',sans-serif;font-size:${badgeSize}px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;padding:${Math.round(h*0.008)}px ${Math.round(w*0.028)}px;border-radius:100px}
+.title{font-family:'Playfair Display',serif;font-size:${titleSize}px;font-weight:900;color:#1A1A1A;text-align:center;line-height:1.15;max-width:${Math.round(w*0.85)}px;word-wrap:break-word;overflow-wrap:break-word}
+.title em{font-style:normal;color:#FF7A59;position:relative}
+.body{flex:1;padding:0 ${pad}px;display:flex;flex-direction:column;gap:${cardGap}px;min-height:0}
+.card{flex:1;border-radius:${cardRadius}px;padding:${Math.round(cardH*0.14)}px ${Math.round(w*0.04)}px;display:flex;align-items:center;gap:${Math.round(w*0.032)}px;min-height:0;overflow:hidden}
+.card.c1{background:#FFF0F0;border:1.5px solid #FFCCCC}
+.card.c2{background:#FEF9E7;border:1.5px solid #FFE5A0}
+.card.c3{background:#F0FFF4;border:1.5px solid #B3EED0}
+.icon-wrap{width:${iconSize}px;height:${iconSize}px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:${Math.round(iconSize*0.48)}px;font-weight:900;line-height:1}
+.c1 .icon-wrap{background:#FFB3B3;color:#CC0000}
+.c2 .icon-wrap{background:#FFD4A3;color:#CC6600}
+.c3 .icon-wrap{background:#B3FFD1;color:#006633}
+.card-text{flex:1;min-width:0;overflow:hidden}
+.card-label{display:inline-flex;align-items:center;gap:5px;font-size:${labelSize}px;font-weight:900;text-transform:uppercase;letter-spacing:2px;margin-bottom:${Math.round(cardH*0.06)}px;padding:3px 10px;border-radius:100px}
+.c1 .card-label{background:#FFB3B3;color:#8B0000}
+.c2 .card-label{background:#FFD4A3;color:#7A4000}
+.c3 .card-label{background:#B3FFD1;color:#005500}
+.card-title{font-family:'Playfair Display',serif;font-size:${cardTitleSize}px;font-weight:700;color:#1A1A1A;line-height:1.2;margin-bottom:${Math.round(cardH*0.05)}px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card-body{font-size:${cardBodySize}px;font-weight:500;color:#4A4A4A;line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.card-body strong{font-weight:800;color:#1A1A1A}
+.footer{height:${footerH}px;flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:8px;border-top:1px solid #E8E8E2;background:#FDFDF9}
+.footer-dot{width:5px;height:5px;border-radius:50%;background:#24A89B}
+.footer-text{font-size:${Math.round(w*0.012)}px;font-weight:700;color:#24A89B;letter-spacing:1px;text-transform:uppercase}
 </style></head><body>
-<div class="header"><div class="title">{{TITLE}}</div><div class="badge">{{BADGE}}</div></div>
-<div class="body">
-<div class="card c1"><div class="card-label">Bad</div><div class="card-title">{{P1_TITLE}}</div><div class="card-body">{{P1_BODY}}</div></div>
-<div class="card c2"><div class="card-label">OK</div><div class="card-title">{{P2_TITLE}}</div><div class="card-body">{{P2_BODY}}</div></div>
-<div class="card c3"><div class="card-label">Excellent</div><div class="card-title">{{P3_TITLE}}</div><div class="card-body">{{P3_BODY}}</div></div>
+<div class="header">
+<div class="badge">{{BADGE}}</div>
+<div class="title">{{TITLE}}</div>
 </div>
-<div class="footer">{{FOOTER}}</div>
+<div class="body">
+<div class="card c1"><div class="icon-wrap">✗</div><div class="card-text"><div class="card-label">Avoid</div><div class="card-title">{{P1_TITLE}}</div><div class="card-body">{{P1_BODY}}</div></div></div>
+<div class="card c2"><div class="icon-wrap">~</div><div class="card-text"><div class="card-label">Better</div><div class="card-title">{{P2_TITLE}}</div><div class="card-body">{{P2_BODY}}</div></div></div>
+<div class="card c3"><div class="icon-wrap">✓</div><div class="card-text"><div class="card-label">Best</div><div class="card-title">{{P3_TITLE}}</div><div class="card-body">{{P3_BODY}}</div></div></div>
+</div>
+<div class="footer"><div class="footer-dot"></div><div class="footer-text">{{FOOTER}}</div><div class="footer-dot"></div></div>
 </body></html>`;
 }
 
