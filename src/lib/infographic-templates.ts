@@ -17,46 +17,45 @@
 const FONT_IMPORTS = `<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;900&family=Caveat:wght@500;700&display=swap" rel="stylesheet">`;
 
 // ─── TEMPLATE 1: AWA_CLASSIC ───
-// Bulletproof: CSS forces vertical fill. Claude ONLY replaces {{text}}.
+// Pixel-perfect 7-section dense list on cream background with wood frame.
+// Dynamic sizing. Playfair Display title + Inter body. Rounded numbered squares.
 export function awaClassic(w: number, h: number): string {
+  const pad = Math.round(w * 0.052);
+  const headerH = Math.round(h * 0.17);
+  const footerH = Math.round(h * 0.07);
+  const numSize = Math.round(w * 0.048);
+  const itemTitleSize = Math.round(w * 0.022);
+  const itemBodySize = Math.round(w * 0.016);
+  const titleSize = Math.round(w * 0.044);
+  const badgeSize = Math.round(w * 0.012);
+  const itemGap = Math.round(h * 0.012);
+  const colors = ["#FF6B6B","#3B82F6","#10B981","#F59E0B","#8B5CF6","#EC4899","#06B6D4"];
+
   return `<!DOCTYPE html>
-<html><head><meta charset="UTF-8">${FONT_IMPORTS}
+<html><head><meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{width:${w}px;height:${h}px;overflow:hidden}
-body{background:#FFFFF5;font-family:'Poppins',sans-serif;border:6px solid #5D3A1A;padding:22px;display:flex;flex-direction:column}
-.header{display:flex;align-items:center;gap:12px;margin-bottom:10px;padding-bottom:10px;border-bottom:3px solid #E53E3E}
-.header-text{flex:1}
-.header-illust{flex-shrink:0}
-.badge{display:inline-block;background:#E53E3E;color:#fff;font-size:9px;font-weight:700;padding:2px 10px;border-radius:10px;margin-bottom:6px;letter-spacing:1px;text-transform:uppercase}
-.title{font-size:26px;font-weight:900;color:#1A1A1A;line-height:1.05;text-transform:uppercase;letter-spacing:-0.5px;font-style:normal}
-.title span{color:#E53E3E}
-.sections{display:flex;flex-direction:column;justify-content:space-between;flex:1;gap:0}
-.section{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;background:rgba(0,0,0,0.018);border-radius:6px;border-left:3px solid var(--c);flex:1}
-.num{width:26px;height:26px;min-width:26px;border-radius:50%;background:var(--c);color:#fff;font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-style:normal}
-.ico{width:26px;height:26px;min-width:26px;border-radius:6px;background:color-mix(in srgb,var(--c) 10%,transparent);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.sc{flex:1;min-width:0}
-.st{font-size:13px;font-weight:700;color:var(--c);margin-bottom:1px;font-style:normal}
-.sb{font-size:11px;color:#2D3748;line-height:1.35;font-style:normal}
-.sb .a{color:#E53E3E;font-weight:700}
-.tip{padding:8px 10px;background:rgba(229,62,62,0.04);border:1.5px dashed #E53E3E;border-radius:6px;display:flex;gap:6px;align-items:flex-start;margin-top:6px}
-.tip b{font-size:9px;font-weight:900;color:#E53E3E;text-transform:uppercase;white-space:nowrap;letter-spacing:0.5px}
-.tip span{font-size:11px;color:#2D3748;line-height:1.3;font-style:normal}
-.footer{text-align:center;margin-top:6px;padding-top:6px;border-top:2px solid #5D3A1A;font-size:10px;font-weight:700;color:#5D3A1A;font-style:normal}
-.s1{--c:#E53E3E}.s2{--c:#3182CE}.s3{--c:#38A169}.s4{--c:#DD6B20}.s5{--c:#9B59B6}.s6{--c:#EC4899}.s7{--c:#00897B}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+html,body{width:${w}px;height:${h}px;overflow:hidden;background:#FFFFF5}
+body{font-family:'Inter',sans-serif;display:flex;flex-direction:column;color:#1A1A1A;border:6px solid #5D3A1A}
+.header{height:${headerH}px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${Math.round(pad*0.7)}px ${pad}px;gap:${Math.round(h*0.009)}px;background:#FFFFF5;border-bottom:3px solid #5D3A1A}
+.badge{display:inline-flex;align-items:center;background:#5D3A1A;color:#FFFFF5;font-size:${badgeSize}px;font-weight:800;letter-spacing:2px;text-transform:uppercase;padding:${Math.round(h*0.006)}px ${Math.round(w*0.022)}px;border-radius:100px}
+.title{font-family:'Playfair Display',serif;font-size:${titleSize}px;font-weight:900;color:#1A1A1A;text-align:center;line-height:1.18;max-width:${Math.round(w*0.88)}px;word-wrap:break-word}
+.body{flex:1;padding:${Math.round(h*0.016)}px ${pad}px;display:flex;flex-direction:column;gap:${itemGap}px;min-height:0}
+.item{flex:1;display:flex;align-items:center;gap:${Math.round(w*0.025)}px;min-height:0;overflow:hidden;padding:${Math.round(h*0.008)}px ${Math.round(w*0.02)}px;border-radius:10px;background:rgba(255,255,245,0.6);border:1px solid rgba(93,58,26,0.12)}
+.num{width:${numSize}px;height:${numSize}px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:${Math.round(numSize*0.44)}px;font-weight:900;color:#FFFFFF;flex-shrink:0;line-height:1}
+.item-text{flex:1;min-width:0;overflow:hidden}
+.item-title{font-size:${itemTitleSize}px;font-weight:800;color:#1A1A1A;line-height:1.2;margin-bottom:${Math.round(h*0.004)}px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.item-body{font-size:${itemBodySize}px;font-weight:500;color:#4A4A4A;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.item-body .a{font-weight:800;color:#5D3A1A}
+.footer{height:${footerH}px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-top:2px solid #5D3A1A;background:#FFFFF5}
+.footer-text{font-size:${Math.round(w*0.013)}px;font-weight:700;color:#5D3A1A;letter-spacing:1px;text-transform:uppercase}
 </style></head><body>
-<div class="header"><div class="header-text"><div class="badge">{{BADGE}}</div><div class="title">{{TITLE}}</div></div><div class="header-illust">{{MAIN_ILLUSTRATION}}</div></div>
-<div class="sections">
-<div class="section s1"><div class="num">1</div><div class="ico">{{P1_ICON}}</div><div class="sc"><div class="st">{{P1_TITLE}}</div><div class="sb">{{P1_BODY}}</div></div></div>
-<div class="section s2"><div class="num">2</div><div class="ico">{{P2_ICON}}</div><div class="sc"><div class="st">{{P2_TITLE}}</div><div class="sb">{{P2_BODY}}</div></div></div>
-<div class="section s3"><div class="num">3</div><div class="ico">{{P3_ICON}}</div><div class="sc"><div class="st">{{P3_TITLE}}</div><div class="sb">{{P3_BODY}}</div></div></div>
-<div class="section s4"><div class="num">4</div><div class="ico">{{P4_ICON}}</div><div class="sc"><div class="st">{{P4_TITLE}}</div><div class="sb">{{P4_BODY}}</div></div></div>
-<div class="section s5"><div class="num">5</div><div class="ico">{{P5_ICON}}</div><div class="sc"><div class="st">{{P5_TITLE}}</div><div class="sb">{{P5_BODY}}</div></div></div>
-<div class="section s6"><div class="num">6</div><div class="ico">{{P6_ICON}}</div><div class="sc"><div class="st">{{P6_TITLE}}</div><div class="sb">{{P6_BODY}}</div></div></div>
-<div class="section s7"><div class="num">7</div><div class="ico">{{P7_ICON}}</div><div class="sc"><div class="st">{{P7_TITLE}}</div><div class="sb">{{P7_BODY}}</div></div></div>
+<div class="header"><div class="badge">{{BADGE}}</div><div class="title">{{TITLE}}</div></div>
+<div class="body">
+${colors.map((c, i) => `<div class="item"><div class="num" style="background:${c}">${i+1}</div><div class="item-text"><div class="item-title">{{P${i+1}_TITLE}}</div><div class="item-body">{{P${i+1}_BODY}}</div></div></div>`).join("\n")}
 </div>
-<div class="tip"><b>Pro Tip:</b><span>{{PRO_TIP}}</span></div>
-<div class="footer">{{FOOTER}}</div>
+<div class="footer"><div class="footer-text">{{FOOTER}}</div></div>
 </body></html>`;
 }
 
@@ -433,126 +432,161 @@ body{font-family:'Inter',sans-serif;display:flex;flex-direction:column;color:#1A
 }
 
 // ─── TEMPLATE 10: WHITEBOARD ───
-// Constitution v3.0 — Notebook tips style.
-// Header (20%) / Body (70%) with 3 vertical cards and dot-grid background / Footer (10%).
-// Inter font only — Caveat dropped, brain + lightbulb SVG doodles dropped.
-// Distinct palette: blue/orange/green pastels (Constitution default).
+// Pixel-perfect 7-item numbered list on dot-grid background.
+// Dynamic sizing. Playfair Display titles + Inter body. Semi-transparent cards.
 export function whiteboard(w: number, h: number): string {
-  const isPortrait = h > 1100;
+  const pad = Math.round(w * 0.055);
+  const headerH = Math.round(h * 0.18);
+  const footerH = Math.round(h * 0.08);
+  const titleSize = Math.round(w * 0.048);
+  const badgeSize = Math.round(w * 0.012);
+  const itemTitleSize = Math.round(w * 0.024);
+  const itemBodySize = Math.round(w * 0.017);
+  const numSize = Math.round(w * 0.055);
+  const itemGap = Math.round(h * 0.012);
+  const numColors = [
+    { bg:"#FFE5E5", color:"#CC0000", border:"#FFB3B3" },
+    { bg:"#FFF0D4", color:"#CC6600", border:"#FFD4A3" },
+    { bg:"#E5F5FF", color:"#0066CC", border:"#AEC6CF" },
+    { bg:"#F0E5FF", color:"#6600CC", border:"#D4B3FF" },
+    { bg:"#E5FFE5", color:"#006600", border:"#B3FFD1" },
+    { bg:"#FFE5F5", color:"#CC0066", border:"#FFB3D4" },
+    { bg:"#FFF5E5", color:"#CC7700", border:"#FFD4A3" },
+  ];
+
   return `<!DOCTYPE html>
-<html><head><meta charset="UTF-8">${FONT_IMPORTS}
+<html><head><meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{width:${w}px;height:${h}px;overflow:hidden}
-body{background:#FFFFFF;font-family:'Inter',sans-serif;display:flex;flex-direction:column;color:#1F2937}
-.header{flex:0 0 20%;background:#FFFFFF;padding:32px 40px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:16px;min-height:0}
-.title{font-family:'Inter',sans-serif;font-size:${isPortrait ? 88 : 72}px;font-weight:900;color:#1F2937;text-transform:uppercase;letter-spacing:-1.8px;line-height:1;font-style:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:100%}
-.title span{color:#1F2937;background:linear-gradient(180deg,transparent 60%,#FFE066 60%);padding:0 8px}
-.badge{display:inline-block;padding:8px 22px;background:#EBF5FB;color:#1F2937;font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;border-radius:16px;font-style:normal;flex-shrink:0}
-.body{flex:1 1 70%;padding:24px 40px;display:flex;flex-direction:column;gap:16px;min-height:0;background-image:radial-gradient(circle,#E8EAED 1px,transparent 1px);background-size:24px 24px}
-.card{flex:1 1 0;border-radius:16px;padding:40px;box-shadow:0 4px 16px rgba(0,0,0,0.06);display:flex;flex-direction:column;justify-content:center;font-style:normal;min-height:0;overflow:hidden}
-.card.c1{background:#EBF5FB}
-.card.c2{background:#FEF9E7}
-.card.c3{background:#EAFAF1}
-.card-label{display:inline-block;align-self:flex-start;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:1.8px;margin-bottom:14px;padding:6px 14px;border-radius:16px;font-style:normal}
-.c1 .card-label{background:#AEC6CF;color:#1F2937}
-.c2 .card-label{background:#FFD4A3;color:#1F2937}
-.c3 .card-label{background:#B3FFD1;color:#1F2937}
-.card-title{font-family:'Inter',sans-serif;font-size:${isPortrait ? 32 : 28}px;font-weight:900;color:#1F2937;line-height:1.1;margin-bottom:10px;font-style:normal;max-width:600px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.card-body{font-size:${isPortrait ? 18 : 16}px;font-weight:600;color:#1F2937;line-height:1.4;font-style:normal;max-width:520px;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
-.card-body .a{color:#1F2937;background:linear-gradient(180deg,transparent 60%,#FFE066 60%);padding:0 2px;font-weight:800}
-.footer{flex:0 0 10%;background:#F8F9FA;border-top:1px solid #E5E7EB;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#24A89B;font-style:normal;letter-spacing:0.5px;min-height:0}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+html,body{width:${w}px;height:${h}px;overflow:hidden;background:#FAFBFF}
+body{font-family:'Inter',sans-serif;display:flex;flex-direction:column;color:#1A1A1A}
+body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(circle,#C8C8D0 1px,transparent 1px);background-size:28px 28px;opacity:0.4;pointer-events:none;z-index:0}
+.header{position:relative;z-index:1;height:${headerH}px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${Math.round(pad*0.7)}px ${pad}px;gap:${Math.round(h*0.01)}px;background:transparent;border-bottom:2px dashed #D0D0DC}
+.badge{display:inline-flex;align-items:center;gap:6px;background:#24A89B;color:#FFFFFF;font-size:${badgeSize}px;font-weight:800;letter-spacing:2px;text-transform:uppercase;padding:${Math.round(h*0.007)}px ${Math.round(w*0.025)}px;border-radius:100px}
+.title{font-family:'Playfair Display',serif;font-size:${titleSize}px;font-weight:900;color:#1A1A1A;text-align:center;line-height:1.2;max-width:${Math.round(w*0.88)}px;word-wrap:break-word}
+.body{position:relative;z-index:1;flex:1;padding:${Math.round(h*0.022)}px ${pad}px;display:flex;flex-direction:column;gap:${itemGap}px;min-height:0}
+.item{flex:1;display:flex;align-items:center;gap:${Math.round(w*0.028)}px;background:rgba(255,255,255,0.85);border-radius:16px;padding:${Math.round(h*0.016)}px ${Math.round(w*0.032)}px;border:1.5px solid #E8E8F0;min-height:0;overflow:hidden}
+.num{width:${numSize}px;height:${numSize}px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:${Math.round(numSize*0.42)}px;font-weight:900;flex-shrink:0;line-height:1}
+${numColors.map((c, i) => `.item:nth-child(${i+1}) .num{background:${c.bg};color:${c.color};border:2px solid ${c.border}}`).join("\n")}
+.item-text{flex:1;min-width:0;overflow:hidden}
+.item-title{font-family:'Playfair Display',serif;font-size:${itemTitleSize}px;font-weight:700;color:#1A1A1A;line-height:1.2;margin-bottom:${Math.round(h*0.005)}px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.item-body{font-size:${itemBodySize}px;font-weight:500;color:#4A4A4A;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.item-body .highlight{background:linear-gradient(180deg,transparent 55%,#FFE066 55%);font-weight:700;color:#1A1A1A;padding:0 2px}
+.footer{position:relative;z-index:1;height:${footerH}px;flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:8px;border-top:2px dashed #D0D0DC;background:transparent}
+.footer-text{font-size:${Math.round(w*0.012)}px;font-weight:700;color:#24A89B;letter-spacing:1px;text-transform:uppercase}
 </style></head><body>
-<div class="header"><div class="title">{{TITLE}}</div><div class="badge">{{BADGE}}</div></div>
+<div class="header"><div class="badge">{{BADGE}}</div><div class="title">{{TITLE}}</div></div>
 <div class="body">
-<div class="card c1"><div class="card-label">Tip 1</div><div class="card-title">{{P1_TITLE}}</div><div class="card-body">{{P1_BODY}}</div></div>
-<div class="card c2"><div class="card-label">Tip 2</div><div class="card-title">{{P2_TITLE}}</div><div class="card-body">{{P2_BODY}}</div></div>
-<div class="card c3"><div class="card-label">Tip 3</div><div class="card-title">{{P3_TITLE}}</div><div class="card-body">{{P3_BODY}}</div></div>
+${[1,2,3,4,5,6,7].map(i => `<div class="item"><div class="num">${i}</div><div class="item-text"><div class="item-title">{{P${i}_TITLE}}</div><div class="item-body">{{P${i}_BODY}}</div></div></div>`).join("\n")}
 </div>
-<div class="footer">{{FOOTER}}</div>
+<div class="footer"><div class="footer-text">{{FOOTER}}</div></div>
 </body></html>`;
 }
 
 // ─── TEMPLATE 11: FUNNEL ───
-// Constitution v3.0 — 3-step funnel as 3 vertical cards.
-// Header (20%) / Body (70%) with 3 numbered cards / Footer (10%).
-// Inter font only — cartoon character SVG dropped, 5-stage gradient bars dropped.
+// Pixel-perfect 5-stage funnel with decreasing widths. Dynamic sizing.
+// Playfair Display titles + Inter body. Cream #FDFDF9 background.
 export function funnel(w: number, h: number): string {
-  const isPortrait = h > 1100;
+  const pad = Math.round(w * 0.05);
+  const headerH = Math.round(h * 0.18);
+  const footerH = Math.round(h * 0.1);
+  const titleSize = Math.round(w * 0.048);
+  const badgeSize = Math.round(w * 0.012);
+  const stepTitleSize = Math.round(w * 0.026);
+  const stepBodySize = Math.round(w * 0.017);
+  const numSize = Math.round(w * 0.05);
+  const steps = [
+    { bg:"#FFF0F0", border:"#FFCCCC", numBg:"#FFB3B3", numColor:"#CC0000", width:"100%" },
+    { bg:"#FEF5E7", border:"#FFD4A3", numBg:"#FFD4A3", numColor:"#CC6600", width:"90%" },
+    { bg:"#FEF9E7", border:"#FFE5A0", numBg:"#FFE5A0", numColor:"#996600", width:"78%" },
+    { bg:"#E8F5E9", border:"#B3EED0", numBg:"#B3FFD1", numColor:"#006633", width:"64%" },
+    { bg:"#E3F2FD", border:"#AEC6CF", numBg:"#AEC6CF", numColor:"#004499", width:"50%" },
+  ];
+
   return `<!DOCTYPE html>
-<html><head><meta charset="UTF-8">${FONT_IMPORTS}
+<html><head><meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{width:${w}px;height:${h}px;overflow:hidden}
-body{background:#FFFFFF;font-family:'Inter',sans-serif;display:flex;flex-direction:column;color:#1F2937}
-.header{flex:0 0 20%;background:#FFFFFF;padding:32px 40px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:16px;min-height:0}
-.title{font-family:'Inter',sans-serif;font-size:${isPortrait ? 88 : 72}px;font-weight:900;color:#1F2937;text-transform:uppercase;letter-spacing:-1.8px;line-height:1;font-style:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:100%}
-.title span{color:#1F2937;background:linear-gradient(180deg,transparent 60%,#FFE066 60%);padding:0 8px}
-.badge{display:inline-block;padding:8px 22px;background:#EBF5FB;color:#1F2937;font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;border-radius:16px;font-style:normal;flex-shrink:0}
-.body{flex:1 1 70%;padding:24px 40px;display:flex;flex-direction:column;gap:16px;min-height:0}
-.card{flex:1 1 0;border-radius:16px;padding:40px;box-shadow:0 4px 16px rgba(0,0,0,0.06);display:flex;flex-direction:column;justify-content:center;font-style:normal;min-height:0;overflow:hidden}
-.card.c1{background:#FFF0F0}
-.card.c2{background:#FEF9E7}
-.card.c3{background:#EAFAF1}
-.card-label{display:flex;align-items:center;align-self:flex-start;gap:10px;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:1.8px;margin-bottom:14px;padding:6px 14px 6px 8px;border-radius:16px;font-style:normal}
-.c1 .card-label{background:#FFB3B3;color:#1F2937}
-.c2 .card-label{background:#FFD4A3;color:#1F2937}
-.c3 .card-label{background:#B3FFD1;color:#1F2937}
-.step-num{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:#FFFFFF;color:#1F2937;font-size:13px;font-weight:900;font-style:normal;flex-shrink:0}
-.card-title{font-family:'Inter',sans-serif;font-size:${isPortrait ? 32 : 28}px;font-weight:900;color:#1F2937;line-height:1.1;margin-bottom:10px;font-style:normal;max-width:600px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.card-body{font-size:${isPortrait ? 18 : 16}px;font-weight:600;color:#1F2937;line-height:1.4;font-style:normal;max-width:520px;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
-.card-body .a{color:#1F2937;background:linear-gradient(180deg,transparent 60%,#FFE066 60%);padding:0 2px;font-weight:800}
-.footer{flex:0 0 10%;background:#F8F9FA;border-top:1px solid #E5E7EB;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#24A89B;font-style:normal;letter-spacing:0.5px;min-height:0}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+html,body{width:${w}px;height:${h}px;overflow:hidden;background:#FDFDF9}
+body{font-family:'Inter',sans-serif;display:flex;flex-direction:column;color:#1A1A1A}
+.header{height:${headerH}px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${Math.round(pad*0.8)}px ${pad}px;gap:${Math.round(h*0.01)}px;background:#FDFDF9;border-bottom:1px solid #E8E8E2}
+.badge{display:inline-flex;align-items:center;background:#1A1A1A;color:#FDFDF9;font-size:${badgeSize}px;font-weight:800;letter-spacing:2px;text-transform:uppercase;padding:${Math.round(h*0.007)}px ${Math.round(w*0.025)}px;border-radius:100px}
+.title{font-family:'Playfair Display',serif;font-size:${titleSize}px;font-weight:900;color:#1A1A1A;text-align:center;line-height:1.15;max-width:${Math.round(w*0.85)}px;word-wrap:break-word}
+.body{flex:1;padding:${Math.round(h*0.02)}px ${pad}px;display:flex;flex-direction:column;align-items:center;gap:${Math.round(h*0.015)}px;min-height:0}
+.step{display:flex;align-items:center;gap:${Math.round(w*0.025)}px;border-radius:14px;padding:${Math.round(h*0.016)}px ${Math.round(w*0.035)}px;border:1.5px solid;flex-shrink:0;overflow:hidden}
+.num{width:${numSize}px;height:${numSize}px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:${Math.round(numSize*0.42)}px;font-weight:900;flex-shrink:0;line-height:1}
+.step-text{flex:1;min-width:0;overflow:hidden}
+.step-title{font-family:'Playfair Display',serif;font-size:${stepTitleSize}px;font-weight:700;color:#1A1A1A;line-height:1.2;margin-bottom:${Math.round(h*0.005)}px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.step-body{font-size:${stepBodySize}px;font-weight:500;color:#4A4A4A;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.arrow{font-size:${Math.round(w*0.028)}px;color:#C0C0C8;text-align:center;line-height:1;flex-shrink:0}
+.footer{height:${footerH}px;flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:8px;border-top:1px solid #E8E8E2;background:#FDFDF9}
+.footer-dot{width:5px;height:5px;border-radius:50%;background:#24A89B}
+.footer-text{font-size:${Math.round(w*0.012)}px;font-weight:700;color:#24A89B;letter-spacing:1px;text-transform:uppercase}
 </style></head><body>
-<div class="header"><div class="title">{{TITLE}}</div><div class="badge">{{BADGE}}</div></div>
+<div class="header"><div class="badge">{{BADGE}}</div><div class="title">{{TITLE}}</div></div>
 <div class="body">
-<div class="card c1"><div class="card-label"><span class="step-num">1</span>Step</div><div class="card-title">{{P1_TITLE}}</div><div class="card-body">{{P1_BODY}}</div></div>
-<div class="card c2"><div class="card-label"><span class="step-num">2</span>Step</div><div class="card-title">{{P2_TITLE}}</div><div class="card-body">{{P2_BODY}}</div></div>
-<div class="card c3"><div class="card-label"><span class="step-num">3</span>Step</div><div class="card-title">{{P3_TITLE}}</div><div class="card-body">{{P3_BODY}}</div></div>
+${steps.map((s, i) => `<div class="step" style="width:${s.width};background:${s.bg};border-color:${s.border}"><div class="num" style="background:${s.numBg};color:${s.numColor}">${i+1}</div><div class="step-text"><div class="step-title">{{P${i+1}_TITLE}}</div><div class="step-body">{{P${i+1}_BODY}}</div></div></div>${i < 4 ? `<div class="arrow">▼</div>` : ""}`).join("\n")}
 </div>
-<div class="footer">{{FOOTER}}</div>
+<div class="footer"><div class="footer-dot"></div><div class="footer-text">{{FOOTER}}</div><div class="footer-dot"></div></div>
 </body></html>`;
 }
 
 // ─── TEMPLATE 12: DATA_GRID ───
-// Constitution v3.0 — 3-concept reference cards.
-// Header (20%) / Body (70%) with 3 concept cards / Footer (10%).
-// Inter font only — table layout, bonus cards, and tip box dropped.
-// Distinct palette: blue/violet/green pastels (cool data accent).
+// Pixel-perfect framework table: 4 rows × 3 columns + tip box.
+// Dynamic sizing. Playfair Display titles + Inter body. Cream #FDFDF9 background.
 export function dataGrid(w: number, h: number): string {
-  const isPortrait = h > 1100;
+  const pad = Math.round(w * 0.05);
+  const headerH = Math.round(h * 0.19);
+  const footerH = Math.round(h * 0.09);
+  const bodyH = h - headerH - footerH;
+  const titleSize = Math.round(w * 0.048);
+  const badgeSize = Math.round(w * 0.012);
+  const tableHeaderSize = Math.round(w * 0.013);
+  const cellSize = Math.round(w * 0.017);
+  const dotSize = Math.round(w * 0.018);
+  const dotColors = ["#FFB3B3","#FFD4A3","#B3FFD1","#D4B3FF"];
+  const rowBgs = ["#FFFFFF","#F9FAFB","#FFFFFF","#F9FAFB"];
+
   return `<!DOCTYPE html>
-<html><head><meta charset="UTF-8">${FONT_IMPORTS}
+<html><head><meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{width:${w}px;height:${h}px;overflow:hidden}
-body{background:#FFFFFF;font-family:'Inter',sans-serif;display:flex;flex-direction:column;color:#1F2937}
-.header{flex:0 0 20%;background:#FFFFFF;padding:32px 40px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:16px;min-height:0}
-.title{font-family:'Inter',sans-serif;font-size:${isPortrait ? 88 : 72}px;font-weight:900;color:#1F2937;text-transform:uppercase;letter-spacing:-1.8px;line-height:1;font-style:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:100%}
-.title span{color:#1F2937;background:linear-gradient(180deg,transparent 60%,#FFE066 60%);padding:0 8px}
-.badge{display:inline-block;padding:8px 22px;background:#EBF5FB;color:#1F2937;font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;border-radius:16px;font-style:normal;flex-shrink:0}
-.body{flex:1 1 70%;padding:24px 40px;display:flex;flex-direction:column;gap:16px;min-height:0}
-.card{flex:1 1 0;border-radius:16px;padding:40px;box-shadow:0 4px 16px rgba(0,0,0,0.06);display:flex;flex-direction:column;justify-content:center;font-style:normal;min-height:0;overflow:hidden}
-.card.c1{background:#EBF5FB}
-.card.c2{background:#F4EDFF}
-.card.c3{background:#EAFAF1}
-.card-label{display:flex;align-items:center;align-self:flex-start;gap:10px;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:1.8px;margin-bottom:14px;padding:6px 14px;border-radius:16px;font-style:normal}
-.c1 .card-label{background:#AEC6CF;color:#1F2937}
-.c2 .card-label{background:#D4B3FF;color:#1F2937}
-.c3 .card-label{background:#B3FFD1;color:#1F2937}
-.label-dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#1F2937;flex-shrink:0}
-.card-title{font-family:'Inter',sans-serif;font-size:${isPortrait ? 32 : 28}px;font-weight:900;color:#1F2937;line-height:1.1;margin-bottom:10px;font-style:normal;max-width:600px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.card-body{font-size:${isPortrait ? 18 : 16}px;font-weight:600;color:#1F2937;line-height:1.4;font-style:normal;max-width:520px;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
-.card-body .a{color:#1F2937;background:linear-gradient(180deg,transparent 60%,#FFE066 60%);padding:0 2px;font-weight:800}
-.footer{flex:0 0 10%;background:#F8F9FA;border-top:1px solid #E5E7EB;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#24A89B;font-style:normal;letter-spacing:0.5px;min-height:0}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+html,body{width:${w}px;height:${h}px;overflow:hidden;background:#FDFDF9}
+body{font-family:'Inter',sans-serif;display:flex;flex-direction:column;color:#1A1A1A}
+.header{height:${headerH}px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${Math.round(pad*0.8)}px ${pad}px;gap:${Math.round(h*0.01)}px;background:#FDFDF9}
+.badge{display:inline-flex;align-items:center;background:#1A1A1A;color:#FDFDF9;font-size:${badgeSize}px;font-weight:800;letter-spacing:2px;text-transform:uppercase;padding:${Math.round(h*0.007)}px ${Math.round(w*0.025)}px;border-radius:100px}
+.title{font-family:'Playfair Display',serif;font-size:${titleSize}px;font-weight:900;color:#1A1A1A;text-align:center;line-height:1.15;max-width:${Math.round(w*0.85)}px;word-wrap:break-word}
+.body{flex:1;padding:0 ${pad}px ${Math.round(h*0.02)}px;display:flex;flex-direction:column;min-height:0}
+.table{flex:1;border-radius:16px;overflow:hidden;border:1.5px solid #E5E7EB;box-shadow:0 4px 24px rgba(0,0,0,0.06);display:flex;flex-direction:column}
+.table-header{display:grid;grid-template-columns:1.2fr 2fr 1.1fr;background:#EBF5FB;border-bottom:2px solid #AEC6CF;padding:${Math.round(h*0.015)}px ${Math.round(w*0.025)}px;gap:${Math.round(w*0.015)}px}
+.th{font-size:${tableHeaderSize}px;font-weight:900;text-transform:uppercase;letter-spacing:1.2px;color:#1A1A1A}
+.table-row{flex:1;display:grid;grid-template-columns:1.2fr 2fr 1.1fr;align-items:center;padding:0 ${Math.round(w*0.025)}px;gap:${Math.round(w*0.015)}px;border-bottom:1px solid #F3F4F6;min-height:0;overflow:hidden}
+.table-row:last-child{border-bottom:none}
+.cell-name{display:flex;align-items:center;gap:${Math.round(w*0.012)}px;font-weight:800;font-size:${cellSize}px;color:#1A1A1A;overflow:hidden}
+.dot{width:${dotSize}px;height:${dotSize}px;border-radius:50%;flex-shrink:0}
+.cell-desc{font-size:${Math.round(cellSize*0.94)}px;font-weight:500;color:#4A4A4A;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cell-desc .a{font-weight:800;color:#1A1A1A;background:linear-gradient(180deg,transparent 58%,#FFE066 58%);padding:0 2px}
+.cell-use{font-size:${Math.round(cellSize*0.88)}px;font-weight:700;color:#24A89B;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.tip{margin-top:${Math.round(h*0.018)}px;padding:${Math.round(h*0.016)}px ${Math.round(w*0.03)}px;background:#E8F8F6;border-radius:12px;border-left:4px solid #24A89B;display:flex;gap:${Math.round(w*0.018)}px;align-items:flex-start;flex-shrink:0}
+.tip-icon{width:${Math.round(w*0.038)}px;height:${Math.round(w*0.038)}px;border-radius:50%;background:#24A89B;color:#fff;display:flex;align-items:center;justify-content:center;font-size:${Math.round(w*0.02)}px;font-weight:900;flex-shrink:0}
+.tip-body{flex:1;font-size:${Math.round(cellSize*0.88)}px;color:#1A1A1A;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tip-label{font-size:${Math.round(w*0.011)}px;font-weight:900;color:#24A89B;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:2px}
+.footer{height:${footerH}px;flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:8px;border-top:1px solid #E8E8E2;background:#FDFDF9}
+.footer-dot{width:5px;height:5px;border-radius:50%;background:#24A89B}
+.footer-text{font-size:${Math.round(w*0.012)}px;font-weight:700;color:#24A89B;letter-spacing:1px;text-transform:uppercase}
 </style></head><body>
-<div class="header"><div class="title">{{TITLE}}</div><div class="badge">{{BADGE}}</div></div>
+<div class="header"><div class="badge">{{BADGE}}</div><div class="title">{{TITLE}}</div></div>
 <div class="body">
-<div class="card c1"><div class="card-label"><span class="label-dot"></span>Concept 1</div><div class="card-title">{{P1_TITLE}}</div><div class="card-body">{{P1_BODY}}</div></div>
-<div class="card c2"><div class="card-label"><span class="label-dot"></span>Concept 2</div><div class="card-title">{{P2_TITLE}}</div><div class="card-body">{{P2_BODY}}</div></div>
-<div class="card c3"><div class="card-label"><span class="label-dot"></span>Concept 3</div><div class="card-title">{{P3_TITLE}}</div><div class="card-body">{{P3_BODY}}</div></div>
+<div class="table">
+<div class="table-header"><div class="th">Concept</div><div class="th">Description</div><div class="th">Best for</div></div>
+${[0,1,2,3].map(i => `<div class="table-row" style="background:${rowBgs[i]}"><div class="cell-name"><div class="dot" style="background:${dotColors[i]}"></div>{{P${i+1}_TITLE}}</div><div class="cell-desc">{{P${i+1}_BODY}}</div><div class="cell-use">{{P${i+5}_TITLE}}</div></div>`).join("\n")}
 </div>
-<div class="footer">{{FOOTER}}</div>
+<div class="tip"><div class="tip-icon">★</div><div class="tip-body"><span class="tip-label">Key Takeaway</span>{{PRO_TIP}}</div></div>
+</div>
+<div class="footer"><div class="footer-dot"></div><div class="footer-text">{{FOOTER}}</div><div class="footer-dot"></div></div>
 </body></html>`;
 }
 
