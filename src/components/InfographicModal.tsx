@@ -331,46 +331,65 @@ export default function InfographicModal({ open, onClose, content, platform, con
   // ─── Downloads (PNG + JPEG from HTML via html2canvas) ───
 
   async function renderHtmlToCanvas(): Promise<HTMLCanvasElement> {
-    // Create an offscreen iframe to render the full HTML (preserves all inline styles)
-    const iframe = document.createElement("iframe");
-    iframe.style.cssText = `position:fixed;top:-9999px;left:-9999px;width:${dims.width}px;height:${dims.height}px;border:none;z-index:-1;`;
-    document.body.appendChild(iframe);
+    // Use the visible iframe if available, else create offscreen one
+    const existingIframe = iframeRef.current;
+    let iframe: HTMLIFrameElement;
+    let shouldRemove = false;
 
-    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-    if (!iframeDoc) throw new Error("Cannot access iframe document");
+    if (existingIframe?.contentDocument?.body) {
+      iframe = existingIframe;
+    } else {
+      iframe = document.createElement("iframe");
+      iframe.style.cssText = `position:fixed;top:-9999px;left:-9999px;width:${dims.width}px;height:${dims.height}px;border:none;z-index:-1;`;
+      document.body.appendChild(iframe);
+      shouldRemove = true;
 
-    iframeDoc.open();
-    iframeDoc.write(htmlCode);
-    iframeDoc.close();
+      const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (!iframeDoc) throw new Error("Cannot access iframe document");
+      iframeDoc.open();
+      iframeDoc.write(htmlCode);
+      iframeDoc.close();
+    }
 
-    // Wait for fonts and rendering
-    await new Promise((r) => setTimeout(r, 2000));
+    const iframeDoc = iframe.contentDocument!;
+
+    // Wait for fonts to be ready in the iframe context
+    try {
+      await iframe.contentWindow?.document.fonts.ready;
+    } catch { /* fonts API may not be available */ }
+
+    // Extra delay for Google Fonts @import to load
+    await new Promise((r) => setTimeout(r, 1500));
 
     const html2canvas = (await import("html2canvas")).default;
-    const canvas = await html2canvas(iframeDoc.documentElement, {
-      width: dims.width,
-      height: dims.height,
-      scale: 2,
+    const element = iframeDoc.documentElement;
+    const canvas = await html2canvas(element, {
       useCORS: true,
-      allowTaint: false,
+      allowTaint: true,
       backgroundColor: "#f8f9f7",
+      scale: 2,
       logging: false,
-      onclone: (doc: Document) => {
-        doc.querySelectorAll("*").forEach((el) => {
-          const computed = window.getComputedStyle(el);
-          const bg = computed.backgroundColor;
-          const color = computed.color;
-          if (bg && bg !== "rgba(0, 0, 0, 0)" && bg !== "transparent") {
-            (el as HTMLElement).style.backgroundColor = bg;
+      width: iframeDoc.documentElement.scrollWidth,
+      height: iframeDoc.documentElement.scrollHeight,
+      windowWidth: iframeDoc.documentElement.scrollWidth,
+      windowHeight: iframeDoc.documentElement.scrollHeight,
+      onclone: (clonedDoc: Document) => {
+        clonedDoc.querySelectorAll("*").forEach((el) => {
+          const htmlEl = el as HTMLElement;
+          const computed = window.getComputedStyle(htmlEl);
+          // Force all critical properties inline for html2canvas
+          if (computed.backgroundColor && computed.backgroundColor !== "rgba(0, 0, 0, 0)") {
+            htmlEl.style.backgroundColor = computed.backgroundColor;
           }
-          if (color) {
-            (el as HTMLElement).style.color = color;
-          }
+          if (computed.color) htmlEl.style.color = computed.color;
+          if (computed.fontFamily) htmlEl.style.fontFamily = computed.fontFamily;
+          if (computed.fontSize) htmlEl.style.fontSize = computed.fontSize;
+          if (computed.fontWeight) htmlEl.style.fontWeight = computed.fontWeight;
         });
       },
     });
 
-    document.body.removeChild(iframe);
+    if (shouldRemove) document.body.removeChild(iframe);
     return canvas;
   }
 
@@ -389,7 +408,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
         link.download = `supen-infographic-${Date.now()}.png`;
       }
       link.click();
-      toast.success("Infographic downloaded!");
+      toast.success("Downloaded!");
     } catch (err) {
       console.error("[InfographicModal] Download error:", err);
       toast.error("Download error — try again");

@@ -16,6 +16,33 @@
 
 const FONT_IMPORTS = `<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;900&family=Caveat:wght@500;700&display=swap" rel="stylesheet">`;
 
+// ─── Shared font loading head block (robust: @import + fallbacks + font-ready) ───
+const FONT_HEAD = `<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Caveat:wght@400;500;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+</style>`;
+
+// ─── SVG paper grid background (inline data URI) ───
+function gridBg(gridSize: number = 32, opacity: number = 0.06): string {
+  const r = Math.round(opacity * 255);
+  const hex = r.toString(16).padStart(2, '0');
+  return `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='${gridSize}' height='${gridSize}'%3E%3Cpath d='M ${gridSize} 0 L 0 0 0 ${gridSize}' fill='none' stroke='%2364647880' stroke-width='0.5'/%3E%3C/svg%3E")`;
+}
+
+// ─── Decorative SVG elements ───
+function wavyUnderline(width: number, color: string): string {
+  const c = encodeURIComponent(color);
+  return `<svg width="${width}" height="8" viewBox="0 0 200 8" style="display:block;margin:0 auto;"><path d="M 0 4 Q 25 1 50 4 Q 75 7 100 4 Q 125 1 150 4 Q 175 7 200 4" stroke="${color}" stroke-width="2" fill="none"/></svg>`;
+}
+
+function handArrow(color: string = '#C0392B'): string {
+  return `<svg width="40" height="20" viewBox="0 0 40 20" style="display:inline-block;vertical-align:middle;"><path d="M 2 10 Q 15 3 35 10 L 28 5 M 35 10 L 28 15" stroke="${color}" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+
+function decorStar(size: number = 14): string {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 16 16" style="display:inline;vertical-align:middle;"><text x="1" y="13" font-size="13" fill="#F5922A">★</text></svg>`;
+}
+
 // ─── TEMPLATE 1: AWA_CLASSIC (style IMG1/IMG3 — cadre bois) ───
 // ALL INLINE STYLES for html2canvas compatibility.
 export function awaClassic(w: number, h: number): string {
@@ -38,33 +65,33 @@ export function awaClassic(w: number, h: number): string {
 
   return `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet">
+${FONT_HEAD}
 </head>
-<body style="width:${w}px;height:${h}px;overflow:hidden;margin:0;padding:0;background:#3d2b1a;box-sizing:border-box;">
+<body style="width:${w}px;height:${h}px;overflow:hidden;margin:0;padding:0;background:#3d2b1a;">
 
 <div style="position:absolute;inset:0;background:#3d2b1a;"></div>
 
-<div style="position:absolute;top:${frame}px;left:${frame}px;width:${innerW}px;height:${innerH}px;background:#FFFFF5;display:flex;flex-direction:column;border:2px solid #f0e8d8;">
+<div style="position:absolute;top:${frame}px;left:${frame}px;width:${innerW}px;height:${innerH}px;background:#FFFFF5;background-image:${gridBg(32, 0.04)};display:flex;flex-direction:column;border:2px solid #f0e8d8;">
 
   <div style="height:${headerH}px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${Math.round(20*s)}px ${pad}px;gap:${Math.round(8*s)}px;border-bottom:3px solid #3d2b1a;">
-    <div style="display:inline-block;background:#3d2b1a;color:#FFFFF5;font-family:'Nunito',sans-serif;font-weight:800;font-size:${badgeSz}px;letter-spacing:2px;text-transform:uppercase;padding:${Math.round(5*s)}px ${Math.round(18*s)}px;border-radius:100px;">{{BADGE}}</div>
-    <div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:${titleSz}px;color:#111111;text-align:center;line-height:1.18;max-width:${Math.round(innerW*0.88)}px;letter-spacing:-0.01em;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{TITLE}}</div>
-    <div style="width:${Math.round(innerW*0.6)}px;height:2px;background:#3d2b1a;"></div>
+    <div style="display:inline-block;background:#3d2b1a;color:#FFFFF5;font-family:'Nunito','Arial Black',sans-serif;font-weight:800;font-size:${badgeSz}px;letter-spacing:2px;text-transform:uppercase;padding:${Math.round(5*s)}px ${Math.round(18*s)}px;border-radius:100px;">{{BADGE}}</div>
+    <div style="font-family:'Nunito','Arial Black',sans-serif;font-weight:900;font-size:${titleSz}px;color:#111111;text-align:center;line-height:1.18;max-width:${Math.round(innerW*0.88)}px;letter-spacing:-0.01em;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{TITLE}}</div>
+    ${wavyUnderline(Math.round(innerW * 0.6), '#3d2b1a')}
   </div>
 
   <div style="flex:1;padding:${Math.round(12*s)}px ${pad}px;display:flex;flex-direction:column;gap:${itemGap}px;min-height:0;">
     ${colors.map((c, i) => `
     <div style="flex:1;display:flex;align-items:center;gap:${Math.round(18*s)}px;padding:${Math.round(itemH*0.1)}px ${Math.round(16*s)}px;border-radius:${Math.round(8*s)}px;border:1px solid rgba(61,43,26,0.15);background:rgba(255,255,245,0.8);min-height:0;overflow:hidden;">
-      <div style="width:${numSz}px;height:${numSz}px;border-radius:${Math.round(8*s)}px;background:${c};display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-weight:900;font-size:${Math.round(numSz*0.44)}px;color:#ffffff;flex-shrink:0;">${i+1}</div>
+      <div style="width:${numSz}px;height:${numSz}px;border-radius:${Math.round(8*s)}px;background:${c};display:flex;align-items:center;justify-content:center;font-family:'Nunito','Arial Black',sans-serif;font-weight:900;font-size:${Math.round(numSz*0.44)}px;color:#ffffff;flex-shrink:0;">${i+1}</div>
       <div style="flex:1;min-width:0;overflow:hidden;">
-        <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:${itemTitleSz}px;color:#111111;line-height:1.2;margin-bottom:${Math.round(3*s)}px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;">{{P${i+1}_TITLE}}</div>
-        <div style="font-family:'Caveat',cursive;font-size:${Math.round(itemBodySz*1.15)}px;color:#444444;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{P${i+1}_BODY}}</div>
+        <div style="font-family:'Nunito','Arial Black',sans-serif;font-weight:800;font-size:${itemTitleSz}px;color:#111111;line-height:1.2;margin-bottom:${Math.round(3*s)}px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;">{{P${i+1}_TITLE}}</div>
+        <div style="font-family:'Caveat','Comic Sans MS',cursive;font-size:${Math.round(itemBodySz*1.15)}px;color:#444444;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{P${i+1}_BODY}}</div>
       </div>
     </div>`).join('')}
   </div>
 
   <div style="height:${footerH}px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-top:2px solid #3d2b1a;background:#FFFFF5;">
-    <div style="font-family:'Nunito',sans-serif;font-weight:700;font-size:${Math.round(13*s)}px;color:#3d2b1a;letter-spacing:0.5px;">{{FOOTER}} | Repost ↺</div>
+    <div style="font-family:'Nunito','Arial Black',sans-serif;font-weight:700;font-size:${Math.round(13*s)}px;color:#3d2b1a;letter-spacing:0.5px;">{{FOOTER}} | Repost ↺</div>
   </div>
 
 </div>
@@ -402,30 +429,30 @@ export function uiCards(w: number, h: number): string {
 
   return `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet">
+${FONT_HEAD}
 </head>
-<body style="width:${w}px;height:${h}px;overflow:hidden;margin:0;padding:0;background:#f8f9f7;font-family:'Caveat',cursive;display:flex;flex-direction:column;box-sizing:border-box;">
+<body style="width:${w}px;height:${h}px;overflow:hidden;margin:0;padding:0;background:#f8f9f7;background-image:${gridBg(32, 0.05)};font-family:'Caveat','Comic Sans MS',cursive;display:flex;flex-direction:column;">
 
-<div style="height:${headerH}px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${Math.round(24*s)}px ${pad}px ${Math.round(16*s)}px;gap:${Math.round(12*s)}px;background:#f8f9f7;">
-  <div style="display:inline-block;background:#111111;color:#f8f9f7;font-family:'Nunito',sans-serif;font-weight:800;font-size:${badgeSz}px;letter-spacing:2.5px;text-transform:uppercase;padding:${Math.round(7*s)}px ${Math.round(24*s)}px;border-radius:100px;">{{BADGE}}</div>
-  <div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:${titleSz}px;color:#111111;text-align:center;line-height:1.15;max-width:${Math.round(w*0.85)}px;letter-spacing:-0.01em;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{TITLE}}</div>
+<div style="height:${headerH}px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${Math.round(24*s)}px ${pad}px ${Math.round(16*s)}px;gap:${Math.round(12*s)}px;">
+  <div style="display:inline-block;background:#111111;color:#f8f9f7;font-family:'Nunito','Arial Black',sans-serif;font-weight:800;font-size:${badgeSz}px;letter-spacing:2.5px;text-transform:uppercase;padding:${Math.round(7*s)}px ${Math.round(24*s)}px;border-radius:100px;">{{BADGE}}</div>
+  <div style="font-family:'Nunito','Arial Black',sans-serif;font-weight:900;font-size:${titleSz}px;color:#111111;text-align:center;line-height:1.15;max-width:${Math.round(w*0.85)}px;letter-spacing:-0.01em;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{TITLE}}</div>
 </div>
 
 <div style="flex:1;padding:0 ${pad}px;display:flex;flex-direction:column;gap:${cardGap}px;min-height:0;">
 ${cards.map((c, i) => `
   <div style="flex:1;background:${c.bg};border:1.5px solid ${c.border};border-radius:${Math.round(20*s)}px;padding:${Math.round(16*s)}px ${Math.round(32*s)}px;display:flex;align-items:center;gap:${Math.round(24*s)}px;min-height:0;overflow:hidden;">
-    <div style="width:${numSz}px;height:${numSz}px;border-radius:50%;background:${c.numBg};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Nunito',sans-serif;font-weight:900;font-size:${Math.round(numSz*0.48)}px;color:${c.numColor};">${c.icon}</div>
+    <div style="width:${numSz}px;height:${numSz}px;border-radius:50%;background:${c.numBg};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Nunito','Arial Black',sans-serif;font-weight:900;font-size:${Math.round(numSz*0.48)}px;color:${c.numColor};">${c.icon}</div>
     <div style="flex:1;min-width:0;overflow:hidden;">
-      <div style="display:inline-flex;align-items:center;background:${c.labelBg};color:${c.labelColor};font-family:'Nunito',sans-serif;font-weight:900;font-size:${labelSz}px;text-transform:uppercase;letter-spacing:2px;padding:3px 10px;border-radius:100px;margin-bottom:${Math.round(8*s)}px;">${c.label}</div>
-      <div style="font-family:'Nunito',sans-serif;font-weight:700;font-size:${cardTitleSz}px;color:#111111;line-height:1.2;margin-bottom:${Math.round(6*s)}px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{P${i+1}_TITLE}}</div>
-      <div style="font-family:'Caveat',cursive;font-size:${cardBodySz}px;color:#444444;line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">{{P${i+1}_BODY}}</div>
+      <div style="display:inline-flex;align-items:center;background:${c.labelBg};color:${c.labelColor};font-family:'Nunito','Arial Black',sans-serif;font-weight:900;font-size:${labelSz}px;text-transform:uppercase;letter-spacing:2px;padding:3px 10px;border-radius:100px;margin-bottom:${Math.round(8*s)}px;">${c.label}</div>
+      <div style="font-family:'Nunito','Arial Black',sans-serif;font-weight:700;font-size:${cardTitleSz}px;color:#111111;line-height:1.2;margin-bottom:${Math.round(6*s)}px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{P${i+1}_TITLE}}</div>
+      <div style="font-family:'Caveat','Comic Sans MS',cursive;font-size:${cardBodySz}px;color:#444444;line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">{{P${i+1}_BODY}}</div>
     </div>
   </div>`).join('')}
 </div>
 
 <div style="height:${footerH}px;flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:${Math.round(8*s)}px;border-top:1px solid #E8E8E2;background:#f8f9f7;">
   <div style="width:5px;height:5px;border-radius:50%;background:#24A89B;"></div>
-  <div style="font-family:'Nunito',sans-serif;font-weight:700;font-size:${Math.round(13*s)}px;color:#24A89B;letter-spacing:1px;text-transform:uppercase;">{{FOOTER}} | Repost ↺</div>
+  <div style="font-family:'Nunito','Arial Black',sans-serif;font-weight:700;font-size:${Math.round(13*s)}px;color:#24A89B;letter-spacing:1px;text-transform:uppercase;">{{FOOTER}} | Repost ↺</div>
   <div style="width:5px;height:5px;border-radius:50%;background:#24A89B;"></div>
 </div>
 
@@ -450,9 +477,9 @@ export function whiteboard(w: number, h: number): string {
 
   return `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet">
+${FONT_HEAD}
 </head>
-<body style="width:${w}px;height:${h}px;overflow:hidden;margin:0;padding:0;background:#f8f9f7;font-family:'Caveat',cursive;display:flex;flex-direction:column;border:0.5px solid #e0e0e0;position:relative;box-sizing:border-box;">
+<body style="width:${w}px;height:${h}px;overflow:hidden;margin:0;padding:0;background:#f8f9f7;background-image:${gridBg(32, 0.05)};font-family:'Caveat','Comic Sans MS',cursive;display:flex;flex-direction:column;border:0.5px solid #e0e0e0;position:relative;">
 
 <div style="position:absolute;top:8px;left:8px;width:${Math.round(12*s)}px;height:${Math.round(18*s)}px;background:#555555;border-radius:2px;z-index:10;"></div>
 <div style="position:absolute;top:8px;right:8px;width:${Math.round(12*s)}px;height:${Math.round(18*s)}px;background:#555555;border-radius:2px;z-index:10;"></div>
@@ -460,24 +487,24 @@ export function whiteboard(w: number, h: number): string {
 <div style="position:absolute;bottom:8px;right:8px;width:${Math.round(12*s)}px;height:${Math.round(18*s)}px;background:#555555;border-radius:2px;z-index:10;"></div>
 
 <div style="height:${headerH}px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${Math.round(24*s)}px ${pad}px ${Math.round(16*s)}px;gap:${Math.round(10*s)}px;">
-  <div style="display:inline-block;background:#C0392B;color:#ffffff;font-family:'Nunito',sans-serif;font-weight:800;font-size:${badgeSz}px;letter-spacing:2px;text-transform:uppercase;padding:${Math.round(6*s)}px ${Math.round(20*s)}px;border-radius:100px;">{{BADGE}}</div>
-  <div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:${titleSz}px;color:#111111;text-align:center;line-height:1.15;max-width:${Math.round(w*0.88)}px;letter-spacing:-0.01em;">[{{TITLE}}]</div>
-  <div style="width:${Math.round(w*0.7)}px;height:2px;background:#C0392B;"></div>
+  <div style="display:inline-block;background:#C0392B;color:#ffffff;font-family:'Nunito','Arial Black',sans-serif;font-weight:800;font-size:${badgeSz}px;letter-spacing:2px;text-transform:uppercase;padding:${Math.round(6*s)}px ${Math.round(20*s)}px;border-radius:100px;">{{BADGE}}</div>
+  <div style="font-family:'Nunito','Arial Black',sans-serif;font-weight:900;font-size:${titleSz}px;color:#111111;text-align:center;line-height:1.15;max-width:${Math.round(w*0.88)}px;letter-spacing:-0.01em;">[{{TITLE}}]</div>
+  ${wavyUnderline(Math.round(w * 0.7), '#C0392B')}
 </div>
 
 <div style="flex:1;padding:${Math.round(12*s)}px ${pad}px;display:flex;flex-direction:column;gap:${itemGap}px;min-height:0;">
 ${[1,2,3,4,5,6,7].map((n,i) => `
   <div style="flex:1;display:flex;align-items:center;gap:${Math.round(20*s)}px;background:#ffffff;border-radius:${Math.round(12*s)}px;padding:${Math.round(12*s)}px ${Math.round(20*s)}px;border-left:4px solid ${borderColors[i]};min-height:0;overflow:hidden;">
-    <div style="width:${numSz}px;height:${numSz}px;border-radius:50%;border:2px solid #111111;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Nunito',sans-serif;font-weight:900;font-size:${Math.round(20*s)}px;color:#111111;">${n}</div>
+    <div style="width:${numSz}px;height:${numSz}px;border-radius:50%;border:2px solid #111111;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Nunito','Arial Black',sans-serif;font-weight:900;font-size:${Math.round(20*s)}px;color:#111111;">${n}</div>
     <div style="flex:1;min-width:0;overflow:hidden;">
-      <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:${itemTitleSz}px;color:#111111;line-height:1.2;margin-bottom:${Math.round(4*s)}px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;">{{P${n}_TITLE}}</div>
-      <div style="font-family:'Caveat',cursive;font-size:${itemBodySz}px;color:#444444;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{P${n}_BODY}}</div>
+      <div style="font-family:'Nunito','Arial Black',sans-serif;font-weight:800;font-size:${itemTitleSz}px;color:#111111;line-height:1.2;margin-bottom:${Math.round(4*s)}px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;">{{P${n}_TITLE}}</div>
+      <div style="font-family:'Caveat','Comic Sans MS',cursive;font-size:${itemBodySz}px;color:#444444;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{P${n}_BODY}}</div>
     </div>
   </div>`).join('')}
 </div>
 
 <div style="height:${footerH}px;flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:${Math.round(8*s)}px;border-top:0.5px solid #cccccc;background:#fafafa;">
-  <div style="font-family:'Nunito',sans-serif;font-weight:700;font-size:${Math.round(15*s)}px;color:#333333;">{{FOOTER}} | Repost ↺</div>
+  <div style="font-family:'Nunito','Arial Black',sans-serif;font-weight:700;font-size:${Math.round(15*s)}px;color:#333333;">{{FOOTER}} | Repost ↺</div>
 </div>
 
 </body></html>`;
@@ -507,36 +534,41 @@ export function funnel(w: number, h: number): string {
 
   return `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet">
+${FONT_HEAD}
 </head>
-<body style="width:${w}px;min-height:${h}px;overflow:hidden;margin:0;padding:${pad}px;background:#fffef5;font-family:'Caveat',cursive;box-sizing:border-box;">
+<body style="width:${w}px;min-height:${h}px;overflow:hidden;margin:0;padding:${pad}px;background:#fffef5;background-image:${gridBg(32, 0.04)};font-family:'Caveat','Comic Sans MS',cursive;box-sizing:border-box;position:relative;">
+
+<!-- Decorative stars -->
+<div style="position:absolute;top:${Math.round(20*s)}px;right:${Math.round(30*s)}px;">${decorStar(Math.round(16*s))}</div>
+<div style="position:absolute;top:${Math.round(60*s)}px;left:${Math.round(25*s)}px;">${decorStar(Math.round(12*s))}</div>
+<div style="position:absolute;bottom:${Math.round(100*s)}px;right:${Math.round(50*s)}px;">${decorStar(Math.round(14*s))}</div>
 
 <div style="text-align:center;margin-bottom:${Math.round(8*s)}px;">
-  <div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:${titleSz}px;line-height:1.1;color:#111111;letter-spacing:-0.01em;">{{TITLE}}</div>
+  <div style="font-family:'Nunito','Arial Black',sans-serif;font-weight:900;font-size:${titleSz}px;line-height:1.1;color:#111111;letter-spacing:-0.01em;">{{TITLE}}</div>
 </div>
-<div style="text-align:center;font-family:'Caveat',cursive;font-size:${Math.round(18*s)}px;color:#666666;font-style:italic;margin-bottom:${Math.round(20*s)}px;">{{P6_BODY}}</div>
+<div style="text-align:center;font-family:'Caveat','Comic Sans MS',cursive;font-size:${Math.round(18*s)}px;color:#666666;font-style:italic;margin-bottom:${Math.round(20*s)}px;">{{P6_BODY}}</div>
 
 <div style="text-align:center;margin-bottom:${Math.round(20*s)}px;">
-  <span style="display:inline-block;background:#111111;color:#ffffff;font-family:'Nunito',sans-serif;font-weight:800;font-size:${badgeSz}px;letter-spacing:2px;text-transform:uppercase;padding:${Math.round(6*s)}px ${Math.round(20*s)}px;border-radius:100px;">{{BADGE}}</span>
+  <span style="display:inline-block;background:#111111;color:#ffffff;font-family:'Nunito','Arial Black',sans-serif;font-weight:800;font-size:${badgeSz}px;letter-spacing:2px;text-transform:uppercase;padding:${Math.round(6*s)}px ${Math.round(20*s)}px;border-radius:100px;">{{BADGE}}</span>
 </div>
 
 ${steps.map((step, i) => `
 <div style="background:${step.bg};border-radius:${Math.round(12*s)}px;display:flex;align-items:center;min-height:${cardH}px;width:${step.width};margin:0 auto;">
-  <div style="width:${numSz}px;height:${numSz}px;border-radius:50%;background:#ffffff;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:${Math.round(16*s)}px;font-family:'Nunito',sans-serif;font-weight:700;font-size:${Math.round(18*s)}px;color:${step.badgeColor};">${i+1}</div>
+  <div style="width:${numSz}px;height:${numSz}px;border-radius:50%;background:#ffffff;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:${Math.round(16*s)}px;font-family:'Nunito','Arial Black',sans-serif;font-weight:700;font-size:${Math.round(18*s)}px;color:${step.badgeColor};">${i+1}</div>
   <div style="padding:${Math.round(12*s)}px ${Math.round(16*s)}px ${Math.round(12*s)}px ${Math.round(12*s)}px;flex:1;min-width:0;overflow:hidden;">
-    <div style="font-family:'Nunito',sans-serif;font-weight:700;font-size:${stepTitleSz}px;color:${step.textColor};line-height:1.2;margin-bottom:4px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;">{{P${i+1}_TITLE}}</div>
-    <div style="font-family:'Caveat',cursive;font-size:${stepBodySz}px;color:rgba(255,255,255,0.88);font-style:italic;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{P${i+1}_BODY}}</div>
+    <div style="font-family:'Nunito','Arial Black',sans-serif;font-weight:700;font-size:${stepTitleSz}px;color:${step.textColor};line-height:1.2;margin-bottom:4px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;">{{P${i+1}_TITLE}}</div>
+    <div style="font-family:'Caveat','Comic Sans MS',cursive;font-size:${stepBodySz}px;color:rgba(255,255,255,0.88);font-style:italic;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{P${i+1}_BODY}}</div>
   </div>
 </div>
 ${i < 4 ? `<div style="text-align:center;height:${arrowH}px;display:flex;align-items:center;justify-content:center;"><span style="font-size:${Math.round(20*s)}px;color:#C0392B;line-height:1;">▼</span></div>` : ''}
 `).join('')}
 
 <div style="border:1.5px solid #2E7D32;border-radius:${Math.round(8*s)}px;padding:${Math.round(16*s)}px ${Math.round(20*s)}px;margin-top:${spaceAfter}px;background:#ffffff;">
-  <div style="font-family:'Nunito',sans-serif;font-weight:700;font-size:${Math.round(13*s)}px;color:#2E7D32;margin-bottom:${Math.round(6*s)}px;text-transform:uppercase;letter-spacing:0.05em;">PRO TIP:</div>
-  <div style="font-family:'Caveat',cursive;font-size:${Math.round(18*s)}px;color:#333333;font-style:italic;">{{PRO_TIP}}</div>
+  <div style="font-family:'Nunito','Arial Black',sans-serif;font-weight:700;font-size:${Math.round(13*s)}px;color:#2E7D32;margin-bottom:${Math.round(6*s)}px;text-transform:uppercase;letter-spacing:0.05em;">PRO TIP: ${decorStar(Math.round(12*s))}</div>
+  <div style="font-family:'Caveat','Comic Sans MS',cursive;font-size:${Math.round(18*s)}px;color:#333333;font-style:italic;">{{PRO_TIP}}</div>
 </div>
 
-<div style="text-align:center;padding:${Math.round(20*s)}px 0 0;border-top:0.5px solid #cccccc;margin-top:${spaceAfter}px;font-family:'Nunito',sans-serif;font-weight:600;font-size:${Math.round(15*s)}px;color:#333333;">
+<div style="text-align:center;padding:${Math.round(20*s)}px 0 0;border-top:0.5px solid #cccccc;margin-top:${spaceAfter}px;font-family:'Nunito','Arial Black',sans-serif;font-weight:600;font-size:${Math.round(15*s)}px;color:#333333;">
   {{FOOTER}} | Repost ↺
 </div>
 
@@ -562,46 +594,46 @@ export function dataGrid(w: number, h: number): string {
 
   return `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet">
+${FONT_HEAD}
 </head>
-<body style="width:${w}px;height:${h}px;overflow:hidden;margin:0;padding:0;background:#f8f9f7;font-family:'Caveat',cursive;display:flex;flex-direction:column;box-sizing:border-box;">
+<body style="width:${w}px;height:${h}px;overflow:hidden;margin:0;padding:0;background:#f8f9f7;background-image:${gridBg(32, 0.05)};font-family:'Caveat','Comic Sans MS',cursive;display:flex;flex-direction:column;">
 
 <div style="height:${headerH}px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${Math.round(24*s)}px ${pad}px;gap:${Math.round(10*s)}px;border-bottom:2px solid #C0392B;">
-  <div style="display:inline-block;background:#2563EB;color:#ffffff;font-family:'Nunito',sans-serif;font-weight:800;font-size:${badgeSz}px;letter-spacing:2px;text-transform:uppercase;padding:${Math.round(6*s)}px ${Math.round(20*s)}px;border-radius:100px;">{{BADGE}}</div>
-  <div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:${titleSz}px;color:#111111;text-align:center;line-height:1.15;max-width:${Math.round(w*0.85)}px;letter-spacing:-0.01em;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{TITLE}}</div>
+  <div style="display:inline-block;background:#2563EB;color:#ffffff;font-family:'Nunito','Arial Black',sans-serif;font-weight:800;font-size:${badgeSz}px;letter-spacing:2px;text-transform:uppercase;padding:${Math.round(6*s)}px ${Math.round(20*s)}px;border-radius:100px;">{{BADGE}}</div>
+  <div style="font-family:'Nunito','Arial Black',sans-serif;font-weight:900;font-size:${titleSz}px;color:#111111;text-align:center;line-height:1.15;max-width:${Math.round(w*0.85)}px;letter-spacing:-0.01em;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{TITLE}}</div>
 </div>
 
 <div style="flex:1;padding:0 ${pad}px ${Math.round(pad*0.5)}px;display:flex;flex-direction:column;min-height:0;">
 
   <div style="flex:1;border-radius:${Math.round(12*s)}px;overflow:hidden;border:1.5px solid #e0e0e0;display:flex;flex-direction:column;box-shadow:0 2px 16px rgba(0,0,0,0.05);">
     <div style="display:grid;grid-template-columns:1.2fr 2fr 1fr;background:#f5f5f5;border-bottom:2px solid #e0e0e0;padding:${Math.round(14*s)}px ${Math.round(20*s)}px;gap:${Math.round(12*s)}px;">
-      <div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:${thSz}px;text-transform:uppercase;letter-spacing:1px;color:#C0392B;">Concept</div>
-      <div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:${thSz}px;text-transform:uppercase;letter-spacing:1px;color:#2563EB;">Description</div>
-      <div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:${thSz}px;text-transform:uppercase;letter-spacing:1px;color:#4A8B35;">Best For</div>
+      <div style="font-family:'Nunito','Arial Black',sans-serif;font-weight:900;font-size:${thSz}px;text-transform:uppercase;letter-spacing:1px;color:#C0392B;">Concept</div>
+      <div style="font-family:'Nunito','Arial Black',sans-serif;font-weight:900;font-size:${thSz}px;text-transform:uppercase;letter-spacing:1px;color:#2563EB;">Description</div>
+      <div style="font-family:'Nunito','Arial Black',sans-serif;font-weight:900;font-size:${thSz}px;text-transform:uppercase;letter-spacing:1px;color:#4A8B35;">Best For</div>
     </div>
     ${[0,1,2,3].map(i => `
     <div style="flex:1;display:grid;grid-template-columns:1.2fr 2fr 1fr;align-items:center;padding:0 ${Math.round(20*s)}px;gap:${Math.round(12*s)}px;border-bottom:0.5px solid #e8e8e8;background:${rowBgs[i]};min-height:0;overflow:hidden;">
-      <div style="display:flex;align-items:center;gap:${Math.round(10*s)}px;font-family:'Nunito',sans-serif;font-weight:800;font-size:${cellSz}px;color:#111111;overflow:hidden;">
+      <div style="display:flex;align-items:center;gap:${Math.round(10*s)}px;font-family:'Nunito','Arial Black',sans-serif;font-weight:800;font-size:${cellSz}px;color:#111111;overflow:hidden;">
         <div style="width:${dotSz}px;height:${dotSz}px;border-radius:50%;background:${dots[i]};flex-shrink:0;"></div>
         <span style="overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;">{{P${i+1}_TITLE}}</span>
       </div>
-      <div style="font-family:'Caveat',cursive;font-size:${Math.round(cellSz*1.1)}px;color:#444444;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{P${i+1}_BODY}}</div>
-      <div style="font-family:'Nunito',sans-serif;font-weight:700;font-size:${Math.round(cellSz*0.88)}px;color:#4A8B35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{P${i+5}_TITLE}}</div>
+      <div style="font-family:'Caveat','Comic Sans MS',cursive;font-size:${Math.round(cellSz*1.1)}px;color:#444444;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{P${i+1}_BODY}}</div>
+      <div style="font-family:'Nunito','Arial Black',sans-serif;font-weight:700;font-size:${Math.round(cellSz*0.88)}px;color:#4A8B35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{P${i+5}_TITLE}}</div>
     </div>`).join('')}
   </div>
 
   <div style="margin-top:${Math.round(16*s)}px;padding:${Math.round(14*s)}px ${Math.round(20*s)}px;background:#fffdf0;border-radius:${Math.round(10*s)}px;border-left:4px solid #C0392B;display:flex;gap:${Math.round(14*s)}px;align-items:flex-start;flex-shrink:0;">
     <div>
-      <div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:${Math.round(11*s)}px;color:#C0392B;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;">★ Key Takeaway</div>
-      <div style="font-family:'Caveat',cursive;font-size:${Math.round(cellSz*1.05)}px;color:#111111;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{PRO_TIP}}</div>
+      <div style="font-family:'Nunito','Arial Black',sans-serif;font-weight:900;font-size:${Math.round(11*s)}px;color:#C0392B;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;">★ Key Takeaway</div>
+      <div style="font-family:'Caveat','Comic Sans MS',cursive;font-size:${Math.round(cellSz*1.05)}px;color:#111111;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{PRO_TIP}}</div>
     </div>
   </div>
 
 </div>
 
 <div style="height:${footerH}px;flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:${Math.round(8*s)}px;border-top:1px solid #e0e0e0;background:#fafafa;">
-  <div style="font-family:'Nunito',sans-serif;font-weight:700;font-size:${Math.round(15*s)}px;color:#2563EB;">{{FOOTER}}</div>
-  <div style="font-family:'Nunito',sans-serif;font-weight:700;font-size:${Math.round(15*s)}px;color:#444444;">| Repost ↺</div>
+  <div style="font-family:'Nunito','Arial Black',sans-serif;font-weight:700;font-size:${Math.round(15*s)}px;color:#2563EB;">{{FOOTER}}</div>
+  <div style="font-family:'Nunito','Arial Black',sans-serif;font-weight:700;font-size:${Math.round(15*s)}px;color:#444444;">| Repost ↺</div>
 </div>
 
 </body></html>`;
