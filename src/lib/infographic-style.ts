@@ -301,12 +301,12 @@ CANVAS:
 
 TITLE BLOCK (top 12% of canvas):
 - Title: "${extraction.title}" — Nunito Black 900, 52-56px, #111111, centered
-- Colored underline below title: 2-3px, color #c0392b, full width minus 40px margins
+- Colored underline below title: 2-3px, color #C0392B, full width minus 40px margins
 
 CONTENT (12% to 93% height):
 - Left/right padding: 40px
 - Each SECTION has:
-  * Section header: Nunito Bold 20-24px, colored (#c0392b or #2B4DAF or #4A8B35)
+  * Section header: Nunito Bold 20-24px, colored (#C0392B or #2B4DAF or #2E7D32)
   * Colored underline 2px under header, same color
   * Bullets: colored • symbols, Caveat 400 18-20px, #111111
   * Key terms: yellow #E8F044 background highlight (inline, flat)
@@ -331,9 +331,9 @@ TITLE BLOCK: Nunito Black 900, 48-52px, #111111, centered
 Yellow #E8F044 highlight on one keyword
 
 3 CARDS stacked vertically:
-Card 1 (Avoid): bg #fff5f5, border-left 5px #c0392b, icon ✗ red
-Card 2 (Better): bg #fffbf0, border-left 5px #F5922A, icon ~ orange
-Card 3 (Best): bg #f2faf0, border-left 5px #4A8B35, icon ✓ green
+Card 1 (Avoid): bg #FFF0F0, border 1.5px #FFCCCC, border-left 5px #C0392B, icon ✗ bg #FFB3B3 color #CC0000
+Card 2 (Better): bg #FEF9E7, border 1.5px #FFE5A0, border-left 5px #D4A017, icon ~ bg #FFD4A3 color #CC6600
+Card 3 (Best): bg #F0FFF4, border 1.5px #B3EED0, border-left 5px #2E7D32, icon ✓ bg #B3FFD1 color #006633
 
 Each card: Nunito 800 title + Caveat 400 body, border-radius 16px
 Key terms: yellow #E8F044 background inline highlight
@@ -354,13 +354,13 @@ TITLE BLOCK (top 14%):
 
 FUNNEL (center, 70% height):
 - 5 horizontal stages, progressively narrower (100% → 88% → 74% → 60% → 46%)
-- Stage 1: #c0392b (red) — widest
-- Stage 2: #F5922A (orange)
-- Stage 3: #EAB308 (amber)
-- Stage 4: #4A8B35 (green)
-- Stage 5: #2B4DAF (blue) — narrowest
+- Stage 1: #B83228 (red) — widest
+- Stage 2: #E07B20 (orange)
+- Stage 3: #D4A017 (gold)
+- Stage 4: #2E7D32 (green)
+- Stage 5: #1565C0 (blue) — narrowest
 - Each stage: white number circle + Nunito 800 title + Caveat 400 body
-- ▼ arrows between stages in #c0392b
+- ▼ arrows between stages in #C0392B
 - Key terms: yellow #E8F044 background highlight
 
 STAGES TO RENDER:
@@ -379,16 +379,16 @@ One keyword highlighted with #E8F044 background
 
 TABLE (4 rows × 3 columns):
 - Header: bg #f5f5f5, Nunito 900 uppercase
-  * Column 1 "Concept": color #c0392b
+  * Column 1 "Concept": color #C0392B
   * Column 2 "Description": color #2B4DAF
-  * Column 3 "Best For": color #4A8B35
+  * Column 3 "Best For": color #2E7D32
 - Rows alternate: #ffffff / #f9f9f9
-- Colored dots per row: #c0392b / #F5922A / #4A8B35 / #2B4DAF
+- Colored dots per row: #C0392B / #D4A017 / #2E7D32 / #8B5CF6
 - Concept names: Nunito 800
 - Descriptions: Caveat 400, key terms highlighted #E8F044
-- Use cases: Nunito 700, color #4A8B35
+- Use cases: Nunito 700, color #2E7D32
 
-KEY TAKEAWAY box: border-left 4px #c0392b, bg #fffdf0
+KEY TAKEAWAY box: border-left 4px #C0392B, bg #fffdf0
 
 CONTENT:
 ${pointsList}
@@ -418,7 +418,7 @@ CONTENT (12% to 88%):
   * Colored underline 2px under title
   * Body: Caveat 400, 14-16px, #111111
   * Key terms: yellow #E8F044 background highlight
-- Colors: #c0392b, #2B4DAF, #4A8B35, #F5922A, #8B5CF6, #EC4899, #0D9488
+- Colors: #C0392B, #2B4DAF, #2E7D32, #D4A017, #8B5CF6, #EC4899, #0D9488
 
 SECTIONS TO RENDER:
 ${pointsList}
@@ -448,34 +448,51 @@ MANDATORY STYLE RULES — NO EXCEPTIONS:
 1. Background MUST be #f8f9f7 (off-white cool). NEVER dark backgrounds.
 2. EXACTLY TWO font families:
    - Heavy printed: Nunito ExtraBold 900 / Poppins Black for titles + headers
-   - Handwritten: Caveat 400-700 / Patrick Hand for body text + bullets
+   - Handwritten: Caveat 400-700 for body text + bullets
 3. Maximum 4 accent colors ONLY:
-   - Red: #c0392b (warm brownish red — NOT #ff0000)
-   - Blue: #2B4DAF (deep medium blue — NOT navy)
-   - Green: #4A8B35 (natural medium green — NOT lime)
+   - Red: #C0392B (warm brownish red — NOT #ff0000, NOT #E63946)
+   - Blue: #2B4DAF (deep medium blue — NOT navy, NOT #4285F4)
+   - Green: #2E7D32 (natural medium green — NOT lime, NOT #16A34A)
    - Yellow: #E8F044 (ONLY as inline text highlight background)
 4. NO gradients on text. NO gradient backgrounds. NO dark cards.
 5. Yellow #E8F044 = ONLY inline highlighting pen behind words. NEVER as card/section color.
 6. Pack information densely but readably.
 7. Every section header must have a colored underline accent.
 8. Must look like meticulous hand-crafted study notes — NOT AI-generated corporate slides.
+9. ALL CSS MUST BE INLINE (style="...") — NEVER use CSS classes.
+   This is critical for PNG export compatibility with html2canvas.
+
+TITRE OBLIGATOIRE:
+font-family: 'Nunito', sans-serif;
+font-weight: 900;
+font-size: 52px minimum;
+color: #111111;
+letter-spacing: -0.01em;
+text-align: center;
+
+CORPS OBLIGATOIRE:
+font-family: 'Caveat', cursive;
+font-weight: 400-700;
+font-size: minimum 15px;
+color: #111111;
 
 CRITICAL TYPOGRAPHY:
 - Titles: 52-56px, weight 900, color #111111
-- Section headers: 20-24px, bold, colored
-- Body bullets: 18-20px, Caveat-style, #111111
-- Small details/examples: 14-16px, italic, colored
-- Footer CTA: 20-22px bold, creator name blue underlined
+- Section headers: 20-24px, Nunito bold, colored
+- Body bullets: 18-20px, Caveat 400, #111111
+- Small details/examples: 14-16px, Caveat italic, colored
+- Footer CTA: 15-18px Nunito bold, creator name blue underlined
 - MINIMUM font size: 13px (thumbnail-safe)
 
 EXACT COLOR VALUES — USE ONLY THESE:
 - Background: #f8f9f7
 - Primary text: #111111
-- Red: #c0392b
+- Red: #C0392B
 - Blue: #2B4DAF
-- Green: #4A8B35
+- Green: #2E7D32
+- Gold/Orange: #D4A017
 - Yellow highlight: #E8F044
-- Orange accent: #F5922A
+- Orange accent: #F5922A (secondary)
 - Gray separators: #e0e0e0
 - Secondary text: #666666
 - Footer text: #333333`;
@@ -505,13 +522,16 @@ ${"═".repeat(50)}
 TECHNICAL REQUIREMENTS
 ${"═".repeat(50)}
 
-CSS MANDATORY:
+CSS MANDATORY — ALL INLINE STYLES:
 - html, body { width: ${dims.width}px; height: ${dims.height}px; overflow: hidden; margin: 0; padding: 0; }
 - body { background: #f8f9f7; font-family: 'Nunito', sans-serif; display: flex; flex-direction: column; }
 - Safe zone padding: ${safePad}px on all sides
+- CRITICAL: ALL styles MUST be inline (style="..."). NEVER use CSS classes.
+  Only <style>*{box-sizing:border-box;margin:0;padding:0}</style> is allowed in <head>.
+  This ensures html2canvas PNG export captures all colors correctly.
 
 FONTS (load from Google Fonts):
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Caveat:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 CONTENT TO INTEGRATE:
 Title: ${extraction.title}

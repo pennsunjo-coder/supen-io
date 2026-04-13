@@ -25,7 +25,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { assertOnline, withTimeout, sanitizeInfographicHtml, friendlyError } from "@/lib/resilience";
 
-const FONT_LINK = '<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">';
+const FONT_LINK = '<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet">';
 
 function injectFontsInHtml(html: string): string {
   if (html.includes("fonts.googleapis.com")) return html;
@@ -331,32 +331,46 @@ export default function InfographicModal({ open, onClose, content, platform, con
   // ─── Downloads (PNG + JPEG from HTML via html2canvas) ───
 
   async function renderHtmlToCanvas(): Promise<HTMLCanvasElement> {
-    const container = document.createElement("div");
-    container.style.cssText = `position:fixed;top:-9999px;left:-9999px;width:${dims.width}px;height:${dims.height}px;overflow:hidden;z-index:-1;`;
-    const styleMatch = htmlCode.match(/<style[\s\S]*?<\/style>/i);
-    const bodyMatch = htmlCode.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-    container.innerHTML = (styleMatch ? styleMatch[0] : "") + (bodyMatch ? bodyMatch[1] : htmlCode);
-    const bodyStyleMatch = htmlCode.match(/<body[^>]*style="([^"]*)"/i);
-    if (bodyStyleMatch) container.style.cssText += bodyStyleMatch[1];
-    container.style.width = `${dims.width}px`;
-    container.style.height = `${dims.height}px`;
-    container.style.overflow = "hidden";
-    container.style.background = "#FDFDF9";
-    container.style.boxSizing = "border-box";
-    document.body.appendChild(container);
-    await new Promise((r) => setTimeout(r, 1500));
+    // Create an offscreen iframe to render the full HTML (preserves all inline styles)
+    const iframe = document.createElement("iframe");
+    iframe.style.cssText = `position:fixed;top:-9999px;left:-9999px;width:${dims.width}px;height:${dims.height}px;border:none;z-index:-1;`;
+    document.body.appendChild(iframe);
+
+    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!iframeDoc) throw new Error("Cannot access iframe document");
+
+    iframeDoc.open();
+    iframeDoc.write(htmlCode);
+    iframeDoc.close();
+
+    // Wait for fonts and rendering
+    await new Promise((r) => setTimeout(r, 2000));
 
     const html2canvas = (await import("html2canvas")).default;
-    const canvas = await html2canvas(container, {
+    const canvas = await html2canvas(iframeDoc.documentElement, {
       width: dims.width,
       height: dims.height,
       scale: 2,
       useCORS: true,
-      allowTaint: true,
-      backgroundColor: "#FDFDF9",
+      allowTaint: false,
+      backgroundColor: "#f8f9f7",
       logging: false,
+      onclone: (doc: Document) => {
+        doc.querySelectorAll("*").forEach((el) => {
+          const computed = window.getComputedStyle(el);
+          const bg = computed.backgroundColor;
+          const color = computed.color;
+          if (bg && bg !== "rgba(0, 0, 0, 0)" && bg !== "transparent") {
+            (el as HTMLElement).style.backgroundColor = bg;
+          }
+          if (color) {
+            (el as HTMLElement).style.color = color;
+          }
+        });
+      },
     });
-    document.body.removeChild(container);
+
+    document.body.removeChild(iframe);
     return canvas;
   }
 
@@ -366,19 +380,19 @@ export default function InfographicModal({ open, onClose, content, platform, con
 
     try {
       const canvas = await renderHtmlToCanvas();
-      const mime = format === "jpeg" ? "image/jpeg" : "image/png";
-      const ext = format === "jpeg" ? "jpg" : "png";
-      const dataUrl = canvas.toDataURL(mime, format === "jpeg" ? 0.95 : undefined);
       const link = document.createElement("a");
-      link.download = `supen-infographie-${Date.now()}.${ext}`;
-      link.href = dataUrl;
-      document.body.appendChild(link);
+      if (format === "jpeg") {
+        link.href = canvas.toDataURL("image/jpeg", 0.95);
+        link.download = `supen-infographic-${Date.now()}.jpg`;
+      } else {
+        link.href = canvas.toDataURL("image/png");
+        link.download = `supen-infographic-${Date.now()}.png`;
+      }
       link.click();
-      document.body.removeChild(link);
-      toast.success(`${format.toUpperCase()} downloaded!`);
+      toast.success("Infographic downloaded!");
     } catch (err) {
       console.error("[InfographicModal] Download error:", err);
-      toast.error("Download error");
+      toast.error("Download error — try again");
     } finally {
       setDownloading(false);
     }
