@@ -17,53 +17,62 @@
 const FONT_IMPORTS = `<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;900&family=Caveat:wght@500;700&display=swap" rel="stylesheet">`;
 
 // ─── TEMPLATE 1: AWA_CLASSIC ───
-// Awa K Penn signature style: cream background, wood frame, 7 colored numbered items.
-// Nunito Black titles + Caveat handwritten body. Yellow #FFEF5A highlights.
+// Dense guide sketchboard: wood frame, cream bg, 7 colored numbered items.
+// Nunito Black 900 titles + Caveat handwritten body. Yellow #E8F044 highlights.
 export function awaClassic(w: number, h: number): string {
   const pad = Math.round(w * 0.05);
   const frameW = Math.round(w * 0.028);
-  const headerH = Math.round(h * 0.16);
-  const footerH = Math.round(h * 0.09);
-  const bodyH = h - headerH - footerH;
-  const titleSize = Math.round(w * 0.042);
+  const headerH = Math.round(h * 0.14);
+  const footerH = Math.round(h * 0.05);
+  const titleSize = Math.round(w * 0.046);
   const badgeSize = Math.round(w * 0.012);
-  const itemGap = Math.round(h * 0.01);
-  const numSize = Math.round(w * 0.046);
+  const itemGap = Math.round(h * 0.008);
+  const numSize = Math.round(w * 0.042);
   const itemTitleSize = Math.round(w * 0.021);
-  const itemBodySize = Math.round(w * 0.015);
+  const itemBodySize = Math.round(w * 0.016);
 
-  const colors = ['#E63946','#2563EB','#16A34A','#F59E0B','#8B5CF6','#EC4899','#0D9488'];
+  const colors = ['#c0392b','#2B4DAF','#4A8B35','#F5922A','#8B5CF6','#EC4899','#0D9488'];
 
   return `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Caveat:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:${w}px;height:${h}px;overflow:hidden}
-body{background:#FFFFF5;font-family:'Nunito',sans-serif;display:flex;flex-direction:column;color:#1a1a1a;border:${frameW}px solid #3d2b1a}
+body{background:#ffffff;font-family:'Nunito',sans-serif;display:flex;flex-direction:column;color:#111111;border:${frameW}px solid #3d2b1a}
 
-.header{height:${headerH}px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${Math.round(pad*0.7)}px ${pad}px;gap:${Math.round(h*0.008)}px;border-bottom:3px solid #3d2b1a}
-.badge{display:inline-flex;align-items:center;background:#3d2b1a;color:#FFFFF5;font-size:${badgeSize}px;font-weight:900;letter-spacing:2px;text-transform:uppercase;padding:${Math.round(h*0.006)}px ${Math.round(w*0.022)}px;border-radius:100px}
-.title{font-family:'Nunito',sans-serif;font-size:${titleSize}px;font-weight:900;color:#1a1a1a;text-align:center;line-height:1.18;max-width:${Math.round(w*0.88)}px;word-wrap:break-word}
-.title em{font-style:normal;background:#FFEF5A;padding:0 4px}
+.header{height:${headerH}px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${Math.round(pad*0.6)}px ${pad}px;gap:${Math.round(h*0.006)}px;background:#f8f8f8;border-bottom:2px solid #111111}
+.badge{display:inline-flex;align-items:center;background:#3d2b1a;color:#f8f9f7;font-size:${badgeSize}px;font-weight:900;letter-spacing:2px;text-transform:uppercase;padding:${Math.round(h*0.005)}px ${Math.round(w*0.022)}px;border-radius:100px}
+.title{font-family:'Nunito',sans-serif;font-size:${titleSize}px;font-weight:900;color:#111111;text-align:center;line-height:1.15;max-width:${Math.round(w*0.88)}px;word-wrap:break-word;text-transform:uppercase}
+.title em{font-style:normal;background:#E8F044;padding:0 4px}
 
-.body{flex:1;padding:${Math.round(h*0.015)}px ${pad}px;display:flex;flex-direction:column;gap:${itemGap}px;min-height:0}
+.body{flex:1;padding:${Math.round(h*0.012)}px ${pad}px;display:flex;flex-direction:column;gap:${itemGap}px;min-height:0}
 
-.item{flex:1;display:flex;align-items:center;gap:${Math.round(w*0.022)}px;padding:${Math.round(h*0.01)}px ${Math.round(w*0.02)}px;border-radius:8px;border:1px solid rgba(61,43,26,0.15);background:rgba(255,255,245,0.8);min-height:0;overflow:hidden}
+.item{flex:1;display:flex;align-items:center;gap:${Math.round(w*0.02)}px;padding:${Math.round(h*0.008)}px ${Math.round(w*0.018)}px;border-radius:8px;border:1px solid rgba(61,43,26,0.12);background:rgba(248,249,247,0.9);min-height:0;overflow:hidden}
 .num{width:${numSize}px;height:${numSize}px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:${Math.round(numSize*0.44)}px;font-weight:900;color:#fff;flex-shrink:0}
 .item-text{flex:1;min-width:0;overflow:hidden}
-.item-title{font-family:'Nunito',sans-serif;font-size:${itemTitleSize}px;font-weight:800;color:#1a1a1a;line-height:1.2;margin-bottom:${Math.round(h*0.003)}px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
-.item-body{font-family:'Caveat',cursive;font-size:${Math.round(itemBodySize*1.15)}px;font-weight:500;color:#444;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.item-body .a{font-weight:700;color:#3d2b1a;background:#FFEF5A;padding:0 2px}
+.item-title{font-family:'Nunito',sans-serif;font-size:${itemTitleSize}px;font-weight:800;color:#111111;line-height:1.2;margin-bottom:${Math.round(h*0.002)}px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.item-title::after{content:'';display:block;width:100%;height:2px;margin-top:2px}
+.item:nth-child(1) .item-title::after{background:#c0392b}
+.item:nth-child(2) .item-title::after{background:#2B4DAF}
+.item:nth-child(3) .item-title::after{background:#4A8B35}
+.item:nth-child(4) .item-title::after{background:#F5922A}
+.item:nth-child(5) .item-title::after{background:#8B5CF6}
+.item:nth-child(6) .item-title::after{background:#EC4899}
+.item:nth-child(7) .item-title::after{background:#0D9488}
+.item-body{font-family:'Caveat',cursive;font-size:${Math.round(itemBodySize*1.2)}px;font-weight:400;color:#111111;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.item-body .a{font-weight:700;color:#3d2b1a;background:#E8F044;padding:0 2px}
 
-.footer{height:${footerH}px;flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:${Math.round(w*0.01)}px;border-top:2px solid #3d2b1a;background:#FFFFF5}
-.footer-text{font-family:'Nunito',sans-serif;font-size:${Math.round(w*0.013)}px;font-weight:700;color:#3d2b1a;letter-spacing:0.5px}
+.footer{height:${footerH}px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:#1a1a1a}
+.footer-text{font-family:'Nunito',sans-serif;font-size:${Math.round(w*0.015)}px;font-weight:700;color:#ffffff;letter-spacing:0.5px}
+.footer-text .blue{color:#93c5fd}
+.footer-text .green{color:#86efac}
 </style></head><body>
 <div class="header"><div class="badge">{{BADGE}}</div><div class="title">{{TITLE}}</div></div>
 <div class="body">
 ${colors.map((c,i)=>`<div class="item"><div class="num" style="background:${c}">${i+1}</div><div class="item-text"><div class="item-title">{{P${i+1}_TITLE}}</div><div class="item-body">{{P${i+1}_BODY}}</div></div></div>`).join('\n')}
 </div>
-<div class="footer"><div class="footer-text">{{FOOTER}} | Repost ↻</div></div>
+<div class="footer"><div class="footer-text">Follow <span class="blue">@creator</span> for more | <span class="green">Repost ↻</span></div></div>
 </body></html>`;
 }
 
@@ -376,55 +385,54 @@ body{width:${w}px;height:${h}px;background:#FFFFF8;font-family:'Poppins',sans-se
 }
 
 // ─── TEMPLATE 9: UI_CARDS ───
-// Pixel-perfect 3-tier comparison (Bad → Better → Best).
-// Dynamic sizing: all dimensions computed from w/h for any aspect ratio.
-// Playfair Display titles + Inter body. Circular icon per card. Cream background.
+// 3-tier comparison (Bad → Better → Best). Off-white #f8f9f7 background.
+// Nunito Black 900 titles + Caveat body. Color-coded cards with border-left accents.
 export function uiCards(w: number, h: number): string {
-  const pad = Math.round(w * 0.055);
-  const cardGap = Math.round(h * 0.018);
-  const cardRadius = 20;
-  const headerH = Math.round(h * 0.20);
-  const bodyH = Math.round(h * 0.68);
+  const pad = Math.round(w * 0.05);
+  const cardGap = Math.round(h * 0.016);
+  const cardRadius = 16;
+  const headerH = Math.round(h * 0.18);
+  const bodyH = Math.round(h * 0.70);
   const footerH = h - headerH - bodyH;
   const cardH = Math.round((bodyH - cardGap * 4) / 3);
-  const titleSize = Math.round(w * 0.052);
-  const badgeSize = Math.round(w * 0.013);
-  const cardTitleSize = Math.round(w * 0.028);
+  const titleSize = Math.round(w * 0.048);
+  const badgeSize = Math.round(w * 0.012);
+  const cardTitleSize = Math.round(w * 0.026);
   const cardBodySize = Math.round(w * 0.019);
-  const iconSize = Math.round(w * 0.065);
+  const iconSize = Math.round(w * 0.06);
   const labelSize = Math.round(w * 0.011);
 
   return `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Caveat:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-*{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
-html,body{width:${w}px;height:${h}px;overflow:hidden;background:#FDFDF9}
-body{font-family:'Inter',sans-serif;display:flex;flex-direction:column;color:#1A1A1A}
-.header{height:${headerH}px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${Math.round(pad*0.8)}px ${pad}px;gap:${Math.round(h*0.012)}px;background:#FDFDF9}
-.badge{display:inline-flex;align-items:center;gap:6px;background:#1A1A1A;color:#FDFDF9;font-family:'Inter',sans-serif;font-size:${badgeSize}px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;padding:${Math.round(h*0.008)}px ${Math.round(w*0.028)}px;border-radius:100px}
-.title{font-family:'Playfair Display',serif;font-size:${titleSize}px;font-weight:900;color:#1A1A1A;text-align:center;line-height:1.15;max-width:${Math.round(w*0.85)}px;word-wrap:break-word;overflow-wrap:break-word}
-.title em{font-style:normal;color:#FF7A59;position:relative}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:${w}px;height:${h}px;overflow:hidden;background:#f8f9f7}
+body{font-family:'Nunito',sans-serif;display:flex;flex-direction:column;color:#111111}
+.header{height:${headerH}px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${Math.round(pad*0.7)}px ${pad}px;gap:${Math.round(h*0.01)}px}
+.badge{display:inline-flex;align-items:center;background:#111111;color:#f8f9f7;font-size:${badgeSize}px;font-weight:900;letter-spacing:2.5px;text-transform:uppercase;padding:${Math.round(h*0.006)}px ${Math.round(w*0.025)}px;border-radius:100px}
+.title{font-family:'Nunito',sans-serif;font-size:${titleSize}px;font-weight:900;color:#111111;text-align:center;line-height:1.15;max-width:${Math.round(w*0.85)}px;word-wrap:break-word}
+.title em{font-style:normal;background:#E8F044;padding:0 4px}
 .body{flex:1;padding:0 ${pad}px;display:flex;flex-direction:column;gap:${cardGap}px;min-height:0}
-.card{flex:1;border-radius:${cardRadius}px;padding:${Math.round(cardH*0.14)}px ${Math.round(w*0.04)}px;display:flex;align-items:center;gap:${Math.round(w*0.032)}px;min-height:0;overflow:hidden}
-.card.c1{background:#FFF0F0;border:1.5px solid #FFCCCC}
-.card.c2{background:#FEF9E7;border:1.5px solid #FFE5A0}
-.card.c3{background:#F0FFF4;border:1.5px solid #B3EED0}
+.card{flex:1;border-radius:${cardRadius}px;padding:${Math.round(cardH*0.12)}px ${Math.round(w*0.035)}px;display:flex;align-items:center;gap:${Math.round(w*0.028)}px;min-height:0;overflow:hidden;border-left:5px solid}
+.card.c1{background:#fff5f5;border-left-color:#c0392b}
+.card.c2{background:#fffbf0;border-left-color:#F5922A}
+.card.c3{background:#f2faf0;border-left-color:#4A8B35}
 .icon-wrap{width:${iconSize}px;height:${iconSize}px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:${Math.round(iconSize*0.48)}px;font-weight:900;line-height:1}
-.c1 .icon-wrap{background:#FFB3B3;color:#CC0000}
-.c2 .icon-wrap{background:#FFD4A3;color:#CC6600}
-.c3 .icon-wrap{background:#B3FFD1;color:#006633}
+.c1 .icon-wrap{background:rgba(192,57,43,0.12);color:#c0392b}
+.c2 .icon-wrap{background:rgba(245,146,42,0.12);color:#F5922A}
+.c3 .icon-wrap{background:rgba(74,139,53,0.12);color:#4A8B35}
 .card-text{flex:1;min-width:0;overflow:hidden}
-.card-label{display:inline-flex;align-items:center;gap:5px;font-size:${labelSize}px;font-weight:900;text-transform:uppercase;letter-spacing:2px;margin-bottom:${Math.round(cardH*0.06)}px;padding:3px 10px;border-radius:100px}
-.c1 .card-label{background:#FFB3B3;color:#8B0000}
-.c2 .card-label{background:#FFD4A3;color:#7A4000}
-.c3 .card-label{background:#B3FFD1;color:#005500}
-.card-title{font-family:'Playfair Display',serif;font-size:${cardTitleSize}px;font-weight:700;color:#1A1A1A;line-height:1.2;margin-bottom:${Math.round(cardH*0.05)}px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.card-body{font-size:${cardBodySize}px;font-weight:500;color:#4A4A4A;line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-.card-body strong{font-weight:800;color:#1A1A1A}
-.footer{height:${footerH}px;flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:8px;border-top:1px solid #E8E8E2;background:#FDFDF9}
-.footer-dot{width:5px;height:5px;border-radius:50%;background:#24A89B}
-.footer-text{font-size:${Math.round(w*0.012)}px;font-weight:700;color:#24A89B;letter-spacing:1px;text-transform:uppercase}
+.card-label{display:inline-flex;align-items:center;font-size:${labelSize}px;font-weight:900;text-transform:uppercase;letter-spacing:2px;margin-bottom:${Math.round(cardH*0.05)}px;padding:3px 10px;border-radius:100px}
+.c1 .card-label{background:rgba(192,57,43,0.15);color:#c0392b}
+.c2 .card-label{background:rgba(245,146,42,0.15);color:#b06a10}
+.c3 .card-label{background:rgba(74,139,53,0.15);color:#4A8B35}
+.card-title{font-family:'Nunito',sans-serif;font-size:${cardTitleSize}px;font-weight:800;color:#111111;line-height:1.2;margin-bottom:${Math.round(cardH*0.04)}px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card-body{font-family:'Caveat',cursive;font-size:${Math.round(cardBodySize*1.1)}px;font-weight:400;color:#111111;line-height:1.4;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.card-body .hl{background:#E8F044;font-weight:700;padding:0 2px}
+.footer{height:${footerH}px;flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:8px;border-top:0.5px solid #e0e0e0;background:#fafafa}
+.footer-text{font-family:'Nunito',sans-serif;font-size:${Math.round(w*0.013)}px;font-weight:700;color:#333333}
+.footer-text .blue{color:#2B4DAF;text-decoration:underline}
 </style></head><body>
 <div class="header">
 <div class="badge">{{BADGE}}</div>
@@ -435,57 +443,68 @@ body{font-family:'Inter',sans-serif;display:flex;flex-direction:column;color:#1A
 <div class="card c2"><div class="icon-wrap">~</div><div class="card-text"><div class="card-label">Better</div><div class="card-title">{{P2_TITLE}}</div><div class="card-body">{{P2_BODY}}</div></div></div>
 <div class="card c3"><div class="icon-wrap">✓</div><div class="card-text"><div class="card-label">Best</div><div class="card-title">{{P3_TITLE}}</div><div class="card-body">{{P3_BODY}}</div></div></div>
 </div>
-<div class="footer"><div class="footer-dot"></div><div class="footer-text">{{FOOTER}}</div><div class="footer-dot"></div></div>
+<div class="footer"><div class="footer-text">{{FOOTER}} | Follow <span class="blue">@creator</span> | Repost ↻</div></div>
 </body></html>`;
 }
 
 // ─── TEMPLATE 10: WHITEBOARD ───
-// Clean whiteboard style: white background, colored left borders, numbered circles.
-// Nunito Black titles + Caveat handwritten body. Yellow #FFEF5A highlights.
+// Paper-clip whiteboard: off-white #f8f9f7, corner clips, colored left borders.
+// Nunito Black 900 titles + Caveat handwritten body. Yellow #E8F044 highlights.
 export function whiteboard(w: number, h: number): string {
   const pad = Math.round(w * 0.05);
-  const headerH = Math.round(h * 0.16);
-  const footerH = Math.round(h * 0.1);
-  const bodyH = h - headerH - footerH;
-  const titleSize = Math.round(w * 0.046);
+  const headerH = Math.round(h * 0.14);
+  const footerH = Math.round(h * 0.07);
+  const titleSize = Math.round(w * 0.048);
   const badgeSize = Math.round(w * 0.012);
   const sectionTitleSize = Math.round(w * 0.022);
-  const bodyTextSize = Math.round(w * 0.017);
-  const bulletSize = Math.round(w * 0.018);
-  const itemGap = Math.round(h * 0.011);
+  const bodyTextSize = Math.round(w * 0.018);
+  const itemGap = Math.round(h * 0.009);
+  const numSize = Math.round(w * 0.048);
+  const clipW = 12;
+  const clipH = 20;
+  const borderColors = ['#c0392b','#2B4DAF','#4A8B35','#c0392b','#2B4DAF','#4A8B35','#F5922A'];
 
   return `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Caveat:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:${w}px;height:${h}px;overflow:hidden}
-body{background:#ffffff;font-family:'Nunito',sans-serif;display:flex;flex-direction:column;color:#1a1a1a;border:1px solid #e0e0e0;border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,0.08)}
+body{background:#f8f9f7;font-family:'Nunito',sans-serif;display:flex;flex-direction:column;color:#111111;border:1px solid #dddddd;border-radius:6px;box-shadow:0 4px 24px rgba(0,0,0,0.08);position:relative}
 
-.header{height:${headerH}px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${Math.round(pad*0.8)}px ${pad}px;gap:${Math.round(h*0.01)}px;background:#ffffff;border-bottom:2px solid #e0e0e0}
-.badge{display:inline-flex;align-items:center;background:#E63946;color:#fff;font-family:'Nunito',sans-serif;font-size:${badgeSize}px;font-weight:900;letter-spacing:2px;text-transform:uppercase;padding:${Math.round(h*0.007)}px ${Math.round(w*0.025)}px;border-radius:100px}
-.title{font-family:'Nunito',sans-serif;font-size:${titleSize}px;font-weight:900;color:#1a1a1a;text-align:center;line-height:1.2;max-width:${Math.round(w*0.88)}px;word-wrap:break-word}
-.title em{font-style:normal;background:#FFEF5A;padding:0 4px}
+.clip{position:absolute;width:${clipW}px;height:${clipH}px;background:#aaaaaa;border-radius:2px;z-index:10}
+.clip-tl{top:6px;left:6px}
+.clip-tr{top:6px;right:6px}
+.clip-bl{bottom:6px;left:6px}
+.clip-br{bottom:6px;right:6px}
 
-.body{flex:1;padding:${Math.round(h*0.018)}px ${pad}px;display:flex;flex-direction:column;gap:${itemGap}px;min-height:0}
+.header{height:${headerH}px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${Math.round(pad*0.6)}px ${pad}px;gap:${Math.round(h*0.008)}px}
+.badge{display:inline-flex;align-items:center;background:#c0392b;color:#fff;font-family:'Nunito',sans-serif;font-size:${badgeSize}px;font-weight:900;letter-spacing:2px;text-transform:uppercase;padding:${Math.round(h*0.005)}px ${Math.round(w*0.022)}px;border-radius:100px}
+.title{font-family:'Nunito',sans-serif;font-size:${titleSize}px;font-weight:900;color:#111111;text-align:center;line-height:1.15;max-width:${Math.round(w*0.88)}px;word-wrap:break-word}
+.title em{font-style:normal;background:#E8F044;padding:0 4px}
+.title-line{width:${Math.round(w*0.8)}px;height:3px;background:#c0392b;margin-top:${Math.round(h*0.004)}px}
 
-.item{flex:1;display:flex;align-items:center;gap:${Math.round(w*0.025)}px;background:#ffffff;border-radius:12px;padding:${Math.round(h*0.013)}px ${Math.round(w*0.028)}px;border-left:4px solid #E63946;min-height:0;overflow:hidden}
-.item:nth-child(2n){border-left-color:#2563EB}
-.item:nth-child(3n){border-left-color:#16A34A}
-.item:nth-child(4n){border-left-color:#F59E0B}
+.body{flex:1;padding:${Math.round(h*0.012)}px ${pad}px;display:flex;flex-direction:column;gap:${itemGap}px;min-height:0}
 
-.num{width:${Math.round(w*0.052)}px;height:${Math.round(w*0.052)}px;border-radius:50%;border:2px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font-size:${Math.round(w*0.022)}px;font-weight:900;flex-shrink:0;color:#1a1a1a;font-family:'Nunito',sans-serif}
+.item{flex:1;display:flex;align-items:center;gap:${Math.round(w*0.022)}px;background:#ffffff;border-radius:10px;padding:${Math.round(h*0.01)}px ${Math.round(w*0.025)}px;min-height:0;overflow:hidden}
+${borderColors.map((c,i)=>`.item:nth-child(${i+1}){border-left:4px solid ${c}}`).join('\n')}
+
+.num{width:${numSize}px;height:${numSize}px;border-radius:50%;border:2px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font-size:${Math.round(numSize*0.42)}px;font-weight:900;flex-shrink:0;color:#111111;font-family:'Nunito',sans-serif}
 
 .item-text{flex:1;min-width:0;overflow:hidden}
-.item-title{font-family:'Nunito',sans-serif;font-size:${sectionTitleSize}px;font-weight:800;color:#1a1a1a;line-height:1.2;margin-bottom:${Math.round(h*0.004)}px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
-.item-body{font-family:'Caveat',cursive;font-size:${Math.round(bodyTextSize*1.15)}px;font-weight:500;color:#444444;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.item-body .hl{background:#FFEF5A;font-weight:700;padding:0 2px}
+.item-title{font-family:'Nunito',sans-serif;font-size:${sectionTitleSize}px;font-weight:800;line-height:1.2;margin-bottom:${Math.round(h*0.003)}px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+${borderColors.map((c,i)=>`.item:nth-child(${i+1}) .item-title{color:${c}}`).join('\n')}
+.item-title::after{content:'';display:block;height:2px;width:100%;margin-top:2px}
+${borderColors.map((c,i)=>`.item:nth-child(${i+1}) .item-title::after{background:${c}}`).join('\n')}
+.item-body{font-family:'Caveat',cursive;font-size:${Math.round(bodyTextSize*1.1)}px;font-weight:400;color:#111111;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.item-body .hl{background:#E8F044;font-weight:700;padding:0 2px}
 
-.footer{height:${footerH}px;flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:${Math.round(w*0.01)}px;border-top:1px solid #e0e0e0;background:#fafafa}
-.footer-text{font-family:'Nunito',sans-serif;font-size:${Math.round(w*0.013)}px;font-weight:700;color:#2563EB;letter-spacing:0.5px}
-.footer-repost{font-family:'Nunito',sans-serif;font-size:${Math.round(w*0.013)}px;font-weight:700;color:#444}
+.footer{height:${footerH}px;flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:${Math.round(w*0.008)}px;border-top:0.5px solid #cccccc;background:#fafafa}
+.footer-text{font-family:'Nunito',sans-serif;font-size:${Math.round(w*0.014)}px;font-weight:700;color:#333333}
+.footer-text .blue{color:#2B4DAF;font-weight:800;text-decoration:underline}
 </style></head><body>
-<div class="header"><div class="badge">{{BADGE}}</div><div class="title">{{TITLE}}</div></div>
+<div class="clip clip-tl"></div><div class="clip clip-tr"></div><div class="clip clip-bl"></div><div class="clip clip-br"></div>
+<div class="header"><div class="badge">{{BADGE}}</div><div class="title">{{TITLE}}</div><div class="title-line"></div></div>
 <div class="body">
 <div class="item"><div class="num">1</div><div class="item-text"><div class="item-title">{{P1_TITLE}}</div><div class="item-body">{{P1_BODY}}</div></div></div>
 <div class="item"><div class="num">2</div><div class="item-text"><div class="item-title">{{P2_TITLE}}</div><div class="item-body">{{P2_BODY}}</div></div></div>
@@ -495,123 +514,125 @@ body{background:#ffffff;font-family:'Nunito',sans-serif;display:flex;flex-direct
 <div class="item"><div class="num">6</div><div class="item-text"><div class="item-title">{{P6_TITLE}}</div><div class="item-body">{{P6_BODY}}</div></div></div>
 <div class="item"><div class="num">7</div><div class="item-text"><div class="item-title">{{P7_TITLE}}</div><div class="item-body">{{P7_BODY}}</div></div></div>
 </div>
-<div class="footer"><div class="footer-text">{{FOOTER}}</div><div class="footer-repost">| Repost ↻</div></div>
+<div class="footer"><div class="footer-text">{{FOOTER}} | Follow <span class="blue">@creator</span> | Repost ↻</div></div>
 </body></html>`;
 }
 
 // ─── TEMPLATE 11: FUNNEL ───
-// Progressive funnel with 5 decreasing-width stages. Warm cream background.
-// Nunito Black titles + Caveat handwritten body. Yellow #FFEF5A highlights.
+// Process flow funnel with 5 decreasing-width stages. Warm ivory background.
+// Nunito Black 900 titles + Caveat handwritten body. Yellow #E8F044 highlights.
 export function funnel(w: number, h: number): string {
   const pad = Math.round(w * 0.05);
-  const headerH = Math.round(h * 0.16);
-  const footerH = Math.round(h * 0.1);
-  const bodyH = h - headerH - footerH;
-  const titleSize = Math.round(w * 0.046);
+  const headerH = Math.round(h * 0.15);
+  const footerH = Math.round(h * 0.06);
+  const titleSize = Math.round(w * 0.048);
   const badgeSize = Math.round(w * 0.012);
-  const stepTitleSize = Math.round(w * 0.024);
+  const stepTitleSize = Math.round(w * 0.022);
   const stepBodySize = Math.round(w * 0.016);
-  const arrowSize = Math.round(w * 0.03);
-  const stepGap = Math.round(h * 0.008);
-  const numSize = Math.round(w * 0.048);
+  const arrowSize = Math.round(w * 0.025);
+  const stepGap = Math.round(h * 0.006);
+  const numSize = Math.round(w * 0.044);
 
   const steps = [
-    {bg:'#fff5f5',border:'#E63946',num:'#E63946',width:'100%'},
-    {bg:'#fff8f0',border:'#F59E0B',num:'#F59E0B',width:'88%'},
+    {bg:'#fff5f5',border:'#c0392b',num:'#c0392b',width:'100%'},
+    {bg:'#fff8f0',border:'#F5922A',num:'#F5922A',width:'88%'},
     {bg:'#fffdf0',border:'#EAB308',num:'#EAB308',width:'74%'},
-    {bg:'#f0fdf4',border:'#16A34A',num:'#16A34A',width:'60%'},
-    {bg:'#eff6ff',border:'#2563EB',num:'#2563EB',width:'46%'},
+    {bg:'#f2faf0',border:'#4A8B35',num:'#4A8B35',width:'60%'},
+    {bg:'#f0f4ff',border:'#2B4DAF',num:'#2B4DAF',width:'46%'},
   ];
 
   return `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Caveat:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:${w}px;height:${h}px;overflow:hidden}
-body{background:#fffef5;font-family:'Nunito',sans-serif;display:flex;flex-direction:column;color:#1a1a1a;border:1px solid #e8e0d0;box-shadow:0 4px 24px rgba(0,0,0,0.08)}
+body{background:#fffef5;font-family:'Nunito',sans-serif;display:flex;flex-direction:column;color:#111111;box-shadow:0 4px 24px rgba(0,0,0,0.08)}
 
-.header{height:${headerH}px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${Math.round(pad*0.8)}px ${pad}px;gap:${Math.round(h*0.01)}px;border-bottom:2px solid #e8e0d0}
-.badge{display:inline-flex;align-items:center;background:#E63946;color:#fff;font-size:${badgeSize}px;font-weight:900;letter-spacing:2px;text-transform:uppercase;padding:${Math.round(h*0.007)}px ${Math.round(w*0.025)}px;border-radius:100px}
-.title{font-family:'Nunito',sans-serif;font-size:${titleSize}px;font-weight:900;color:#1a1a1a;text-align:center;line-height:1.18;max-width:${Math.round(w*0.85)}px;word-wrap:break-word}
-.title em{font-style:normal;background:#FFEF5A;padding:0 4px}
+.header{height:${headerH}px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${Math.round(pad*0.6)}px ${pad}px;gap:${Math.round(h*0.008)}px}
+.badge{display:inline-flex;align-items:center;background:#c0392b;color:#fff;font-size:${badgeSize}px;font-weight:900;letter-spacing:2px;text-transform:uppercase;padding:${Math.round(h*0.005)}px ${Math.round(w*0.022)}px;border-radius:100px}
+.title{font-family:'Nunito',sans-serif;font-size:${titleSize}px;font-weight:900;color:#111111;text-align:center;line-height:1.15;max-width:${Math.round(w*0.88)}px;word-wrap:break-word}
+.title em{font-style:normal;background:#E8F044;padding:0 4px}
+.subtitle{font-family:'Caveat',cursive;font-size:${Math.round(w*0.016)}px;font-weight:400;color:#666666;text-align:center}
 
-.body{flex:1;padding:${Math.round(h*0.018)}px ${pad}px;display:flex;flex-direction:column;align-items:center;gap:${stepGap}px;min-height:0}
+.body{flex:1;padding:${Math.round(h*0.012)}px ${pad}px;display:flex;flex-direction:column;align-items:center;gap:${stepGap}px;min-height:0}
 
-.step{display:flex;align-items:center;gap:${Math.round(w*0.022)}px;border-radius:12px;padding:${Math.round(h*0.013)}px ${Math.round(w*0.03)}px;border:2px solid;flex-shrink:0;overflow:hidden}
+.step{display:flex;align-items:center;gap:${Math.round(w*0.02)}px;border-radius:12px;padding:${Math.round(h*0.012)}px ${Math.round(w*0.025)}px;border:2px solid;flex-shrink:0;overflow:hidden}
 .num{width:${numSize}px;height:${numSize}px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:${Math.round(numSize*0.44)}px;font-weight:900;flex-shrink:0;color:#fff;font-family:'Nunito',sans-serif}
 .step-text{flex:1;min-width:0;overflow:hidden}
-.step-title{font-family:'Nunito',sans-serif;font-size:${stepTitleSize}px;font-weight:800;color:#1a1a1a;line-height:1.2;margin-bottom:${Math.round(h*0.004)}px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
-.step-body{font-family:'Caveat',cursive;font-size:${Math.round(stepBodySize*1.1)}px;font-weight:500;color:#444;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.arrow{font-size:${arrowSize}px;color:#E63946;text-align:center;line-height:1;flex-shrink:0;font-weight:900}
+.step-title{font-family:'Nunito',sans-serif;font-size:${stepTitleSize}px;font-weight:800;color:#111111;line-height:1.2;margin-bottom:${Math.round(h*0.003)}px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.step-title::after{content:'';display:block;height:2px;width:80%;margin-top:2px}
+${steps.map((s,i)=>`.step:nth-child(${i*2+1}) .step-title::after{background:${s.border}}`).join('\n')}
+.step-body{font-family:'Caveat',cursive;font-size:${Math.round(stepBodySize*1.15)}px;font-weight:400;color:#111111;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.step-body .hl{background:#E8F044;font-weight:700;padding:0 2px}
+.arrow{font-size:${arrowSize}px;color:#c0392b;text-align:center;line-height:1;flex-shrink:0;font-weight:900}
 
-.footer{height:${footerH}px;flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:${Math.round(w*0.01)}px;border-top:1px solid #e8e0d0;background:#fafaf5}
-.footer-text{font-family:'Nunito',sans-serif;font-size:${Math.round(w*0.013)}px;font-weight:700;color:#2563EB}
-.footer-repost{font-family:'Nunito',sans-serif;font-size:${Math.round(w*0.013)}px;font-weight:700;color:#444}
+.footer{height:${footerH}px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-top:0.5px solid #cccccc;background:#fafafa}
+.footer-text{font-family:'Nunito',sans-serif;font-size:${Math.round(w*0.014)}px;font-weight:700;color:#333333}
+.footer-text .blue{color:#2B4DAF;font-weight:800;text-decoration:underline}
 </style></head><body>
 <div class="header"><div class="badge">{{BADGE}}</div><div class="title">{{TITLE}}</div></div>
 <div class="body">
 ${steps.map((s,i) => `<div class="step" style="width:${s.width};background:${s.bg};border-color:${s.border}"><div class="num" style="background:${s.num}">${i+1}</div><div class="step-text"><div class="step-title">{{P${i+1}_TITLE}}</div><div class="step-body">{{P${i+1}_BODY}}</div></div></div>${i<4?`\n<div class="arrow">▼</div>`:''}`).join('\n')}
 </div>
-<div class="footer"><div class="footer-text">{{FOOTER}}</div><div class="footer-repost">| Repost ↻</div></div>
+<div class="footer"><div class="footer-text">Follow <span class="blue">@creator</span> for more | Repost ↻</div></div>
 </body></html>`;
 }
 
 // ─── TEMPLATE 12: DATA_GRID ───
 // Framework table: 4 rows × 3 columns + key takeaway tip box.
-// Nunito Black titles + Caveat handwritten body. Yellow #FFEF5A highlights.
+// Nunito Black 900 titles + Caveat handwritten body. Yellow #E8F044 highlights.
 export function dataGrid(w: number, h: number): string {
   const pad = Math.round(w * 0.05);
-  const headerH = Math.round(h * 0.17);
-  const footerH = Math.round(h * 0.09);
-  const bodyH = h - headerH - footerH;
+  const headerH = Math.round(h * 0.15);
+  const footerH = Math.round(h * 0.06);
   const titleSize = Math.round(w * 0.044);
   const badgeSize = Math.round(w * 0.012);
   const thSize = Math.round(w * 0.013);
   const cellSize = Math.round(w * 0.016);
-  const dotSize = Math.round(w * 0.017);
+  const dotSize = Math.round(w * 0.015);
 
-  const dots = ['#E63946','#F59E0B','#16A34A','#2563EB'];
-  const rowBgs = ['#ffffff','#f8f9fa','#ffffff','#f8f9fa'];
+  const dots = ['#c0392b','#F5922A','#4A8B35','#2B4DAF'];
+  const rowBgs = ['#ffffff','#f9f9f9','#ffffff','#f9f9f9'];
 
   return `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Caveat:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:${w}px;height:${h}px;overflow:hidden}
-body{background:#ffffff;font-family:'Nunito',sans-serif;display:flex;flex-direction:column;color:#1a1a1a;border:1px solid #e0e0e0;box-shadow:0 4px 24px rgba(0,0,0,0.06)}
+body{background:#f8f9f7;font-family:'Nunito',sans-serif;display:flex;flex-direction:column;color:#111111;box-shadow:0 4px 24px rgba(0,0,0,0.06)}
 
-.header{height:${headerH}px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${Math.round(pad*0.8)}px ${pad}px;gap:${Math.round(h*0.01)}px;border-bottom:2px solid #E63946}
-.badge{display:inline-flex;align-items:center;background:#2563EB;color:#fff;font-size:${badgeSize}px;font-weight:900;letter-spacing:2px;text-transform:uppercase;padding:${Math.round(h*0.007)}px ${Math.round(w*0.025)}px;border-radius:100px}
-.title{font-family:'Nunito',sans-serif;font-size:${titleSize}px;font-weight:900;color:#1a1a1a;text-align:center;line-height:1.18;max-width:${Math.round(w*0.85)}px;word-wrap:break-word}
-.title em{font-style:normal;background:#FFEF5A;padding:0 4px}
+.header{height:${headerH}px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${Math.round(pad*0.6)}px ${pad}px;gap:${Math.round(h*0.008)}px}
+.badge{display:inline-flex;align-items:center;background:#2B4DAF;color:#fff;font-size:${badgeSize}px;font-weight:900;letter-spacing:2px;text-transform:uppercase;padding:${Math.round(h*0.005)}px ${Math.round(w*0.022)}px;border-radius:100px}
+.title{font-family:'Nunito',sans-serif;font-size:${titleSize}px;font-weight:900;color:#111111;text-align:center;line-height:1.18;max-width:${Math.round(w*0.85)}px;word-wrap:break-word}
+.title em{font-style:normal;background:#E8F044;padding:0 4px}
 
-.body{flex:1;padding:0 ${pad}px ${Math.round(h*0.018)}px;display:flex;flex-direction:column;min-height:0}
+.body{flex:1;padding:0 ${pad}px ${Math.round(h*0.012)}px;display:flex;flex-direction:column;min-height:0}
 
-.table{flex:1;border-radius:12px;overflow:hidden;border:1.5px solid #e0e0e0;display:flex;flex-direction:column;box-shadow:0 2px 16px rgba(0,0,0,0.05)}
-.th-row{display:grid;grid-template-columns:1.2fr 2fr 1fr;background:#f5f5f5;border-bottom:2px solid #e0e0e0;padding:${Math.round(h*0.013)}px ${Math.round(w*0.022)}px;gap:${Math.round(w*0.012)}px}
-.th{font-family:'Nunito',sans-serif;font-size:${thSize}px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:#1a1a1a}
-.th:nth-child(1){color:#E63946}
-.th:nth-child(2){color:#2563EB}
-.th:nth-child(3){color:#16A34A}
+.table{flex:1;border-radius:12px;overflow:hidden;border:1.5px solid #e0e0e0;display:flex;flex-direction:column;background:#ffffff}
+.th-row{display:grid;grid-template-columns:1.2fr 2fr 1fr;background:#f5f5f5;border-bottom:2px solid #e0e0e0;padding:${Math.round(h*0.012)}px ${Math.round(w*0.02)}px;gap:${Math.round(w*0.01)}px}
+.th{font-family:'Nunito',sans-serif;font-size:${thSize}px;font-weight:900;text-transform:uppercase;letter-spacing:1px}
+.th:nth-child(1){color:#c0392b}
+.th:nth-child(2){color:#2B4DAF}
+.th:nth-child(3){color:#4A8B35}
 
-.row{flex:1;display:grid;grid-template-columns:1.2fr 2fr 1fr;align-items:center;padding:0 ${Math.round(w*0.022)}px;gap:${Math.round(w*0.012)}px;border-bottom:0.5px solid #e8e8e8;min-height:0;overflow:hidden}
+.row{flex:1;display:grid;grid-template-columns:1.2fr 2fr 1fr;align-items:center;padding:0 ${Math.round(w*0.02)}px;gap:${Math.round(w*0.01)}px;border-bottom:0.5px solid #e8e8e8;min-height:0;overflow:hidden}
 .row:last-child{border-bottom:none}
 
-.cell-name{display:flex;align-items:center;gap:${Math.round(w*0.01)}px;font-family:'Nunito',sans-serif;font-weight:800;font-size:${cellSize}px;color:#1a1a1a;overflow:hidden}
+.cell-name{display:flex;align-items:center;gap:${Math.round(w*0.008)}px;font-family:'Nunito',sans-serif;font-weight:800;font-size:${cellSize}px;color:#111111;overflow:hidden}
 .dot{width:${dotSize}px;height:${dotSize}px;border-radius:50%;flex-shrink:0}
-.cell-desc{font-family:'Caveat',cursive;font-size:${Math.round(cellSize*1.12)}px;font-weight:500;color:#444;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.cell-desc .hl{background:#FFEF5A;font-weight:700;padding:0 2px}
-.cell-use{font-family:'Nunito',sans-serif;font-size:${Math.round(cellSize*0.9)}px;font-weight:700;color:#16A34A;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cell-desc{font-family:'Caveat',cursive;font-size:${Math.round(cellSize*1.15)}px;font-weight:400;color:#111111;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cell-desc .hl{background:#E8F044;font-weight:700;padding:0 2px}
+.cell-use{font-family:'Nunito',sans-serif;font-size:${Math.round(cellSize*0.9)}px;font-weight:700;color:#4A8B35;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 
-.tip{margin-top:${Math.round(h*0.016)}px;padding:${Math.round(h*0.014)}px ${Math.round(w*0.028)}px;background:#fffdf0;border-radius:10px;border-left:4px solid #E63946;display:flex;gap:${Math.round(w*0.016)}px;align-items:flex-start;flex-shrink:0}
-.tip-label{font-family:'Nunito',sans-serif;font-size:${Math.round(w*0.012)}px;font-weight:900;color:#E63946;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:2px}
-.tip-body{font-family:'Caveat',cursive;font-size:${Math.round(cellSize*1.05)}px;font-weight:500;color:#1a1a1a;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tip{margin-top:${Math.round(h*0.014)}px;padding:${Math.round(h*0.012)}px ${Math.round(w*0.025)}px;background:#fffdf0;border-radius:10px;border-left:4px solid #c0392b;display:flex;gap:${Math.round(w*0.014)}px;align-items:flex-start;flex-shrink:0}
+.tip-label{font-family:'Nunito',sans-serif;font-size:${Math.round(w*0.012)}px;font-weight:900;color:#c0392b;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:2px}
+.tip-body{font-family:'Caveat',cursive;font-size:${Math.round(cellSize*1.1)}px;font-weight:400;color:#111111;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 
-.footer{height:${footerH}px;flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:${Math.round(w*0.01)}px;border-top:1px solid #e0e0e0;background:#fafafa}
-.footer-text{font-family:'Nunito',sans-serif;font-size:${Math.round(w*0.013)}px;font-weight:700;color:#2563EB}
-.footer-repost{font-family:'Nunito',sans-serif;font-size:${Math.round(w*0.013)}px;font-weight:700;color:#444}
+.footer{height:${footerH}px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-top:0.5px solid #e0e0e0;background:#fafafa}
+.footer-text{font-family:'Nunito',sans-serif;font-size:${Math.round(w*0.013)}px;font-weight:700;color:#333333}
+.footer-text .blue{color:#2B4DAF;text-decoration:underline}
 </style></head><body>
 <div class="header"><div class="badge">{{BADGE}}</div><div class="title">{{TITLE}}</div></div>
 <div class="body">
@@ -621,7 +642,7 @@ ${[0,1,2,3].map(i=>`<div class="row" style="background:${rowBgs[i]}"><div class=
 </div>
 <div class="tip"><div><div class="tip-label">★ Key Takeaway</div><div class="tip-body">{{PRO_TIP}}</div></div></div>
 </div>
-<div class="footer"><div class="footer-text">{{FOOTER}}</div><div class="footer-repost">| Repost ↻</div></div>
+<div class="footer"><div class="footer-text">Follow <span class="blue">@creator</span> for more | Repost ↻</div></div>
 </body></html>`;
 }
 

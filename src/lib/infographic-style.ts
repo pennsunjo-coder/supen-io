@@ -277,60 +277,157 @@ const LAYOUT_VARIATIONS = ["vertical numbered", "two-column grid", "timeline ste
 
 const CLEAN_TEMPLATES = new Set(["UI_CARDS", "WHITEBOARD", "FUNNEL", "DATA_GRID"]);
 
-// ─── Template-specific instructions for Claude HTML generation ───
+// ─── Template-specific prompt for Claude HTML generation ───
 
-function getTemplateInstructions(
+function getTemplatePrompt(
   templateId: string,
   extraction: ExtractionResult,
   dims: { width: number; height: number },
 ): string {
-  const bodyH = Math.round(dims.height * 0.70);
-  const cardPad = Math.round(dims.width * 0.037);
-  const iconSize = Math.round(dims.width * 0.074);
+  const dimStr = `${dims.width}x${dims.height}`;
+  const pointsList = extraction.points.map((p, i) =>
+    `${i + 1}. ${p.title} — ${p.body}`
+  ).join("\n");
 
   switch (templateId) {
-    case "UI_CARDS":
-      return `Structure: 3 horizontal cards stacked vertically in the body (${bodyH}px).
-Each card has a circular icon on the left + text content on the right.
-Card 1: bg #FFF0F0, border #FFCCCC, icon "✗" red, label "Avoid", title + body
-Card 2: bg #FEF9E7, border #FFE5A0, icon "~" orange, label "Better", title + body
-Card 3: bg #F0FFF4, border #B3EED0, icon "✓" green, label "Best", title + body
-Each card: padding proportional, border-radius 20px, display flex, align-items center.
-Title font: Playfair Display 700. Body font: Inter 500. Background: cream #FDFDF9.`;
-
     case "WHITEBOARD":
-      return `Structure : Liste verticale de 5-7 points dans le body.
-Fond du body : #FAFBFF
-Chaque point : icône circulaire colorée à gauche + texte à droite
-Icône : width/height ${iconSize}px, border-radius 50%
-Séparateur fin #E5E7EB entre chaque point
-Police : Inter, style notes propres et lisibles`;
+      return `Generate a WHITEBOARD BULLET LIST infographic at ${dimStr}px.
+
+CANVAS:
+- Background: #f8f9f7 with ultra-subtle paper grain (2-3% opacity)
+- 4 metallic corner clips (12x20px, gray #aaaaaa) at each corner
+- 1px border #dddddd around canvas, border-radius 6px
+- Soft shadow: box-shadow 0 4px 24px rgba(0,0,0,0.08)
+
+TITLE BLOCK (top 12% of canvas):
+- Title: "${extraction.title}" — Nunito Black 900, 52-56px, #111111, centered
+- Colored underline below title: 2-3px, color #c0392b, full width minus 40px margins
+
+CONTENT (12% to 93% height):
+- Left/right padding: 40px
+- Each SECTION has:
+  * Section header: Nunito Bold 20-24px, colored (#c0392b or #2B4DAF or #4A8B35)
+  * Colored underline 2px under header, same color
+  * Bullets: colored • symbols, Caveat 400 18-20px, #111111
+  * Key terms: yellow #E8F044 background highlight (inline, flat)
+  * Tool/platform names: blue #2B4DAF bold underlined
+
+SECTIONS TO RENDER:
+Badge: ${extraction.badge}
+${pointsList}
+Pro tip: ${extraction.proTip}
+
+FOOTER (bottom 7%):
+- Separator: 0.5px #cccccc
+- Text: "Follow @creator for more | Repost ↻" — Nunito Bold 20-22px
+- Creator name: blue #2B4DAF bold underlined`;
+
+    case "UI_CARDS":
+      return `Generate a 3-TIER COMPARISON infographic at ${dimStr}px.
+
+CANVAS: Background #f8f9f7 (cool off-white)
+
+TITLE BLOCK: Nunito Black 900, 48-52px, #111111, centered
+Yellow #E8F044 highlight on one keyword
+
+3 CARDS stacked vertically:
+Card 1 (Avoid): bg #fff5f5, border-left 5px #c0392b, icon ✗ red
+Card 2 (Better): bg #fffbf0, border-left 5px #F5922A, icon ~ orange
+Card 3 (Best): bg #f2faf0, border-left 5px #4A8B35, icon ✓ green
+
+Each card: Nunito 800 title + Caveat 400 body, border-radius 16px
+Key terms: yellow #E8F044 background inline highlight
+
+CONTENT:
+${pointsList}
+
+FOOTER: "Follow @creator for more | Repost ↻" — Nunito Bold, #333333`;
 
     case "FUNNEL":
-      return `Structure : 5 barres horizontales décroissantes.
-Barre 1 (100% largeur) : fond #FDECEA, numéro cerclé + texte
-Barre 2 (85%) : fond #FEF3E2
-Barre 3 (70%) : fond #FEF9E7
-Barre 4 (55%) : fond #E8F5E9
-Barre 5 (40%) : fond #E8F4FD, texte gras = résultat final
-Flèche vers le bas entre chaque barre
-CTA final : fond #24A89B, texte blanc, border-radius 12px`;
+      return `Generate a FUNNEL / PROCESS FLOW infographic at ${dimStr}px.
+
+CANVAS: Background #fffef5 (warm ivory)
+
+TITLE BLOCK (top 14%):
+- Title: Nunito 900, 52-56px, #111111
+- Subtitle: Caveat italic 14-16px, #666666, centered
+
+FUNNEL (center, 70% height):
+- 5 horizontal stages, progressively narrower (100% → 88% → 74% → 60% → 46%)
+- Stage 1: #c0392b (red) — widest
+- Stage 2: #F5922A (orange)
+- Stage 3: #EAB308 (amber)
+- Stage 4: #4A8B35 (green)
+- Stage 5: #2B4DAF (blue) — narrowest
+- Each stage: white number circle + Nunito 800 title + Caveat 400 body
+- ▼ arrows between stages in #c0392b
+- Key terms: yellow #E8F044 background highlight
+
+STAGES TO RENDER:
+${pointsList}
+Pro tip: ${extraction.proTip}
+
+FOOTER: "Follow @creator for more | Repost ↻" — Nunito Bold`;
 
     case "DATA_GRID":
-      return `Structure : Tableau 4 lignes × 3 colonnes.
-En-tête : fond #EBF5FB, Inter 800, uppercase, letter-spacing 1px
-Colonnes : "Concept" | "Description" | "Idéal pour"
-Lignes alternées : blanc / #F9FAFB
-Dot coloré devant chaque concept
-Dernière colonne : texte court, Inter 700, couleur #24A89B`;
+      return `Generate a DATA TABLE infographic at ${dimStr}px.
+
+CANVAS: Background #f8f9f7
+
+TITLE: Nunito Black 900, 48px, #111111, centered
+One keyword highlighted with #E8F044 background
+
+TABLE (4 rows × 3 columns):
+- Header: bg #f5f5f5, Nunito 900 uppercase
+  * Column 1 "Concept": color #c0392b
+  * Column 2 "Description": color #2B4DAF
+  * Column 3 "Best For": color #4A8B35
+- Rows alternate: #ffffff / #f9f9f9
+- Colored dots per row: #c0392b / #F5922A / #4A8B35 / #2B4DAF
+- Concept names: Nunito 800
+- Descriptions: Caveat 400, key terms highlighted #E8F044
+- Use cases: Nunito 700, color #4A8B35
+
+KEY TAKEAWAY box: border-left 4px #c0392b, bg #fffdf0
+
+CONTENT:
+${pointsList}
+Pro tip: ${extraction.proTip}
+
+FOOTER: "Follow @creator for more | Repost ↻"`;
 
     default: // AWA_CLASSIC
-      return `Structure : 7 sections numérotées verticalement.
-Fond : #FFFFF5 (crème)
-Bordure externe : 6px solid #5D3A1A
-Numéros cerclés colorés : rouge/bleu/vert/orange/violet/rose/cyan
-Chaque section : numéro + titre gras + description courte
-Pro tip : bordure pointillée rouge, fond #FFF5F5`;
+      return `Generate a DENSE GUIDE SKETCHBOARD infographic at ${dimStr}px.
+
+CANVAS:
+- Background: #ffffff with 3% paper grain
+- OUTER FRAME: 28-32px all sides, dark brown wood grain #3d2b1a
+- Inner edge: ivory line #f0e8d8, 2px
+
+TITLE BLOCK (top 12%):
+- Full-width off-white band #f8f8f8
+- Separator below: #111111, 2px
+- Title: "${extraction.title}" — Nunito 900, 48-60px, UPPERCASE, centered
+- Subtitle: italic 14px #666666
+
+CONTENT (12% to 88%):
+- 7 numbered sections vertically
+- Each section:
+  * Colored rounded number square (10px radius)
+  * Section title: Nunito Bold 18-22px, colored per section
+  * Colored underline 2px under title
+  * Body: Caveat 400, 14-16px, #111111
+  * Key terms: yellow #E8F044 background highlight
+- Colors: #c0392b, #2B4DAF, #4A8B35, #F5922A, #8B5CF6, #EC4899, #0D9488
+
+SECTIONS TO RENDER:
+${pointsList}
+Pro tip: ${extraction.proTip}
+
+FOOTER:
+- Dark band #1a1a1a, height 48-56px
+- Text: "Follow @creator for more" white Nunito Bold 16-18px
+- Creator: light blue #93c5fd. "Repost ↻": light green #86efac`;
   }
 }
 
@@ -342,26 +439,46 @@ export function buildInfographicPrompt(
   customInstructions?: string,
   forcedTemplate?: string,
 ): string {
-  const INFOGRAPHIC_SYSTEM_PROMPT = `You are an expert educational infographic designer specializing in viral social media content inspired by Awa K Penn.
+  const SYSTEM_MASTER = `SYSTEM CONTEXT:
+You are generating a viral educational infographic for social media.
+Style: inspired by Awa K Penn — hand-crafted whiteboard/notebook content.
+Professional but deliberately approachable.
 
-IDENTITY: Your infographics combine bold Nunito/Poppins Black titles,
-Caveat handwritten body text, yellow #FFEF5A highlights on key terms,
-clean white backgrounds, and maximum 4 accent colors.
+MANDATORY STYLE RULES — NO EXCEPTIONS:
+1. Background MUST be #f8f9f7 (off-white cool). NEVER dark backgrounds.
+2. EXACTLY TWO font families:
+   - Heavy printed: Nunito ExtraBold 900 / Poppins Black for titles + headers
+   - Handwritten: Caveat 400-700 / Patrick Hand for body text + bullets
+3. Maximum 4 accent colors ONLY:
+   - Red: #c0392b (warm brownish red — NOT #ff0000)
+   - Blue: #2B4DAF (deep medium blue — NOT navy)
+   - Green: #4A8B35 (natural medium green — NOT lime)
+   - Yellow: #E8F044 (ONLY as inline text highlight background)
+4. NO gradients on text. NO gradient backgrounds. NO dark cards.
+5. Yellow #E8F044 = ONLY inline highlighting pen behind words. NEVER as card/section color.
+6. Pack information densely but readably.
+7. Every section header must have a colored underline accent.
+8. Must look like meticulous hand-crafted study notes — NOT AI-generated corporate slides.
 
-ALWAYS:
-- Use Nunito ExtraBold/Black (weight 900) for all titles
-- Use Caveat for body text to create handwritten feel
-- Highlight key terms with yellow background #FFEF5A
-- Use red #E63946, blue #2563EB, green #16A34A as accent colors
-- End with "Follow [creator] for more | Repost ↻"
-- Keep backgrounds white or near-white (#ffffff, #fffef5, #FFFFF5)
+CRITICAL TYPOGRAPHY:
+- Titles: 52-56px, weight 900, color #111111
+- Section headers: 20-24px, bold, colored
+- Body bullets: 18-20px, Caveat-style, #111111
+- Small details/examples: 14-16px, italic, colored
+- Footer CTA: 20-22px bold, creator name blue underlined
+- MINIMUM font size: 13px (thumbnail-safe)
 
-NEVER:
-- Use dark backgrounds on main canvas
-- Use more than 4 accent colors
-- Use thin or light font weights for titles
-- Use complex illustrations or photographs
-- Leave large empty spaces unfilled`;
+EXACT COLOR VALUES — USE ONLY THESE:
+- Background: #f8f9f7
+- Primary text: #111111
+- Red: #c0392b
+- Blue: #2B4DAF
+- Green: #4A8B35
+- Yellow highlight: #E8F044
+- Orange accent: #F5922A
+- Gray separators: #e0e0e0
+- Secondary text: #666666
+- Footer text: #333333`;
 
   const analysis = analyzeContent(content, platform);
   const dims = FORMAT_DIMS[analysis.format];
@@ -370,136 +487,49 @@ NEVER:
   const extraction = extractKeyPoints(content);
 
   const safePad = Math.round(dims.width * 0.05);
-  const titleSize = Math.round(dims.width * 0.06);
-  const bodySize = Math.round(dims.width * 0.018);
-  const subtitleSize = Math.round(dims.width * 0.028);
-  const cardPad = Math.round(dims.width * 0.037);
-  const headerH = Math.round(dims.height * 0.20);
-  const bodyH = Math.round(dims.height * 0.70);
-  const footerH = Math.round(dims.height * 0.10);
+  const templatePrompt = getTemplatePrompt(templateId, extraction, dims);
 
   const pointsText = extraction.points.map((p, i) =>
     `${i + 1}. ${p.title} — ${p.body}`
   ).join("\n");
 
-  return `${INFOGRAPHIC_SYSTEM_PROMPT}
+  return `${SYSTEM_MASTER}
 
-You are an expert educational infographic designer specializing in viral social media content. Your style is inspired by Awa K Penn, known for clean whiteboard-style infographics combining:
-- Bold printed typography for titles and headers
-- Handwritten/marker-style fonts for body text
-- Strategic yellow highlights (#FFEF5A) for key terms
-- Clean white backgrounds with minimal decoration
-- High information density with clear visual hierarchy
-- Warm, approachable "study notes" aesthetic
+${"═".repeat(50)}
+TEMPLATE: ${templateId} — FORMAT: ${dims.width}×${dims.height}px
+${"═".repeat(50)}
 
-Your infographics are always:
-1. Highly readable at small sizes (thumbnail-safe)
-2. Structured with clear visual hierarchy
-3. Using maximum 3-4 accent colors + black + white
-4. Including colored underlines, checkmarks, minimal hand-drawn elements
-5. Ending with a consistent footer/CTA
+${templatePrompt}
 
-Never use: gradients on text, dark backgrounds, complex illustrations,
-photographic elements, or more than 4 colors.
-Always prioritize readability and information clarity over decoration.
+${"═".repeat(50)}
+TECHNICAL REQUIREMENTS
+${"═".repeat(50)}
 
-Génère un fichier HTML/CSS COMPLET et AUTONOME pour une infographie de niveau professionnel LinkedIn.
-
-${"═".repeat(40)}
-SPÉCIFICATIONS TECHNIQUES OBLIGATOIRES
-${"═".repeat(40)}
-
-FORMAT : ${dims.width}×${dims.height}px — Format ${dims.width === dims.height ? "carré 1:1" : "portrait 4:5"}
-TEMPLATE : ${templateId}
-
-CSS OBLIGATOIRE :
+CSS MANDATORY:
 - html, body { width: ${dims.width}px; height: ${dims.height}px; overflow: hidden; margin: 0; padding: 0; }
-- body { font-family: 'Nunito', sans-serif; display: flex; flex-direction: column; }
-- Padding global : ${safePad}px sur tous les côtés
-- JAMAIS de overflow visible — tout doit tenir dans ${dims.height}px
+- body { background: #f8f9f7; font-family: 'Nunito', sans-serif; display: flex; flex-direction: column; }
+- Safe zone padding: ${safePad}px on all sides
 
-POLICES (charger depuis Google Fonts) :
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+FONTS (load from Google Fonts):
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Caveat:wght@400;500;700&display=swap" rel="stylesheet">
 
-STRUCTURE HTML OBLIGATOIRE :
-
-<!-- HEADER : 16-18% de la hauteur = ${headerH}px -->
-<div class="header" style="height: ${headerH}px; flex-shrink: 0;">
-  Badge catégorie + Titre principal en Nunito Black (weight 900)
-</div>
-
-<!-- BODY : 70% de la hauteur = ${bodyH}px -->
-<div class="body" style="flex: 1; overflow: hidden;">
-  Contenu principal selon le template — body text in Caveat cursive
-</div>
-
-<!-- FOOTER : 9-10% de la hauteur = ${footerH}px -->
-<div class="footer" style="height: ${footerH}px; flex-shrink: 0;">
-  "Follow @creator for more | Repost ↻"
-</div>
-
-${"═".repeat(40)}
-RÈGLES CSS ANTI-DÉFAUT (OBLIGATOIRES)
-${"═".repeat(40)}
-
-1. SAFE ZONE : padding ${safePad}px sur tous les côtés
-   → Aucun texte ne touche les bords
-
-2. TYPOGRAPHIE :
-   → Titre : font-family: 'Nunito'; font-size: ${titleSize}px; font-weight: 900;
-   → Corps : font-family: 'Caveat', cursive; font-size: ${bodySize}px; font-weight: 500;
-   → Sous-titres : font-family: 'Nunito'; font-size: ${subtitleSize}px; font-weight: 800;
-
-3. COULEURS OBLIGATOIRES :
-   → Fond principal : #ffffff ou #fffef5 ou #FFFFF5
-   → Texte principal : #1a1a1a
-   → Accent 1 (rouge) : #E63946
-   → Accent 2 (bleu) : #2563EB
-   → Accent 3 (vert) : #16A34A
-   → Highlight jaune : #FFEF5A
-
-4. CARTES :
-   → border-radius: 12px
-   → padding: ${cardPad}px
-   → border-left: 4px solid [accent color]
-   → background: fond blanc ou pastel très clair
-
-5. REMPLISSAGE :
-   → Le body doit être rempli à 90% minimum
-   → Si peu de contenu : augmenter font-size et padding
-   → line-height: 1.35-1.4 for Caveat body text
-
-6. Z-INDEX :
-   → Texte toujours au premier plan
-   → Fond toujours derrière
-
-${"═".repeat(40)}
-TEMPLATE ${templateId} — STRUCTURE SPÉCIFIQUE
-${"═".repeat(40)}
-
-${getTemplateInstructions(templateId, extraction, dims)}
-
-${"═".repeat(40)}
-CONTENU À INTÉGRER
-${"═".repeat(40)}
-
-Titre : ${extraction.title}
-Badge : ${extraction.badge}
-Points :
+CONTENT TO INTEGRATE:
+Title: ${extraction.title}
+Badge: ${extraction.badge}
+Points:
 ${pointsText}
-Pro tip : ${extraction.proTip}
-Footer : Follow @creator for more | Repost ↻
+Pro tip: ${extraction.proTip}
+Footer: Follow @creator for more | Repost ↻
 
-${customInstructions ? `Instructions supplémentaires : ${customInstructions}` : ""}
+${customInstructions ? `Additional instructions: ${customInstructions}` : ""}
 
-${"═".repeat(40)}
-FORMAT DE SORTIE
-${"═".repeat(40)}
+${"═".repeat(50)}
+OUTPUT FORMAT
+${"═".repeat(50)}
 
-Génère UNIQUEMENT le code HTML complet.
-Commence par <!DOCTYPE html> et termine par </html>.
-Aucun texte avant ou après le HTML.
-Aucun markdown, aucun backtick.
+Generate ONLY complete HTML code.
+Start with <!DOCTYPE html> and end with </html>.
+No text before or after HTML. No markdown, no backticks.
 All visible text must be in ENGLISH.`;
 }
 
@@ -516,44 +546,44 @@ interface TemplateStyleGuide {
 
 const TEMPLATE_STYLE_GUIDES: Record<string, TemplateStyleGuide> = {
   UI_CARDS: {
-    vibe: "Clean SaaS landing page meets editorial magazine. Apple/Notion/Linear aesthetic. Sophisticated, never loud.",
-    background: "Soft #F8F9FA off-white background. NO heavy borders, NO frames, NO patterns. Pure breathing room.",
-    layout: "Centered serif title at top with a small uppercase kicker label above. 3 stacked white cards taking the main vertical space (each card ~equal height, flex:1). Each card has a colored category pill at the top-left ('Mauvais' / 'Bon' / 'Excellent'), then a serif card title, then sans-serif body. 4-cell insight grid at the bottom for supporting points.",
-    typography: "Title in Playfair Display 900, 32px, sentence case (NOT all caps). Card titles in Playfair 700, 17px. Card bodies in Inter 400, 13px, color #4B5563, line-height 1.5. Insight titles 11px Inter 700. Generous white space.",
-    colors: "Pastel pills — red #FFE5E5/text #E03131 for 'Mauvais', amber #FFF1DC/text #D97706 for 'Bon', green #E5F7E8/text #2BA84A for 'Excellent'. Card left borders match (4px). Yellow #FFE066 highlighter underline behind one keyword per card body.",
-    structure: "Strict 3-tier comparison. Card 1 = the worst/wrong/bad version (red). Card 2 = the okay/standard version (orange). Card 3 = the best/expert version (green). Each card body 25-30 words MAX. Bottom 4 insights are short 'why it works' takeaways, 12-18 words each.",
+    vibe: "Clean 3-tier comparison. Awa K Penn study notes aesthetic. Approachable, hand-crafted feel.",
+    background: "#f8f9f7 off-white. NO heavy borders, NO frames.",
+    layout: "Centered Nunito 900 title. 3 stacked cards (Avoid/Better/Best). Each card: border-left 5px colored accent + icon + Nunito title + Caveat body. Footer with Repost CTA.",
+    typography: "Nunito 900 for title 48-52px. Nunito 800 for card titles 26px. Caveat 400 for body 19px. Yellow #E8F044 inline highlights.",
+    colors: "Card 1 red: bg #fff5f5, border #c0392b. Card 2 orange: bg #fffbf0, border #F5922A. Card 3 green: bg #f2faf0, border #4A8B35. Badge: #111111. Highlights: #E8F044.",
+    structure: "Strict 3-tier comparison. Card 1 = bad (red ✗). Card 2 = okay (orange ~). Card 3 = best (green ✓). 25-30 words per card body MAX.",
   },
   WHITEBOARD: {
-    vibe: "Friendly hand-drawn whiteboard. Smart consultant's notebook page. LinkedIn educator vibe. Approachable, not corporate.",
-    background: "Pure white #FFFFFF with very subtle dotted grid pattern (radial-gradient dots at 24px spacing, color #E8EAED). NO frames, NO heavy borders.",
-    layout: "Top header: small uppercase blue kicker + big handwritten title (with one keyword highlighted in yellow). 7 sections below in vertical flow, each = hand-drawn marker symbol on the left (→, ★, ✓, !) + content on the right. Dashed separators between sections. Bottom: 'Astuce pro' callout box with dashed orange border.",
-    typography: "Title in Caveat handwritten font, 42px, weight 700, normal style. Section titles in Caveat 24px, weight 700. Marker symbols in Caveat 30px. Body text in Inter 400, 13px, color #4B5563. The mix of handwritten + clean sans-serif = teacher's whiteboard energy.",
-    colors: "Marker accents rotating: blue #4DABF7, red #FF6B6B, green #51CF66. Yellow highlighter #FFE066 behind important words (linear-gradient bottom-half background trick). Subtle gray separators #F1F3F5. Pro tip box uses orange #FFB347 dashed border on #FFFAF0 background.",
-    structure: "7 short tips/steps. Each section: 3-6 word handwritten title + 18-25 word body in Inter. ONE keyword per section gets the yellow highlighter <span class='a'>treatment</span>. Pro tip at bottom is the single most actionable takeaway.",
+    vibe: "Hand-crafted whiteboard bulletin. Paper clips at corners. LinkedIn educator energy. Study notes aesthetic.",
+    background: "#f8f9f7 with paper grain 2-3% opacity. 1px #dddddd border. Corner clips #aaaaaa.",
+    layout: "Top: Nunito 900 title + #c0392b underline. 7 numbered sections with colored left borders alternating #c0392b/#2B4DAF/#4A8B35. Circled numbers. Footer: Nunito Bold.",
+    typography: "Nunito 900 titles 48px. Section headers Nunito 800 22px, colored. Body Caveat 400 18-20px #111111. Colored underlines under each header.",
+    colors: "Borders: #c0392b, #2B4DAF, #4A8B35 rotating. Highlights: #E8F044 inline. Number circles: 2px #1a1a1a border. Gray separator: #e0e0e0.",
+    structure: "7 bullet list items. Each: circled number + colored Nunito header + Caveat body. ONE keyword per section gets #E8F044 highlight.",
   },
   FUNNEL: {
-    vibe: "Modern strategy framework. McKinsey-meets-Linear. Visual progression that pulls the eye downward through sequential stages.",
-    background: "Soft vertical gradient from #FFF8F0 (warm top) to #F0F4FF (cool bottom). Clean, no border, no pattern.",
-    layout: "Centered uppercase title at top with a dark kicker pill above. 5 funnel stages stacked vertically, each progressively narrower (96%, 84%, 72%, 60%, 48% width). Each stage = colored gradient pill with a number circle on the left + uppercase stage title + body description. Small ▼ arrows between stages. Bottom: 2 side-by-side note cards (purple + cyan accents).",
-    typography: "Title in Inter 900, 28-32px, ALL CAPS, letter-spacing -0.5px. Stage titles in Inter 800, 13-15px, ALL CAPS. Stage bodies in Inter 500, 11-12px, opacity 0.95 on colored bg. Note titles 11px uppercase. All sans-serif, no italic.",
-    colors: "Funnel gradient progression (warm → cool): stage 1 red #EF4444→#F87171, stage 2 orange #F97316→#FB923C, stage 3 amber #F59E0B→#FBBF24, stage 4 emerald #10B981→#34D399, stage 5 blue #3B82F6→#60A5FA. Notes use purple #9333EA and cyan #0891B2 left borders.",
-    structure: "5 sequential stages of a process/framework/funnel, each building on the previous. Stage 1 = entry/awareness (largest), stage 5 = goal/conversion (smallest). Each stage: 2-4 word title + 12-18 word body. Bottom 2 notes = 'common pitfall' (purple) + 'expert tip' (cyan), 10-15 words each.",
+    vibe: "Process flow funnel. Progressive narrowing stages. Warm ivory background. Hand-drawn energy.",
+    background: "#fffef5 warm ivory. No heavy border.",
+    layout: "Nunito 900 title centered. 5 progressively narrower stages (100%→46%). Number circles white on colored bg. ▼ arrows between stages. Footer CTA.",
+    typography: "Nunito 900 title 48-56px. Stage titles Nunito 800 22px. Body Caveat 400 16-18px. Colored underlines per stage.",
+    colors: "Stage 1: #c0392b. Stage 2: #F5922A. Stage 3: #EAB308. Stage 4: #4A8B35. Stage 5: #2B4DAF. Highlights: #E8F044. Arrows: #c0392b.",
+    structure: "5 sequential stages filtering down. Stage 1 = widest (entry). Stage 5 = narrowest (goal). 2-4 word title + 12-18 word body per stage.",
   },
   DATA_GRID: {
-    vibe: "Notebook framework table. Knowledge worker reference card. Notion / consulting deliverable energy. Sober, structured, immediately scannable.",
-    background: "White #FFFFFF with very subtle 32px squared notebook grid (rgba(0,0,0,0.018)). NO heavy borders.",
-    layout: "Centered serif title (with one yellow-highlighted word) + small pastel-blue uppercase kicker. Below: a 4-row × 3-column table (Élément / Description / Idéal pour) with a pastel blue header row. Each row has a colored dot (red/orange/green/violet) next to the concept name. Bottom: 2 small bonus cards side-by-side. Below: a single brand-color #24A89B 'À retenir' tip box with star icon.",
-    typography: "Title in Playfair Display 900, 28-32px, sentence case. Kicker 10px Inter 800 uppercase. Header row 10px Inter 800 uppercase. Body cells 11-12px Inter 400 (description) / 700 (concept name and use case). NO italic.",
-    colors: "Header pill bg #AEC6CF (pastel blue) text #1F2937. Row dots: #FFB3B3 / #FFD4A3 / #B3FFD1 / #D4B3FF (rouge/orange/vert/violet pastels). Use case arrow #24A89B. Yellow #FFE066 highlighter underline behind one keyword per description. Tip box: brand #24A89B left border + #E8F8F6 background.",
-    structure: "Strict 4-row table. Each row = ONE framework concept (P1-P4). Column 1 = name (2-4 words). Column 2 = description (15-25 words, one bold keyword). Column 3 = 'Idéal pour' use case (3-6 words). Bottom: 2 tiny bonus cards using P7 + a brand-color tip box for the single most important takeaway.",
+    vibe: "Framework reference table. Knowledge worker study card. Clean structured data.",
+    background: "#f8f9f7 off-white. No heavy borders.",
+    layout: "Nunito 900 title + #E8F044 keyword highlight. 4-row × 3-column table (Concept/Description/Best For). Colored dots per row. Key Takeaway box with #c0392b border-left.",
+    typography: "Nunito 900 title 44px. Header Nunito 900 13px uppercase. Cell names Nunito 800 16px. Descriptions Caveat 400 18px. Use cases Nunito 700 14px #4A8B35.",
+    colors: "Header columns: #c0392b/#2B4DAF/#4A8B35. Row dots: #c0392b/#F5922A/#4A8B35/#2B4DAF. Highlights: #E8F044. Tip: #c0392b border, #fffdf0 bg.",
+    structure: "4-row table. Column 1 = concept name (2-4 words). Column 2 = description (Caveat, one bold keyword). Column 3 = use case. Bottom tip box = key takeaway.",
   },
   AWA_CLASSIC: {
-    vibe: "Awa K. Penn viral infographic. Dense, scannable, save-worthy. Cream paper with wood frame.",
-    background: "Cream #FFFFF5 with 6px solid #5D3A1A wood-tone border.",
-    layout: "Header: badge pill + ALL CAPS title (left) + contextual illustration (right). 7 numbered sections below in a tight vertical flow. Pro tip box at bottom with dashed border.",
-    typography: "Poppins. Title 28px weight 900 ALL CAPS letter-spacing -0.5px. Section headers 13px weight 700. Body 11px weight 400 line-height 1.35.",
-    colors: "Section colors rotating: #E53E3E, #3182CE, #38A169, #DD6B20, #9B59B6, #EC4899, #00897B. Pro tip uses red #E53E3E dashed border.",
-    structure: "7 dense sections, each 30-50 words with sub-bullets and one accent-colored bold keyword. Pro tip 30-50 words actionable.",
+    vibe: "Awa K Penn dense guide. Wood-framed sketchboard. Cream paper. Save-worthy viral content.",
+    background: "#ffffff with #3d2b1a wood frame border 28px. Off-white header #f8f8f8.",
+    layout: "Dark badge pill + UPPERCASE Nunito 900 title. 7 numbered sections with colored rounded squares. Dark footer band #1a1a1a with light text.",
+    typography: "Nunito 900 title 46px uppercase. Section headers Nunito 800 21px. Body Caveat 400 16px. Colored underlines. #E8F044 highlights.",
+    colors: "Numbers: #c0392b, #2B4DAF, #4A8B35, #F5922A, #8B5CF6, #EC4899, #0D9488. Frame: #3d2b1a. Badge: #3d2b1a. Highlights: #E8F044.",
+    structure: "7 dense sections. Each: colored rounded number + Nunito header + colored underline + Caveat body. Footer: dark band, white text, blue/green accents.",
   },
 };
 
