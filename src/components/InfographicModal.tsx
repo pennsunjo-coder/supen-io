@@ -328,70 +328,52 @@ export default function InfographicModal({ open, onClose, content, platform, con
     }, 1000);
   }
 
-  // ─── Downloads (PNG + JPEG from HTML via html2canvas) ───
+  // ─── Downloads (PNG + JPEG + PDF from HTML via html2canvas) ───
 
   async function renderHtmlToCanvas(): Promise<HTMLCanvasElement> {
-    // Use the visible iframe if available, else create offscreen one
-    const existingIframe = iframeRef.current;
-    let iframe: HTMLIFrameElement;
-    let shouldRemove = false;
+    const iframe = iframeRef.current;
+    if (!iframe) throw new Error("Iframe not available");
 
-    if (existingIframe?.contentDocument?.body) {
-      iframe = existingIframe;
-    } else {
-      iframe = document.createElement("iframe");
-      iframe.style.cssText = `position:fixed;top:-9999px;left:-9999px;width:${dims.width}px;height:${dims.height}px;border:none;z-index:-1;`;
-      document.body.appendChild(iframe);
-      shouldRemove = true;
+    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!iframeDoc?.body) throw new Error("Cannot access iframe content");
 
-      const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-      if (!iframeDoc) throw new Error("Cannot access iframe document");
-      iframeDoc.open();
-      iframeDoc.write(htmlCode);
-      iframeDoc.close();
-    }
-
-    const iframeDoc = iframe.contentDocument!;
-
-    // Wait for fonts to be ready in the iframe context
-    try {
-      await iframe.contentWindow?.document.fonts.ready;
-    } catch { /* fonts API may not be available */ }
-
-    // Extra delay for Google Fonts @import to load
+    // Wait for fonts to load inside the iframe
+    try { await iframe.contentWindow?.document.fonts.ready; } catch {}
     await new Promise((r) => setTimeout(r, 1500));
 
     const html2canvas = (await import("html2canvas")).default;
-    const element = iframeDoc.documentElement;
-    const canvas = await html2canvas(element, {
+    const rootEl = iframeDoc.body;
+
+    const canvas = await html2canvas(rootEl, {
       useCORS: true,
       allowTaint: true,
       backgroundColor: "#f8f9f7",
       scale: 2,
       logging: false,
-      width: iframeDoc.documentElement.scrollWidth,
-      height: iframeDoc.documentElement.scrollHeight,
-      windowWidth: iframeDoc.documentElement.scrollWidth,
-      windowHeight: iframeDoc.documentElement.scrollHeight,
+      foreignObjectRendering: false,
+      imageTimeout: 5000,
       onclone: (clonedDoc: Document) => {
-        clonedDoc.querySelectorAll("*").forEach((el) => {
-          const htmlEl = el as HTMLElement;
-          const computed = window.getComputedStyle(htmlEl);
-          // Force all critical properties inline for html2canvas
-          if (computed.backgroundColor && computed.backgroundColor !== "rgba(0, 0, 0, 0)") {
-            htmlEl.style.backgroundColor = computed.backgroundColor;
-          }
-          if (computed.color) htmlEl.style.color = computed.color;
-          if (computed.fontFamily) htmlEl.style.fontFamily = computed.fontFamily;
-          if (computed.fontSize) htmlEl.style.fontSize = computed.fontSize;
-          if (computed.fontWeight) htmlEl.style.fontWeight = computed.fontWeight;
-          if (computed.borderLeftColor) htmlEl.style.borderLeftColor = computed.borderLeftColor;
-          if (computed.borderColor) htmlEl.style.borderColor = computed.borderColor;
-        });
+        try {
+          clonedDoc.querySelectorAll("*").forEach((el) => {
+            const htmlEl = el as HTMLElement;
+            try {
+              const computed = window.getComputedStyle(htmlEl);
+              const bg = computed.backgroundColor;
+              if (bg && bg !== "rgba(0, 0, 0, 0)" && bg !== "transparent") {
+                htmlEl.style.backgroundColor = bg;
+              }
+              if (computed.color) htmlEl.style.color = computed.color;
+              if (computed.fontFamily) htmlEl.style.fontFamily = computed.fontFamily;
+              if (computed.fontWeight) htmlEl.style.fontWeight = computed.fontWeight;
+              if (computed.fontSize) htmlEl.style.fontSize = computed.fontSize;
+              if (computed.borderLeftColor) htmlEl.style.borderLeftColor = computed.borderLeftColor;
+              if (computed.borderColor) htmlEl.style.borderColor = computed.borderColor;
+            } catch {}
+          });
+        } catch {}
       },
     });
 
-    if (shouldRemove) document.body.removeChild(iframe);
     return canvas;
   }
 
@@ -402,6 +384,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
     try {
       const canvas = await renderHtmlToCanvas();
       const link = document.createElement("a");
+      link.style.display = "none";
       if (format === "jpeg") {
         link.href = canvas.toDataURL("image/jpeg", 0.95);
         link.download = `supen-infographic-${Date.now()}.jpg`;
@@ -409,11 +392,21 @@ export default function InfographicModal({ open, onClose, content, platform, con
         link.href = canvas.toDataURL("image/png");
         link.download = `supen-infographic-${Date.now()}.png`;
       }
+      document.body.appendChild(link);
       link.click();
-      toast.success("Downloaded!");
+      document.body.removeChild(link);
+      toast.success(`${format.toUpperCase()} downloaded!`);
     } catch (err) {
       console.error("[InfographicModal] Download error:", err);
-      toast.error("Download error — try again");
+      // Fallback: open HTML in new tab
+      try {
+        const blob = new Blob([htmlCode], { type: "text/html" });
+        const url = URL.createObjectURL(blob);
+        window.open(url, "_blank");
+        toast.info("Opened in new tab — right-click image to save");
+      } catch {
+        toast.error("Download failed — try again");
+      }
     } finally {
       setDownloading(false);
     }
@@ -444,36 +437,45 @@ export default function InfographicModal({ open, onClose, content, platform, con
     try {
       const canvas = await renderHtmlToCanvas();
       const imgData = canvas.toDataURL("image/png");
-
-      // Open a print window with the infographic image — user saves as PDF
-      const printWindow = window.open("", "_blank");
-      if (!printWindow) {
-        toast.error("Autorisez les popups pour télécharger le PDF");
-        setDownloading(false);
-        return;
-      }
-
-      const imgW = canvas.width;
-      const imgH = canvas.height;
+      const imgW = canvas.width / 2;
+      const imgH = canvas.height / 2;
       const ratio = imgH / imgW;
-      const isPortrait = ratio > 1;
 
-      printWindow.document.write(`<!DOCTYPE html>
-<html><head><title>Supen Infographic</title>
-<style>
-*{margin:0;padding:0}
-body{background:white;display:flex;align-items:center;justify-content:center;min-height:100vh}
-img{max-width:100%;max-height:100vh;display:block;page-break-inside:avoid}
-@page{margin:0;size:${isPortrait ? "portrait" : "landscape"}}
-@media print{body{margin:0}img{width:100%;height:auto}}
-</style></head><body>
-<img src="${imgData}" />
-<script>
-window.onload=function(){setTimeout(function(){window.print();setTimeout(function(){window.close()},1000)},500)};
-</script></body></html>`);
-      printWindow.document.close();
-
-      toast.success("Dialogue d'impression ouvert — sauvegardez en PDF !");
+      // Try jsPDF first
+      try {
+        const { jsPDF } = await import("jspdf");
+        const pdfW = 210;
+        const pdfH = Math.round(pdfW * ratio);
+        const pdf = new jsPDF({
+          orientation: ratio > 1 ? "portrait" : "landscape",
+          unit: "mm",
+          format: [pdfW, pdfH],
+          compress: true,
+        });
+        pdf.addImage(imgData, "PNG", 0, 0, pdfW, pdfH, "", "FAST");
+        pdf.save(`supen-infographic-${Date.now()}.pdf`);
+        toast.success("PDF downloaded!");
+      } catch (pdfErr) {
+        console.warn("jsPDF failed, using print fallback:", pdfErr);
+        // Fallback: print dialog
+        const printWin = window.open("", "_blank", "width=1200,height=800");
+        if (!printWin) {
+          // Last fallback: save as PNG
+          const link = document.createElement("a");
+          link.href = imgData;
+          link.download = `supen-infographic-${Date.now()}.png`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          toast.info("Saved as PNG (popups blocked for PDF)");
+          setDownloading(false);
+          return;
+        }
+        const isPortrait = ratio > 1;
+        printWin.document.write(`<!DOCTYPE html><html><head><style>*{margin:0;padding:0;box-sizing:border-box}body{background:white}img{width:100%;height:auto;display:block;page-break-inside:avoid}@page{margin:0;size:${isPortrait ? "portrait" : "landscape"}}@media print{body{margin:0}img{width:100%}}</style></head><body><img src="${imgData}"/><script>window.onload=function(){setTimeout(function(){window.print();setTimeout(function(){window.close()},1000)},800)};<\/script></body></html>`);
+        printWin.document.close();
+        toast.success("Print dialog → Save as PDF");
+      }
     } catch (err) {
       console.error("[InfographicModal] PDF error:", err);
       toast.error("PDF failed — use PNG instead");
@@ -746,7 +748,7 @@ window.onload=function(){setTimeout(function(){window.print();setTimeout(functio
                         width: `${100 / iframeScale}%`,
                         height: `${100 / iframeScale}%`,
                       }}
-                      sandbox="allow-same-origin"
+                      sandbox="allow-same-origin allow-scripts"
                       title="Infographic preview"
                     />
                   </div>
@@ -777,6 +779,13 @@ window.onload=function(){setTimeout(function(){window.print();setTimeout(functio
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     Saving...
                   </div>
+                )}
+
+                {/* Download status */}
+                {downloading && (
+                  <p className="text-xs text-muted-foreground text-center animate-pulse mb-2">
+                    Preparing download... (may take a few seconds)
+                  </p>
                 )}
 
                 {/* Primary actions — PNG + JPEG + PDF download */}
