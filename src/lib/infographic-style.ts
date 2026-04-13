@@ -530,6 +530,23 @@ Footer : Created with Supen.io
 
 ${customInstructions ? `Instructions supplémentaires : ${customInstructions}` : ""}
 
+TYPOGRAPHY RULES — MANDATORY:
+- Title: Nunito font-weight 900, font-size minimum 44px
+- Section headers: Nunito font-weight 800, font-size 24-28px
+- Body text: Caveat font-weight 500, font-size minimum 16px
+- Labels/badges: Nunito font-weight 800, font-size 11-13px
+- ALL text must have overflow:hidden + -webkit-line-clamp
+- NO text can overflow its container
+- white-space:nowrap on single-line elements only
+- line-height: 1.1-1.15 for titles, 1.3-1.5 for body
+
+ORDER RULES — MANDATORY:
+- Header first (badge + title): flex-shrink:0
+- Body in middle: flex:1, min-height:0
+- Footer last: flex-shrink:0
+- Every flex container needs: display:flex, overflow:hidden
+- Every flex child needs: min-width:0 OR min-height:0
+
 DENSITY RULES — MANDATORY:
 - Minimum 5 distinct points per infographic (never less)
 - Each point must have a title (3-6 words) AND a body (15-25 words)
