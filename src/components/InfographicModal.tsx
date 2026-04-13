@@ -385,6 +385,8 @@ export default function InfographicModal({ open, onClose, content, platform, con
           if (computed.fontFamily) htmlEl.style.fontFamily = computed.fontFamily;
           if (computed.fontSize) htmlEl.style.fontSize = computed.fontSize;
           if (computed.fontWeight) htmlEl.style.fontWeight = computed.fontWeight;
+          if (computed.borderLeftColor) htmlEl.style.borderLeftColor = computed.borderLeftColor;
+          if (computed.borderColor) htmlEl.style.borderColor = computed.borderColor;
         });
       },
     });

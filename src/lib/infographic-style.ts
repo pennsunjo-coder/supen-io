@@ -528,32 +528,15 @@ ${extraction.points.map((p, i) => `P${i+1}_TITLE: ${p.title}\nP${i+1}_BODY: ${p.
 Pro tip : ${extraction.proTip}
 Footer : Created with Supen.io
 
-ICÔNES EMOJI À REMPLIR :
-Pour chaque {{ICON_N}}, choisis l'emoji le plus adapté
-au contenu de P{N}_TITLE parmi :
-💡🚀🧠🎯📊⚙️✅⚡📚👥⭐📱💰🔥💪🎨🔑💎🌟🏆
-
-Guide rapide :
-- Conseil/idée → 💡
-- Croissance/lancement → 🚀
-- Stratégie/réflexion → 🧠
-- Objectif/résultat → 🎯
-- Performance/stats → 📊
-- Processus/système → ⚙️
-- Succès/validation → ✅
-- Rapidité/énergie → ⚡
-- Apprentissage → 📚
-- Communauté/audience → 👥
-- Qualité/excellence → 🏆
-- Argent/revenus → 💰
-- Motivation/force → 💪
-- Créativité → 🎨
-- Clé/secret → 🔑
-- Premium/valeur → 💎
-
-IMPORTANT : Remplace chaque {{ICON_N}} par UN SEUL emoji approprié au contenu.
-
 ${customInstructions ? `Instructions supplémentaires : ${customInstructions}` : ""}
+
+DENSITY RULES — MANDATORY:
+- Minimum 5 distinct points per infographic (never less)
+- Each point must have a title (3-6 words) AND a body (15-25 words)
+- An infographic with less than 5 points will be REJECTED
+- Content must fill 75-85% of the canvas visually
+- NO empty sections, NO placeholder text like "lorem ipsum"
+- Every point must be specific and actionable
 
 RAPPEL FINAL :
 - Nunito 900 pour TOUS les titres

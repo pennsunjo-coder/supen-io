@@ -22,25 +22,46 @@ const FONT_HEAD = `<style>
 *{box-sizing:border-box;margin:0;padding:0}
 </style>`;
 
-// ─── SVG paper grid background (inline data URI) ───
-function gridBg(gridSize: number = 32, opacity: number = 0.06): string {
-  const r = Math.round(opacity * 255);
-  const hex = r.toString(16).padStart(2, '0');
-  return `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='${gridSize}' height='${gridSize}'%3E%3Cpath d='M ${gridSize} 0 L 0 0 0 ${gridSize}' fill='none' stroke='%2364647880' stroke-width='0.5'/%3E%3C/svg%3E")`;
+// ─── SVG paper grid backgrounds ───
+function dotGridBg(gridSize: number = 32, opacity: number = 0.06): string {
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${gridSize}' height='${gridSize}'><circle cx='${gridSize/2}' cy='${gridSize/2}' r='0.8' fill='rgba(80,80,100,${opacity})'/></svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+}
+function gridLineBg(gridSize: number = 32, opacity: number = 0.05): string {
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${gridSize}' height='${gridSize}'><path d='M ${gridSize} 0 L 0 0 0 ${gridSize}' fill='none' stroke='rgba(80,80,100,${opacity})' stroke-width='0.5'/></svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
 }
 
 // ─── Decorative SVG elements ───
 function wavyUnderline(width: number, color: string): string {
-  const c = encodeURIComponent(color);
   return `<svg width="${width}" height="8" viewBox="0 0 200 8" style="display:block;margin:0 auto;"><path d="M 0 4 Q 25 1 50 4 Q 75 7 100 4 Q 125 1 150 4 Q 175 7 200 4" stroke="${color}" stroke-width="2" fill="none"/></svg>`;
 }
-
-function handArrow(color: string = '#C0392B'): string {
-  return `<svg width="40" height="20" viewBox="0 0 40 20" style="display:inline-block;vertical-align:middle;"><path d="M 2 10 Q 15 3 35 10 L 28 5 M 35 10 L 28 15" stroke="${color}" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-}
-
 function decorStar(size: number = 14): string {
   return `<svg width="${size}" height="${size}" viewBox="0 0 16 16" style="display:inline;vertical-align:middle;"><text x="1" y="13" font-size="13" fill="#F5922A">★</text></svg>`;
+}
+
+// ─── Hand-drawn SVG sketch icons (for inline HTML templates) ───
+function sketchIcon(type: string, size: number, color: string): string {
+  const s = size;
+  const c = color;
+  const icons: Record<string, string> = {
+    target: `<svg width="${s}" height="${s}" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="13" stroke="${c}" stroke-width="1.8"/><circle cx="16" cy="16" r="8" stroke="${c}" stroke-width="1.8"/><circle cx="16" cy="16" r="3" fill="${c}"/><line x1="16" y1="3" x2="16" y2="8" stroke="${c}" stroke-width="1.8" stroke-linecap="round"/><line x1="16" y1="24" x2="16" y2="29" stroke="${c}" stroke-width="1.8" stroke-linecap="round"/><line x1="3" y1="16" x2="8" y2="16" stroke="${c}" stroke-width="1.8" stroke-linecap="round"/><line x1="24" y1="16" x2="29" y2="16" stroke="${c}" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    rocket: `<svg width="${s}" height="${s}" viewBox="0 0 32 32" fill="none"><path d="M16 4 C16 4 22 8 22 16 L22 22 L16 28 L10 22 L10 16 C10 8 16 4 16 4Z" stroke="${c}" stroke-width="1.8" stroke-linecap="round" fill="none"/><circle cx="16" cy="14" r="3" stroke="${c}" stroke-width="1.5"/><path d="M10 20 L6 24 L6 27 L9 27 L13 23" stroke="${c}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M22 20 L26 24 L26 27 L23 27 L19 23" stroke="${c}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>`,
+    brain: `<svg width="${s}" height="${s}" viewBox="0 0 32 32" fill="none"><path d="M16 6 C10 6 6 10 6 15 C6 18 7 20 9 21 C9 23 10 25 12 25 L16 25 L20 25 C22 25 23 23 23 21 C25 20 26 18 26 15 C26 10 22 6 16 6Z" stroke="${c}" stroke-width="1.8" stroke-linecap="round" fill="none"/><line x1="16" y1="6" x2="16" y2="25" stroke="${c}" stroke-width="1.2" stroke-dasharray="1 3"/><path d="M9 15 Q11 13 13 15" stroke="${c}" stroke-width="1.5" stroke-linecap="round" fill="none"/><path d="M19 15 Q21 13 23 15" stroke="${c}" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>`,
+    lightbulb: `<svg width="${s}" height="${s}" viewBox="0 0 32 32" fill="none"><path d="M16 5 C11 5 7 9 7 14 C7 18 10 21 11 22 L11 26 L21 26 L21 22 C22 21 25 18 25 14 C25 9 21 5 16 5Z" stroke="${c}" stroke-width="1.8" stroke-linecap="round" fill="none"/><line x1="12" y1="26" x2="20" y2="26" stroke="${c}" stroke-width="2" stroke-linecap="round"/><line x1="13" y1="29" x2="19" y2="29" stroke="${c}" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="9" x2="16" y2="13" stroke="${c}" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    chart: `<svg width="${s}" height="${s}" viewBox="0 0 32 32" fill="none"><line x1="6" y1="26" x2="6" y2="6" stroke="#111" stroke-width="1.8" stroke-linecap="round"/><line x1="6" y1="26" x2="28" y2="26" stroke="#111" stroke-width="1.8" stroke-linecap="round"/><polyline points="8,22 13,16 18,19 23,10" stroke="${c}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="23" cy="10" r="2.5" fill="${c}"/></svg>`,
+    gear: `<svg width="${s}" height="${s}" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="5" stroke="${c}" stroke-width="1.8"/><path d="M16 5 L16 8 M16 24 L16 27 M5 16 L8 16 M24 16 L27 16 M8 8 L10 10 M22 22 L24 24 M8 24 L10 22 M22 10 L24 8" stroke="${c}" stroke-width="2.2" stroke-linecap="round"/></svg>`,
+    clipboard: `<svg width="${s}" height="${s}" viewBox="0 0 32 32" fill="none"><rect x="6" y="8" width="20" height="20" rx="2" stroke="${c}" stroke-width="1.8"/><path d="M12 8 L12 6 Q16 4 20 6 L20 8" stroke="${c}" stroke-width="1.8" stroke-linecap="round" fill="none"/><line x1="10" y1="14" x2="22" y2="14" stroke="${c}" stroke-width="1.5" stroke-linecap="round"/><line x1="10" y1="18" x2="22" y2="18" stroke="${c}" stroke-width="1.5" stroke-linecap="round"/><line x1="10" y1="22" x2="18" y2="22" stroke="${c}" stroke-width="1.5" stroke-linecap="round"/></svg>`,
+    check: `<svg width="${s}" height="${s}" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="13" stroke="${c}" stroke-width="1.8"/><path d="M9 16 L14 21 L23 11" stroke="${c}" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    star: `<svg width="${s}" height="${s}" viewBox="0 0 32 32" fill="none"><path d="M16 4 L19 12 L28 12 L21 17 L24 26 L16 21 L8 26 L11 17 L4 12 L13 12 Z" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>`,
+    book: `<svg width="${s}" height="${s}" viewBox="0 0 32 32" fill="none"><path d="M6 7 L6 26 Q6 27 8 27 L16 27 L16 7 L8 7 Q6 7 6 7Z" stroke="${c}" stroke-width="1.8" fill="none"/><path d="M16 7 L24 7 Q26 7 26 9 L26 26 Q26 27 24 27 L16 27" stroke="${c}" stroke-width="1.8" fill="none"/><line x1="16" y1="7" x2="16" y2="27" stroke="${c}" stroke-width="1.5"/><line x1="9" y1="12" x2="14" y2="12" stroke="${c}" stroke-width="1.2" stroke-linecap="round"/><line x1="9" y1="16" x2="14" y2="16" stroke="${c}" stroke-width="1.2" stroke-linecap="round"/></svg>`,
+  };
+  return icons[type] || icons['target'];
+}
+
+function iconForIndex(index: number): string {
+  const cycle = ['target','rocket','brain','lightbulb','chart','gear','clipboard','check','star','book'];
+  return cycle[index % cycle.length];
 }
 
 // ─── TEMPLATE 1: AWA_CLASSIC (style IMG1/IMG3 — cadre bois) ───
@@ -71,7 +92,7 @@ ${FONT_HEAD}
 
 <div style="position:absolute;inset:0;background:#3d2b1a;"></div>
 
-<div style="position:absolute;top:${frame}px;left:${frame}px;width:${innerW}px;height:${innerH}px;background:#FFFFF5;background-image:${gridBg(32, 0.04)};display:flex;flex-direction:column;border:2px solid #f0e8d8;">
+<div style="position:absolute;top:${frame}px;left:${frame}px;width:${innerW}px;height:${innerH}px;background-color:#FFFFF5;background-image:${dotGridBg(30, 0.05)};display:flex;flex-direction:column;border:2px solid #f0e8d8;">
 
   <div style="height:${headerH}px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${Math.round(20*s)}px ${pad}px;gap:${Math.round(8*s)}px;border-bottom:3px solid #3d2b1a;">
     <div style="display:inline-block;background:#3d2b1a;color:#FFFFF5;font-family:'Nunito','Arial Black',sans-serif;font-weight:800;font-size:${badgeSz}px;letter-spacing:2px;text-transform:uppercase;padding:${Math.round(5*s)}px ${Math.round(18*s)}px;border-radius:100px;">{{BADGE}}</div>
@@ -83,7 +104,7 @@ ${FONT_HEAD}
     ${colors.map((c, i) => `
     <div style="flex:1;display:flex;align-items:center;gap:${Math.round(14*s)}px;padding:${Math.round(itemH*0.1)}px ${Math.round(16*s)}px;border-radius:${Math.round(8*s)}px;border:1px solid rgba(61,43,26,0.15);background:rgba(255,255,245,0.8);min-height:0;overflow:hidden;">
       <div style="width:${numSz}px;height:${numSz}px;border-radius:${Math.round(8*s)}px;background:${c};display:flex;align-items:center;justify-content:center;font-family:'Nunito','Arial Black',sans-serif;font-weight:900;font-size:${Math.round(numSz*0.44)}px;color:#ffffff;flex-shrink:0;">${i+1}</div>
-      <div style="font-size:${Math.round(28*s)}px;flex-shrink:0;line-height:1;">{{ICON_${i+1}}}</div>
+      <div style="flex-shrink:0;opacity:0.7;">${sketchIcon(iconForIndex(i), Math.round(28*s), c)}</div>
       <div style="flex:1;min-width:0;overflow:hidden;">
         <div style="font-family:'Nunito','Arial Black',sans-serif;font-weight:800;font-size:${itemTitleSz}px;color:#111111;line-height:1.2;margin-bottom:${Math.round(3*s)}px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;">{{P${i+1}_TITLE}}</div>
         <div style="font-family:'Caveat','Comic Sans MS',cursive;font-size:${Math.round(itemBodySz*1.15)}px;color:#444444;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{P${i+1}_BODY}}</div>
@@ -432,7 +453,7 @@ export function uiCards(w: number, h: number): string {
 <html><head><meta charset="UTF-8">
 ${FONT_HEAD}
 </head>
-<body style="width:${w}px;height:${h}px;overflow:hidden;margin:0;padding:0;background:#f8f9f7;background-image:${gridBg(32, 0.05)};font-family:'Caveat','Comic Sans MS',cursive;display:flex;flex-direction:column;">
+<body style="width:${w}px;height:${h}px;overflow:hidden;margin:0;padding:0;background-color:#f8f9f7;background-image:${dotGridBg(32, 0.05)};font-family:'Caveat','Comic Sans MS',cursive;display:flex;flex-direction:column;">
 
 <div style="height:${headerH}px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${Math.round(24*s)}px ${pad}px ${Math.round(16*s)}px;gap:${Math.round(12*s)}px;">
   <div style="display:inline-block;background:#111111;color:#f8f9f7;font-family:'Nunito','Arial Black',sans-serif;font-weight:800;font-size:${badgeSz}px;letter-spacing:2.5px;text-transform:uppercase;padding:${Math.round(7*s)}px ${Math.round(24*s)}px;border-radius:100px;">{{BADGE}}</div>
@@ -445,7 +466,7 @@ ${cards.map((c, i) => `
     <div style="width:${numSz}px;height:${numSz}px;border-radius:50%;background:${c.numBg};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Nunito','Arial Black',sans-serif;font-weight:900;font-size:${Math.round(numSz*0.48)}px;color:${c.numColor};">${c.icon}</div>
     <div style="flex:1;min-width:0;overflow:hidden;">
       <div style="display:inline-flex;align-items:center;background:${c.labelBg};color:${c.labelColor};font-family:'Nunito','Arial Black',sans-serif;font-weight:900;font-size:${labelSz}px;text-transform:uppercase;letter-spacing:2px;padding:3px 10px;border-radius:100px;margin-bottom:${Math.round(8*s)}px;">${c.label}</div>
-      <div style="font-family:'Nunito','Arial Black',sans-serif;font-weight:700;font-size:${cardTitleSz}px;color:#111111;line-height:1.2;margin-bottom:${Math.round(6*s)}px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;"><span style="font-size:${Math.round(22*s)}px;margin-right:${Math.round(6*s)}px;">{{ICON_${i+1}}}</span>{{P${i+1}_TITLE}}</div>
+      <div style="font-family:'Nunito','Arial Black',sans-serif;font-weight:700;font-size:${cardTitleSz}px;color:#111111;line-height:1.2;margin-bottom:${Math.round(6*s)}px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{P${i+1}_TITLE}}</div>
       <div style="font-family:'Caveat','Comic Sans MS',cursive;font-size:${cardBodySz}px;color:#444444;line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">{{P${i+1}_BODY}}</div>
     </div>
   </div>`).join('')}
@@ -480,7 +501,7 @@ export function whiteboard(w: number, h: number): string {
 <html><head><meta charset="UTF-8">
 ${FONT_HEAD}
 </head>
-<body style="width:${w}px;height:${h}px;overflow:hidden;margin:0;padding:0;background:#f8f9f7;background-image:${gridBg(32, 0.05)};font-family:'Caveat','Comic Sans MS',cursive;display:flex;flex-direction:column;border:0.5px solid #e0e0e0;position:relative;">
+<body style="width:${w}px;height:${h}px;overflow:hidden;margin:0;padding:0;background-color:#f8f9f7;background-image:${dotGridBg(28, 0.08)};font-family:'Caveat','Comic Sans MS',cursive;display:flex;flex-direction:column;border:0.5px solid #e0e0e0;position:relative;">
 
 <div style="position:absolute;top:8px;left:8px;width:${Math.round(12*s)}px;height:${Math.round(18*s)}px;background:#555555;border-radius:2px;z-index:10;"></div>
 <div style="position:absolute;top:8px;right:8px;width:${Math.round(12*s)}px;height:${Math.round(18*s)}px;background:#555555;border-radius:2px;z-index:10;"></div>
@@ -497,7 +518,7 @@ ${FONT_HEAD}
 ${[1,2,3,4,5,6,7].map((n,i) => `
   <div style="flex:1;display:flex;align-items:center;gap:${Math.round(16*s)}px;background:#ffffff;border-radius:${Math.round(12*s)}px;padding:${Math.round(10*s)}px ${Math.round(16*s)}px;border-left:4px solid ${borderColors[i]};min-height:0;overflow:hidden;">
     <div style="width:${numSz}px;height:${numSz}px;border-radius:50%;border:2.5px solid #111111;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Nunito','Arial Black',sans-serif;font-weight:900;font-size:${Math.round(20*s)}px;color:#111111;background:white;">${n}</div>
-    <div style="font-size:${Math.round(32*s)}px;flex-shrink:0;line-height:1;">{{ICON_${n}}}</div>
+    <div style="flex-shrink:0;opacity:0.75;">${sketchIcon(iconForIndex(i), Math.round(30*s), borderColors[i])}</div>
     <div style="flex:1;min-width:0;overflow:hidden;">
       <div style="font-family:'Nunito','Arial Black',sans-serif;font-weight:800;font-size:${itemTitleSz}px;color:#111111;line-height:1.2;margin-bottom:${Math.round(4*s)}px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;">{{P${n}_TITLE}}</div>
       <div style="font-family:'Caveat','Comic Sans MS',cursive;font-size:${itemBodySz}px;color:#444444;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{P${n}_BODY}}</div>
@@ -538,7 +559,7 @@ export function funnel(w: number, h: number): string {
 <html><head><meta charset="UTF-8">
 ${FONT_HEAD}
 </head>
-<body style="width:${w}px;min-height:${h}px;overflow:hidden;margin:0;padding:${pad}px;background:#fffef5;background-image:${gridBg(32, 0.04)};font-family:'Caveat','Comic Sans MS',cursive;box-sizing:border-box;position:relative;">
+<body style="width:${w}px;min-height:${h}px;overflow:hidden;margin:0;padding:${pad}px;background-color:#fffef5;background-image:${dotGridBg(32, 0.05)};font-family:'Caveat','Comic Sans MS',cursive;box-sizing:border-box;position:relative;">
 
 <!-- Decorative stars -->
 <div style="position:absolute;top:${Math.round(20*s)}px;right:${Math.round(30*s)}px;">${decorStar(Math.round(16*s))}</div>
@@ -557,7 +578,7 @@ ${FONT_HEAD}
 ${steps.map((step, i) => `
 <div style="background:${step.bg};border-radius:${Math.round(12*s)}px;display:flex;align-items:center;min-height:${cardH}px;width:${step.width};margin:0 auto;">
   <div style="width:${numSz}px;height:${numSz}px;border-radius:50%;background:#ffffff;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:${Math.round(16*s)}px;font-family:'Nunito','Arial Black',sans-serif;font-weight:700;font-size:${Math.round(18*s)}px;color:${step.badgeColor};">${i+1}</div>
-  <div style="font-size:${Math.round(28*s)}px;flex-shrink:0;line-height:1;margin-left:${Math.round(4*s)}px;">{{ICON_${i+1}}}</div>
+  <div style="flex-shrink:0;margin-left:${Math.round(4*s)}px;opacity:0.9;">${sketchIcon(iconForIndex(i), Math.round(26*s), '#ffffff')}</div>
   <div style="padding:${Math.round(12*s)}px ${Math.round(12*s)}px ${Math.round(12*s)}px ${Math.round(4*s)}px;flex:1;min-width:0;overflow:hidden;">
     <div style="font-family:'Nunito','Arial Black',sans-serif;font-weight:700;font-size:${stepTitleSz}px;color:${step.textColor};line-height:1.2;margin-bottom:4px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;">{{P${i+1}_TITLE}}</div>
     <div style="font-family:'Caveat','Comic Sans MS',cursive;font-size:${stepBodySz}px;color:rgba(255,255,255,0.88);font-style:italic;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{P${i+1}_BODY}}</div>
@@ -599,7 +620,7 @@ export function dataGrid(w: number, h: number): string {
 <html><head><meta charset="UTF-8">
 ${FONT_HEAD}
 </head>
-<body style="width:${w}px;height:${h}px;overflow:hidden;margin:0;padding:0;background:#f8f9f7;background-image:${gridBg(32, 0.05)};font-family:'Caveat','Comic Sans MS',cursive;display:flex;flex-direction:column;">
+<body style="width:${w}px;height:${h}px;overflow:hidden;margin:0;padding:0;background-color:#f8f9f7;background-image:${gridLineBg(32, 0.06)};font-family:'Caveat','Comic Sans MS',cursive;display:flex;flex-direction:column;">
 
 <div style="height:${headerH}px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${Math.round(24*s)}px ${pad}px;gap:${Math.round(10*s)}px;border-bottom:2px solid #C0392B;">
   <div style="display:inline-block;background:#2563EB;color:#ffffff;font-family:'Nunito','Arial Black',sans-serif;font-weight:800;font-size:${badgeSz}px;letter-spacing:2px;text-transform:uppercase;padding:${Math.round(6*s)}px ${Math.round(20*s)}px;border-radius:100px;">{{BADGE}}</div>
@@ -618,7 +639,7 @@ ${FONT_HEAD}
     <div style="flex:1;display:grid;grid-template-columns:1.2fr 2fr 1fr;align-items:center;padding:0 ${Math.round(20*s)}px;gap:${Math.round(12*s)}px;border-bottom:0.5px solid #e8e8e8;background:${rowBgs[i]};min-height:0;overflow:hidden;">
       <div style="display:flex;align-items:center;gap:${Math.round(6*s)}px;font-family:'Nunito','Arial Black',sans-serif;font-weight:800;font-size:${cellSz}px;color:#111111;overflow:hidden;">
         <div style="width:${dotSz}px;height:${dotSz}px;border-radius:50%;background:${dots[i]};flex-shrink:0;"></div>
-        <span style="font-size:${Math.round(18*s)}px;flex-shrink:0;">{{ICON_${i+1}}}</span>
+        <span style="flex-shrink:0;opacity:0.7;">${sketchIcon(iconForIndex(i), Math.round(18*s), dots[i])}</span>
         <span style="overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;">{{P${i+1}_TITLE}}</span>
       </div>
       <div style="font-family:'Caveat','Comic Sans MS',cursive;font-size:${Math.round(cellSz*1.1)}px;color:#444444;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{P${i+1}_BODY}}</div>

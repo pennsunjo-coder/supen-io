@@ -147,3 +147,58 @@
 .animate-marquee {
   animation: marquee 20s linear infinite;
 }
+
+/* ── INFOGRAPHIC STYLES ── */
+.infographic-title {
+  font-family: 'Nunito', 'Arial Black', sans-serif;
+  font-weight: 900;
+  color: #111111;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.infographic-body {
+  font-family: 'Caveat', 'Comic Sans MS', cursive;
+  font-weight: 500;
+  color: #111111;
+  line-height: 1.5;
+}
+.infographic-section-header {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 800;
+  color: #111111;
+}
+.highlight-yellow {
+  background-color: #E8F044;
+  padding: 1px 3px;
+  border-radius: 2px;
+  color: #111111;
+}
+.sketch-number-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2.5px solid currentColor;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 800;
+  font-size: 16px;
+  background: white;
+  flex-shrink: 0;
+}
+.infographic-footer {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  color: #333333;
+  text-align: center;
+  border-top: 0.5px solid #cccccc;
+  padding-top: 14px;
+  margin-top: 20px;
+}
+.infographic-footer .creator-name {
+  color: #1565C0;
+  text-decoration: underline;
+  font-weight: 700;
+}
