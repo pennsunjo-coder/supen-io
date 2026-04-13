@@ -342,6 +342,27 @@ export function buildInfographicPrompt(
   customInstructions?: string,
   forcedTemplate?: string,
 ): string {
+  const INFOGRAPHIC_SYSTEM_PROMPT = `You are an expert educational infographic designer specializing in viral social media content inspired by Awa K Penn.
+
+IDENTITY: Your infographics combine bold Nunito/Poppins Black titles,
+Caveat handwritten body text, yellow #FFEF5A highlights on key terms,
+clean white backgrounds, and maximum 4 accent colors.
+
+ALWAYS:
+- Use Nunito ExtraBold/Black (weight 900) for all titles
+- Use Caveat for body text to create handwritten feel
+- Highlight key terms with yellow background #FFEF5A
+- Use red #E63946, blue #2563EB, green #16A34A as accent colors
+- End with "Follow [creator] for more | Repost ↻"
+- Keep backgrounds white or near-white (#ffffff, #fffef5, #FFFFF5)
+
+NEVER:
+- Use dark backgrounds on main canvas
+- Use more than 4 accent colors
+- Use thin or light font weights for titles
+- Use complex illustrations or photographs
+- Leave large empty spaces unfilled`;
+
   const analysis = analyzeContent(content, platform);
   const dims = FORMAT_DIMS[analysis.format];
   const selection = selectBestTemplate(content, platform, forcedTemplate);
@@ -361,7 +382,27 @@ export function buildInfographicPrompt(
     `${i + 1}. ${p.title} — ${p.body}`
   ).join("\n");
 
-  return `Tu es un développeur front-end expert en design d'infographies.
+  return `${INFOGRAPHIC_SYSTEM_PROMPT}
+
+You are an expert educational infographic designer specializing in viral social media content. Your style is inspired by Awa K Penn, known for clean whiteboard-style infographics combining:
+- Bold printed typography for titles and headers
+- Handwritten/marker-style fonts for body text
+- Strategic yellow highlights (#FFEF5A) for key terms
+- Clean white backgrounds with minimal decoration
+- High information density with clear visual hierarchy
+- Warm, approachable "study notes" aesthetic
+
+Your infographics are always:
+1. Highly readable at small sizes (thumbnail-safe)
+2. Structured with clear visual hierarchy
+3. Using maximum 3-4 accent colors + black + white
+4. Including colored underlines, checkmarks, minimal hand-drawn elements
+5. Ending with a consistent footer/CTA
+
+Never use: gradients on text, dark backgrounds, complex illustrations,
+photographic elements, or more than 4 colors.
+Always prioritize readability and information clarity over decoration.
+
 Génère un fichier HTML/CSS COMPLET et AUTONOME pour une infographie de niveau professionnel LinkedIn.
 
 ${"═".repeat(40)}
@@ -373,28 +414,28 @@ TEMPLATE : ${templateId}
 
 CSS OBLIGATOIRE :
 - html, body { width: ${dims.width}px; height: ${dims.height}px; overflow: hidden; margin: 0; padding: 0; }
-- body { background: #FDFDF9; font-family: 'Inter', sans-serif; display: flex; flex-direction: column; }
+- body { font-family: 'Nunito', sans-serif; display: flex; flex-direction: column; }
 - Padding global : ${safePad}px sur tous les côtés
 - JAMAIS de overflow visible — tout doit tenir dans ${dims.height}px
 
 POLICES (charger depuis Google Fonts) :
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
 
 STRUCTURE HTML OBLIGATOIRE :
 
-<!-- HEADER : 20% de la hauteur = ${headerH}px -->
+<!-- HEADER : 16-18% de la hauteur = ${headerH}px -->
 <div class="header" style="height: ${headerH}px; flex-shrink: 0;">
-  Badge catégorie + Titre principal en Playfair Display
+  Badge catégorie + Titre principal en Nunito Black (weight 900)
 </div>
 
 <!-- BODY : 70% de la hauteur = ${bodyH}px -->
 <div class="body" style="flex: 1; overflow: hidden;">
-  Contenu principal selon le template
+  Contenu principal selon le template — body text in Caveat cursive
 </div>
 
-<!-- FOOTER : 10% de la hauteur = ${footerH}px -->
+<!-- FOOTER : 9-10% de la hauteur = ${footerH}px -->
 <div class="footer" style="height: ${footerH}px; flex-shrink: 0;">
-  "Created with Supen.io" en #24A89B
+  "Follow @creator for more | Repost ↻"
 </div>
 
 ${"═".repeat(40)}
@@ -405,28 +446,28 @@ ${"═".repeat(40)}
    → Aucun texte ne touche les bords
 
 2. TYPOGRAPHIE :
-   → Titre : font-family: 'Playfair Display'; font-size: ${titleSize}px; font-weight: 900;
-   → Corps : font-family: 'Inter'; font-size: ${bodySize}px; font-weight: 600;
-   → Sous-titres : font-size: ${subtitleSize}px; font-weight: 800;
+   → Titre : font-family: 'Nunito'; font-size: ${titleSize}px; font-weight: 900;
+   → Corps : font-family: 'Caveat', cursive; font-size: ${bodySize}px; font-weight: 500;
+   → Sous-titres : font-family: 'Nunito'; font-size: ${subtitleSize}px; font-weight: 800;
 
 3. COULEURS OBLIGATOIRES :
-   → Fond principal : #FDFDF9
-   → Texte principal : #1A1A1A
-   → Accent 1 (orange) : #FF7A59
-   → Accent 2 (bleu) : #4285F4
-   → Accent 3 (vert) : #34A853
-   → Brand Supen : #24A89B
+   → Fond principal : #ffffff ou #fffef5 ou #FFFFF5
+   → Texte principal : #1a1a1a
+   → Accent 1 (rouge) : #E63946
+   → Accent 2 (bleu) : #2563EB
+   → Accent 3 (vert) : #16A34A
+   → Highlight jaune : #FFEF5A
 
 4. CARTES :
-   → border-radius: 20px
+   → border-radius: 12px
    → padding: ${cardPad}px
-   → box-shadow: 0 4px 16px rgba(0,0,0,0.06)
-   → background: fond pastel uni (jamais transparent)
+   → border-left: 4px solid [accent color]
+   → background: fond blanc ou pastel très clair
 
 5. REMPLISSAGE :
    → Le body doit être rempli à 90% minimum
    → Si peu de contenu : augmenter font-size et padding
-   → line-height: 1.6 minimum
+   → line-height: 1.35-1.4 for Caveat body text
 
 6. Z-INDEX :
    → Texte toujours au premier plan
@@ -447,7 +488,7 @@ Badge : ${extraction.badge}
 Points :
 ${pointsText}
 Pro tip : ${extraction.proTip}
-Footer : Created with Supen.io
+Footer : Follow @creator for more | Repost ↻
 
 ${customInstructions ? `Instructions supplémentaires : ${customInstructions}` : ""}
 
