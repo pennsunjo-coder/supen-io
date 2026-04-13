@@ -439,63 +439,70 @@ export function buildInfographicPrompt(
   customInstructions?: string,
   forcedTemplate?: string,
 ): string {
-  const SYSTEM_MASTER = `SYSTEM CONTEXT:
-You are generating a viral educational infographic for social media.
-Style: inspired by Awa K Penn — hand-crafted whiteboard/notebook content.
-Professional but deliberately approachable.
+  const UNIVERSAL_STYLE_CONTEXT = `
+STYLE CONTEXT — READ THIS FIRST AND APPLY TO EVERYTHING:
 
-MANDATORY STYLE RULES — NO EXCEPTIONS:
-1. Background MUST be #f8f9f7 (off-white cool). NEVER dark backgrounds.
-2. EXACTLY TWO font families:
-   - Heavy printed: Nunito ExtraBold 900 / Poppins Black for titles + headers
-   - Handwritten: Caveat 400-700 for body text + bullets
-3. Maximum 4 accent colors ONLY:
-   - Red: #C0392B (warm brownish red — NOT #ff0000, NOT #E63946)
-   - Blue: #2B4DAF (deep medium blue — NOT navy, NOT #4285F4)
-   - Green: #2E7D32 (natural medium green — NOT lime, NOT #16A34A)
-   - Yellow: #E8F044 (ONLY as inline text highlight background)
-4. NO gradients on text. NO gradient backgrounds. NO dark cards.
-5. Yellow #E8F044 = ONLY inline highlighting pen behind words. NEVER as card/section color.
-6. Pack information densely but readably.
-7. Every section header must have a colored underline accent.
-8. Must look like meticulous hand-crafted study notes — NOT AI-generated corporate slides.
-9. ALL CSS MUST BE INLINE (style="...") — NEVER use CSS classes.
-   This is critical for PNG export compatibility with html2canvas.
+You are generating viral educational infographic HTML/CSS for social media.
+The reference style is Awa K Penn — hand-crafted whiteboard/notebook content.
 
-TITRE OBLIGATOIRE:
-font-family: 'Nunito', sans-serif;
-font-weight: 900;
-font-size: 52px minimum;
-color: #111111;
-letter-spacing: -0.01em;
-text-align: center;
+════════════════════════════════════════════════
+MANDATORY AESTHETIC RULES — NO EXCEPTIONS
+════════════════════════════════════════════════
 
-CORPS OBLIGATOIRE:
-font-family: 'Caveat', cursive;
-font-weight: 400-700;
-font-size: minimum 15px;
-color: #111111;
+1. Background: ALWAYS #f8f9f7 to #fffef8 — NEVER dark backgrounds
+2. TWO fonts ONLY:
+   - Titles/headers: Nunito ExtraBold weight 900
+   - Body/bullets: Caveat Regular/Bold (handwritten feel)
+   - Load: https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Caveat:wght@400;500;600;700&display=swap
+3. Yellow ONLY as inline highlighter: background:#FFEF5A on specific words
+   NEVER as card background or section color
+4. Max 4 accent colors:
+   - Red: #C0392B (warm brownish — NOT #FF0000)
+   - Blue: #2563EB (medium — NOT navy)
+   - Green: #4A8B35 (natural — NOT lime)
+   - Orange: #F5922A (tertiary only)
+5. NO gradients. NO dark cards. NO corporate slide aesthetic.
+6. Dense information — every section packed with useful content
+7. Each section header has colored underline in accent color
+8. Footer ALWAYS: "Follow @supen for more | Repost ↺" Nunito Bold centered
+9. ALL CSS MUST BE INLINE (style="...") — NEVER use CSS classes
+   This is critical for PNG export with html2canvas
 
-CRITICAL TYPOGRAPHY:
-- Titles: 52-56px, weight 900, color #111111
-- Section headers: 20-24px, Nunito bold, colored
-- Body bullets: 18-20px, Caveat 400, #111111
-- Small details/examples: 14-16px, Caveat italic, colored
-- Footer CTA: 15-18px Nunito bold, creator name blue underlined
-- MINIMUM font size: 13px (thumbnail-safe)
+════════════════════════════════════════════════
+VISUAL SIGNATURE ELEMENTS (MANDATORY)
+════════════════════════════════════════════════
 
-EXACT COLOR VALUES — USE ONLY THESE:
-- Background: #f8f9f7
-- Primary text: #111111
-- Red: #C0392B
-- Blue: #2B4DAF
-- Green: #2E7D32
-- Gold/Orange: #D4A017
-- Yellow highlight: #E8F044
-- Orange accent: #F5922A (secondary)
-- Gray separators: #e0e0e0
-- Secondary text: #666666
-- Footer text: #333333`;
+WHITEBOARD TEMPLATES:
+- 4 small metal clips at corners (12x18px dark gray rectangles)
+- Very subtle border 0.5px #e0e0e0 around canvas
+- Background grain 2% opacity
+- [Square brackets] around title — bold black, Nunito 900
+
+NOTEBOOK TEMPLATES:
+- Top spiral binding: 20 metallic coils, 70px tall
+- Left margin line: vertical #E63946, 1.5px, at x=72px
+- Horizontal ruled lines: #dde8f0, 0.5px, every 34px
+
+ALL TEMPLATES:
+- Yellow #FFEF5A inline highlights (flat, no border-radius, like Stabilo marker)
+- Colored section header underlines (2px, accent color)
+- Circle/oval badges for numbered lists (stroke 1.5px, white fill)
+- ✓ checkmarks in #C0392B
+- ★ stars for emphasis in #F5922A
+- → arrows between elements
+- Circled numbers ①②③④⑤⑥ in Nunito Bold blue #2563EB
+
+════════════════════════════════════════════════
+QUALITY THRESHOLD — REJECT IF ANY OF THESE:
+════════════════════════════════════════════════
+✗ Clean modern sans-serif throughout (Caveat missing)
+✗ Dark backgrounds or dark section cards
+✗ Pale/washed-out colors
+✗ Empty whitespace between sections
+✗ Missing numbered badge circles on step items
+✗ Text cut off or misaligned
+✗ Yellow used as card/section background
+✗ More than 4 accent colors`;
 
   const analysis = analyzeContent(content, platform);
   const dims = FORMAT_DIMS[analysis.format];
@@ -503,54 +510,36 @@ EXACT COLOR VALUES — USE ONLY THESE:
   const templateId = selection.templateId;
   const extraction = extractKeyPoints(content);
 
-  const safePad = Math.round(dims.width * 0.05);
   const templatePrompt = getTemplatePrompt(templateId, extraction, dims);
 
-  const pointsText = extraction.points.map((p, i) =>
-    `${i + 1}. ${p.title} — ${p.body}`
-  ).join("\n");
+  const dimStr = `${dims.width}x${dims.height}`;
 
-  return `${SYSTEM_MASTER}
+  return `${UNIVERSAL_STYLE_CONTEXT}
 
-${"═".repeat(50)}
-TEMPLATE: ${templateId} — FORMAT: ${dims.width}×${dims.height}px
-${"═".repeat(50)}
+TEMPLATE ACTIF : ${templateId}
+DIMENSIONS : ${dimStr}px
 
 ${templatePrompt}
 
-${"═".repeat(50)}
-TECHNICAL REQUIREMENTS
-${"═".repeat(50)}
+CONTENU À INTÉGRER :
+Titre : ${extraction.title}
+Badge : ${extraction.badge}
+${extraction.points.map((p, i) => `P${i+1}_TITLE: ${p.title}\nP${i+1}_BODY: ${p.body}`).join('\n')}
+Pro tip : ${extraction.proTip}
+Footer : Created with Supen.io
 
-CSS MANDATORY — ALL INLINE STYLES:
-- html, body { width: ${dims.width}px; height: ${dims.height}px; overflow: hidden; margin: 0; padding: 0; }
-- body { background: #f8f9f7; font-family: 'Nunito', sans-serif; display: flex; flex-direction: column; }
-- Safe zone padding: ${safePad}px on all sides
-- CRITICAL: ALL styles MUST be inline (style="..."). NEVER use CSS classes.
-  Only <style>*{box-sizing:border-box;margin:0;padding:0}</style> is allowed in <head>.
-  This ensures html2canvas PNG export captures all colors correctly.
+${customInstructions ? `Instructions supplémentaires : ${customInstructions}` : ""}
 
-FONTS (load from Google Fonts):
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-CONTENT TO INTEGRATE:
-Title: ${extraction.title}
-Badge: ${extraction.badge}
-Points:
-${pointsText}
-Pro tip: ${extraction.proTip}
-Footer: Follow @creator for more | Repost ↻
-
-${customInstructions ? `Additional instructions: ${customInstructions}` : ""}
-
-${"═".repeat(50)}
-OUTPUT FORMAT
-${"═".repeat(50)}
-
-Generate ONLY complete HTML code.
-Start with <!DOCTYPE html> and end with </html>.
-No text before or after HTML. No markdown, no backticks.
-All visible text must be in ENGLISH.`;
+RAPPEL FINAL :
+- Nunito 900 pour TOUS les titres
+- Caveat pour TOUT le corps de texte
+- Styles INLINE uniquement (jamais de classes CSS)
+- Background #f8f9f7 (jamais #ffffff pur)
+- Couleurs saturées et confiantes (pas de pastels trop pâles)
+- Génère UNIQUEMENT le code HTML complet
+- Commence par <!DOCTYPE html> et termine par </html>
+- Aucun texte avant ou après le HTML
+- All visible text must be in ENGLISH`;
 }
 
 // ─── Gemini prompt builder ───

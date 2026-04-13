@@ -16,50 +16,58 @@
 
 const FONT_IMPORTS = `<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;900&family=Caveat:wght@500;700&display=swap" rel="stylesheet">`;
 
-// ─── TEMPLATE 1: AWA_CLASSIC ───
-// Dense guide sketchboard. ALL INLINE STYLES for html2canvas compatibility.
+// ─── TEMPLATE 1: AWA_CLASSIC (style IMG1/IMG3 — cadre bois) ───
+// ALL INLINE STYLES for html2canvas compatibility.
 export function awaClassic(w: number, h: number): string {
-  const s = (v: number) => Math.round(v * w / 1080);
-  const sh = (v: number) => Math.round(v * h / 1350);
-  const frameW = s(30);
-  const pad = s(44);
-  const headerH = sh(180);
-  const footerH = sh(56);
-  const itemGap = sh(8);
-  const numSz = s(42);
-  const titleSz = s(50);
-  const badgeSz = s(12);
-  const itemTitleSz = s(21);
-  const itemBodySz = s(18);
+  const s = w / 1080;
+  const frame = Math.round(28 * s);
+  const pad = Math.round(40 * s);
+  const innerW = w - frame * 2;
+  const innerH = h - frame * 2;
+  const headerH = Math.round(innerH * 0.17);
+  const footerH = Math.round(innerH * 0.09);
+  const itemGap = Math.round(10 * s);
+  const itemH = Math.round((innerH - headerH - footerH - itemGap * 6 - pad * 2) / 7);
+  const numSz = Math.round(46 * s);
+  const titleSz = Math.round(42 * s);
+  const badgeSz = Math.round(12 * s);
+  const itemTitleSz = Math.round(20 * s);
+  const itemBodySz = Math.round(15 * s);
 
-  const COLORS = ['#B83228','#2B4DAF','#2E7D32','#D4A017','#8B5CF6','#C0392B','#0D9488'];
+  const colors = ['#C0392B','#2563EB','#2E7D32','#D4A017','#8B5CF6','#C0392B','#0D9488'];
 
   return `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>*{box-sizing:border-box;margin:0;padding:0}</style>
 </head>
-<body style="width:${w}px;height:${h}px;overflow:hidden;background:#ffffff;font-family:'Nunito',sans-serif;display:flex;flex-direction:column;color:#111111;border:${frameW}px solid #3d2b1a;">
+<body style="width:${w}px;height:${h}px;overflow:hidden;margin:0;padding:0;background:#3d2b1a;box-sizing:border-box;">
 
-<div style="height:${headerH}px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${sh(12)}px ${pad}px;gap:${sh(6)}px;background:#f8f8f8;border-bottom:2px solid #111111;">
-  <div style="display:inline-flex;align-items:center;background:#3d2b1a;color:#f8f9f7;font-family:'Nunito',sans-serif;font-size:${badgeSz}px;font-weight:900;letter-spacing:2px;text-transform:uppercase;padding:${sh(5)}px ${s(22)}px;border-radius:100px;">{{BADGE}}</div>
-  <div style="font-family:'Nunito',sans-serif;font-size:${titleSz}px;font-weight:900;color:#111111;text-align:center;line-height:1.15;max-width:${s(950)}px;word-wrap:break-word;text-transform:uppercase;letter-spacing:-0.01em;">{{TITLE}}</div>
-</div>
+<div style="position:absolute;inset:0;background:#3d2b1a;"></div>
 
-<div style="flex:1;padding:${sh(12)}px ${pad}px;display:flex;flex-direction:column;gap:${itemGap}px;min-height:0;">
-${COLORS.map((c,i)=>`<div style="flex:1;display:flex;align-items:center;gap:${s(20)}px;padding:${sh(8)}px ${s(18)}px;border-radius:8px;border:1px solid rgba(61,43,26,0.12);background:#f8f9f7;min-height:0;overflow:hidden;">
-  <div style="width:${numSz}px;height:${numSz}px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:${Math.round(numSz*0.44)}px;font-weight:900;color:#fff;flex-shrink:0;background:${c};">${i+1}</div>
-  <div style="flex:1;min-width:0;overflow:hidden;">
-    <div style="font-family:'Nunito',sans-serif;font-size:${itemTitleSz}px;font-weight:800;color:#111111;line-height:1.2;margin-bottom:${sh(2)}px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-bottom:2px solid ${c};padding-bottom:2px;">{{P${i+1}_TITLE}}</div>
-    <div style="font-family:'Caveat',cursive;font-size:${itemBodySz}px;font-weight:400;color:#111111;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{P${i+1}_BODY}}</div>
+<div style="position:absolute;top:${frame}px;left:${frame}px;width:${innerW}px;height:${innerH}px;background:#FFFFF5;display:flex;flex-direction:column;border:2px solid #f0e8d8;">
+
+  <div style="height:${headerH}px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${Math.round(20*s)}px ${pad}px;gap:${Math.round(8*s)}px;border-bottom:3px solid #3d2b1a;">
+    <div style="display:inline-block;background:#3d2b1a;color:#FFFFF5;font-family:'Nunito',sans-serif;font-weight:800;font-size:${badgeSz}px;letter-spacing:2px;text-transform:uppercase;padding:${Math.round(5*s)}px ${Math.round(18*s)}px;border-radius:100px;">{{BADGE}}</div>
+    <div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:${titleSz}px;color:#111111;text-align:center;line-height:1.18;max-width:${Math.round(innerW*0.88)}px;letter-spacing:-0.01em;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{TITLE}}</div>
+    <div style="width:${Math.round(innerW*0.6)}px;height:2px;background:#3d2b1a;"></div>
   </div>
-</div>`).join('\n')}
-</div>
 
-<div style="height:${footerH}px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:#1a1a1a;">
-  <div style="font-family:'Nunito',sans-serif;font-size:${s(15)}px;font-weight:700;color:#ffffff;letter-spacing:0.5px;">Follow <span style="color:#93c5fd;">@creator</span> for more | <span style="color:#86efac;">Repost ↻</span></div>
-</div>
+  <div style="flex:1;padding:${Math.round(12*s)}px ${pad}px;display:flex;flex-direction:column;gap:${itemGap}px;min-height:0;">
+    ${colors.map((c, i) => `
+    <div style="flex:1;display:flex;align-items:center;gap:${Math.round(18*s)}px;padding:${Math.round(itemH*0.1)}px ${Math.round(16*s)}px;border-radius:${Math.round(8*s)}px;border:1px solid rgba(61,43,26,0.15);background:rgba(255,255,245,0.8);min-height:0;overflow:hidden;">
+      <div style="width:${numSz}px;height:${numSz}px;border-radius:${Math.round(8*s)}px;background:${c};display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-weight:900;font-size:${Math.round(numSz*0.44)}px;color:#ffffff;flex-shrink:0;">${i+1}</div>
+      <div style="flex:1;min-width:0;overflow:hidden;">
+        <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:${itemTitleSz}px;color:#111111;line-height:1.2;margin-bottom:${Math.round(3*s)}px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;">{{P${i+1}_TITLE}}</div>
+        <div style="font-family:'Caveat',cursive;font-size:${Math.round(itemBodySz*1.15)}px;color:#444444;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{P${i+1}_BODY}}</div>
+      </div>
+    </div>`).join('')}
+  </div>
 
+  <div style="height:${footerH}px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-top:2px solid #3d2b1a;background:#FFFFF5;">
+    <div style="font-family:'Nunito',sans-serif;font-weight:700;font-size:${Math.round(13*s)}px;color:#3d2b1a;letter-spacing:0.5px;">{{FOOTER}} | Repost ↺</div>
+  </div>
+
+</div>
 </body></html>`;
 }
 
@@ -371,229 +379,229 @@ body{width:${w}px;height:${h}px;background:#FFFFF8;font-family:'Poppins',sans-se
 </body></html>`;
 }
 
-// ─── TEMPLATE 9: UI_CARDS ───
-// 3-tier comparison (Bad → Better → Best). ALL INLINE STYLES for html2canvas.
+// ─── TEMPLATE 9: UI_CARDS (style comparaison 3 niveaux) ───
+// ALL INLINE STYLES for html2canvas compatibility.
 export function uiCards(w: number, h: number): string {
-  const s = (v: number) => Math.round(v * w / 1080);
-  const sh = (v: number) => Math.round(v * h / 1350);
-  const pad = s(54);
-  const headerH = sh(240);
-  const footerH = sh(60);
-  const cardGap = sh(18);
-  const titleSz = s(52);
-  const badgeSz = s(12);
-  const cardTitleSz = s(26);
-  const cardBodySz = s(20);
-  const iconSz = s(65);
-  const labelSz = s(11);
+  const s = w / 1080;
+  const pad = Math.round(48 * s);
+  const headerH = Math.round(210 * s);
+  const footerH = Math.round(70 * s);
+  const cardGap = Math.round(16 * s);
+  const titleSz = Math.round(52 * s);
+  const badgeSz = Math.round(13 * s);
+  const numSz = Math.round(56 * s);
+  const cardTitleSz = Math.round(26 * s);
+  const cardBodySz = Math.round(19 * s);
+  const labelSz = Math.round(11 * s);
 
   const cards = [
-    { bg:'#FFF0F0', border:'#FFCCCC', borderL:'#C0392B', iconBg:'#FFB3B3', iconColor:'#CC0000', icon:'✗', label:'Avoid', labelBg:'rgba(192,57,43,0.15)', labelColor:'#C0392B' },
-    { bg:'#FEF9E7', border:'#FFE5A0', borderL:'#D4A017', iconBg:'#FFD4A3', iconColor:'#CC6600', icon:'~', label:'Better', labelBg:'rgba(212,160,23,0.15)', labelColor:'#8B6914' },
-    { bg:'#F0FFF4', border:'#B3EED0', borderL:'#2E7D32', iconBg:'#B3FFD1', iconColor:'#006633', icon:'✓', label:'Best', labelBg:'rgba(46,125,50,0.15)', labelColor:'#2E7D32' },
+    { bg:'#FFF0F0', border:'#FFCCCC', numBg:'#FFB3B3', numColor:'#CC0000', labelBg:'#FFB3B3', labelColor:'#8B0000', label:'❌ Avoid', icon:'✗' },
+    { bg:'#FEF9E7', border:'#FFE5A0', numBg:'#FFD4A3', numColor:'#CC6600', labelBg:'#FFD4A3', labelColor:'#7A4000', label:'⚡ Better', icon:'~' },
+    { bg:'#F0FFF4', border:'#B3EED0', numBg:'#B3FFD1', numColor:'#006633', labelBg:'#B3FFD1', labelColor:'#005500', label:'🏆 Best', icon:'✓' },
   ];
 
   return `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>*{box-sizing:border-box;margin:0;padding:0}</style>
 </head>
-<body style="width:${w}px;height:${h}px;overflow:hidden;background:#f8f9f7;font-family:'Nunito',sans-serif;display:flex;flex-direction:column;color:#111111;">
+<body style="width:${w}px;height:${h}px;overflow:hidden;margin:0;padding:0;background:#f8f9f7;font-family:'Caveat',cursive;display:flex;flex-direction:column;box-sizing:border-box;">
 
-<div style="height:${headerH}px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${sh(16)}px ${pad}px;gap:${sh(10)}px;">
-  <div style="display:inline-flex;align-items:center;background:#111111;color:#f8f9f7;font-size:${badgeSz}px;font-weight:900;letter-spacing:2.5px;text-transform:uppercase;padding:${sh(6)}px ${s(25)}px;border-radius:100px;">{{BADGE}}</div>
-  <div style="font-family:'Nunito',sans-serif;font-size:${titleSz}px;font-weight:900;color:#111111;text-align:center;line-height:1.15;max-width:${s(920)}px;word-wrap:break-word;letter-spacing:-0.01em;">{{TITLE}}</div>
+<div style="height:${headerH}px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${Math.round(24*s)}px ${pad}px ${Math.round(16*s)}px;gap:${Math.round(12*s)}px;background:#f8f9f7;">
+  <div style="display:inline-block;background:#111111;color:#f8f9f7;font-family:'Nunito',sans-serif;font-weight:800;font-size:${badgeSz}px;letter-spacing:2.5px;text-transform:uppercase;padding:${Math.round(7*s)}px ${Math.round(24*s)}px;border-radius:100px;">{{BADGE}}</div>
+  <div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:${titleSz}px;color:#111111;text-align:center;line-height:1.15;max-width:${Math.round(w*0.85)}px;letter-spacing:-0.01em;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{TITLE}}</div>
 </div>
 
 <div style="flex:1;padding:0 ${pad}px;display:flex;flex-direction:column;gap:${cardGap}px;min-height:0;">
-${cards.map((c,i)=>`<div style="flex:1;border-radius:16px;padding:${sh(16)}px ${s(35)}px;display:flex;align-items:center;gap:${s(28)}px;min-height:0;overflow:hidden;background:${c.bg};border:1.5px solid ${c.border};border-left:5px solid ${c.borderL};">
-  <div style="width:${iconSz}px;height:${iconSz}px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:${Math.round(iconSz*0.48)}px;font-weight:900;line-height:1;background:${c.iconBg};color:${c.iconColor};">${c.icon}</div>
-  <div style="flex:1;min-width:0;overflow:hidden;">
-    <div style="display:inline-flex;align-items:center;font-size:${labelSz}px;font-weight:900;text-transform:uppercase;letter-spacing:2px;margin-bottom:${sh(6)}px;padding:3px 10px;border-radius:100px;background:${c.labelBg};color:${c.labelColor};">${c.label}</div>
-    <div style="font-family:'Nunito',sans-serif;font-size:${cardTitleSz}px;font-weight:800;color:#111111;line-height:1.2;margin-bottom:${sh(5)}px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{P${i+1}_TITLE}}</div>
-    <div style="font-family:'Caveat',cursive;font-size:${cardBodySz}px;font-weight:400;color:#111111;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">{{P${i+1}_BODY}}</div>
-  </div>
-</div>`).join('\n')}
+${cards.map((c, i) => `
+  <div style="flex:1;background:${c.bg};border:1.5px solid ${c.border};border-radius:${Math.round(20*s)}px;padding:${Math.round(16*s)}px ${Math.round(32*s)}px;display:flex;align-items:center;gap:${Math.round(24*s)}px;min-height:0;overflow:hidden;">
+    <div style="width:${numSz}px;height:${numSz}px;border-radius:50%;background:${c.numBg};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Nunito',sans-serif;font-weight:900;font-size:${Math.round(numSz*0.48)}px;color:${c.numColor};">${c.icon}</div>
+    <div style="flex:1;min-width:0;overflow:hidden;">
+      <div style="display:inline-flex;align-items:center;background:${c.labelBg};color:${c.labelColor};font-family:'Nunito',sans-serif;font-weight:900;font-size:${labelSz}px;text-transform:uppercase;letter-spacing:2px;padding:3px 10px;border-radius:100px;margin-bottom:${Math.round(8*s)}px;">${c.label}</div>
+      <div style="font-family:'Nunito',sans-serif;font-weight:700;font-size:${cardTitleSz}px;color:#111111;line-height:1.2;margin-bottom:${Math.round(6*s)}px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{P${i+1}_TITLE}}</div>
+      <div style="font-family:'Caveat',cursive;font-size:${cardBodySz}px;color:#444444;line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">{{P${i+1}_BODY}}</div>
+    </div>
+  </div>`).join('')}
 </div>
 
-<div style="height:${footerH}px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-top:0.5px solid #e0e0e0;background:#fafafa;">
-  <div style="font-family:'Nunito',sans-serif;font-size:${s(14)}px;font-weight:700;color:#333333;">{{FOOTER}} | Follow <span style="color:#2B4DAF;text-decoration:underline;">@creator</span> | Repost ↻</div>
+<div style="height:${footerH}px;flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:${Math.round(8*s)}px;border-top:1px solid #E8E8E2;background:#f8f9f7;">
+  <div style="width:5px;height:5px;border-radius:50%;background:#24A89B;"></div>
+  <div style="font-family:'Nunito',sans-serif;font-weight:700;font-size:${Math.round(13*s)}px;color:#24A89B;letter-spacing:1px;text-transform:uppercase;">{{FOOTER}} | Repost ↺</div>
+  <div style="width:5px;height:5px;border-radius:50%;background:#24A89B;"></div>
 </div>
 
 </body></html>`;
 }
 
-// ─── TEMPLATE 10: WHITEBOARD ───
-// Paper-clip whiteboard. ALL INLINE STYLES for html2canvas compatibility.
+// ─── TEMPLATE 10: WHITEBOARD (style IMG5/IMG7) ───
+// ALL INLINE STYLES for html2canvas compatibility.
 export function whiteboard(w: number, h: number): string {
-  const s = (v: number) => Math.round(v * w / 1080);
-  const sh = (v: number) => Math.round(v * h / 1350);
-  const pad = s(44);
-  const headerH = sh(180);
-  const footerH = sh(70);
-  const titleSz = s(52);
-  const badgeSz = s(12);
-  const itemTitleSz = s(22);
-  const itemBodySz = s(19);
-  const itemGap = sh(9);
-  const numSz = s(48);
-  const borderColors = ['#C0392B','#2B4DAF','#2E7D32','#D4A017','#C0392B','#2B4DAF','#2E7D32'];
-  const titleColors = ['#C0392B','#2B4DAF','#2E7D32','#D4A017','#C0392B','#2B4DAF','#2E7D32'];
+  const s = w / 1080;
+  const pad = Math.round(48 * s);
+  const headerH = Math.round(200 * s);
+  const footerH = Math.round(80 * s);
+  const itemGap = Math.round(12 * s);
+  const titleSz = Math.round(48 * s);
+  const badgeSz = Math.round(13 * s);
+  const numSz = Math.round(48 * s);
+  const itemTitleSz = Math.round(22 * s);
+  const itemBodySz = Math.round(17 * s);
+
+  const borderColors = ['#C0392B','#2563EB','#4A8B35','#F5922A','#C0392B','#2563EB','#4A8B35'];
 
   return `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>*{box-sizing:border-box;margin:0;padding:0}</style>
 </head>
-<body style="width:${w}px;height:${h}px;overflow:hidden;background:#f8f9f7;font-family:'Nunito',sans-serif;display:flex;flex-direction:column;color:#111111;border:1px solid #dddddd;border-radius:6px;position:relative;">
+<body style="width:${w}px;height:${h}px;overflow:hidden;margin:0;padding:0;background:#f8f9f7;font-family:'Caveat',cursive;display:flex;flex-direction:column;border:0.5px solid #e0e0e0;position:relative;box-sizing:border-box;">
 
-<div style="position:absolute;top:6px;left:6px;width:12px;height:20px;background:#aaaaaa;border-radius:2px;"></div>
-<div style="position:absolute;top:6px;right:6px;width:12px;height:20px;background:#aaaaaa;border-radius:2px;"></div>
-<div style="position:absolute;bottom:6px;left:6px;width:12px;height:20px;background:#aaaaaa;border-radius:2px;"></div>
-<div style="position:absolute;bottom:6px;right:6px;width:12px;height:20px;background:#aaaaaa;border-radius:2px;"></div>
+<div style="position:absolute;top:8px;left:8px;width:${Math.round(12*s)}px;height:${Math.round(18*s)}px;background:#555555;border-radius:2px;z-index:10;"></div>
+<div style="position:absolute;top:8px;right:8px;width:${Math.round(12*s)}px;height:${Math.round(18*s)}px;background:#555555;border-radius:2px;z-index:10;"></div>
+<div style="position:absolute;bottom:8px;left:8px;width:${Math.round(12*s)}px;height:${Math.round(18*s)}px;background:#555555;border-radius:2px;z-index:10;"></div>
+<div style="position:absolute;bottom:8px;right:8px;width:${Math.round(12*s)}px;height:${Math.round(18*s)}px;background:#555555;border-radius:2px;z-index:10;"></div>
 
-<div style="height:${headerH}px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${sh(10)}px ${pad}px;gap:${sh(8)}px;">
-  <div style="display:inline-flex;align-items:center;background:#C0392B;color:#fff;font-family:'Nunito',sans-serif;font-size:${badgeSz}px;font-weight:900;letter-spacing:2px;text-transform:uppercase;padding:${sh(5)}px ${s(22)}px;border-radius:100px;">{{BADGE}}</div>
-  <div style="font-family:'Nunito',sans-serif;font-size:${titleSz}px;font-weight:900;color:#111111;text-align:center;line-height:1.15;max-width:${s(950)}px;word-wrap:break-word;letter-spacing:-0.01em;">{{TITLE}}</div>
-  <div style="width:${s(860)}px;height:3px;background:#C0392B;margin-top:${sh(4)}px;"></div>
+<div style="height:${headerH}px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${Math.round(24*s)}px ${pad}px ${Math.round(16*s)}px;gap:${Math.round(10*s)}px;">
+  <div style="display:inline-block;background:#C0392B;color:#ffffff;font-family:'Nunito',sans-serif;font-weight:800;font-size:${badgeSz}px;letter-spacing:2px;text-transform:uppercase;padding:${Math.round(6*s)}px ${Math.round(20*s)}px;border-radius:100px;">{{BADGE}}</div>
+  <div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:${titleSz}px;color:#111111;text-align:center;line-height:1.15;max-width:${Math.round(w*0.88)}px;letter-spacing:-0.01em;">[{{TITLE}}]</div>
+  <div style="width:${Math.round(w*0.7)}px;height:2px;background:#C0392B;"></div>
 </div>
 
-<div style="flex:1;padding:${sh(12)}px ${pad}px;display:flex;flex-direction:column;gap:${itemGap}px;min-height:0;">
-${borderColors.map((c,i)=>`<div style="flex:1;display:flex;align-items:center;gap:${s(22)}px;background:#ffffff;border-radius:10px;padding:${sh(10)}px ${s(25)}px;min-height:0;overflow:hidden;border-left:4px solid ${c};">
-  <div style="width:${numSz}px;height:${numSz}px;border-radius:50%;border:2px solid #111111;display:flex;align-items:center;justify-content:center;font-size:${Math.round(numSz*0.42)}px;font-weight:900;flex-shrink:0;color:#111111;font-family:'Nunito',sans-serif;">${i+1}</div>
-  <div style="flex:1;min-width:0;overflow:hidden;">
-    <div style="font-family:'Nunito',sans-serif;font-size:${itemTitleSz}px;font-weight:800;color:${titleColors[i]};line-height:1.2;margin-bottom:${sh(3)}px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-bottom:2px solid ${c};padding-bottom:2px;">{{P${i+1}_TITLE}}</div>
-    <div style="font-family:'Caveat',cursive;font-size:${itemBodySz}px;font-weight:400;color:#111111;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{P${i+1}_BODY}}</div>
-  </div>
-</div>`).join('\n')}
+<div style="flex:1;padding:${Math.round(12*s)}px ${pad}px;display:flex;flex-direction:column;gap:${itemGap}px;min-height:0;">
+${[1,2,3,4,5,6,7].map((n,i) => `
+  <div style="flex:1;display:flex;align-items:center;gap:${Math.round(20*s)}px;background:#ffffff;border-radius:${Math.round(12*s)}px;padding:${Math.round(12*s)}px ${Math.round(20*s)}px;border-left:4px solid ${borderColors[i]};min-height:0;overflow:hidden;">
+    <div style="width:${numSz}px;height:${numSz}px;border-radius:50%;border:2px solid #111111;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Nunito',sans-serif;font-weight:900;font-size:${Math.round(20*s)}px;color:#111111;">${n}</div>
+    <div style="flex:1;min-width:0;overflow:hidden;">
+      <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:${itemTitleSz}px;color:#111111;line-height:1.2;margin-bottom:${Math.round(4*s)}px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;">{{P${n}_TITLE}}</div>
+      <div style="font-family:'Caveat',cursive;font-size:${itemBodySz}px;color:#444444;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{P${n}_BODY}}</div>
+    </div>
+  </div>`).join('')}
 </div>
 
-<div style="height:${footerH}px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-top:0.5px solid #cccccc;background:#fafafa;">
-  <div style="font-family:'Nunito',sans-serif;font-size:${s(15)}px;font-weight:700;color:#333333;">{{FOOTER}} | Follow <span style="color:#2B4DAF;font-weight:800;text-decoration:underline;">@creator</span> | Repost ↻</div>
+<div style="height:${footerH}px;flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:${Math.round(8*s)}px;border-top:0.5px solid #cccccc;background:#fafafa;">
+  <div style="font-family:'Nunito',sans-serif;font-weight:700;font-size:${Math.round(15*s)}px;color:#333333;">{{FOOTER}} | Repost ↺</div>
 </div>
 
 </body></html>`;
 }
 
-// ─── TEMPLATE 11: FUNNEL ───
-// Pixel-perfect forensic funnel. ALL INLINE STYLES for html2canvas.
+// ─── TEMPLATE 11: FUNNEL (style IMG2 — proportions forensiques) ───
+// ALL INLINE STYLES for html2canvas compatibility.
 export function funnel(w: number, h: number): string {
-  const scale = w / 1080;
-  const pad = Math.round(40 * scale);
-  const headingSz = Math.round(52 * scale);
-  const subheadSz = Math.round(18 * scale);
-  const badgeSz = Math.round(12 * scale);
-  const cardH = Math.round(84 * scale);
-  const arrowH = Math.round(40 * scale);
-  const numSz = Math.round(44 * scale);
-  const titleSz = Math.round(18 * scale);
-  const subtextSz = Math.round(15 * scale);
-  const proTipPad = Math.round(16 * scale);
-  const footerPad = Math.round(20 * scale);
+  const s = w / 1080;
+  const pad = Math.round(48 * s);
+  const titleSz = Math.round(52 * s);
+  const badgeSz = Math.round(13 * s);
+  const cardH = Math.round(84 * s);
+  const arrowH = Math.round(40 * s);
+  const spaceAfter = Math.round(24 * s);
+  const numSz = Math.round(44 * s);
+  const stepTitleSz = Math.round(20 * s);
+  const stepBodySz = Math.round(16 * s);
 
   const steps = [
-    { bg:'#B83228', badgeColor:'#B83228', width:'100%' },
-    { bg:'#E07B20', badgeColor:'#E07B20', width:'88%' },
-    { bg:'#D4A017', badgeColor:'#8B6914', width:'76%' },
-    { bg:'#2E7D32', badgeColor:'#2E7D32', width:'64%' },
-    { bg:'#1565C0', badgeColor:'#1565C0', width:'52%' },
+    { bg:'#B83228', badgeColor:'#B83228', textColor:'#ffffff', width:'100%' },
+    { bg:'#E07B20', badgeColor:'#E07B20', textColor:'#ffffff', width:'88%' },
+    { bg:'#D4A017', badgeColor:'#8B6914', textColor:'#ffffff', width:'76%' },
+    { bg:'#2E7D32', badgeColor:'#2E7D32', textColor:'#ffffff', width:'64%' },
+    { bg:'#1565C0', badgeColor:'#1565C0', textColor:'#ffffff', width:'52%' },
   ];
 
   return `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>*{box-sizing:border-box;margin:0;padding:0}</style>
 </head>
-<body style="width:${w}px;min-height:${h}px;background:#f8f9f7;padding:${pad}px;font-family:'Caveat',cursive;">
+<body style="width:${w}px;min-height:${h}px;overflow:hidden;margin:0;padding:${pad}px;background:#fffef5;font-family:'Caveat',cursive;box-sizing:border-box;">
 
-<div style="text-align:center;margin-bottom:8px;">
-  <div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:${headingSz}px;line-height:1.1;color:#111111;letter-spacing:-0.01em;">{{TITLE}}</div>
+<div style="text-align:center;margin-bottom:${Math.round(8*s)}px;">
+  <div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:${titleSz}px;line-height:1.1;color:#111111;letter-spacing:-0.01em;">{{TITLE}}</div>
 </div>
-<div style="text-align:center;font-family:'Caveat',cursive;font-size:${subheadSz}px;color:#666666;font-style:italic;margin-bottom:${Math.round(20*scale)}px;">{{P6_BODY}}</div>
+<div style="text-align:center;font-family:'Caveat',cursive;font-size:${Math.round(18*s)}px;color:#666666;font-style:italic;margin-bottom:${Math.round(20*s)}px;">{{P6_BODY}}</div>
 
-<div style="text-align:center;margin-bottom:${Math.round(20*scale)}px;">
-  <span style="display:inline-block;background:#111111;color:#ffffff;font-family:'Nunito',sans-serif;font-weight:800;font-size:${badgeSz}px;letter-spacing:2px;text-transform:uppercase;padding:${Math.round(6*scale)}px ${Math.round(20*scale)}px;border-radius:100px;">{{BADGE}}</span>
+<div style="text-align:center;margin-bottom:${Math.round(20*s)}px;">
+  <span style="display:inline-block;background:#111111;color:#ffffff;font-family:'Nunito',sans-serif;font-weight:800;font-size:${badgeSz}px;letter-spacing:2px;text-transform:uppercase;padding:${Math.round(6*s)}px ${Math.round(20*s)}px;border-radius:100px;">{{BADGE}}</span>
 </div>
 
-${steps.map((s, i) => `
-<div style="background:${s.bg};border-radius:${Math.round(12*scale)}px;display:flex;align-items:center;min-height:${cardH}px;width:${s.width};margin:0 auto;">
-  <div style="width:${numSz}px;height:${numSz}px;border-radius:50%;background:#ffffff;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:${Math.round(16*scale)}px;font-family:'Nunito',sans-serif;font-weight:700;font-size:${Math.round(18*scale)}px;color:${s.badgeColor};">${i+1}</div>
-  <div style="padding:${Math.round(12*scale)}px ${Math.round(16*scale)}px ${Math.round(12*scale)}px ${Math.round(12*scale)}px;flex:1;">
-    <div style="font-family:'Nunito',sans-serif;font-weight:700;font-size:${titleSz}px;color:#ffffff;line-height:1.2;margin-bottom:4px;">{{P${i+1}_TITLE}}</div>
-    <div style="font-family:'Caveat',cursive;font-size:${subtextSz}px;color:rgba(255,255,255,0.88);font-style:italic;">{{P${i+1}_BODY}}</div>
+${steps.map((step, i) => `
+<div style="background:${step.bg};border-radius:${Math.round(12*s)}px;display:flex;align-items:center;min-height:${cardH}px;width:${step.width};margin:0 auto;">
+  <div style="width:${numSz}px;height:${numSz}px;border-radius:50%;background:#ffffff;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:${Math.round(16*s)}px;font-family:'Nunito',sans-serif;font-weight:700;font-size:${Math.round(18*s)}px;color:${step.badgeColor};">${i+1}</div>
+  <div style="padding:${Math.round(12*s)}px ${Math.round(16*s)}px ${Math.round(12*s)}px ${Math.round(12*s)}px;flex:1;min-width:0;overflow:hidden;">
+    <div style="font-family:'Nunito',sans-serif;font-weight:700;font-size:${stepTitleSz}px;color:${step.textColor};line-height:1.2;margin-bottom:4px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;">{{P${i+1}_TITLE}}</div>
+    <div style="font-family:'Caveat',cursive;font-size:${stepBodySz}px;color:rgba(255,255,255,0.88);font-style:italic;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{P${i+1}_BODY}}</div>
   </div>
 </div>
-${i < 4 ? `<div style="text-align:center;height:${arrowH}px;display:flex;align-items:center;justify-content:center;"><span style="font-size:${Math.round(20*scale)}px;color:#C0392B;">▼</span></div>` : ''}
+${i < 4 ? `<div style="text-align:center;height:${arrowH}px;display:flex;align-items:center;justify-content:center;"><span style="font-size:${Math.round(20*s)}px;color:#C0392B;line-height:1;">▼</span></div>` : ''}
 `).join('')}
 
-<div style="border:1.5px solid #2E7D32;border-radius:${Math.round(8*scale)}px;padding:${proTipPad}px ${Math.round(20*scale)}px;margin-top:${Math.round(24*scale)}px;background:#FFFFFF;">
-  <div style="font-family:'Nunito',sans-serif;font-weight:700;font-size:${Math.round(13*scale)}px;color:#2E7D32;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.05em;">PRO TIP:</div>
-  <div style="font-family:'Caveat',cursive;font-size:${Math.round(18*scale)}px;color:#333333;font-style:italic;">{{PRO_TIP}}</div>
+<div style="border:1.5px solid #2E7D32;border-radius:${Math.round(8*s)}px;padding:${Math.round(16*s)}px ${Math.round(20*s)}px;margin-top:${spaceAfter}px;background:#ffffff;">
+  <div style="font-family:'Nunito',sans-serif;font-weight:700;font-size:${Math.round(13*s)}px;color:#2E7D32;margin-bottom:${Math.round(6*s)}px;text-transform:uppercase;letter-spacing:0.05em;">PRO TIP:</div>
+  <div style="font-family:'Caveat',cursive;font-size:${Math.round(18*s)}px;color:#333333;font-style:italic;">{{PRO_TIP}}</div>
 </div>
 
-<div style="text-align:center;padding:${footerPad}px 0 0;border-top:0.5px solid #cccccc;margin-top:${Math.round(24*scale)}px;font-family:'Nunito',sans-serif;font-weight:600;font-size:${Math.round(15*scale)}px;color:#333333;">
+<div style="text-align:center;padding:${Math.round(20*s)}px 0 0;border-top:0.5px solid #cccccc;margin-top:${spaceAfter}px;font-family:'Nunito',sans-serif;font-weight:600;font-size:${Math.round(15*s)}px;color:#333333;">
   {{FOOTER}} | Repost ↺
 </div>
 
 </body></html>`;
 }
 
-// ─── TEMPLATE 12: DATA_GRID ───
-// Framework table 4×3 + key takeaway. ALL INLINE STYLES for html2canvas.
+// ─── TEMPLATE 12: DATA_GRID (style tableau comparaison) ───
+// ALL INLINE STYLES for html2canvas compatibility.
 export function dataGrid(w: number, h: number): string {
-  const s = (v: number) => Math.round(v * w / 1080);
-  const sh = (v: number) => Math.round(v * h / 1350);
-  const pad = s(44);
-  const headerH = sh(190);
-  const footerH = sh(60);
-  const titleSz = s(48);
-  const badgeSz = s(12);
-  const thSz = s(13);
-  const cellSz = s(16);
-  const dotSz = s(15);
-  const thPad = `${sh(14)}px ${s(20)}px`;
-  const rowPad = `0 ${s(20)}px`;
+  const s = w / 1080;
+  const pad = Math.round(48 * s);
+  const headerH = Math.round(190 * s);
+  const footerH = Math.round(70 * s);
+  const tipH = Math.round(90 * s);
+  const titleSz = Math.round(48 * s);
+  const badgeSz = Math.round(13 * s);
+  const thSz = Math.round(13 * s);
+  const cellSz = Math.round(16 * s);
+  const dotSz = Math.round(16 * s);
 
   const dots = ['#C0392B','#D4A017','#2E7D32','#8B5CF6'];
-  const rowBgs = ['#ffffff','#f9f9f9','#ffffff','#f9f9f9'];
-  const thColors = ['#C0392B','#2B4DAF','#2E7D32'];
+  const rowBgs = ['#ffffff','#f9fafb','#ffffff','#f9fafb'];
 
   return `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>*{box-sizing:border-box;margin:0;padding:0}</style>
 </head>
-<body style="width:${w}px;height:${h}px;overflow:hidden;background:#f8f9f7;font-family:'Nunito',sans-serif;display:flex;flex-direction:column;color:#111111;">
+<body style="width:${w}px;height:${h}px;overflow:hidden;margin:0;padding:0;background:#f8f9f7;font-family:'Caveat',cursive;display:flex;flex-direction:column;box-sizing:border-box;">
 
-<div style="height:${headerH}px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${sh(10)}px ${pad}px;gap:${sh(8)}px;">
-  <div style="display:inline-flex;align-items:center;background:#2B4DAF;color:#fff;font-size:${badgeSz}px;font-weight:900;letter-spacing:2px;text-transform:uppercase;padding:${sh(5)}px ${s(22)}px;border-radius:100px;">{{BADGE}}</div>
-  <div style="font-family:'Nunito',sans-serif;font-size:${titleSz}px;font-weight:900;color:#111111;text-align:center;line-height:1.18;max-width:${s(920)}px;word-wrap:break-word;letter-spacing:-0.01em;">{{TITLE}}</div>
+<div style="height:${headerH}px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${Math.round(24*s)}px ${pad}px;gap:${Math.round(10*s)}px;border-bottom:2px solid #C0392B;">
+  <div style="display:inline-block;background:#2563EB;color:#ffffff;font-family:'Nunito',sans-serif;font-weight:800;font-size:${badgeSz}px;letter-spacing:2px;text-transform:uppercase;padding:${Math.round(6*s)}px ${Math.round(20*s)}px;border-radius:100px;">{{BADGE}}</div>
+  <div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:${titleSz}px;color:#111111;text-align:center;line-height:1.15;max-width:${Math.round(w*0.85)}px;letter-spacing:-0.01em;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{TITLE}}</div>
 </div>
 
-<div style="flex:1;padding:0 ${pad}px ${sh(12)}px;display:flex;flex-direction:column;min-height:0;">
+<div style="flex:1;padding:0 ${pad}px ${Math.round(pad*0.5)}px;display:flex;flex-direction:column;min-height:0;">
 
-<div style="flex:1;border-radius:12px;overflow:hidden;border:1.5px solid #e0e0e0;display:flex;flex-direction:column;background:#ffffff;">
-  <div style="display:grid;grid-template-columns:1.2fr 2fr 1fr;background:#f5f5f5;border-bottom:2px solid #e0e0e0;padding:${thPad};gap:${s(10)}px;">
-    <div style="font-family:'Nunito',sans-serif;font-size:${thSz}px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:${thColors[0]};">Concept</div>
-    <div style="font-family:'Nunito',sans-serif;font-size:${thSz}px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:${thColors[1]};">Description</div>
-    <div style="font-family:'Nunito',sans-serif;font-size:${thSz}px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:${thColors[2]};">Best For</div>
+  <div style="flex:1;border-radius:${Math.round(12*s)}px;overflow:hidden;border:1.5px solid #e0e0e0;display:flex;flex-direction:column;box-shadow:0 2px 16px rgba(0,0,0,0.05);">
+    <div style="display:grid;grid-template-columns:1.2fr 2fr 1fr;background:#f5f5f5;border-bottom:2px solid #e0e0e0;padding:${Math.round(14*s)}px ${Math.round(20*s)}px;gap:${Math.round(12*s)}px;">
+      <div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:${thSz}px;text-transform:uppercase;letter-spacing:1px;color:#C0392B;">Concept</div>
+      <div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:${thSz}px;text-transform:uppercase;letter-spacing:1px;color:#2563EB;">Description</div>
+      <div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:${thSz}px;text-transform:uppercase;letter-spacing:1px;color:#4A8B35;">Best For</div>
+    </div>
+    ${[0,1,2,3].map(i => `
+    <div style="flex:1;display:grid;grid-template-columns:1.2fr 2fr 1fr;align-items:center;padding:0 ${Math.round(20*s)}px;gap:${Math.round(12*s)}px;border-bottom:0.5px solid #e8e8e8;background:${rowBgs[i]};min-height:0;overflow:hidden;">
+      <div style="display:flex;align-items:center;gap:${Math.round(10*s)}px;font-family:'Nunito',sans-serif;font-weight:800;font-size:${cellSz}px;color:#111111;overflow:hidden;">
+        <div style="width:${dotSz}px;height:${dotSz}px;border-radius:50%;background:${dots[i]};flex-shrink:0;"></div>
+        <span style="overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;">{{P${i+1}_TITLE}}</span>
+      </div>
+      <div style="font-family:'Caveat',cursive;font-size:${Math.round(cellSz*1.1)}px;color:#444444;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{P${i+1}_BODY}}</div>
+      <div style="font-family:'Nunito',sans-serif;font-weight:700;font-size:${Math.round(cellSz*0.88)}px;color:#4A8B35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{P${i+5}_TITLE}}</div>
+    </div>`).join('')}
   </div>
-${[0,1,2,3].map(i=>`  <div style="flex:1;display:grid;grid-template-columns:1.2fr 2fr 1fr;align-items:center;padding:${rowPad};gap:${s(10)}px;border-bottom:0.5px solid #e8e8e8;min-height:0;overflow:hidden;background:${rowBgs[i]};">
-    <div style="display:flex;align-items:center;gap:${s(8)}px;font-family:'Nunito',sans-serif;font-weight:800;font-size:${cellSz}px;color:#111111;overflow:hidden;"><div style="width:${dotSz}px;height:${dotSz}px;border-radius:50%;flex-shrink:0;background:${dots[i]};"></div>{{P${i+1}_TITLE}}</div>
-    <div style="font-family:'Caveat',cursive;font-size:${Math.round(cellSz*1.15)}px;font-weight:400;color:#111111;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{P${i+1}_BODY}}</div>
-    <div style="font-family:'Nunito',sans-serif;font-size:${Math.round(cellSz*0.9)}px;font-weight:700;color:#2E7D32;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{P${i+5}_TITLE}}</div>
-  </div>`).join('\n')}
-</div>
 
-<div style="margin-top:${sh(14)}px;padding:${sh(12)}px ${s(25)}px;background:#fffdf0;border-radius:10px;border-left:4px solid #C0392B;flex-shrink:0;">
-  <div style="font-family:'Nunito',sans-serif;font-size:${s(12)}px;font-weight:900;color:#C0392B;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">★ Key Takeaway</div>
-  <div style="font-family:'Caveat',cursive;font-size:${Math.round(cellSz*1.1)}px;font-weight:400;color:#111111;line-height:1.35;">{{PRO_TIP}}</div>
-</div>
+  <div style="margin-top:${Math.round(16*s)}px;padding:${Math.round(14*s)}px ${Math.round(20*s)}px;background:#fffdf0;border-radius:${Math.round(10*s)}px;border-left:4px solid #C0392B;display:flex;gap:${Math.round(14*s)}px;align-items:flex-start;flex-shrink:0;">
+    <div>
+      <div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:${Math.round(11*s)}px;color:#C0392B;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;">★ Key Takeaway</div>
+      <div style="font-family:'Caveat',cursive;font-size:${Math.round(cellSz*1.05)}px;color:#111111;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{PRO_TIP}}</div>
+    </div>
+  </div>
 
 </div>
 
-<div style="height:${footerH}px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-top:0.5px solid #e0e0e0;background:#fafafa;">
-  <div style="font-family:'Nunito',sans-serif;font-size:${s(14)}px;font-weight:700;color:#333333;">Follow <span style="color:#2B4DAF;text-decoration:underline;">@creator</span> for more | Repost ↻</div>
+<div style="height:${footerH}px;flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:${Math.round(8*s)}px;border-top:1px solid #e0e0e0;background:#fafafa;">
+  <div style="font-family:'Nunito',sans-serif;font-weight:700;font-size:${Math.round(15*s)}px;color:#2563EB;">{{FOOTER}}</div>
+  <div style="font-family:'Nunito',sans-serif;font-weight:700;font-size:${Math.round(15*s)}px;color:#444444;">| Repost ↺</div>
 </div>
 
 </body></html>`;
