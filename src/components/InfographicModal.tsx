@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
   X, RefreshCw, Download, Sparkles, Check,
-  Loader2, Copy, Maximize2,
+  Loader2, Copy, Maximize2, FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -435,6 +435,50 @@ export default function InfographicModal({ open, onClose, content, platform, con
     }
   }
 
+  async function handleDownloadPDF() {
+    if (downloading || !htmlCode) return;
+    setDownloading(true);
+
+    try {
+      const canvas = await renderHtmlToCanvas();
+      const imgData = canvas.toDataURL("image/png");
+
+      // Open a print window with the infographic image — user saves as PDF
+      const printWindow = window.open("", "_blank");
+      if (!printWindow) {
+        toast.error("Autorisez les popups pour télécharger le PDF");
+        setDownloading(false);
+        return;
+      }
+
+      const imgW = canvas.width;
+      const imgH = canvas.height;
+      const ratio = imgH / imgW;
+      const isPortrait = ratio > 1;
+
+      printWindow.document.write(`<!DOCTYPE html>
+<html><head><title>Supen Infographic</title>
+<style>
+*{margin:0;padding:0}
+body{background:white;display:flex;align-items:center;justify-content:center;min-height:100vh}
+img{max-width:100%;max-height:100vh;display:block;page-break-inside:avoid}
+@page{margin:0;size:${isPortrait ? "portrait" : "landscape"}}
+@media print{body{margin:0}img{width:100%;height:auto}}
+</style></head><body>
+<img src="${imgData}" />
+<script>
+window.onload=function(){setTimeout(function(){window.print();setTimeout(function(){window.close()},1000)},500)};
+</script></body></html>`);
+      printWindow.document.close();
+
+      toast.success("Dialogue d'impression ouvert — sauvegardez en PDF !");
+    } catch (err) {
+      console.error("[InfographicModal] PDF error:", err);
+      toast.error("PDF failed — use PNG instead");
+    }
+    setDownloading(false);
+  }
+
   // ─── Save ───
   // Called EXPLICITLY from handleGenerate after a verified success.
   // Accepts fresh data via opts to avoid stale React state closures.
@@ -733,28 +777,39 @@ export default function InfographicModal({ open, onClose, content, platform, con
                   </div>
                 )}
 
-                {/* Primary actions — PNG + JPEG download */}
+                {/* Primary actions — PNG + JPEG + PDF download */}
                 <div className="flex gap-2 mb-3">
                   <Button
                     onClick={() => handleDownload("png")}
                     variant="outline"
-                    className="flex-1 gap-2 h-10 text-xs font-semibold"
+                    className="flex-1 gap-1.5 h-9 text-xs font-semibold"
                     disabled={downloading}
                   >
                     {downloading
-                      ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating...</>
-                      : <><Download className="w-3.5 h-3.5" /> PNG</>
+                      ? <><Loader2 className="w-3 h-3 animate-spin" /> ...</>
+                      : <><Download className="w-3 h-3" /> PNG</>
                     }
                   </Button>
                   <Button
                     onClick={() => handleDownload("jpeg")}
                     variant="outline"
-                    className="flex-1 gap-2 h-10 text-xs font-semibold"
+                    className="flex-1 gap-1.5 h-9 text-xs font-semibold"
                     disabled={downloading}
                   >
                     {downloading
-                      ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating...</>
-                      : <><Download className="w-3.5 h-3.5" /> JPEG</>
+                      ? <><Loader2 className="w-3 h-3 animate-spin" /> ...</>
+                      : <><Download className="w-3 h-3" /> JPEG</>
+                    }
+                  </Button>
+                  <Button
+                    onClick={handleDownloadPDF}
+                    variant="outline"
+                    className="flex-1 gap-1.5 h-9 text-xs font-semibold"
+                    disabled={downloading}
+                  >
+                    {downloading
+                      ? <><Loader2 className="w-3 h-3 animate-spin" /> ...</>
+                      : <><FileText className="w-3 h-3" /> PDF</>
                     }
                   </Button>
                 </div>
