@@ -49,14 +49,14 @@ const testimonials = [
 const resultsData = [
   { src: "/results/Screenshot_2026-04-02_003014.png", stat: "2.7K likes · 649 shares", platform: "Facebook", tier: "green" },
   { src: "/results/Screenshot_2026-04-02_003201.png", stat: "3.2K likes · 5K shares", platform: "Facebook", tier: "green" },
-  { src: "/results/Screenshot_2026-04-02_003257.png", stat: "26K likes · 23K shares", platform: "Facebook", tier: "gold" },
+  { src: "/results/Screenshot_2026-04-02_003257.png", stat: "260K likes · 230K shares", platform: "Facebook", tier: "gold" },
   { src: "/results/Screenshot_2026-04-02_003356.png", stat: "7.2K likes · 7.1K shares", platform: "Facebook", tier: "green" },
   { src: "/results/Screenshot_2026-04-02_003931.png", stat: "1.1K likes · 230 shares", platform: "Facebook", tier: "cyan" },
   { src: "/results/Screenshot_2026-04-02_004452.png", stat: "630 reactions · 44 reposts", platform: "LinkedIn", tier: "cyan" },
   { src: "/results/Screenshot_2026-04-02_004606.png", stat: "624 reactions · 63 reposts", platform: "LinkedIn", tier: "cyan" },
   { src: "/results/Screenshot_2026-04-02_004655.png", stat: "697 reactions · 93 reposts", platform: "LinkedIn", tier: "cyan" },
-  { src: "/results/Screenshot_2026-04-02_004737.png", stat: "881 reactions · 135 reposts", platform: "LinkedIn", tier: "cyan" },
-  { src: "/results/Screenshot_2026-04-02_005007.png", stat: "1.7M views · 3K likes", platform: "X (Twitter)", tier: "gold" },
+  { src: "/results/Screenshot_2026-04-02_004737.png", stat: "8,810 reactions · 1,350 reposts", platform: "LinkedIn", tier: "cyan" },
+  { src: "/results/Screenshot_2026-04-02_005007.png", stat: "17M views · 30K likes", platform: "X (Twitter)", tier: "gold" },
   { src: "/results/Screenshot_2026-04-02_005138.png", stat: "1.6M views · 9.8K likes", platform: "X (Twitter)", tier: "gold" },
   { src: "/results/Screenshot_2026-04-02_005256.png", stat: "257K views · 2.2K likes", platform: "X (Twitter)", tier: "green" },
 ];
@@ -552,10 +552,10 @@ const Index = () => {
           {/* Stats headline */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">
             {[
-              { num: "26K+", label: "Likes", platform: "Facebook" },
-              { num: "1.7M", label: "Views", platform: "X (Twitter)" },
-              { num: "5K", label: "Shares", platform: "Facebook" },
-              { num: "881", label: "Reactions", platform: "LinkedIn" },
+              { num: "260K+", label: "Likes", platform: "Facebook" },
+              { num: "17M", label: "Views", platform: "X (Twitter)" },
+              { num: "50K", label: "Shares", platform: "Facebook" },
+              { num: "8,810", label: "Reactions", platform: "LinkedIn" },
             ].map((s, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }}
                 className="bg-foreground/[0.03] border border-foreground/[0.06] rounded-xl p-5 hover:border-primary/30 transition-colors relative"
