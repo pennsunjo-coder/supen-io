@@ -95,8 +95,20 @@ export function selectBestTemplate(content: string, platform: string, forcedTemp
     return { templateId: forcedTemplate, reason: "Style choisi manuellement" };
   }
 
-  const words = content.toLowerCase().split(/\s+/);
+  const lower = content.toLowerCase();
+  const words = lower.split(/\s+/);
   const wordCount = words.length;
+
+  // ── Detect 3-entity comparison (A vs B vs C) → COMPARISON ──
+  const vsMatches = content.match(/\bvs\.?\b/gi);
+  const hasMultiVs = vsMatches && vsMatches.length >= 2; // "A vs B vs C" has 2 "vs"
+  const has3Entities = /(.+)\s+vs\.?\s+(.+)\s+vs\.?\s+(.+)/i.test(content);
+
+  // ── Detect resource/course lists → NOTEBOOK ──
+  const hasResourceList = /\d+\s+(free|best|top)\s+(course|resource|tool|book|site|app|platform)/i.test(content)
+    || /free\s+(course|resource|tool)/i.test(content)
+    || /cours gratuit|ressources? gratuit|outils? gratuit/i.test(content)
+    || /course|udemy|coursera|edx|skillshare|masterclass/i.test(lower);
 
   const p = {
     hasNumberedList: /(\d+\.|①|②|③|étape|step|premier|first)/i.test(content),
@@ -109,46 +121,49 @@ export function selectBestTemplate(content: string, platform: string, forcedTemp
     isMarketing: /marketing|contenu|content|viral|audience|engagement/i.test(content),
   };
 
-  const hasBreaking = /breaking|urgent|stop|dead|goodbye|end of|rip\b|game.?over|replaced/i.test(content);
-  const hasMasterclass = /master|guide complet|cheat.?sheet|tout savoir|everything|complete guide/i.test(content);
   const hasFunnel = /funnel|entonnoir|processus|parcours|roadmap|pipeline|conversion|tunnel|étapes? du/i.test(content);
-  const hasDataGrid = /framework|modèle|méthode|tableau|matrix|matrice|grille|ressources?|glossaire|outils?\s|comparison detailed/i.test(content);
-  const has3Tier = /bad.*good.*great|good.*better.*best|niveau\s*1.*niveau\s*2|level\s*1.*level\s*2|débutant.*avancé|beginner.*advanced|bronze.*silver.*gold/i.test(content);
+  const hasDataGrid = /framework|modèle|méthode|tableau|matrix|matrice|grille|glossaire|comparison detailed/i.test(content);
 
   let templateId: string;
   let reason: string;
 
-  if (hasBreaking && wordCount < 200) {
-    templateId = "AWA_BREAKING";
-    reason = "Contenu urgent — mise en page choc";
-  } else if (p.hasStats && wordCount < 200) {
-    templateId = "STATS_IMPACT";
-    reason = "Statistiques détectées — visuel chiffres clés";
-  } else if (hasFunnel) {
+  // Priority 1: 3-entity comparison → COMPARISON (3-column layout)
+  if (has3Entities || hasMultiVs) {
+    templateId = "COMPARISON";
+    reason = "Comparaison à 3 entités — colonnes côte à côte";
+  }
+  // Priority 2: Resource/course lists → NOTEBOOK (spiral binding)
+  else if (hasResourceList) {
+    templateId = "NOTEBOOK";
+    reason = "Liste de ressources/cours — style cahier spirale";
+  }
+  // Priority 3: Funnel/process
+  else if (hasFunnel) {
     templateId = "FUNNEL";
     reason = "Processus/parcours — entonnoir progressif";
-  } else if (has3Tier) {
-    templateId = "UI_CARDS";
-    reason = "Comparaison à 3 niveaux — cartes UI claires";
-  } else if (p.hasComparison) {
-    templateId = "UI_CARDS";
-    reason = "Comparaison/avant-après — cartes UI claires";
-  } else if (hasDataGrid) {
+  }
+  // Priority 4: 2-entity comparison or tiers → COMPARISON
+  else if (p.hasComparison) {
+    templateId = "COMPARISON";
+    reason = "Comparaison détectée — colonnes côte à côte";
+  }
+  // Priority 5: Framework/data grid
+  else if (hasDataGrid) {
     templateId = "DATA_GRID";
     reason = "Framework/ressources — tableau structuré";
-  } else if (hasMasterclass && wordCount > 200) {
-    templateId = "AWA_MASTERCLASS";
-    reason = "Masterclass/guide — apprentissage structuré";
-  } else if (p.hasHowTo || p.hasTips || p.hasNumberedList) {
+  }
+  // Priority 6: How-to, tips, numbered lists → WHITEBOARD
+  else if (p.hasHowTo || p.hasTips || p.hasNumberedList) {
     templateId = "WHITEBOARD";
     reason = "Conseils/étapes — style tableau dessiné";
-  } else if (p.isTech && !p.isMarketing) {
-    templateId = "DARK_TECH";
-    reason = "Contenu tech — glassmorphism sombre";
-  } else if (wordCount > 300) {
-    templateId = "CHEAT_SHEET";
-    reason = "Contenu long — grille cheat sheet";
-  } else {
+  }
+  // Priority 7: Long content → WHITEBOARD (dense)
+  else if (wordCount > 300) {
+    templateId = "WHITEBOARD";
+    reason = "Contenu long — whiteboard dense";
+  }
+  // Default: AWA_CLASSIC
+  else {
     templateId = "AWA_CLASSIC";
     reason = "Contenu général — style viral Awa Penn";
   }
@@ -568,7 +583,8 @@ RAPPEL FINAL :
 }
 
 
-// ─── Gemini Image prompt builder — forensic specs from 12 Awa K Penn references ───
+
+// ─── Gemini Image prompt builder v4.0 — pixel-precise forensic specs ───
 
 function getForensicTemplateSpec(
   templateId: string,
@@ -588,203 +604,278 @@ function getForensicTemplateSpec(
     case "DARK_TECH":
       return `
 TEMPLATE: WHITEBOARD STUDY NOTES
-(Exact reference: "How to Master ChatGPT in 2 Minutes" by Awa K Penn)
+(Pixel-perfect reference: "How to Master Claude in 2 Minutes" by Awa K Penn)
 
 Canvas: ${W}×${H}px
 
-PHYSICAL SURFACE:
-- Background: #f8f9f7 off-white with visible paper grain texture (3-4% noise opacity)
-- 4 small dark gray metallic rectangular clips at each corner (~12×18px, color #777777)
-- Very subtle border: 0.5px #e0e0e0 around entire canvas edge
-- Must look like a real physical whiteboard that's been photographed
+PHYSICAL WHITEBOARD SURFACE:
+- Background color: #f8f9f7 (measured — cool off-white, NOT pure white)
+- Paper grain texture: random noise dots at 2-3% opacity
+  Grain: ~1px scattered dots in #c0c0c0 and #d8d8d8
+- 4 corner clips: dark gray metallic rectangles
+  Size: 10px wide × 16px tall
+  Color: #555555 (dark gray metal)
+  Position: 6px inset from each corner
+  Appearance: slight 3D bevel effect, like real metal clips
+- Canvas border: 0.5px solid #e0e0e0 around entire perimeter
 
-TITLE ZONE (top 10%):
-- "[${extraction.title}]" — with LITERAL square brackets
-- Font: extremely thick hand-drawn marker pen (like Nunito Black weight 900)
-- Size: ~48px, black #111111, centered
-- Below title: 2px red underline spanning 80% width, color #C0392B
+TITLE (top 8% = y:0 to y:${Math.round(H * 0.08)}):
+- "[${extraction.title}]" with LITERAL square [ ] brackets
+- Font rendering: EXTREMELY THICK marker-pen strokes
+  The letter strokes must be approximately 8-10% of the character height
+  Example: for a 48px character, each stroke is ~4-5px thick
+  This creates the distinctive "permanent marker" look
+  Slight irregularity in stroke weight — not perfectly uniform
+- Size: 44-48px, color #111111, centered horizontally
+- Below title: red underline spanning 80% of canvas width
+  Color: #C0392B, thickness 2.5px, slightly wavy (hand-drawn feel)
 
-YELLOW SECTION BANDS:
-- 2-3 full-width yellow #FFEF5A background strips across the layout
-- Black bold text centered on each band (e.g., "STRUCTURE YOUR PROMPT", "FEATURES")
-- These act as visual section dividers — like highlighting an entire line with a marker
-- Height: ~30px per band
+YELLOW SECTION BANDS (mandatory dividers):
+These are full-width bright yellow background strips that act as section dividers.
+- Background: #FFEF5A (bright Stabilo-marker yellow)
+- Height: 36-42px per band
+- Text: black #111111, heavy bold ~20px, ALL CAPS, centered
+- Include 3-4 of these bands distributed across the layout:
+  Band 1 (at ~12%): "${extraction.points[0]?.title?.toUpperCase() || "KEY CONCEPTS"}"
+  Band 2 (at ~40%): "FEATURES" or "KEY DETAILS"
+  Band 3 (at ~65%): "${extraction.points[Math.min(4, pointCount - 1)]?.title?.toUpperCase() || "HOW TO APPLY"}"
+  Band 4 (at ~85%): "LEARN FROM ${extraction.title.split(" ").slice(-1)[0] || "THIS"}"
+- These bands look like someone drew a highlighter across the entire width
 
-CONTENT ZONE (10% to 92% — MUST FILL):
-Pack ${Math.max(pointCount, 7)} sections DENSELY. No empty space allowed.
+CONTENT ZONE (8% to 94% = y:${Math.round(H * 0.08)} to y:${Math.round(H * 0.94)}):
+Organize into 10-15 content blocks. Use 2 columns where appropriate.
+Left/right padding: 36px. Gap between columns: 24px.
 
-For each section:
-- Section header: heavy bold colored text, 20px
-  Colors cycle: #C0392B → #2563EB → #4A8B35 → #F5922A → repeat
-- 2px colored underline under EVERY header (matching header color)
-- 2-4 bullet points per section with colored • markers
-- Body text: handwritten casual style (Caveat-like), 15-17px, #111111
-- Yellow #FFEF5A flat highlight behind 1 KEY TERM per section
-- Hand-drawn circle/oval badge with number for each section (stroke style, not filled)
+For EACH of the ${Math.max(pointCount, 7)} sections:
+- Colored section header: heavy bold 18-20px
+  Color cycling: #C0392B → #2563EB → #4A8B35 → #F5922A → repeat
+- 2px colored underline directly below header (same color as header)
+- ★ orange star #F5922A icon before important section headers
+- 2-4 bullet points with colored • dots (matching section color)
+- Body text: handwritten Caveat-style, 15-17px, #111111 to #333333
+  Slightly irregular letter spacing to look hand-written
+- Per section: 1 KEY TERM gets a flat yellow #FFEF5A highlight behind it
+- Numbers in hand-drawn oval badges: 2px stroke, slightly irregular oval shape
+  NOT solid filled circles — transparent center with stroke outline
 
 DECORATIVE MUST-HAVES:
-- ✓ Red checkmarks #C0392B on positive items
-- ★ Orange stars #F5922A next to important sections
-- → Arrow symbols between connected elements
-- Colored letter-in-square badges for any framework acronyms
+- ✓ Red checkmarks: #C0392B, thick 2.5px stroke, hand-drawn style
+- ★ Stars: #F5922A, drawn with irregular strokes, ~14px
+- → Arrows: hand-drawn with slight curve, connecting related items
+- Framework acronym badges: colored letter in small rounded square
+  Example: [R] [T] [C] [R] [O] [S] — each letter in a colored box
+  Box: 24×24px, rounded 4px, accent color background, white letter
 
-FOOTER (bottom 5%):
+FOOTER (bottom 6% = y:${Math.round(H * 0.94)} to y:${H}):
+- Thin separator line: 0.5px #cccccc
 - "Follow Awa K Penn for more amazing AI content | Repost ↺"
-- Handwritten bold, 18px, creator name in blue #2563EB underlined
+- Font: handwritten bold 18px
+- "Awa K Penn": blue #2563EB, bold, underlined
+- ↺ symbol: recycling/repost icon
 
-DENSITY RULE: Content MUST fill from title to footer with ZERO visible empty space.
-The canvas should look like a dense study reference sheet, not a sparse slide.
+DENSITY TARGET: Content must reach y:${Math.round(H * 0.94)} before footer.
+Zero empty white space. If content ends before y:${Math.round(H * 0.80)}, ADD MORE SECTIONS.
 `;
 
     case "NOTEBOOK":
       return `
 TEMPLATE: SPIRAL NOTEBOOK
-(Exact reference: "9 Free Courses for Building AI Agents" by Awa K Penn)
+(Pixel-perfect reference: "9 Free Courses for Building AI Agents" by Awa K Penn)
 
 Canvas: ${W}×${H}px
 
-SPIRAL BINDING (top 6% = ~${Math.round(H * 0.06)}px):
-- 20 metallic oval spiral coils spanning full width
-- Each coil: oval ~36px wide × 26px tall
-- Color: silver-gray #a39581
-- 3D shading: light side #c8c0b0, shadow side #7a7060
-- CRITICAL: coils overlap paper edge — pass in FRONT and BEHIND the page
-- This must look like a real spiral-bound notebook
+SPIRAL BINDING (y:0 to y:${Math.round(H * 0.06)} — top 6%):
+- Exactly 20-22 metallic oval coils across full width
+- Each coil: 36px wide × 26px tall, oval shape
+- Coil color: #a39581 (aged silver-gray metal)
+- 3D shading on EACH coil:
+  Top-left highlight: #c8c0b0 (lighter, catching light)
+  Bottom-right shadow: #7a7060 (darker, in shadow)
+  Creates realistic metallic 3D cylindrical look
+- Coils OVERLAP the paper edge: the bottom half of each coil
+  appears to go BEHIND the paper while the top half is IN FRONT
+- Even spacing between coils: ~${Math.round(W / 22)}px center-to-center
+- The paper edge is visible between coils
 
-PAGE TEXTURE (below spiral):
-- Background: warm cream #fffef8 (like actual notebook paper)
-- Horizontal ruled lines: #dde8f0, 0.5px, every 34px, spanning full width
-- Red vertical margin line: #E63946, 1.5px, at x=72px from left edge
-- Paper grain texture: 4-5% opacity
+PAGE TEXTURE (below spiral, y:${Math.round(H * 0.06)} to y:${H}):
+- Background: #fffef8 (warm cream — like real notebook paper)
+- Horizontal ruled lines across full width:
+  Color: #dde8f0 (light blue)
+  Weight: 0.5px
+  Spacing: every 34px
+  These must be visible across the ENTIRE page
+- Red vertical margin line:
+  Color: #E63946
+  Weight: 1.5px
+  Position: x=72px from left edge, full height
+- Paper grain: subtle noise at 4% opacity
 
-TITLE (top 16%, below spiral):
-- Multi-color word treatment — EACH key word in a DIFFERENT accent color:
-  * Numbers: GREEN #4A8B35, very bold, ~56px
-  * Key adjectives: RED #C0392B with underline
-  * Main nouns: dark BLUE #1a3d7c, bold
-  * Tech terms (AI, etc.): yellow #FFEF5A background behind red text
-- Font: handwritten bold (Caveat Bold 700), 52-56px
-- Red curved arrow ↓ drawn after title
+MULTI-COLOR TITLE (y:${Math.round(H * 0.06)} to y:${Math.round(H * 0.22)} — 16%):
+EACH major word gets its OWN COLOR — this is the signature notebook style:
+Title: "${extraction.title}"
+Apply these color rules to the words:
+- Any number/quantity word: GREEN #16A34A, extra large ~56px, Caveat Bold
+- Key adjectives (Free, Best, Top, etc.): RED #C0392B + thick underline
+- Main nouns (Courses, Tools, etc.): dark BLUE #1a3d7c, bold
+- Tech terms (AI, Code, etc.): RED #C0392B text on YELLOW #FFEF5A background
+- Font: handwritten bold marker-pen style (Caveat Bold 700)
+  Stroke irregularity: slight wobble to look hand-drawn
+  Size varies: important words 52-56px, connectors 36-40px
+- After last word: draw a curved red arrow ↓ (hand-drawn, #C0392B)
 
-CONTENT (25% to 85%):
-${pointCount >= 5 ? `Data table with columns:
-- Column 1: "#" — hand-drawn oval number badges (01, 02, 03... in red)
-- Column 2: "Provider" — Nunito Bold, blue #2563EB
-- Column 3: "Course Title" / topic — Caveat style, dark
-- Column 4: "Duration" / detail — green #4A8B35
-- Column 5: "Instructor" / source — alternating colors
-- Alternating row backgrounds: transparent / very light gray
-- Thin horizontal lines between rows` :
-`Numbered list:
-- Each number in hand-drawn oval badge (stroke style)
-- Item title: Nunito Bold 16px, green or blue
-- Item body: Caveat 15px, black
-- Key terms highlighted yellow #FFEF5A inline`}
+CONTENT TABLE (y:${Math.round(H * 0.22)} to y:${Math.round(H * 0.85)} — 63%):
+Data table with 5 columns:
+- Header row: handwritten bold column labels, slightly larger
+- Column 1 "#": hand-drawn oval number badges (01, 02, 03...)
+  Oval: ~28×20px, 2px stroke #333333, slightly irregular shape
+  Number: red #C0392B bold inside oval
+- Column 2 "Provider": bold sans-serif, blue #2563EB
+- Column 3 "Title/Topic": handwritten Caveat, dark #111111
+- Column 4 "Detail/Duration": green #4A8B35
+- Column 5 "Source/Author": alternating red/blue/green
+- Row separator: thin lines matching ruled lines
+- Alternating backgrounds: transparent / very light #f9f9f7
+- Fill with ${Math.max(pointCount, 7)} rows of content
 
-FOOTER (bottom 10%):
-- Curved decorative arrows ↙ left and ↗ right
-- "Follow for more | Repost ↺" — Caveat Bold 26px
-- Creator name: blue #2563EB, bold, underlined
+FOOTER (y:${Math.round(H * 0.85)} to y:${H} — bottom 15%):
+- Two large curved decorative arrows:
+  ↙ on left side, ↗ on right side
+  Color: #C0392B or #2563EB, stroke 3px, hand-drawn curve
+- "Follow Awa K Penn for more amazing AI content | Repost"
+  Font: Caveat Bold, 24-28px
+  "Awa K Penn": blue #2563EB, bold, underlined
+  "Repost": with ↺ recycling symbol
 
-DENSITY: Fill the notebook page completely. No blank ruled lines at bottom.
+DENSITY: Every ruled line on the page should have content near it.
+No blank ruled lines at the bottom of the page.
 `;
 
     case "COMPARISON":
       return `
 TEMPLATE: 3-COLUMN COMPARISON
-(Exact reference: "Claude Opus 4.6 vs ChatGPT 5.4 vs Gemini 3.1 Pro" by Awa K Penn)
+(Pixel-perfect reference: "Claude Opus 4.6 vs ChatGPT 5.4 vs Gemini 3.1 Pro")
 
 Canvas: ${W}×${H}px
 
-BACKGROUND: #f5f5f0 with paper texture and very subtle shadow/frame edge
+BACKGROUND: #f5f5f0 with paper grain texture 3% opacity
+Subtle shadow/frame edge giving the impression of a photographed poster
 
-TITLE (top 8%):
-- "[${extraction.title}]" with LITERAL square brackets
-- Each item name in its OWN accent color, underlined:
-  * Item 1: blue #2563EB
-  * Item 2: green #4A8B35
-  * Item 3: red/orange #C0392B
-- "vs" in black regular weight between items
-- Font: heavy hand-drawn sans-serif, 28-32px
+TITLE (y:0 to y:${Math.round(H * 0.08)} — top 8%):
+- "[${extraction.title}]" — with LITERAL square brackets
+- Each compared item in its OWN color:
+  Item 1: blue #2563EB, bold, underlined
+  Item 2: green #4A8B35, bold, underlined
+  Item 3: red #C0392B or orange #F5922A, bold, underlined
+- "vs" between items: black #111111, regular weight, not underlined
+- Font: heavy bold hand-drawn sans-serif, 28-32px
+- Separator line below title: 1px #cccccc, full width
 
-COLUMN LAYOUT (8% to 92%):
-- 3 equal vertical columns
-- Thin separator lines between columns: #cccccc, 0.5px
-- Product/brand icon at top of each column
+3-COLUMN LAYOUT (y:${Math.round(H * 0.08)} to y:${Math.round(H * 0.93)} — 85%):
+Three equal columns, each ~${Math.round((W - 48) / 3)}px wide
+Left padding: 16px, right padding: 16px, column gap: 8px
+Column separator: vertical line 0.5px #cccccc between columns
 
-EACH COLUMN HAS THESE EXACT SECTIONS (ALL MANDATORY):
-1. "DESCRIPTION:" — bold colored label, underlined + Caveat body text 13px
-2. "WHEN TO USE IT:" — bold colored label + bullet points with → arrows
-3. "USE CASES:" — bold colored label + bullet points
-4. "STRENGTHS:" — GREEN #4A8B35 label + positive bullet points
-5. "WEAKNESSES:" — RED #C0392B label + negative bullet points
-6. "PRO TIP:" — label on yellow #FFEF5A background + Caveat body
+Product/brand icon at top of each column (if applicable)
+
+EACH COLUMN MUST HAVE ALL 6 SECTIONS (mandatory — measured from reference):
+
+1. "Description:" — colored bold label 14px + underline
+   Body: Caveat 12-13px, 3-5 lines of text
+
+2. "When to use it:" — colored bold label 14px + underline
+   Body: bullet points with → arrows, Caveat 12px
+   3-4 bullet points minimum
+
+3. "Use cases:" — colored bold label 14px + underline
+   Body: bullet points, Caveat 12px
+   3-4 use cases minimum
+
+4. "Strengths:" — GREEN #4A8B35 bold label + underline
+   Body: bullet points with ✓ checkmarks
+   Key metrics: yellow #FFEF5A highlight (e.g., "128K context window")
+   3-4 strengths minimum
+
+5. "Weaknesses:" — RED #C0392B bold label + underline
+   Body: bullet points with • red dots
+   2-3 weaknesses minimum
+
+6. "Pro Tip:" — label on yellow #FFEF5A background strip
+   Body: Caveat italic-style 12px, 2-3 lines
 
 Column accent colors:
-- Column 1: blue #2563EB for all headers
-- Column 2: green #4A8B35 for all headers
-- Column 3: orange #F5922A for all headers
-
-KEY DETAILS:
-- Yellow #FFEF5A highlights on specific metrics/numbers within text
-- ✓ checkmarks for strengths, ✗ for weaknesses
-- Body text: handwritten Caveat 12-14px
-- Every section header is colored, bold, and underlined
+- Column 1: blue #2563EB for all section labels
+- Column 2: green #4A8B35 for all section labels
+- Column 3: orange #F5922A for all section labels
 
 FOOTER (bottom 5%):
 - "Follow Awa K Penn for more amazing AI content | Repost ↺"
+- "Awa K Penn" in blue #2563EB underlined
 
-DENSITY: ALL 6 sections MUST appear in EVERY column. Columns filled top to bottom.
+DENSITY: EVERY column packed from top to bottom. All 6 sections in EVERY column.
+Each column should contain 120-180 words. Total: 400-550 words across all columns.
 `;
 
     case "FUNNEL":
       return `
 TEMPLATE: FUNNEL PROCESS FLOW
-(Exact reference: "The Personal Branding Funnel (2026)" by Awa K Penn)
+(Pixel-perfect reference: "The Personal Branding Funnel (2026)" by Awa K Penn)
 
 Canvas: ${W}×${H}px
 
-BACKGROUND: light gray/off-white #f5f5f0 with subtle paper texture
-The whole image should look like a whiteboard sketch
+BACKGROUND: #f5f5f0 off-white with paper grain 3% opacity
+The whole image must look like a hand-drawn whiteboard sketch
 
-TITLE (top 12%):
-- "${extraction.title}" — very heavy hand-drawn marker pen style
-- Black #111111, 52-60px, centered
-- Year in parentheses if present
+TITLE (y:0 to y:${Math.round(H * 0.12)} — top 12%):
+- "${extraction.title}"
+- Font: EXTREMELY thick hand-drawn marker-pen, 52-60px
+  Stroke width ~10% of character height — very chunky
+- Black #111111, centered
+- Year in parentheses if present: e.g. "(2026)"
 
-FUNNEL SHAPE (center-left, occupying 50% width × 55% height):
-- Large trapezoid narrowing from top to bottom
-- Wide top: ~${Math.round(W * 0.55)}px, narrow bottom: ~${Math.round(W * 0.25)}px
-- Outline: hand-drawn IRREGULAR strokes (slightly wobbly, like drawn freehand)
-- Stroke: black #333333, 2.5px
-- Fill: warm cream/tan #f5e6c8, gradient slightly darker toward bottom
-- Divided into ${Math.min(pointCount, 4)} horizontal sections
+FUNNEL SHAPE (center-left, y:${Math.round(H * 0.14)} to y:${Math.round(H * 0.72)}):
+- Position: centered horizontally or slightly left (leaving room for character)
+- Width: top edge ~${Math.round(W * 0.55)}px, bottom edge ~${Math.round(W * 0.25)}px
+- Shape: trapezoid narrowing from top to bottom
+- Outline: hand-drawn IRREGULAR strokes — slightly wobbly, like freehand
+  Stroke: black #333333, 2.5px
+- Fill: warm cream/tan #f5e6c8, subtle gradient darker toward bottom
+- Divided into ${Math.min(pointCount, 4)} horizontal sections by thin internal lines
 
-SECTION LABELS (inside/overlapping funnel):
-Each section has:
-- White rectangle label box with thin red border #C0392B
-- Bold ALL CAPS text: "1. ${extraction.points[0]?.title || "THEY NOTICE YOU"}"
-- Below each label: 2-3 lines with red ✓ checkmarks + handwritten text (Caveat 14px)
+SECTION LABELS (overlapping funnel sections):
+${extraction.points.slice(0, 4).map((p, i) => `
+Section ${i + 1}:
+- White rectangle label: thin 1.5px red border #C0392B, white fill, slight shadow
+- Text: "${i + 1}. ${p.title.toUpperCase()}" — heavy bold ALL CAPS, 16px
+- Below label: 2-3 items with red ✓ checkmarks (#C0392B)
+  Checkmarks: thick 2.5px hand-drawn ✓
+  Text: handwritten Caveat 14px, #333333
+  Items: ${p.body.split(/[,;.]/).slice(0, 3).map(s => s.trim()).filter(Boolean).join(" / ") || "Show up consistently / Stand out / Create curiosity"}`).join("")}
 
-CHARACTER (right side, ~25% of canvas):
-- Cartoon man in business casual: blue shirt, gray vest, glasses
-- Standing pose, pointing at the funnel with one hand
-- Art style: bold line-art outlines, flat color fills
-- Friendly, confident expression
-- This character is ESSENTIAL to the Awa K Penn funnel style
+CHARACTER (right side, ~25% of canvas width):
+- ESSENTIAL ELEMENT: Cartoon person in business casual attire
+  - Blue collared shirt, gray/brown vest or jacket, glasses
+  - Standing upright, pointing at the funnel with one hand
+  - Friendly confident smile
+  - Art style: bold black outlines 2-3px, flat color fills
+  - Simple cartoon proportions (not realistic)
+- Position: right third of canvas, vertically centered with funnel
 
 DECORATIONS:
-- 6-8 gold sparkle stars ✦ ★ scattered around funnel
-  Colors: #F5C518 and #E8B800, mix solid/outline, 8-16px
-- Two large curved RED arrows (↙ left side, ↘ right side) flanking funnel
-  Color #C0392B, stroke 3-4px, hand-drawn curve style
+- 6-8 gold sparkle stars scattered around funnel:
+  ✦ solid stars: #F5C518, 10-16px
+  ★ outline stars: #E8B800, 8-14px
+  Random positions, varying sizes
+- Two large curved RED arrows flanking funnel:
+  Left side: ↙ curving downward, #C0392B, 3-4px stroke
+  Right side: ↘ curving downward, #C0392B, 3-4px stroke
+  Hand-drawn style with slight irregularity
 
-CTA BOX (bottom 10%):
-- Hand-drawn rectangle (slightly imperfect strokes, 1.5px black)
-- "Save this →" in bold + brief description text
-- Arrow drawn pointing to box from above
+CTA BOX (y:${Math.round(H * 0.78)} to y:${Math.round(H * 0.88)}):
+- Hand-drawn rectangle: slightly imperfect strokes, 1.5px black
+- "Save this →" in bold + "${extraction.proTip.slice(0, 50)}..."
+- Arrow: ← hand-drawn pointing to box
 
-FOOTER: discreet gray text, small
+FOOTER (bottom 8%): discreet gray text, 12px, centered
 `;
 
     case "DATA_GRID":
@@ -792,94 +883,136 @@ FOOTER: discreet gray text, small
     case "AWA_BREAKING":
       return `
 TEMPLATE: DENSE DATA REFERENCE POSTER
-(Exact reference: "The Complete Guide to Human Productivity Systems" by Awa K Penn)
+(Pixel-perfect reference: "The Complete Guide to Human Productivity Systems")
 
 Canvas: ${W}×${H}px
 
-BACKGROUND: #f5f5f0 off-white with paper texture
+BACKGROUND: #f5f5f0 with paper grain 2-3% opacity
 
-TITLE (top 8%):
-- "${extraction.title}" — very heavy black ALL CAPS sans-serif
-- 40-48px, centered
-- Subtitle below: lighter weight, 14px, #666666
+TITLE (y:0 to y:${Math.round(H * 0.08)}):
+- "${extraction.title}" — very heavy black ALL CAPS sans-serif, 40-48px
+- Centered, color #111111
+- Thin subtitle below: 14px #666666
 
-LAYOUT: Multi-section dense reference poster with 4+ distinct zones:
+SECTION 1 — FRAMEWORK MODEL (y:${Math.round(H * 0.08)} to y:${Math.round(H * 0.25)}):
+- "SECTION 1 — THE CORE FRAMEWORK" header, 16px bold, colored underline
+- Row of 3-4 colored rounded boxes (120×80px each):
+  Colors: #4A8B35, #2563EB, #F5922A, #0D9488
+  White bold text: category name, 14px
+  Below: 2-line description, 11px, white
 
-SECTION 1 — FRAMEWORK MODEL (top 20%):
-- "SECTION 1 — THE CORE FRAMEWORK" header with colored underline
-- Horizontal row of 3-4 colored rounded boxes representing pillars/categories
-- Each box: colored background (#4A8B35, #2563EB, #F5922A, #0D9488)
-- White text inside: category name + brief description
-
-SECTION 2 — TOPIC GRID (20-45%):
+SECTION 2 — CONCEPT GRID (y:${Math.round(H * 0.25)} to y:${Math.round(H * 0.48)}):
 - "SECTION 2 — KEY CONCEPTS" header with colored underline
-- 2×3 or 3×3 grid of colored rounded boxes
-- Each box: pastel background tint + bold title + body text
-- Colors: blue, green, yellow, orange tints
+- 2×3 grid of colored rounded boxes:
+  Each box: 45% width × auto height, rounded 12px
+  Pastel tinted backgrounds matching accent colors
+  Bold title 14px + body 12px inside each box
 
-SECTION 3 — BEHAVIORAL PATTERNS (45-65%):
+SECTION 3 — APPLICATION TABLE (y:${Math.round(H * 0.48)} to y:${Math.round(H * 0.68)}):
 - "SECTION 3 — APPLICATION" header
-- Table or card layout with colored cells
-- Each cell: colored left border + concept + description
+- Table: 3-4 rows with colored left borders
+  Each row: concept title + description, 12px
 
-SECTION 4 — COMPARISON TABLE (65-90%):
-- Full data table: 4-5 rows × 4-5 columns
-- Header row: colored backgrounds (#C0392B, #2563EB, #4A8B35...)
-- Alternating row backgrounds
-- Dense text filling every cell
+SECTION 4 — COMPARISON TABLE (y:${Math.round(H * 0.68)} to y:${Math.round(H * 0.92)}):
+- Full data table: 4 rows × 4 columns
+- Header: colored backgrounds #C0392B, #2563EB, #4A8B35, #F5922A
+- Alternating row backgrounds: #ffffff / #f9fafb
+- Dense text in every cell
 
-CONTENT TO DISTRIBUTE:
+CONTENT:
 ${extraction.points.map((p, i) => `${i + 1}. ${p.title}: ${p.body}`).join("\n")}
 
-FOOTER (bottom 5%):
-- "Follow Awa K Penn for more amazing AI content"
+FOOTER (bottom 5%): "Follow Awa K Penn for more amazing AI content"
 
-DENSITY: This is the DENSEST template. 95%+ canvas fill. Like a reference poster.
-Every square centimeter must contain useful content.
+DENSITY: 95%+ canvas fill. This is a reference poster — every cm² has content.
 `;
 
     default: // AWA_CLASSIC
       return `
 TEMPLATE: AWA CLASSIC FRAMED GUIDE
-(Exact reference: dense framed reference poster by Awa K Penn)
+(Pixel-perfect reference: dense framed reference poster by Awa K Penn)
 
 Canvas: ${W}×${H}px
 
 OUTER FRAME:
 - 28px thick border around entire canvas
-- Dark brown #3d2b1a with subtle diagonal wood grain lines (15% opacity)
-- Thin cream separator #f0e8d8 (2px) between frame and inner content
+- Color: dark brown #3d2b1a
+- Subtle diagonal wood grain lines at 15% opacity
+- Thin cream inset line: #f0e8d8, 2px, between frame and content
 
 INNER CONTENT (background #FFFFF5 warm cream):
 
 TITLE (top 15% of inner area):
-- Dark brown pill badge: #3d2b1a background, white text, uppercase
-- Main title: heavy bold 42px, #111111, centered
-- 2px brown underline below title
+- Dark brown pill badge: #3d2b1a bg, white text, ALL CAPS, 12px
+- Title: "${extraction.title}" — heavy bold 42px, #111111, centered
+- 2px brown underline #3d2b1a below title
 
-7 ITEMS (15% to 88% — must fill completely):
+7 ITEMS (15% to 88% — fills completely):
 ${extraction.points.slice(0, 7).map((p, i) => {
   const colors = ["#C0392B", "#2563EB", "#2E7D32", "#D4A017", "#8B5CF6", "#C0392B", "#0D9488"];
   return `Item ${i + 1} (${colors[i]}):
-- Colored rounded square badge with "${i + 1}" in white Nunito Bold
-- Hand-drawn sketch icon next to number (simple line-art doodle, NOT emoji)
+- Rounded square badge: ${colors[i]} bg, white "${i + 1}", 36×36px, rounded 8px
+- Simple line-art doodle icon next to badge (NOT emoji)
+  Draw: simple ink sketch ~24×24px matching topic
 - Title: "${p.title}" — heavy bold 20px, #111111
 - Body: "${p.body}" — handwritten Caveat 16px, #444444
 - Left border: 1px rgba(61,43,26,0.15)`;
 }).join("\n")}
 
-PRO TIP (below items):
-- Dashed border, slight background tint
+PRO TIP:
+- Dashed border 1.5px #C0392B, background #fffdf0
 - "★ Pro Tip: ${extraction.proTip}"
 
 FOOTER (bottom 8%):
 - Border-top: 2px solid #3d2b1a
-- Background #FFFFF5
-- "Follow for more | Repost ↺" — brown #3d2b1a, bold
-
-DENSITY: All 7 items must be visible. Content fills frame edge to edge.
+- "Follow for more | Repost ↺" — brown #3d2b1a, bold 16px
 `;
   }
+}
+
+// ─── Retry/correction prompt for second Gemini attempts ───
+
+export function buildGeminiRetryPrompt(
+  originalPrompt: string,
+  attemptNumber: number,
+): string {
+  return `${originalPrompt}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️ CORRECTION INSTRUCTIONS (attempt ${attemptNumber})
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The previous generation likely had these common issues. Fix ALL of them:
+
+CORRECTION 1 — FONT WEIGHT:
+The title must be MUCH BOLDER. The letter strokes should be so thick
+they appear almost to merge — like a Sharpie permanent marker.
+Each stroke should be 8-10% of the character height.
+If the title looks like a normal bold font, it is WRONG.
+
+CORRECTION 2 — DENSITY:
+The image likely has 30-50% empty white space at the bottom.
+This is WRONG. Add MORE content to fill the canvas to 90%+.
+Add more bullet points, more sections, more details, more text.
+Content must reach within 6% of the bottom edge.
+
+CORRECTION 3 — NO EMOJIS:
+If any emojis (🤖 💡 📱 etc.) appeared, REMOVE THEM ALL.
+Replace with simple hand-drawn ink sketch doodles, or nothing.
+
+CORRECTION 4 — YELLOW HIGHLIGHTS:
+Add yellow #FFEF5A highlights:
+- 3-5 key terms in body text (flat background behind the word)
+- 2-3 full-width yellow section bands across the layout
+
+CORRECTION 5 — PHYSICAL ELEMENTS:
+Ensure these are clearly visible:
+- Corner clips (whiteboard) or spiral coils (notebook)
+- Paper grain texture on the background
+- Colored underlines under EVERY section header
+- Hand-drawn oval number badges (stroke, not filled)
+
+Apply all corrections and generate the COMPLETE image.`;
 }
 
 export function buildGeminiImagePrompt(
@@ -894,93 +1027,112 @@ export function buildGeminiImagePrompt(
   const selection = selectBestTemplate(content, platform, forcedTemplate);
   const templateId = selection.templateId;
 
-  return `Generate an educational infographic image that looks EXACTLY like
-the viral infographics created by "Awa K Penn" — a popular educational
-content creator on social media. The style must replicate the hand-crafted
-whiteboard/notebook study notes aesthetic pixel-perfectly.
+  return `Generate an image that is VISUALLY IDENTICAL to the viral educational
+infographics created by "Awa K Penn" on LinkedIn and Instagram.
+I will describe every visual element with pixel-perfect precision.
 
 Image dimensions: ${dims.width}×${dims.height}px
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-FORENSIC STYLE SPECIFICATIONS (measured from 12 reference images)
+FONT RENDERING (the most distinctive visual feature)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-[TYPOGRAPHY — THE MOST DISTINCTIVE FEATURE]
-
-TITLES: Extremely thick hand-drawn marker-pen style font.
-- Must look like someone wrote with a VERY thick permanent marker
-- Weight 900+ — the strokes are chunky and bold, not thin or elegant
-- Like Nunito ExtraBold, Poppins Black, or heavy marker lettering
-- Size: 44-60px depending on length
+TITLE FONT — like a thick permanent marker:
+- Stroke width: approximately 8-12% of each character's height
+  For a 48px tall letter, each stroke is 4-6px wide
+- Slight irregularity in weight: not perfectly uniform, like real handwriting
+- Very bold, very chunky — the strokes should almost touch each other
+- Think of Nunito ExtraBold 900 or someone writing with a thick Sharpie
 - Color: #111111 near-black
-- Often wrapped in square brackets: [TITLE HERE]
+- Size: 44-56px depending on title length
+- Letter-spacing: normal to slightly tight (-0.5px)
+- Line-height: 1.1 (tight)
 
-BODY TEXT: Handwritten casual style (like Caveat or Patrick Hand font).
-- Slightly irregular letter spacing — like real handwriting
-- Casual marker-pen feel, NOT clean/geometric
-- Size: 14-18px
+BODY TEXT — like a thin Sharpie marker:
+- Handwritten appearance: slightly variable stroke width
+- Letter forms slightly irregular, not geometrically perfect
+- Like the Caveat font at 15-18px, but drawn by hand
 - Color: #111111 to #333333
+- Line-height: 1.35-1.45
+- NEVER clean/digital looking — must have handwritten character
 
-SECTION HEADERS: Same heavy font as titles but smaller (18-24px).
-- Each header in a DIFFERENT accent color (cycling through palette)
-- EVERY header has a 2px colored underline below it
+SECTION HEADERS — like a medium marker in color:
+- Same heavy style as title but smaller: 18-22px
+- Each header in a cycling accent color: #C0392B → #2563EB → #4A8B35 → #F5922A
+- EVERY header has a 2-2.5px colored underline directly below it
+- Underlines are slightly wavy/imperfect (hand-drawn feel)
 
-[EXACT COLOR PALETTE — USE ONLY THESE]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+EXACT COLOR PALETTE (measured from reference images)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Background: #f8f9f7 (cool off-white — NEVER pure white #ffffff)
-Red accent: #C0392B (warm brownish red — for headers, checkmarks, underlines)
-Blue accent: #2563EB (confident medium blue — for headers, names, links)
-Green accent: #4A8B35 (natural forest green — for headers, positive items)
-Orange accent: #F5922A (warm tangerine — for stars, tertiary emphasis)
-Yellow: #FFEF5A — used TWO ways:
-  1. INLINE HIGHLIGHT: flat background behind specific key words (like a Stabilo marker)
-  2. FULL-WIDTH SECTION BANDS: yellow background strips spanning the full canvas width
-     with bold black centered text, used as section dividers
-Frame brown: #3d2b1a (only for AWA_CLASSIC frame)
+Background: #f8f9f7 (measured — cool off-white, NOT #ffffff)
+Red: #C0392B (warm brownish red — headers, checkmarks, underlines)
+Blue: #2563EB (confident medium blue — headers, names, links)
+Green: #4A8B35 (natural forest green — headers, positive items)
+Orange: #F5922A (warm tangerine — stars, tertiary accent)
+Dark brown: #3d2b1a (frame borders on AWA_CLASSIC only)
+Near-black: #111111 (primary text)
+Cream: #fffef8 (notebook paper background)
 
-[BACKGROUND — PHYSICAL SURFACE FEEL]
+YELLOW #FFEF5A — used EXACTLY two ways:
+1. INLINE WORD HIGHLIGHTS: flat background behind 3-5 key terms per page
+   Looks exactly like someone used a Stabilo Boss highlighter pen
+   No rounded corners — flat rectangular background behind the word
+   Height matches the text line height
 
-- Off-white #f8f9f7 with visible paper grain/noise texture (3-5% opacity)
-- Must look like a REAL PHYSICAL SURFACE — whiteboard, notebook, or poster board
-- NEVER flat digital white
-- The texture should be subtle but visible on close inspection
+2. FULL-WIDTH SECTION BANDS: yellow #FFEF5A background strips spanning
+   the entire canvas width, containing bold black centered section titles
+   Height: 36-42px per band
+   Used as visual section dividers — like highlighting a whole line
+   Include 2-4 of these bands per infographic
 
-[CONTENT DENSITY — THE #1 MOST IMPORTANT RULE]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CONTENT DENSITY — THE #1 MOST CRITICAL RULE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-CRITICAL: The infographic must be EXTREMELY DENSE with content.
-- Fill 85-95% of the canvas with text and visual elements
-- ZERO empty space at the bottom — content fills from top edge to footer
-- Minimum 7 distinct sections/points (not 4 or 5 — at least 7)
-- Each section has 2-4 bullet points or sub-items
-- 200-400 total words of readable text content
-- If there's visible empty whitespace, the image has FAILED
+The canvas MUST be 85-95% filled with text and visual elements.
 
-Think of it like a dense study reference sheet or cheat sheet that a student
-would pin to their wall — every square centimeter packed with useful information.
+For a ${dims.width}×${dims.height}px canvas:
+- Content must start at y ≈ ${Math.round(dims.height * 0.02)}px (near top edge)
+- Content must reach y ≈ ${Math.round(dims.height * 0.94)}px before footer
+- Footer occupies y ≈ ${Math.round(dims.height * 0.94)} to ${dims.height}px
+- ZERO empty white space below the content
 
-[DECORATIVE ELEMENTS — MUST BE PRESENT]
+Achieve this density with:
+- Minimum 7 distinct content sections (not 4 or 5)
+- 2-4 bullet points per section
+- Yellow highlight bands as section dividers
+- Framework boxes, tables, or grids in the layout
+- Sub-bullets and nested lists where appropriate
+- Dense footer with decorative arrows
+- Total readable text: 250-400 words
 
-✓ Red checkmarks (#C0392B) — on positive/included items
-★ Orange stars (#F5922A) — next to important sections
-→ Arrows — between connected elements
-① ② ③ Circled numbers — hand-drawn oval/circle badges with numbers (stroke style, NOT filled solid shapes — like drawn with a pen)
-• Colored bullet dots — matching each section's accent color
-[ ] Square brackets — around title in whiteboard templates
+If the bottom 20% of the canvas is empty white space, the image FAILED.
 
-NEVER USE EMOJIS. No 🤖 💡 🎯 or any emoji characters.
-Use simple hand-drawn sketch doodle icons instead, or no icons at all.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HAND-DRAWN DECORATIVE ELEMENTS (never use emojis)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-[WHAT THIS STYLE IS NOT]
+ABSOLUTELY NO EMOJI CHARACTERS (🤖 💡 🎯 📱 etc.)
+Instead draw these as simple ink sketches with 1.5-2.5px strokes:
 
-NEVER create:
-- Clean modern corporate slides with gradient backgrounds
-- SaaS dashboard / Figma mockup aesthetic
-- Dark backgrounds or dark section cards
-- Thin or elegant fonts — the title must be CHUNKY and hand-drawn
-- Sparse layouts with lots of empty space
-- Emoji characters anywhere in the image
-- Rounded pastel cards with drop shadows
-- More than 4 accent colors
+- Checkmarks ✓: thick hand-drawn check in #C0392B, 2.5px stroke
+- Stars ★: 5-point star with irregular strokes, #F5922A, ~14px
+- Arrows →: hand-drawn angled arrows with slight curve
+- Number badges: slightly oval outline (NOT perfect circle)
+  2px stroke #333333, transparent center, number inside
+  Size: ~28×22px, hand-drawn irregularity
+- Bullet dots •: solid colored circles 4-5px, matching section color
+- Underlines: slightly wavy, not perfectly straight, 2-2.5px
+- Brackets [ ]: drawn around title text in whiteboard templates
+
+For icons (if needed): simple line-art doodles, like quick pen sketches
+- Lightbulb: simple outline with radiating lines
+- Target/bullseye: 2 concentric circles with center dot
+- Brain: simplified wavy outline
+- Arrow/pointer: simple geometric arrow
+ALL drawn with 2px black strokes, minimal detail
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 TEMPLATE SPECIFICATION
@@ -989,39 +1141,52 @@ TEMPLATE SPECIFICATION
 ${getForensicTemplateSpec(templateId, extraction, dims)}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-CONTENT TO RENDER
+CONTENT TO RENDER IN THE INFOGRAPHIC
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Title: "${extraction.title}"
-Category: "${extraction.badge}"
+Category badge: "${extraction.badge}"
 
 ${extraction.points.map((p, i) =>
   `Section ${i + 1}: "${p.title}"
-  Details: ${p.body}`
+  → ${p.body}`
 ).join("\n\n")}
 
-Pro tip: "${extraction.proTip}"
+★ Pro tip: "${extraction.proTip}"
 
 Footer: "Follow Awa K Penn for more amazing AI content | Repost ↺"
 
 ${customPrompt ? `\nUser instruction: ${customPrompt}` : ""}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-FINAL QUALITY GATE — CHECK EVERY ITEM
+REFERENCE IMAGES THIS SHOULD MATCH
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-[ ] Title is EXTREMELY thick/bold marker-pen style (weight 900+)
-[ ] Body text looks handwritten (Caveat-style, slightly irregular)
-[ ] Background is off-white #f8f9f7 with paper grain, NOT pure white
-[ ] Yellow #FFEF5A highlights on 3-5 key terms + section bands
-[ ] At least 3 accent colors used (red #C0392B, blue #2563EB, green #4A8B35)
-[ ] EVERY section header has a colored underline
-[ ] Numbers in hand-drawn oval/circle badges (stroke, not filled)
-[ ] Content fills 85%+ of canvas — ZERO empty space at bottom
-[ ] At least 7 distinct content sections visible
-[ ] Footer present with "Follow... | Repost ↺"
-[ ] NO emojis anywhere — only hand-drawn doodle icons or none
-[ ] Overall feel: hand-crafted study notes, NOT corporate design
+The exact visual target is infographics like:
+- "How to Master Claude in 2 Minutes" (whiteboard with clips, dense sections)
+- "9 Free Courses for Building AI Agents" (spiral notebook with data table)
+- "The Personal Branding Funnel 2026" (funnel with character illustration)
+- "Claude Opus 4.6 vs ChatGPT 5.4 vs Gemini 3.1 Pro" (3-column comparison)
+These have been viral on LinkedIn/Instagram with 100K+ engagements.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FINAL QUALITY GATE — VERIFY EVERY ITEM BEFORE OUTPUTTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[✓] Title strokes are EXTREMELY thick (8-10% of char height)
+[✓] Body text looks handwritten with slight irregularity
+[✓] Background is #f8f9f7 with paper grain — NOT pure white
+[✓] 3-5 inline yellow #FFEF5A word highlights present
+[✓] 2-4 full-width yellow section bands present (whiteboard/notebook)
+[✓] Red #C0392B + Blue #2563EB + Green #4A8B35 accent colors used
+[✓] EVERY section header has a colored underline below it
+[✓] Numbers in hand-drawn oval badges (stroke style, not filled)
+[✓] Content fills 85-95% of canvas — ZERO empty space at bottom
+[✓] At least 7 distinct sections with 2+ bullets each
+[✓] Physical elements present (clips OR spiral coils OR frame)
+[✓] Footer with "Follow... | Repost ↺" at very bottom
+[✓] NO emojis — only hand-drawn doodle icons
+[✓] Looks like hand-crafted study notes, NOT corporate design
 
 Generate the image now.`;
 }

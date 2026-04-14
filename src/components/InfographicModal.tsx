@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import GenerationProgress, { INFOGRAPHIC_STEPS } from "@/components/GenerationProgress";
 import {
   buildGeminiImagePrompt,
+  buildGeminiRetryPrompt,
   analyzeContent,
   getFormatDimensions,
   selectBestTemplate,
@@ -315,7 +316,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
   const previewWidth = 480;
   const iframeScale = previewWidth / dims.width;
 
-  // ─── Generation (Gemini Image ONLY) ───
+  // ─── Generation (Gemini Image ONLY — auto-retry with correction prompt) ───
 
   async function handleGenerate() {
     setStep("generating");
@@ -332,9 +333,25 @@ export default function InfographicModal({ open, onClose, content, platform, con
       assertOnline();
 
       const geminiPrompt = buildGeminiImagePrompt(content, platform, customPrompt || undefined, forcedTemplate);
-      console.log("[InfographicModal] Generating with Gemini Image...");
 
-      const base64 = await generateWithGemini(geminiPrompt);
+      // Attempt 1: standard prompt
+      console.log("[InfographicModal] Attempt 1 — generating with Gemini Image...");
+      let base64: string | null = null;
+      try {
+        base64 = await generateWithGemini(geminiPrompt);
+      } catch (firstErr) {
+        console.warn("[InfographicModal] Attempt 1 failed:", firstErr);
+
+        // Attempt 2: retry with correction prompt
+        console.log("[InfographicModal] Attempt 2 — retrying with correction prompt...");
+        try {
+          const retryPrompt = buildGeminiRetryPrompt(geminiPrompt, 2);
+          base64 = await generateWithGemini(retryPrompt);
+        } catch (secondErr) {
+          console.error("[InfographicModal] Attempt 2 also failed:", secondErr);
+          throw secondErr; // propagate the final error
+        }
+      }
 
       if (!base64) {
         throw new Error("Image generation failed. Please try again.");

@@ -5,8 +5,15 @@
  * These specs are the SINGLE SOURCE OF TRUTH for all Gemini image generation prompts.
  * Every measurement was taken directly from the reference images.
  *
- * ANALYSIS DATE: 2026-04-14
+ * ANALYSIS DATE: 2026-04-14 (v2 — pixel-precise measurements)
  * IMAGES ANALYZED: 12 reference infographics from Awa K. Penn's social media
+ *
+ * KEY REFERENCE IMAGES:
+ * - 648369041: "How to Master Claude in 2 Minutes" → WHITEBOARD template
+ * - 626404547: "9 Free Courses for Building AI Agents" → NOTEBOOK template
+ * - 649266641: "Claude Opus 4.6 vs ChatGPT 5.4 vs Gemini" → COMPARISON template
+ * - 612147737: "The Personal Branding Funnel (2026)" → FUNNEL template
+ * - 587950544: "Complete Guide to Human Productivity" → DENSE_GRID template
  */
 
 // ─── Template categories identified across 12 references ───
@@ -30,12 +37,16 @@ export const GLOBAL_SPECS = {
     feel: "Like a real physical surface (whiteboard, notebook page, poster board)",
   },
 
-  // Typography measured from references
+  // Typography — pixel-precise measurements from references
   typography: {
     title: {
       font: "Extremely heavy hand-drawn sans-serif (like Nunito Black 900+ or marker pen)",
       weight: "900+ — the strokes are VERY thick, almost like permanent marker",
-      size: "44-60px depending on title length",
+      strokeWidth: "8-12% of character height (e.g., 4-6px for a 48px letter)",
+      irregularity: "Slight variation in stroke weight — not perfectly uniform",
+      size: "44-56px depending on title length",
+      letterSpacing: "normal to tight (-0.5px)",
+      lineHeight: "1.05-1.15",
       color: "#111111 (near-black)",
       style: "Often ALL CAPS, sometimes with square brackets [TITLE]",
       multiColor: "In notebook templates, each word can be a different accent color",
@@ -43,22 +54,25 @@ export const GLOBAL_SPECS = {
     sectionHeader: {
       font: "Same heavy sans-serif but slightly smaller",
       weight: "800-900",
-      size: "18-24px",
+      size: "18-22px",
+      lineHeight: "1.2",
       colors: "Rotating through #C0392B, #2563EB, #4A8B35, #F5922A",
-      underline: "2px colored underline matching header color, always present",
+      underline: "2-2.5px colored underline matching header color, slightly wavy",
     },
     body: {
       font: "Handwritten casual (Caveat-like) — slightly irregular letter spacing",
       weight: "400-500",
-      size: "14-18px",
+      size: "14-17px",
+      lineHeight: "1.35-1.45",
       color: "#111111 to #333333",
-      feel: "Like written with a thin marker pen on paper",
+      feel: "Like written with a thin Sharpie marker on paper — not clean/digital",
     },
     footer: {
       text: "\"Follow Awa K Penn for more amazing AI content | Repost ↺\"",
       font: "Same handwritten style, bold",
-      size: "16-20px",
+      size: "18-24px",
       creatorName: "Blue #2563EB, bold, underlined",
+      decorativeArrows: "Curved arrows ↙ ↗ flanking footer text (notebook template)",
     },
   },
 
@@ -77,11 +91,20 @@ export const GLOBAL_SPECS = {
 
   // Yellow highlight usage (CRITICAL — measured across all references)
   yellowHighlight: {
-    inlineWords: "Yellow #FFEF5A flat background behind 3-5 KEY TERMS per infographic",
-    sectionBands: "Full-width yellow background bands used as section dividers/labels",
-    sectionBandText: "Black text, heavy bold, centered on yellow band",
+    inlineWords: {
+      color: "#FFEF5A",
+      shape: "Flat rectangular background — no rounded corners",
+      count: "3-5 key terms per infographic",
+      appearance: "Like a Stabilo Boss highlighter pen mark over the word",
+    },
+    sectionBands: {
+      color: "#FFEF5A background spanning full canvas width",
+      height: "36-42px per band",
+      textStyle: "Black #111111, heavy bold ALL CAPS, 20px, centered",
+      count: "2-4 bands per whiteboard infographic",
+      examples: "STRUCTURE YOUR PROMPT, FEATURES, SHOW AS (FORMAT), LEARN FROM CLAUDE",
+    },
     neverUsedAs: "Card background, border color, or decorative fill",
-    appearance: "Looks exactly like a physical Stabilo highlighter was dragged over the word",
   },
 
   // Content density (THE MOST CRITICAL SPEC)
@@ -128,9 +151,10 @@ export const WHITEBOARD_SPECS = {
   cornerClips: {
     present: true,
     count: 4,
-    position: "One at each corner of the canvas",
-    appearance: "Small dark gray/metallic rectangular clips (~12×18px)",
-    color: "#666666 to #888888",
+    position: "One at each corner, inset 6px from edge",
+    dimensions: "10px wide × 16px tall",
+    color: "#555555 (dark gray metal with slight 3D bevel)",
+    appearance: "Looks like real metallic whiteboard mounting clips",
   },
   border: "Very subtle 0.5px #e0e0e0 border around canvas edge",
   title: {
@@ -158,12 +182,14 @@ export const NOTEBOOK_SPECS = {
   spiralBinding: {
     present: true,
     position: "Top edge, spanning full width",
-    coilCount: 20,
-    coilShape: "Oval, ~36px wide × 26px tall",
-    coilColor: "Silver-gray #a39581",
-    coil3D: "Light side #c8c0b0, Shadow side #7a7060",
-    overlap: "Coils pass in front of AND behind paper edge (3D effect)",
-    heightPercent: 6, // top 6% of canvas
+    coilCount: "20-22 (measured from reference)",
+    coilShape: "Oval, 36px wide × 26px tall",
+    coilColor: "#a39581 (aged silver-gray metal)",
+    coil3DHighlight: "#c8c0b0 (top-left, catching light)",
+    coil3DShadow: "#7a7060 (bottom-right, in shadow)",
+    overlap: "Coils pass in front of AND behind paper edge — half visible above, half behind paper",
+    centerToCenter: "~49px spacing between coil centers (1080/22)",
+    heightPercent: 6, // top 6% of canvas (~70px on 1350px)
   },
   ruledLines: {
     present: true,
