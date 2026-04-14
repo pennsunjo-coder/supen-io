@@ -109,16 +109,12 @@ const plans = [
 ];
 
 const faqs = [
-  { q: "Is it really free to get started?", a: "Yes, the Free plan gives you 5 generations per day with no credit card. Try all features before upgrading to Pro." },
-  { q: "What languages does Supen.io generate content in?", a: "Supen.io generates content in French, English, or the language of your sources. The AI adapts automatically to your context." },
-  { q: "Is my data secure?", a: "Yes, all your data is encrypted and stored on Supabase (SOC 2 Type II). We never sell your data and you can delete it anytime." },
-  { q: "Can I use my own documents?", a: "Yes! Import PDFs, URLs, YouTube transcripts, or notes. The AI generates content based on YOUR sources via our semantic RAG system." },
-  { q: "How does viral scoring work?", a: "Claude Haiku analyzes each variation on 5 criteria: hook, emotion, specificity, actionability, CTA. Total score out of 100, strictly calibrated (most content = 50-65)." },
-  { q: "Is there a generation limit?", a: "Free plan: 5/day. Pro plan: unlimited + scoring + style memory. Business plan: everything in Pro + priority support + analytics." },
-  { q: "Can I cancel my subscription?", a: "Yes, anytime from your settings. No commitment, no hidden fees. Your plan stays active until the end of the paid period." },
-  { q: "Does it work for all platforms?", a: "Instagram, TikTok, LinkedIn, Facebook, YouTube, X (Twitter). Content is automatically adapted to each platform's format and tone." },
-  { q: "How does the AI Coach work?", a: "The Coach knows your niche, platforms, sources and preferred style. It improves with every interaction thanks to conversation memory." },
-  { q: "Does the content pass AI detectors?", a: "Yes. Our Anti-AI Protocol uses grade 5 writing level, varies sentence length, and adds natural imperfections. Result: undetectable by AI detectors." },
+  { q: "Does it really sound human?", a: "Yes. Supen.io uses advanced anti-AI protocols. No 'delve', no 'tapestry', no corporate jargon. Just clean, direct writing that sounds like you." },
+  { q: "Which platforms are supported?", a: "LinkedIn, Instagram, X (Twitter), TikTok, Facebook, and YouTube. Each platform gets its own optimized format and tone." },
+  { q: "How is this different from ChatGPT?", a: "ChatGPT gives you one generic answer. Supen.io gives you 5 variations with different angles, scores them for virality, and remembers your style over time." },
+  { q: "Can I generate infographics too?", a: "Yes. Every post can be turned into a shareable infographic in one click. Style inspired by viral educational content creators." },
+  { q: "Is my content private?", a: "Your content belongs to you. We never train our models on your data. Everything is encrypted and stored securely." },
+  { q: "What's the free plan?", a: "The free plan gives you access to content generation, the AI coach, and basic infographics. No credit card required to start." },
 ];
 
 const PlatformX = () => (

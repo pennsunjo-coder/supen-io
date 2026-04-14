@@ -692,7 +692,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
                   disabled={retryCountdown > 0}
                 >
                   <Sparkles className="w-5 h-5" />
-                  {retryCountdown > 0 ? `Retry in ${retryCountdown}s...` : "Generate infographic"}
+                  {retryCountdown > 0 ? `Retry in ${retryCountdown}s...` : `Generate ${styleChoice === "auto" ? templateSelection.templateId : styleChoice} infographic →`}
                 </Button>
               </div>
             )}

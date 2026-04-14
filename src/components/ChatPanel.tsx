@@ -42,17 +42,27 @@ function cleanAIResponse(text: string): string {
 function getSuggestions(profile: UserProfile | null, lastContent?: string): string[] {
   if (lastContent) {
     return [
-      "What do you think of my latest post?",
-      "How can I make my hook stronger?",
-      "Rewrite this for more engagement",
-      "What angle am I missing?",
+      "How can I improve this post?",
+      "What's the best time to post this?",
+      "How do I turn this into a series?",
+      "Rewrite the hook to be more punchy",
+    ];
+  }
+
+  const platform = profile?.platforms?.[0];
+  if (platform) {
+    return [
+      `What works best on ${platform} right now?`,
+      "Why aren't my posts getting engagement?",
+      "How do I find my content niche?",
+      `Give me 3 post ideas for ${platform}`,
     ];
   }
 
   return [
-    "How do I find my niche?",
-    "Why aren't my posts taking off?",
-    "How do I monetize my audience?",
+    "How do I find my content niche?",
+    "What platform should I focus on first?",
+    "How do I grow from 0 followers?",
     "I have 0 followers, where do I start?",
   ];
 }

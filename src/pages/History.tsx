@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useHistory, GeneratedItem } from "@/hooks/use-history";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
-  Copy, Check, Loader2, ChevronDown, Clock, Filter, RotateCcw,
+  Copy, Check, Loader2, ChevronDown, Clock, Filter, RotateCcw, Search,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -96,6 +97,15 @@ function HistoryCard({ item }: { item: GeneratedItem }) {
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          {(item as any).viral_score > 0 && (
+            <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded-full",
+              (item as any).viral_score >= 80 ? "bg-emerald-500/15 text-emerald-400" :
+              (item as any).viral_score >= 50 ? "bg-amber-500/15 text-amber-400" :
+              "bg-red-500/15 text-red-400"
+            )}>
+              {(item as any).viral_score}%
+            </span>
+          )}
           <span className="text-[10px] text-muted-foreground/50">{formatTime(item.created_at)}</span>
           <ChevronDown className={cn("w-3.5 h-3.5 text-muted-foreground/40 transition-transform", expanded && "rotate-180")} />
         </div>
@@ -158,15 +168,20 @@ function HistoryCard({ item }: { item: GeneratedItem }) {
 const History = () => {
   const { grouped, loading } = useHistory();
   const [filter, setFilter] = useState("All");
+  const [search, setSearch] = useState("");
 
   const filteredGroups = useMemo(
     () => grouped
       .map((group) => ({
         ...group,
-        items: filter === "All" ? group.items : group.items.filter((i) => i.platform === filter),
+        items: group.items.filter((i) => {
+          if (filter !== "All" && i.platform !== filter) return false;
+          if (search.trim() && !i.content.toLowerCase().includes(search.toLowerCase())) return false;
+          return true;
+        }),
       }))
       .filter((group) => group.items.length > 0),
-    [grouped, filter]
+    [grouped, filter, search]
   );
 
   const totalCount = useMemo(
@@ -190,6 +205,17 @@ const History = () => {
                 {loading ? "Loading..." : `${totalCount} item${totalCount > 1 ? "s" : ""} generated`}
               </p>
             </div>
+          </div>
+
+          {/* Search */}
+          <div className="relative mb-4">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/40" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search content..."
+              className="pl-9 h-9 text-sm bg-accent/20 border-border/20"
+            />
           </div>
 
           {/* Filters */}
