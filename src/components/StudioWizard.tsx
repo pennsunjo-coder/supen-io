@@ -1024,9 +1024,11 @@ Strict rules:
             {/* Cards — scrollable */}
             <div className="flex-1 overflow-y-auto px-5 py-4">
               <div className="max-w-lg mx-auto space-y-3">
+                {(() => { const bestIdx = variations.reduce((best, v, i) => v.score > variations[best].score ? i : best, 0); return null; })()}
                 {variations.map((v, idx) => {
                   const isSelected = selectedVariation === idx;
                   const angleColor = ANGLE_COLORS[v.angle] || "bg-accent/40 text-muted-foreground";
+                  const isBestScore = v.score > 0 && v.score === Math.max(...variations.map(x => x.score));
                   return (
                     <div key={idx}>
                       <motion.div
@@ -1039,6 +1041,7 @@ Strict rules:
                         {/* Header */}
                         <div className="flex items-center gap-2 mb-2.5">
                           <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded-full", angleColor)}>{v.angle}</span>
+                          {isBestScore && <span className="text-[9px] font-semibold text-amber-400">🔥 Top Pick</span>}
                           {isSelected && <span className="text-[9px] text-primary/70 flex items-center gap-0.5"><Check className="w-2.5 h-2.5" /> Selected</span>}
                           <span className="text-[10px] text-muted-foreground/50 ml-auto">{v.words} words</span>
                           <div className="flex items-center gap-1.5 group/score relative">

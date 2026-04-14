@@ -79,6 +79,9 @@ export default function Settings() {
   const [tone, setTone] = useState("educatif");
   const [length, setLength] = useState("medium");
   const [antiAi, setAntiAi] = useState(true);
+  const [contentFrequency, setContentFrequency] = useState("weekly");
+  const [targetAudience, setTargetAudience] = useState("");
+  const [contentGoals, setContentGoals] = useState<string[]>([]);
 
   // Danger zone
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -123,6 +126,9 @@ export default function Settings() {
       platforms,
       preferred_tone: tone,
       preferred_length: length,
+      content_frequency: contentFrequency,
+      target_audience: targetAudience,
+      content_goals: contentGoals,
     });
     setSaving(false);
     if (success) {
@@ -368,11 +374,41 @@ export default function Settings() {
                   </div>
                   <Switch checked={antiAi} onCheckedChange={setAntiAi} />
                 </div>
+
+                {/* Content frequency */}
+                <div className="py-3 border-t border-border/20">
+                  <p className="text-sm font-medium mb-2">Posting frequency</p>
+                  <div className="flex flex-wrap gap-2">
+                    {["daily", "weekly", "monthly"].map((freq) => (
+                      <button key={freq} onClick={() => setContentFrequency(freq)} className={cn("px-3 py-1.5 rounded-lg text-xs font-medium border transition-all", contentFrequency === freq ? "border-primary/50 bg-primary/10 text-foreground" : "border-border/30 text-muted-foreground hover:text-foreground")}>
+                        {freq.charAt(0).toUpperCase() + freq.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Target audience */}
+                <div className="py-3 border-t border-border/20">
+                  <p className="text-sm font-medium mb-2">Target audience</p>
+                  <Input value={targetAudience} onChange={(e) => setTargetAudience(e.target.value)} placeholder="e.g. SaaS founders, Gen Z creators, small business owners..." className="h-9 text-sm" />
+                </div>
+
+                {/* Content goals */}
+                <div className="py-3 border-t border-border/20">
+                  <p className="text-sm font-medium mb-2">Content goals</p>
+                  <div className="flex flex-wrap gap-2">
+                    {["followers", "engagement", "sales", "brand"].map((goal) => (
+                      <button key={goal} onClick={() => setContentGoals((prev) => prev.includes(goal) ? prev.filter((g) => g !== goal) : [...prev, goal])} className={cn("px-3 py-1.5 rounded-lg text-xs font-medium border transition-all", contentGoals.includes(goal) ? "border-primary/50 bg-primary/10 text-foreground" : "border-border/30 text-muted-foreground hover:text-foreground")}>
+                        {goal.charAt(0).toUpperCase() + goal.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
 
-              <p className="text-[11px] text-muted-foreground">
-                Language, tone and length preferences coming soon. Anti-AI Protocol is already active.
-              </p>
+              <Button onClick={handleSaveProfile} disabled={saving} className="w-full h-10 text-sm font-semibold gap-2">
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : justSaved ? <><Check className="w-4 h-4" /> Saved</> : "Save preferences"}
+              </Button>
             </>
           )}
 

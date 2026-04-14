@@ -6,7 +6,7 @@ import {
   Youtube, FileText, Globe, MessageSquare, Check, Star,
   ChevronDown, Twitter, Instagram, Linkedin, Mail,
   Layers, Target, PenTool, BarChart3, Users, Sun, Moon, Gift,
-  X as XIcon, Brain, TrendingUp, Clock, CreditCard,
+  X as XIcon, Brain, TrendingUp, Clock, CreditCard, CalendarDays,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
@@ -25,12 +25,12 @@ const fadeUp = {
 };
 
 const features = [
-  { icon: BookOpen, title: "Smart Notebook", desc: "Upload PDFs, URLs, YouTube links and notes. Everything centralized in one research hub." },
-  { icon: Wand2, title: "Content Studio", desc: "Generate platform-ready posts for X, LinkedIn, Instagram, YouTube and more — in one click." },
-  { icon: Shield, title: "Anti-AI Protocol", desc: "Content that passes AI detectors. Grade 5 reading level, zero jargon, 100% human tone." },
-  { icon: MessageSquare, title: "AI Chat Assistant", desc: "Brainstorm ideas, analyze sources, and get content suggestions powered by Claude." },
-  { icon: Youtube, title: "YouTube Transcriber", desc: "Paste a YouTube URL, get a clean transcript instantly. Perfect for repurposing video content." },
-  { icon: Layers, title: "One-Click Repurposing", desc: "Turn one piece of content into 6+ platform-ready posts. Blog → Thread → Carousel → Reel script." },
+  { icon: Sparkles, title: "5 variations instantly", desc: "One topic, five angles. Pick the best one and post." },
+  { icon: Globe, title: "Platform-optimized", desc: "LinkedIn, Instagram, X, TikTok. Each format nailed." },
+  { icon: Shield, title: "AI that sounds human", desc: "No AI smell. Real voice. Real engagement." },
+  { icon: Layers, title: "Infographic generator", desc: "Turn any post into a shareable visual in seconds." },
+  { icon: Brain, title: "Style memory", desc: "AI learns your voice. Gets better every generation." },
+  { icon: CalendarDays, title: "Content calendar", desc: "Plan, schedule, and never miss a posting day." },
 ];
 
 const steps = [
@@ -380,7 +380,7 @@ const Index = () => {
             viewport={{ once: true }} transition={{ duration: 0.5 }}
           >
             <span className="text-xs text-primary font-semibold uppercase tracking-widest">Features</span>
-            <h2 className="text-3xl md:text-4xl font-bold mt-3 mb-4">Everything you need to <span className="text-gradient">create & scale</span></h2>
+            <h2 className="text-3xl md:text-4xl font-bold mt-3 mb-4">Everything you need to <span className="text-gradient">go viral</span></h2>
             <p className="text-muted-foreground max-w-lg mx-auto">From research to publishing, Supen.io handles the entire content creation workflow.</p>
           </motion.div>
 

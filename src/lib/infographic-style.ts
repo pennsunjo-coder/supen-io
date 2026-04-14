@@ -113,16 +113,16 @@ export function selectBestTemplate(content: string, platform: string, forcedTemp
   const p = {
     hasNumberedList: /(\d+\.|①|②|③|étape|step|premier|first)/i.test(content),
     hasStats: /\d+[%km€$]|\d{4,}/i.test(content),
-    hasComparison: /\bvs\b|versus|contre|avant.*après|before.*after|plutôt|better than|bad.*good|good.*great|niveau|level|compare/i.test(content),
-    hasHowTo: /comment|how to|étape|step|guide|tutorial/i.test(content),
-    hasTips: /conseil|tip|astuce|hack|trick|secret/i.test(content),
+    hasComparison: /\bvs\b|versus|contre|avant.*après|before.*after|plutôt|better than|bad.*good|good.*great|niveau|level|compare|compared to/i.test(content),
+    hasHowTo: /comment|how to|étape|step|guide|tutorial|ways to|steps to/i.test(content),
+    hasTips: /conseil|tip|astuce|hack|trick|secret|mistakes?|ways |things /i.test(content),
     isTech: /\bai\b|tech|digital|code|app|software|chatgpt|claude|ia/i.test(content),
     isBusiness: /business|argent|money|revenue|vente|sale|entrepreneur/i.test(content),
     isMarketing: /marketing|contenu|content|viral|audience|engagement/i.test(content),
   };
 
-  const hasFunnel = /funnel|entonnoir|processus|parcours|roadmap|pipeline|conversion|tunnel|étapes? du/i.test(content);
-  const hasDataGrid = /framework|modèle|méthode|tableau|matrix|matrice|grille|glossaire|comparison detailed/i.test(content);
+  const hasFunnel = /funnel|entonnoir|processus|parcours|roadmap|pipeline|conversion|tunnel|étapes? du|journey|workflow/i.test(content);
+  const hasDataGrid = /framework|modèle|méthode|tableau|matrix|matrice|grille|glossaire|comparison detailed|data|statistics|survey|research/i.test(content);
 
   let templateId: string;
   let reason: string;
