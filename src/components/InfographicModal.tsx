@@ -469,19 +469,32 @@ export default function InfographicModal({ open, onClose, content, platform, con
     try {
       const imgData = `data:image/png;base64,${imageBase64}`;
       const ratio = dims.height / dims.width;
-
-      const { jsPDF } = await import("jspdf");
       const pdfW = 210;
       const pdfH = Math.round(pdfW * ratio);
-      const pdf = new jsPDF({
-        orientation: ratio > 1 ? "portrait" : "landscape",
-        unit: "mm",
-        format: [pdfW, pdfH],
-        compress: true,
-      });
-      pdf.addImage(imgData, "PNG", 0, 0, pdfW, pdfH, "", "FAST");
-      pdf.save(`supen-infographic-${Date.now()}.pdf`);
-      toast.success("PDF downloaded!");
+
+      try {
+        const { jsPDF } = await import("jspdf");
+        const pdf = new jsPDF({
+          orientation: ratio > 1 ? "portrait" : "landscape",
+          unit: "mm",
+          format: [pdfW, pdfH],
+          compress: true,
+        });
+        pdf.addImage(imgData, "PNG", 0, 0, pdfW, pdfH, "", "FAST");
+        pdf.save(`supen-infographic-${Date.now()}.pdf`);
+        toast.success("PDF downloaded!");
+      } catch {
+        // Fallback: print dialog
+        const win = window.open("", "_blank");
+        if (!win) {
+          toast.error("Allow popups for PDF download");
+          setDownloading(false);
+          return;
+        }
+        win.document.write(`<!DOCTYPE html><html><head><style>*{margin:0;padding:0}body{background:white}img{width:100%;height:auto;display:block}@page{margin:0}@media print{body{margin:0}}</style></head><body><img src="${imgData}"/><script>window.onload=function(){setTimeout(function(){window.print();setTimeout(function(){window.close()},1000)},500)};<\/script></body></html>`);
+        win.document.close();
+        toast.success("Print dialog → Save as PDF");
+      }
     } catch (err) {
       console.error("[InfographicModal] PDF error:", err);
       toast.error("PDF failed — use PNG instead");

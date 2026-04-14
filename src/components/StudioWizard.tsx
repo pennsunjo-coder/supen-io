@@ -361,7 +361,20 @@ Strict rules:
 7. No markdown (no bold, no italic, no headings) unless the format requires it.
 8. Adapt tone and length to ${selectedPlatform.name} + ${selectedFormat}.
 9. Respond ONLY with the 5 variations separated by ---VARIATION---. Nothing else.
-10. Write ALL content in ENGLISH only.${docInstruction}`;
+10. Write ALL content in ENGLISH only.${docInstruction}
+
+## SECTION 5 — VIRAL CONTENT RULES
+- Hook in the first 3 words — make them stop scrolling
+- Use specific numbers (not "many" but "73%")
+- One clear emotion per post: curiosity, surprise, admiration, or controversy
+- End with an engagement trigger: a question or a bold statement
+- Write like a human, not a content machine
+- Reference real situations, not abstract concepts
+- Short sentences. Max 15 words per sentence.
+- Never start with "I" — start with action or insight
+- Never use: "In today's world", "game changer", "leverage", "optimize", "synergy"
+- No bullet points unless explicitly requested by the user
+- No hashtags unless explicitly requested by the user`;
 
       assertOnline();
       if (!isAnthropicConfigured()) {
