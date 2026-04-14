@@ -257,7 +257,7 @@ const Index = () => {
           <motion.h1 variants={fadeUp} custom={1}
             className="text-5xl md:text-6xl lg:text-7xl leading-[1.05] mb-6 tracking-display"
           >
-            <span className="font-light">Create Content That Goes</span>
+            <span className="font-light">Your Content Deserves to Go</span>
             <br />
             <span className="inline-block overflow-hidden align-bottom font-bold" style={{ minWidth: "6ch", height: "1.15em" }}>
               <AnimatePresence mode="wait">
@@ -279,12 +279,12 @@ const Index = () => {
           <motion.p variants={fadeUp} custom={2}
             className="text-sm md:text-base text-muted-foreground mb-10 max-w-lg mx-auto leading-relaxed font-light"
           >
-            The all-in-one workspace for content creators. Centralize your research, generate platform-ready posts that actually sound human.
+            Stop spending 2 hours on a single post. Generate 5 viral variations in 30 seconds — for LinkedIn, Instagram, TikTok, X, YouTube & Facebook.
           </motion.p>
 
           <motion.div variants={fadeUp} custom={3} className="flex gap-3 justify-center flex-wrap">
             <Button size="lg" onClick={() => navigate("/login")} className="bg-foreground text-background hover:bg-foreground/90 h-11 px-7 text-sm font-medium rounded-lg group">
-              Get started free
+              Start Creating Free
               <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-0.5 transition-transform" />
             </Button>
             <Button size="lg" variant="outline" onClick={() => navigate("/login")} className="bg-foreground/[0.06] border-foreground/10 hover:bg-foreground/10 text-foreground h-11 px-7 text-sm rounded-lg">
@@ -298,6 +298,9 @@ const Index = () => {
             <span className="flex items-center gap-1.5"><CreditCard className="w-3 h-3 text-emerald-500" /> No credit card required</span>
             <span className="flex items-center gap-1.5"><Clock className="w-3 h-3 text-emerald-500" /> Results in 60 seconds</span>
           </motion.div>
+          <motion.p variants={fadeUp} custom={5} className="mt-4 text-xs text-muted-foreground/60 font-medium">
+            Join 2,400+ creators already using Supen.io
+          </motion.p>
 
           {/* Marquee */}
           <motion.div variants={fadeUp} custom={4} className="mt-16 overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_20%,black_80%,transparent)]">

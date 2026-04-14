@@ -176,8 +176,15 @@ export function useDashboard() {
       }
 
       if (topData && topData.length > 0) {
-        setTopContent(topData);
-        setSessions(groupIntoSessions(topData).slice(0, 10));
+        // Filter out empty, too-short, and raw HTML content
+        const cleaned = topData.filter((item) => {
+          if (!item.content || item.content.trim().length < 20) return false;
+          if (isInfographicHtml(item.content)) return false;
+          if (/^<[a-z]/.test(item.content.trim())) return false;
+          return true;
+        });
+        setTopContent(cleaned);
+        setSessions(groupIntoSessions(cleaned).slice(0, 10));
       } else {
         setTopContent([]);
         setSessions([]);

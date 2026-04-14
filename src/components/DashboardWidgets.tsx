@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -12,6 +12,57 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import type { DashboardContent, ContentSession } from "@/hooks/use-dashboard";
 import InfographicModal from "@/components/InfographicModal";
+
+/* ─── Motivation + Quick Tips ─── */
+
+function getMotivation(): string {
+  const h = new Date().getHours();
+  if (h >= 6 && h < 12) return "Good morning! Ready to create?";
+  if (h >= 12 && h < 18) return "Afternoon grind. Keep going!";
+  if (h >= 18 && h < 24) return "Evening session. Creators never stop.";
+  return "Late night creator. Respect.";
+}
+
+const QUICK_TIPS = [
+  "Hook in the first 3 words. Make them stop scrolling.",
+  "Use specific numbers — \"73%\" beats \"most people\" every time.",
+  "End with a question. Engagement doubles when you ask.",
+  "One emotion per post. Curiosity works best on LinkedIn.",
+  "Short sentences. Max 15 words. Punch harder.",
+  "Never start with \"I\" — start with action or insight.",
+  "Post at 8am or 6pm. That's when your audience scrolls.",
+];
+
+export function MotivationWidget({ firstName }: { firstName?: string }) {
+  const [tipIdx, setTipIdx] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTipIdx((prev) => (prev + 1) % QUICK_TIPS.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="px-5 py-4 border-b border-border/10">
+      <p className="text-sm font-semibold text-foreground mb-1">
+        {firstName ? `Hey ${firstName}!` : "Hey!"} {getMotivation()}
+      </p>
+      <AnimatePresence mode="wait">
+        <motion.p
+          key={tipIdx}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.25 }}
+          className="text-[11px] text-primary/70 leading-relaxed"
+        >
+          💡 {QUICK_TIPS[tipIdx]}
+        </motion.p>
+      </AnimatePresence>
+    </div>
+  );
+}
 
 /* ─── Helpers ─── */
 

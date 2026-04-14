@@ -88,7 +88,7 @@ export default function Settings() {
   const currentPlan = (profile?.plan || "free") as Plan;
   const planActive = isPlanActive(profile?.plan, profile?.plan_expires_at);
 
-  async function handleUpgrade(plan: "pro" | "business") {
+  async function handleUpgrade(plan: "plus" | "pro") {
     if (!user) return;
     setUpgrading(plan);
     try {
@@ -121,6 +121,8 @@ export default function Settings() {
       first_name: firstName,
       niche,
       platforms,
+      preferred_tone: tone,
+      preferred_length: length,
     });
     setSaving(false);
     if (success) {
@@ -414,9 +416,9 @@ export default function Settings() {
                         </Button>
                       ) : planId !== "free" ? (
                         <Button
-                          onClick={() => handleUpgrade(planId as "pro" | "business")}
+                          onClick={() => handleUpgrade(planId as "plus" | "pro")}
                           disabled={!!upgrading}
-                          className={cn("w-full h-9 text-xs gap-1.5 font-semibold", planId === "business" && "bg-amber-500 hover:bg-amber-600 text-white")}
+                          className={cn("w-full h-9 text-xs gap-1.5 font-semibold", planId === "pro" && "bg-amber-500 hover:bg-amber-600 text-white")}
                         >
                           {upgrading === planId ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Crown className="w-3.5 h-3.5" />}
                           {upgrading === planId ? "Redirecting..." : `Upgrade to ${config.name}`}
