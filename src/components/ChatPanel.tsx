@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Send, Bot, User, Loader2, Trash2, Sparkles, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { anthropic, CLAUDE_MODEL, SYSTEM_PROMPT, isAnthropicConfigured } from "@/lib/anthropic";
+import { anthropic, CLAUDE_MODEL, isAnthropicConfigured } from "@/lib/anthropic";
 import type { MessageParam } from "@anthropic-ai/sdk/resources/messages";
 import { sanitizeInput, createRateLimiter } from "@/lib/security";
 import { assertOnline, friendlyError } from "@/lib/resilience";
@@ -18,41 +18,43 @@ const RATE_LIMIT_MAX = 10;
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const MAX_PERSISTED_MESSAGES = 10;
 
-// ─── Contextual suggestions ───
+// ─── Strip all markdown formatting from AI responses ───
+
+function cleanAIResponse(text: string): string {
+  return text
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/\*([^*]+)\*/g, "$1")
+    .replace(/__([^_]+)__/g, "$1")
+    .replace(/_([^_]+)_/g, "$1")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/^\s*[-*+]\s+/gm, "")
+    .replace(/^\s*\d+\.\s+/gm, "")
+    .replace(/```[\s\S]*?```/g, "")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/^---+$/gm, "")
+    .replace(/^===+$/gm, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+// ─── Contextual suggestions (human-sounding) ───
 
 function getSuggestions(profile: UserProfile | null, lastContent?: string): string[] {
-  const niche = profile?.niche || "";
-  const platforms = profile?.platforms || [];
-  const suggestions: string[] = [];
-
   if (lastContent) {
-    suggestions.push("Analyze my latest generated content");
-    suggestions.push("How can I improve my hook?");
+    return [
+      "What do you think of my latest post?",
+      "How can I make my hook stronger?",
+      "Rewrite this for more engagement",
+      "What angle am I missing?",
+    ];
   }
 
-  if (niche.includes("Marketing")) {
-    suggestions.push("3 viral hooks for digital marketing");
-    suggestions.push("How to increase my engagement?");
-  } else if (niche.includes("Tech") || niche.includes("IA")) {
-    suggestions.push("Which formats work best in Tech?");
-    suggestions.push("How to simplify a technical concept?");
-  } else if (niche.includes("Business") || niche.includes("Entrepreneur")) {
-    suggestions.push("Share my expertise without sounding pretentious");
-    suggestions.push("Best hooks for LinkedIn");
-  } else if (niche.includes("Finance")) {
-    suggestions.push("How to make finance accessible?");
-    suggestions.push("Hooks for finance content");
-  } else {
-    suggestions.push(`Best practices for ${platforms[0] || "Instagram"}`);
-    suggestions.push("How to find content ideas?");
-  }
-
-  if (!lastContent) {
-    suggestions.push("Summarize my sources");
-    suggestions.push("Generate viral hooks");
-  }
-
-  return suggestions.slice(0, 4);
+  return [
+    "How do I find my niche?",
+    "Why aren't my posts taking off?",
+    "How do I monetize my audience?",
+    "I have 0 followers, where do I start?",
+  ];
 }
 
 // ─── Enriched system prompt ───
@@ -63,43 +65,72 @@ function buildCoachPrompt(
   lastContent?: string,
   styleMemory?: string,
 ): string {
-  const firstName = profile?.first_name || "this creator";
-  const niche = profile?.niche || "Not specified";
-  const platforms = profile?.platforms?.join(", ") || "Not specified";
+  const firstName = profile?.first_name || "";
+  const niche = profile?.niche || "";
+  const platforms = profile?.platforms?.join(", ") || "";
 
-  let prompt = `You are the personal AI Coach of ${firstName}.
-${SYSTEM_PROMPT}
+  const userContext = profile ? `
+USER CONTEXT:
+${firstName ? `Name: ${firstName}` : ""}
+${niche ? `Niche: ${niche}` : ""}
+${platforms ? `Main platforms: ${platforms}` : ""}
 
-## USER PROFILE
-Name: ${firstName}
-Niche: ${niche}
-Platforms: ${platforms}
+Adapt your advice to this specific profile.
+Don't speak generically — talk about THEIR niche, THEIR platform, THEIR goals.
+` : "";
 
-## YOUR ROLE
-You are a supportive, direct, and expert coach.
-You know the trends, algorithms, and what performs well.
-You propose concrete and actionable improvements.
-You adapt to the user's level and style.
+  let prompt = `You are an expert business coach who mentors content creators and entrepreneurs.
+You talk like a friend who has experience — direct, warm, sometimes blunt.
 
-## SPECIFIC INSTRUCTIONS
-1. ALWAYS respond in ENGLISH only
-2. Be direct and concise — max 150 words per response
-3. Propose concrete examples tailored to the ${niche} niche
-4. If you see the last generated content, analyze it and propose improvements
-5. Ask ONE relevant follow-up question at the end of each response
-6. Adapt your advice to these platforms: ${platforms}`;
+${userContext}
+
+ABSOLUTE RULES:
+- ALWAYS respond in ENGLISH only
+- Never use asterisks, never bold, never italic, never markdown formatting of any kind
+- Never use dashes or bullets for lists — use flowing sentences instead
+- Never use numbered lists 1. 2. 3. — weave points into the text naturally
+- Never use headers or titles
+- No "Sure!", "Absolutely!", "Great question!", "Of course!"
+- No "As an AI..." or any reference to being an AI
+- No "It's important to note that..."
+- No "Feel free to..." or "Don't hesitate to..."
+- No excessive politeness or corporate speak
+
+STYLE:
+- Short sentences. Maximum 2-3 lines per paragraph.
+- Use "you" (second person) — talk directly to the person
+- Be direct. Get to the point.
+- Give concrete and specific examples
+- When giving advice, give 1 or 2 really good ones — not a generic list of 10
+- Sometimes end with a short question to engage
+- Tone: supportive mentor but straight-talking
+- Max 120 words per response. Shorter is better.
+
+BANNED WORDS AND PHRASES:
+"global strategy", "holistic approach", "optimize", "maximize", "synergies",
+"quality content", "added value", "it is essential to", "first of all",
+"secondly", "leverage", "streamline", "cutting-edge", "game-changer",
+"take it to the next level"
+
+EXAMPLE BAD RESPONSE (never produce this):
+"Here are the 5 key steps to optimize your strategy:
+**Step 1:** Define your objectives
+**Step 2:** Create content..."
+
+EXAMPLE GOOD RESPONSE:
+"Honestly, your problem isn't the content. It's that you're posting without really knowing who you're talking to. Who's the one person who needs to see you tomorrow morning?"`;
 
   if (sources.length > 0) {
-    prompt += `\n\n## AVAILABLE SOURCES (${sources.length})`;
+    prompt += `\n\nSOURCES AVAILABLE (${sources.length}):`;
     for (const source of sources.slice(0, 5)) {
       const typeLabel = source.type === "url" ? "Link" : source.type === "pdf" ? "PDF" : "Note";
-      prompt += `\n### [${typeLabel}] ${source.title}\n${(source.content || "").slice(0, 2000)}\n`;
+      prompt += `\n[${typeLabel}] ${source.title}: ${(source.content || "").slice(0, 1500)}`;
     }
-    prompt += "\nUse these sources to respond. Cite them when relevant.";
+    prompt += "\nUse these sources when relevant. Don't list them — weave them into your answer.";
   }
 
   if (lastContent) {
-    prompt += `\n\n## LAST GENERATED CONTENT\n${lastContent.slice(0, 1500)}\n\nHelp improve it, rephrase it, find a better hook, or adjust the tone.`;
+    prompt += `\n\nLATEST POST BY THE USER:\n${lastContent.slice(0, 1500)}\n\nGive specific feedback. What works, what doesn't, how to fix it. No fluff.`;
   }
 
   if (styleMemory) {
@@ -218,8 +249,9 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
       let fullResponse = "";
       stream.on("text", (t) => { fullResponse += t; setStreamingContent(fullResponse); });
       await stream.finalMessage();
+      const cleaned = cleanAIResponse(fullResponse);
       setStreamingContent("");
-      onMessagesChange((prev) => [...prev, { role: "assistant", content: fullResponse }]);
+      onMessagesChange((prev) => [...prev, { role: "assistant", content: cleaned }]);
     } catch (err: unknown) {
       if (err instanceof Error && err.name === "AbortError") return;
       setStreamingContent("");
