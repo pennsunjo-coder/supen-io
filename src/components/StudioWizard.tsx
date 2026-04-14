@@ -916,12 +916,33 @@ Strict rules:
 
                       {/* IDEA MODE — textarea */}
                       {sourceMode === "idea" && (
-                        <Textarea value={sourceText} onChange={(e) => setSourceText(e.target.value)} placeholder={sourceModes.find((m) => m.id === sourceMode)?.placeholder} maxLength={5000} className="bg-accent/20 border-border/30 min-h-[120px] resize-none text-sm" />
+                        <div>
+                          <Textarea value={sourceText} onChange={(e) => setSourceText(e.target.value)} placeholder={sourceModes.find((m) => m.id === sourceMode)?.placeholder} maxLength={5000} className="bg-accent/20 border-border/30 min-h-[120px] resize-none text-sm" />
+                          <div className="flex items-center justify-between mt-1.5">
+                            <span className={cn("text-[10px] font-mono", sourceText.length < 150 ? "text-emerald-400/60" : sourceText.length < 200 ? "text-amber-400/60" : "text-red-400/60")}>
+                              {sourceText.length} chars
+                            </span>
+                          </div>
+                          {!sourceText.trim() && (
+                            <div className="flex flex-wrap gap-1.5 mt-2">
+                              {["How I grew my LinkedIn from 0 to 10K", "3 mistakes beginners make on Instagram", "Why most content fails (and how to fix it)", "The truth about going viral in 2026", "My morning routine as a content creator"].map((ex) => (
+                                <button key={ex} type="button" onClick={() => setSourceText(ex)} className="text-[10px] px-2.5 py-1 rounded-full bg-accent/20 border border-border/20 text-muted-foreground/60 hover:text-foreground hover:bg-accent/40 transition-all">
+                                  {ex}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       )}
 
                       {/* KEYWORD MODE — input */}
                       {sourceMode === "keyword" && (
-                        <Input value={sourceText} onChange={(e) => setSourceText(e.target.value)} placeholder={sourceModes.find((m) => m.id === sourceMode)?.placeholder} maxLength={200} className="bg-accent/20 border-border/30 h-11 text-sm" onKeyDown={(e) => e.key === "Enter" && sourceText.trim() && handleGenerate()} />
+                        <div>
+                          <Input value={sourceText} onChange={(e) => setSourceText(e.target.value)} placeholder={sourceModes.find((m) => m.id === sourceMode)?.placeholder} maxLength={200} className="bg-accent/20 border-border/30 h-11 text-sm" onKeyDown={(e) => e.key === "Enter" && sourceText.trim() && handleGenerate()} />
+                          <span className={cn("text-[10px] font-mono mt-1 block", sourceText.length < 150 ? "text-emerald-400/60" : sourceText.length < 200 ? "text-amber-400/60" : "text-red-400/60")}>
+                            {sourceText.length}/200
+                          </span>
+                        </div>
                       )}
 
                       {/* Hook suggestions for idea/keyword modes */}
@@ -985,6 +1006,18 @@ Strict rules:
                   <span className="text-xs font-semibold">{variations.length} variations</span>
                   <span className="text-[11px] text-muted-foreground ml-2">{breadcrumb}</span>
                 </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-[11px] gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
+                  onClick={() => {
+                    const all = variations.map((v, i) => `--- Variation ${i + 1} ---\n${v.content}`).join("\n\n");
+                    navigator.clipboard.writeText(all);
+                    toast.success("All variations copied!");
+                  }}
+                >
+                  <Copy className="w-3 h-3" /> Copy All
+                </Button>
               </div>
             </div>
 

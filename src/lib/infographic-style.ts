@@ -1188,6 +1188,20 @@ FINAL QUALITY GATE — VERIFY EVERY ITEM BEFORE OUTPUTTING
 [✓] NO emojis — only hand-drawn doodle icons
 [✓] Looks like hand-crafted study notes, NOT corporate design
 
+FINAL INSTRUCTIONS:
+1. The image must look like it was created by a human designer, not AI
+2. Every text element must be fully readable — no blurry or cut-off text
+3. No text should be cut off at the edges of the canvas
+4. The overall composition must feel balanced and intentional
+5. Use the exact content provided — do not invent or summarize differently
+6. The style must match EXACTLY the Awa K Penn references described above
+
+ANTI-GENERIC CHECKLIST (fix before outputting):
+- Is the title font extremely bold (weight 900+)? If not → make it bolder
+- Does the background have a paper texture? If not → add subtle grain
+- Are there at least 3 yellow highlights on key terms? If not → add them
+- Is the canvas 80%+ filled with content? If not → add more detail
+
 Generate the image now.`;
 }
 
