@@ -567,133 +567,312 @@ RAPPEL FINAL :
 - All visible text must be in ENGLISH`;
 }
 
-// ─── Gemini prompt builder ───
+// ─── Gemini Image prompt builder (Awa K Penn forensic style) ───
 
-interface TemplateStyleGuide {
-  vibe: string;
-  background: string;
-  layout: string;
-  typography: string;
-  colors: string;
-  structure: string;
-}
+const GEMINI_UNIVERSAL_STYLE_CONTEXT = `
+STYLE CONTEXT — THIS IS THE MOST IMPORTANT INSTRUCTION:
 
-const TEMPLATE_STYLE_GUIDES: Record<string, TemplateStyleGuide> = {
-  UI_CARDS: {
-    vibe: "Clean 3-tier comparison. Awa K Penn study notes aesthetic. Approachable, hand-crafted feel.",
-    background: "#f8f9f7 off-white. NO heavy borders, NO frames.",
-    layout: "Centered Nunito 900 title. 3 stacked cards (Avoid/Better/Best). Each card: border-left 5px colored accent + icon + Nunito title + Caveat body. Footer with Repost CTA.",
-    typography: "Nunito 900 for title 48-52px. Nunito 800 for card titles 26px. Caveat 400 for body 19px. Yellow #E8F044 inline highlights.",
-    colors: "Card 1 red: bg #fff5f5, border #c0392b. Card 2 orange: bg #fffbf0, border #F5922A. Card 3 green: bg #f2faf0, border #4A8B35. Badge: #111111. Highlights: #E8F044.",
-    structure: "Strict 3-tier comparison. Card 1 = bad (red ✗). Card 2 = okay (orange ~). Card 3 = best (green ✓). 25-30 words per card body MAX.",
-  },
-  WHITEBOARD: {
-    vibe: "Hand-crafted whiteboard bulletin. Paper clips at corners. LinkedIn educator energy. Study notes aesthetic.",
-    background: "#f8f9f7 with paper grain 2-3% opacity. 1px #dddddd border. Corner clips #aaaaaa.",
-    layout: "Top: Nunito 900 title + #c0392b underline. 7 numbered sections with colored left borders alternating #c0392b/#2B4DAF/#4A8B35. Circled numbers. Footer: Nunito Bold.",
-    typography: "Nunito 900 titles 48px. Section headers Nunito 800 22px, colored. Body Caveat 400 18-20px #111111. Colored underlines under each header.",
-    colors: "Borders: #c0392b, #2B4DAF, #4A8B35 rotating. Highlights: #E8F044 inline. Number circles: 2px #1a1a1a border. Gray separator: #e0e0e0.",
-    structure: "7 bullet list items. Each: circled number + colored Nunito header + Caveat body. ONE keyword per section gets #E8F044 highlight.",
-  },
-  FUNNEL: {
-    vibe: "Process flow funnel. Progressive narrowing stages. Warm ivory background. Hand-drawn energy.",
-    background: "#fffef5 warm ivory. No heavy border.",
-    layout: "Nunito 900 title centered. 5 progressively narrower stages (100%→46%). Number circles white on colored bg. ▼ arrows between stages. Footer CTA.",
-    typography: "Nunito 900 title 48-56px. Stage titles Nunito 800 22px. Body Caveat 400 16-18px. Colored underlines per stage.",
-    colors: "Stage 1: #c0392b. Stage 2: #F5922A. Stage 3: #EAB308. Stage 4: #4A8B35. Stage 5: #2B4DAF. Highlights: #E8F044. Arrows: #c0392b.",
-    structure: "5 sequential stages filtering down. Stage 1 = widest (entry). Stage 5 = narrowest (goal). 2-4 word title + 12-18 word body per stage.",
-  },
-  DATA_GRID: {
-    vibe: "Framework reference table. Knowledge worker study card. Clean structured data.",
-    background: "#f8f9f7 off-white. No heavy borders.",
-    layout: "Nunito 900 title + #E8F044 keyword highlight. 4-row × 3-column table (Concept/Description/Best For). Colored dots per row. Key Takeaway box with #c0392b border-left.",
-    typography: "Nunito 900 title 44px. Header Nunito 900 13px uppercase. Cell names Nunito 800 16px. Descriptions Caveat 400 18px. Use cases Nunito 700 14px #4A8B35.",
-    colors: "Header columns: #c0392b/#2B4DAF/#4A8B35. Row dots: #c0392b/#F5922A/#4A8B35/#2B4DAF. Highlights: #E8F044. Tip: #c0392b border, #fffdf0 bg.",
-    structure: "4-row table. Column 1 = concept name (2-4 words). Column 2 = description (Caveat, one bold keyword). Column 3 = use case. Bottom tip box = key takeaway.",
-  },
-  AWA_CLASSIC: {
-    vibe: "Awa K Penn dense guide. Wood-framed sketchboard. Cream paper. Save-worthy viral content.",
-    background: "#ffffff with #3d2b1a wood frame border 28px. Off-white header #f8f8f8.",
-    layout: "Dark badge pill + UPPERCASE Nunito 900 title. 7 numbered sections with colored rounded squares. Dark footer band #1a1a1a with light text.",
-    typography: "Nunito 900 title 46px uppercase. Section headers Nunito 800 21px. Body Caveat 400 16px. Colored underlines. #E8F044 highlights.",
-    colors: "Numbers: #c0392b, #2B4DAF, #4A8B35, #F5922A, #8B5CF6, #EC4899, #0D9488. Frame: #3d2b1a. Badge: #3d2b1a. Highlights: #E8F044.",
-    structure: "7 dense sections. Each: colored rounded number + Nunito header + colored underline + Caveat body. Footer: dark band, white text, blue/green accents.",
-  },
-};
+You are generating a viral educational infographic image for social media.
+The EXACT style to replicate is "Awa K Penn" — a popular educational
+content creator whose infographics look like hand-crafted whiteboard notes.
 
-// Build the per-template "CONTENU À INTÉGRER" structure that maps each
-// extracted point to its visual block + pastel color (per the meta-prompt palette).
-function buildContenuAIntegrer(templateId: string, extraction: ExtractionResult): string {
-  const points = extraction.points;
-  const get = (i: number, field: "title" | "body"): string =>
-    points[i]?.[field] || "(à inférer du contenu source)";
-  const lines: string[] = [`Titre : ${(extraction.title || "TITRE PRINCIPAL").toUpperCase()}`];
+MANDATORY VISUAL RULES — VIOLATING ANY OF THESE = FAILURE:
 
+1. FONTS (critical):
+   - Titles/headers: Nunito ExtraBold weight 900 — extremely bold, thick strokes
+   - Body text: Caveat — handwritten, slightly irregular, casual marker-pen feel
+   - These 2 fonts ONLY. No Arial, no Helvetica, no system fonts.
+
+2. BACKGROUND: #f8f9f7 (slightly cool off-white, like a real whiteboard)
+   NEVER pure white #ffffff
+   NEVER dark backgrounds
+   Add subtle 2% paper grain texture
+
+3. COLORS — USE ONLY THESE EXACT HEX VALUES:
+   - Red: #C0392B (warm brownish red)
+   - Blue: #2563EB (medium confident blue)
+   - Green: #4A8B35 (natural forest green)
+   - Orange: #F5922A (warm tangerine)
+   - Yellow #FFEF5A: ONLY as inline text highlighter behind specific words
+     like a real Stabilo marker — flat, no border-radius, never as card color
+
+4. VISUAL SIGNATURE ELEMENTS (all must be present):
+   - Whiteboard templates: 4 small dark gray clips at each corner (12×18px)
+   - Notebook templates: metallic spiral binding at top (20 silver coils, 3D)
+   - Notebook templates: red vertical margin line at x=72px
+   - Notebook templates: light blue horizontal ruled lines every 34px
+   - Numbers in hand-drawn oval/circle badges (stroke style, not CSS)
+   - Colored underlines under ALL section headers (2px, accent color)
+   - Yellow #FFEF5A highlights on KEY TERMS inline
+   - ✓ checkmarks in red #C0392B
+   - → arrows between connected elements
+   - Circled numbers ①②③④⑤⑥ for ordered lists
+
+5. DENSITY: Pack content densely. Every infographic needs:
+   - Minimum 5 distinct sections/points
+   - At least 2-3 bullet points per section
+   - Yellow highlights on 3-5 key terms
+   - Footer: "Follow [creator] for more | Repost ↺"
+
+6. NEVER USE:
+   - Gradients on text
+   - Dark section cards or dark backgrounds
+   - More than 4 accent colors
+   - Clean modern corporate slide aesthetic
+   - Empty whitespace (fill the canvas)
+   - Pale washed-out colors (use saturated, confident colors)
+`;
+
+function getGeminiTemplatePrompt(
+  templateId: string,
+  extraction: ExtractionResult,
+  dims: { width: number; height: number },
+): string {
   switch (templateId) {
-    case "UI_CARDS":
-      lines.push(`Bloc 1 — carte « Mauvais » (Rouge pastel #FFB3B3) : ${get(0, "title")} — ${get(0, "body")}`);
-      lines.push(`Bloc 2 — carte « Bon » (Orange pastel #FFD4A3) : ${get(1, "title")} — ${get(1, "body")}`);
-      lines.push(`Bloc 3 — carte « Excellent / ★ Cible » (Vert pastel #B3FFD1) : ${get(2, "title")} — ${get(2, "body")}`);
-      lines.push(`Bloc 4 — sidebar « Pourquoi ça marche » (Vert pastel) : 4 raisons cochées — ${get(3, "body")} • ${get(4, "body")} • ${get(5, "body")} • ${get(6, "body")}`);
-      break;
-    case "WHITEBOARD": {
-      const wbColors = [
-        "Bleu pastel #AEC6CF",
-        "Rouge pastel #FFB3B3",
-        "Vert pastel #B3FFD1",
-        "Bleu pastel #AEC6CF",
-        "Rouge pastel #FFB3B3",
-        "Vert pastel #B3FFD1",
-        "Bleu pastel #AEC6CF",
-      ];
-      for (let i = 0; i < 7; i++) {
-        lines.push(`Bloc ${i + 1} — conseil/étape (${wbColors[i]}) : ${get(i, "title")} — ${get(i, "body")}`);
-      }
-      lines.push(`Astuce pro (Orange pastel #FFD4A3, dashed border) : ${extraction.proTip}`);
-      break;
-    }
-    case "FUNNEL": {
-      const fnColors = [
-        "Rouge pastel #FFB3B3 (étage le plus large)",
-        "Orange pastel #FFD4A3",
-        "Jaune pastel #FFE9A3",
-        "Vert pastel #B3FFD1",
-        "Bleu pastel #AEC6CF (étage le plus étroit)",
-      ];
-      for (let i = 0; i < 5; i++) {
-        lines.push(`Étage ${i + 1} (${fnColors[i]}) : ${get(i, "title")} — ${get(i, "body")}`);
-      }
-      lines.push(`CTA pleine largeur (Brand Supen #24A89B) : ${get(5, "title") || "Tu y es presque"} — ${extraction.proTip}`);
-      break;
-    }
-    case "DATA_GRID": {
-      const dgColors = [
-        "Rouge pastel #FFB3B3",
-        "Orange pastel #FFD4A3",
-        "Vert pastel #B3FFD1",
-        "Violet pastel #D4B3FF",
-      ];
-      const useCases = [get(4, "title"), get(4, "body"), get(5, "title"), get(5, "body")];
-      for (let i = 0; i < 4; i++) {
-        lines.push(`Ligne ${i + 1} (dot ${dgColors[i]}) : ${get(i, "title")} — ${get(i, "body")} | Idéal pour : ${useCases[i]}`);
-      }
-      lines.push(`Bonus (Bleu pastel #AEC6CF) : ${get(6, "title")}`);
-      lines.push(`À noter (Violet pastel #D4B3FF) : ${get(6, "body")}`);
-      lines.push(`À retenir (Brand Supen #24A89B) : ${extraction.proTip}`);
-      break;
-    }
-    case "AWA_CLASSIC":
-    default: {
-      const awaColors = ["Rouge", "Bleu", "Vert", "Orange", "Violet", "Rose", "Teal"];
-      for (let i = 0; i < 7; i++) {
-        lines.push(`Section ${i + 1} (${awaColors[i]}) : ${get(i, "title")} — ${get(i, "body")}`);
-      }
-      lines.push(`Pro tip (dashed border rouge) : ${extraction.proTip}`);
-      break;
-    }
-  }
 
-  return lines.join("\n");
+    case "WHITEBOARD":
+      return `
+TEMPLATE: WHITEBOARD BULLET LIST
+(Style: "How to Master Claude in 2 Minutes" by Awa K Penn)
+
+Generate a whiteboard-style infographic at ${dims.width}×${dims.height}px.
+
+CANVAS DETAILS:
+- Background: #f8f9f7 with 2% paper grain
+- 4 small dark gray rectangular clips at each corner (12×18px)
+- Very thin border 0.5px #e0e0e0 around canvas
+- Square brackets [ ] framing the title
+
+TITLE BLOCK (top 12%):
+- "[${extraction.title}]" with brackets
+- Nunito ExtraBold 900, ~48px, black #111111, centered
+- Red wavy underline below title: 2px #C0392B
+
+CONTENT (12% to 90%):
+Organize in 2 columns OR 1 column based on content density.
+Left padding: 40px, right padding: 40px.
+
+For each of the ${extraction.points.length} points, create a section with:
+- Section header: Nunito Bold 20-24px, colored (#C0392B or #2563EB or #4A8B35)
+- 2px colored underline under the header
+- Bullet points: colored • symbols, Caveat 18-20px, black #111111
+- Key terms highlighted: yellow #FFEF5A background, flat (no border-radius)
+- Numbers in hand-drawn circle badges (stroke style)
+- ✓ checkmarks in red for positive points
+
+DECORATIVE ELEMENTS:
+- Star ★ in orange #F5922A next to important sections
+- → arrows between connected elements
+- Circled numbers ①②③ for ordered items
+
+FOOTER (bottom 8%):
+- Thin separator 0.5px #cccccc
+- "Follow @supen for more | Repost ↺"
+- Nunito Bold 16px, centered, name in blue #2563EB underlined
+      `;
+
+    case "NOTEBOOK":
+    case "COMPARISON":
+      if (templateId === "NOTEBOOK") {
+        return `
+TEMPLATE: SPIRAL NOTEBOOK
+(Style: "9 Free Courses for Building AI Agents" by Awa K Penn)
+
+Generate a spiral notebook infographic at ${dims.width}×${dims.height}px.
+
+CANVAS DETAILS:
+- Background: #fffef8 (warm paper, slightly cream)
+- Paper grain texture 4-5% opacity
+
+SPIRAL BINDING (top 6% = ~${Math.round(dims.height * 0.06)}px):
+- 20 metallic spiral coils across full width
+- Each coil: oval shape ~36px wide, 26px tall
+- Silver-gray color #a39581 with 3D shading
+  * Light side: #c8c0b0, Shadow side: #7a7060
+- Coils overlap paper edge (pass in front AND behind)
+
+RULED LINES:
+- Horizontal lines #dde8f0, 0.5px, every 34px, full width
+- Left margin line: vertical #E63946, 1.5px, at x=72px
+
+TITLE (below spiral, top 16%):
+- Multi-color word treatment — each key word different color:
+  * Numbers: green #4A8B35, very bold ~56px
+  * Key adjectives: red #C0392B with underline
+  * Main nouns: blue #1a3d7c bold
+  * "AI" or tech terms: yellow #FFEF5A background, red text
+- Font: Caveat Bold 700, ~52-56px
+- Curved red arrow ↓ after title
+
+CONTENT TABLE or LIST:
+- If table: 5 columns, header #f5f5f5, alternating rows
+  * Numbers in hand-drawn oval badges (01, 02, 03...)
+  * Provider names: Nunito Bold, blue #2563EB
+  * Course/item titles: Caveat, green #4A8B35
+  * Key terms highlighted yellow #FFEF5A inline
+- If list: numbered items with Caveat body text
+
+FOOTER (bottom 13%):
+- Curved arrows ↙ left and ↗ right (thick, Caveat Bold)
+- "Follow for more | Repost ↺" Caveat Bold 24-28px
+- Creator name: blue #2563EB bold underlined
+        `;
+      }
+      return `
+TEMPLATE: 3-COLUMN COMPARISON
+(Style: "Claude vs ChatGPT vs Gemini" by Awa K Penn)
+
+Generate a 3-column comparison infographic at ${dims.width}×${dims.height}px.
+
+CANVAS:
+- Background: #f9f9f6 (cool near-white)
+- NO outer border or frame
+- 3 equal vertical columns separated by thin lines #cccccc 0.5px
+
+TITLE (top 10%):
+- Bracket framing: [ ITEM A vs ITEM B vs ITEM C ]
+- Nunito ExtraBold 900, ~32-36px
+- Each item in own accent color, underlined
+- "vs" in black regular weight
+- Full-width separator below title
+
+COLUMN HEADERS (5%):
+- Each column header: Nunito Bold 22px, own color, underlined 2px
+- Separator line below in column color
+
+EACH COLUMN CONTENT:
+1. "DESCRIPTION:" — bold underlined label + Caveat 13px body
+2. "WHEN TO USE:" — 💡 icon + bullet points with → arrows
+3. "USE CASES:" — 🧠 icon + bullet points
+4. "STRENGTHS:" — GREEN #4A8B35 label + positive bullets
+   Key numbers/metrics highlighted yellow #FFEF5A
+5. "WEAKNESSES:" — RED #C0392B label + negative bullets
+6. "PRO TIP:" — label on yellow #FFEF5A background + italic Caveat
+
+FOOTER:
+- Full-width separator #aaaaaa
+- Background #f5f5f5
+- Nunito Bold 16px centered
+      `;
+
+    case "FUNNEL":
+      return `
+TEMPLATE: FUNNEL PROCESS FLOW
+(Style: "The Personal Branding Funnel 2026" by Awa K Penn)
+
+Generate a funnel infographic at ${dims.width}×${dims.height}px.
+
+CANVAS:
+- Background: #fffef5 (warm ivory)
+- Paper grain texture 5% opacity
+- Feel: hand-illustrated sketch on whiteboard
+
+TITLE (top 14%):
+- Very large: Nunito 900 OR Caveat Bold, 52-64px, black #111111
+- Year in parentheses if relevant
+- Subtitle: italic 14px #666666, centered
+
+FUNNEL SHAPE (center, 55% of height):
+- Large trapezoid: wide top (~580px), narrow bottom (~260px)
+- Outline: hand-drawn irregular strokes, black #333333, 2.5px
+- Fill: warm cream/tan #f5e6c8, slightly darker at bottom
+- Divided into ${Math.min(extraction.points.length, 5)} sections
+
+EACH FUNNEL SECTION:
+- Rectangle label box: thin red border #C0392B, white fill
+  Format: "${extraction.points[0]?.title || "STAGE"}" Nunito Bold 16px
+- Below label: 2-3 checkmarks ✓ in red #C0392B, Caveat 14px
+
+SIDE ARROWS:
+- Two large red arrows ↙ and ↘ flanking funnel
+- Color: #C0392B, stroke 3-4px, slightly curved
+- Indicating downward filtering flow
+
+DECORATIVE STARS:
+- 6-8 gold sparkles ✦ ★ scattered around funnel
+- Colors: #F5C518 and #E8B800, mix solid/outline, 8-16px
+
+CHARACTER (right side, optional):
+- Simple line-art cartoon person pointing at funnel
+- Business casual, friendly expression
+- Bold outlines, flat colors
+
+CTA BOX (bottom before footer):
+- Hand-drawn rectangle (slightly imperfect, 1.5px black)
+- "Save this →" bold + description text
+
+FOOTER: Discreet, italic gray
+      `;
+
+    case "DATA_GRID":
+      return `
+TEMPLATE: DATA COMPARISON TABLE
+(Style: dense educational reference by Awa K Penn)
+
+Generate a data grid infographic at ${dims.width}×${dims.height}px.
+
+CANVAS:
+- Background: #f8f9f7
+- Subtle paper grain 2%
+
+TITLE BLOCK (top 18%):
+- Badge: dark pill #111111, white text, Nunito 800, all caps
+- Title: Nunito 900, ~48px, centered, underline #C0392B 2px below
+
+TABLE (middle 70%):
+- Full-width table with 3 columns
+- Header row: #f5f5f5 background
+  * "Concept" — Nunito Bold, red #C0392B
+  * "Description" — Nunito Bold, blue #2563EB
+  * "Best For" — Nunito Bold, green #4A8B35
+- 4 data rows, alternating #ffffff / #f9fafb
+- Row borders: 0.5px #e8e8e8
+- Each row:
+  * Concept: colored dot + Nunito Bold 16px
+  * Description: Caveat 17px, key terms yellow #FFEF5A highlighted
+  * Best For: Nunito Bold 14px, green #4A8B35
+
+PRO TIP BOX:
+- Border-left 4px #C0392B
+- Background #fffdf0
+- "★ KEY TAKEAWAY" Nunito Bold red uppercase
+- Caveat italic body text
+
+FOOTER: standard format
+      `;
+
+    default: // AWA_CLASSIC
+      return `
+TEMPLATE: AWA CLASSIC — 7 TIPS
+(Style: dense framed guide by Awa K Penn)
+
+Generate a 7-item tips infographic at ${dims.width}×${dims.height}px.
+
+CANVAS:
+- Outer wooden frame: 28px, dark brown #3d2b1a, wood grain texture
+- Inner content: #FFFFF5 (warm cream)
+- Thin cream border #f0e8d8 between frame and content
+
+TITLE (top 17% inner area):
+- Dark brown pill badge: background #3d2b1a, white text
+- Title: Nunito 900, ~42px, centered
+- Brown underline below title
+
+7 ITEMS (main body):
+Each item has:
+- Colored square/rounded badge with number (1-7):
+  Colors: #C0392B, #2563EB, #2E7D32, #D4A017, #8B5CF6, #C0392B, #0D9488
+- Sketch-style icon next to number (hand-drawn SVG style)
+- Item title: Nunito Bold 20px, #111111
+- Item body: Caveat 17px, #444444
+- Border-left: 1px rgba(61,43,26,0.15)
+
+FOOTER:
+- Border-top: 2px solid #3d2b1a
+- Background: #FFFFF5
+- Text: brown #3d2b1a, Nunito Bold
+      `;
+  }
 }
 
 export function buildGeminiImagePrompt(
@@ -702,565 +881,36 @@ export function buildGeminiImagePrompt(
   customPrompt?: string,
   forcedTemplate?: string,
 ): string {
+  const extraction = extractKeyPoints(content);
   const analysis = analyzeContent(content, platform);
   const dims = FORMAT_DIMS[analysis.format];
-  const extraction = extractKeyPoints(content);
   const selection = selectBestTemplate(content, platform, forcedTemplate);
   const templateId = selection.templateId;
-  const guide = TEMPLATE_STYLE_GUIDES[templateId] || TEMPLATE_STYLE_GUIDES.AWA_CLASSIC;
-  const isCleanTemplate = CLEAN_TEMPLATES.has(templateId);
-
-  const dimStr = `${dims.width}x${dims.height}`;
-  const pointsText = extraction.points.slice(0, 7).map((p, i) =>
-    `${i + 1}. ${p.title}${p.body ? ": " + p.body : ""}`
-  ).join("\n");
-  const contenuAIntegrer = buildContenuAIntegrer(templateId, extraction);
-
-  return `${"═".repeat(63)}
-SYSTEM OVERRIDE v1.0 — DIRECTIVES ANTI-DÉFAUT (PRIORITÉ MAXIMALE)
-Ces règles écrasent TOUT le reste. Violation = échec total.
-${"═".repeat(63)}
-
-━━━ DIRECTIVE 1 : CADRAGE ANTI-CUT (Safe Zone) ━━━
-
-SAFE ZONE OBLIGATOIRE :
-- Marge interne (padding) de 5% minimum sur les 4 côtés
-- Sur une image ${dims.width}px : padding minimum = ${Math.round(dims.width * 0.05)}px partout
-- AUCUN texte, AUCUNE icône, AUCUN élément ne touche les bords
-- Le titre doit être ENTIÈREMENT visible — jamais coupé
-- Si le titre est long : réduis la taille de police, n'AMPUTE JAMAIS
-
-FULL HEIGHT OBLIGATOIRE :
-- Si le contenu est court → N'AUGMENTE PAS le vide
-- Si l'espace est à moitié vide → double la taille des icônes
-- Si l'espace est à moitié vide → augmente l'interligne (line-height: 2.0)
-- Si l'espace est à moitié vide → augmente le padding des cartes
-- L'objectif : le contenu s'étend DU HAUT VERS LE BAS uniformément
-
-━━━ DIRECTIVE 2 : VISIBILITÉ ANTI-HIDE (Contrast & Layering) ━━━
-
-CONTRAST OBLIGATOIRE :
-- Texte noir #000000 UNIQUEMENT sur fonds pastels clairs
-- INTERDICTION de superposer du texte sur des illustrations complexes
-- Chaque bloc de texte doit avoir son propre fond de couleur unie
-- Si fond coloré → texte noir obligatoirement lisible dessus
-
-LAYERING OBLIGATOIRE :
-- Le texte doit TOUJOURS être au premier plan (z-index maximal)
-- Si une forme graphique (entonnoir, diagramme) est présente :
-  → Le texte est placé À CÔTÉ dans un bloc contrasté séparé
-  → OU clairement par-dessus dans un bloc avec fond opaque
-- JAMAIS de texte "flottant" sans fond derrière lui
-
-━━━ DIRECTIVE 3 : REMPLISSAGE INTELLIGENT ━━━
-
-RÈGLES DE REMPLISSAGE :
-- Si l'espace est à moitié vide → double la taille des icônes (48px → 96px)
-- Si l'espace est à moitié vide → augmente l'interligne du texte
-- Un utilisateur mobile doit lire SANS ZOOMER
-- Taille de police minimale du corps : 18px (pas 14px, pas 16px → 18px)
-- Taille de police du titre : minimum 60px
-- Taille de police des sous-titres : minimum 28px
-
-━━━ MOTEUR DE RENDU SQL → INFOGRAPHIE ━━━
-
-Agis comme un moteur de rendu SQL vers Infographie.
-Input reçu :
-- format: "Portrait 4:5 — ${dimStr}px"
-- content: [contenu fourni ci-dessous]
-- style: "UI Clean, ${templateId}"
-
-Règles de rendu STRICTES :
-1. HEADER (20% hauteur) : Titre massif Serif, centré, padding 5%, JAMAIS coupé, occupe 20% de la largeur minimum
-2. BODY (70% hauteur) : Cards avec border-radius 20px, icône à gauche + texte à droite dans chaque card, padding interne 40px minimum par card
-3. COLORS : Codes Hex stricts uniquement :
-   - Orange : #FF7A59
-   - Blue : #4285F4
-   - Green : #34A853
-   - Fond : #FDFDF9
-   - Texte : #1A1A1A
-4. OUTPUT : Rendu vectoriel ultra-net, zéro flou, zéro texte coupé, zéro espace vide non justifié
-
-━━━ CHECKLIST ANTI-DÉFAUT (valider AVANT génération) ━━━
-
-[ ] Padding 5% appliqué sur les 4 côtés → aucun élément aux bords
-[ ] Titre ENTIÈREMENT visible, non coupé
-[ ] Aucun texte sur fond complexe ou illustration
-[ ] Espace vide < 20% du canvas total
-[ ] Taille police corps ≥ 18px
-[ ] Taille police titre ≥ 60px
-[ ] Chaque bloc de texte a son propre fond opaque
-[ ] Lisible sur mobile sans zoom
-
-${"═".repeat(63)}
-FIN DU SYSTEM OVERRIDE — PRIORITÉ ABSOLUE SUR TOUT LE RESTE
-${"═".repeat(63)}
-
-${"═".repeat(63)}
-CAHIER DES CHARGES DESIGN — RÉFÉRENCE ABSOLUE
-Style : UI Design Professionnel / Diagramme Technique Premium
-${"═".repeat(63)}
-
-Tu es un expert en UI Design et Architecture de l'Information.
-Tu ne crées PAS d'illustrations. Tu construis des diagrammes techniques professionnels de niveau agence de design premium.
-
-━━━ 1. ARCHITECTURE ET COMPOSITION (Layout) ━━━
-
-Format : Portrait vertical 4:5 (${dimStr}px).
-Structure verticale rigoureusement organisée autour d'un axe central.
-
-PIÈCE MAÎTRESSE selon le type de contenu :
-
-Si FUNNEL/PROCESSUS (template actif = ${templateId}) :
-- Entonnoir isométrique 3D "flat design"
-- 5 segments horizontaux distincts qui rétrécissent vers le bas
-- PAS une forme plane — il possède une ÉPAISSEUR et une PERSPECTIVE légère qui lui donne de la profondeur (effet 3D isométrique flat)
-- À GAUCHE et à DROITE de l'entonnoir : blocs de texte disposés de manière ASYMÉTRIQUE MAIS ÉQUILIBRÉE
-- Reliés aux segments par des LIGNES DE RAPPEL ultra-fines (1px) se terminant par des points d'ancrage (petits cercles)
-- Un personnage minimaliste en bas à droite (style "présentateur") pour diriger le regard vers le point final de l'entonnoir
-
-Si COMPARAISON/NIVEAUX :
-- 3 cartes verticales empilées avec profondeur
-- Chaque carte : fond pastel uni, étiquette colorée en haut
-- Ombres très douces (soft shadow uniquement, jamais noire)
-
-Si CONSEILS/TIPS :
-- Grille organisée autour d'un axe central
-- Icônes circulaires bicolores à gauche de chaque point
-- Lignes de connexion fines entre les éléments
-
-━━━ 2. SYSTÈME TYPOGRAPHIQUE (Typography) ━━━
-
-RÈGLE ABSOLUE : Mélange Serif + Sans-Serif UNIQUEMENT.
-
-EN-TÊTE (Titre principal) :
-- Police SERIF premium : Playfair Display ou Garamond
-- Couleur : noir profond (#1A1A1A)
-- Centré
-- Aspect autoritaire et élégant
-- Taille : grande, dominante
-
-BADGE (Au-dessus du titre) :
-- Rectangle à coins arrondis
-- Fond couleur vive (selon la thématique)
-- Texte Sans-Serif EN MAJUSCULES
-- Très petite taille, GRAND espacement de lettres (letter-spacing large)
-- Sert à catégoriser le contenu
-
-CORPS DE TEXTE :
-- Police Sans-Serif géométrique moderne : Inter ou Montserrat
-- Titres de sections : GRAS (Bold)
-- Descriptions : graisse régulière
-- Listes avec CHECKMARKS (coches) vertes circulaires ✓
-
-━━━ 3. PALETTE DE COULEURS ET DÉGRADÉ COGNITIF ━━━
-
-FOND : Blanc cassé / crème très pâle (#FDFDF9)
-→ JAMAIS blanc pur — donne un aspect papier haut de gamme
-→ Évite l'agressivité du blanc pur
-
-TEXTE : Gris-noir anthracite (#1A1A1A)
-→ Contraste parfait sans être "lourd"
-
-PROGRESSION CHROMATIQUE DE L'ENTONNOIR (du haut vers le bas) :
-→ HAUT (large, entrée) : Orange tangerine (#FF8C42 ou #F4845F)
-  Psychologie : Capture l'attention, représente l'entrée de données
-→ MILIEU HAUT : Transition orange → bleu ciel (#87CEEB)
-  Psychologie : Début du processus, logique
-→ MILIEU : Bleu ciel (#5BA4CF)
-  Psychologie : Processus, fiabilité
-→ MILIEU BAS : Bleu pétrole (#2E86AB)
-  Psychologie : Profondeur, expertise
-→ BAS (étroit, sortie) : Vert émeraude saturé (#2ECC71 ou #27AE60)
-  Psychologie : Résultat positif, validation, SUCCÈS
-
-ICÔNES CIRCULAIRES :
-- Fond : version très claire de la couleur du segment correspondant (ex: segment orange → icône sur fond orange très pâle #FFF0E8)
-- Bicolores : fond clair + icône dans la couleur principale
-
-━━━ 4. DÉTAILS GRAPHIQUES ET FINITIONS ━━━
-
-ICÔNES :
-- Chaque bloc de texte latéral = icône vectorielle circulaire
-- Bicolores (fond clair de la couleur du segment + icône principale)
-- Style vectoriel plat, pas d'illustration complexe
-
-LIGNES DE FLUX (Connecteurs) :
-- Épaisseur CONSTANTE : exactement 1px
-- Couleur : gris très clair (#CCCCCC) ou couleur du segment
-- Se terminent par de petits cercles (points d'ancrage)
-- Aspect "diagramme technique professionnel"
-
-RELIEF ET PROFONDEUR DE L'ENTONNOIR :
-- AUCUNE ombre portée noire
-- Relief créé par VARIATIONS DE TEINTES uniquement :
-  → Face avant : couleur principale du segment
-  → Face supérieure : version plus claire (+20% luminosité)
-  → Face latérale : version plus sombre (-20% luminosité)
-  → Simule une source de lumière venant du HAUT À GAUCHE
-- Effet 3D isométrique "flat" = géométrie précise + variations de teinte
-
-━━━ 5. SIGNATURE VISUELLE (Branding / Footer) ━━━
-
-Footer très PROPRE :
-- Mention "Created with Supen.io" en brand color #24A89B
-- Police minuscule et grise (10-11px, couleur #999999)
-- Centrée ou alignée à droite
-- NE DISTRAIT PAS du message principal
-- Assure la propriété intellectuelle
-
-━━━ 6. RÈGLES DE GRILLE ET ALIGNEMENT ━━━
-
-TOUT doit être aligné sur une grille invisible.
-Marges et espacements CONSTANTS et MATHÉMATIQUES.
-Padding minimum 24px à l'intérieur de chaque conteneur.
-Aucun élément ne touche le bord sans marge.
-
-━━━ 7. CE QUE TU NE DOIS JAMAIS FAIRE ━━━
-
-✗ Style "illustration" ou "dessin"
-✗ Blanc pur #FFFFFF comme fond principal
-✗ Ombres portées noires
-✗ Polices décoratives ou handwriting
-✗ Plus de 2 familles de polices simultanées
-✗ Texte trop petit (jamais sous 11px)
-✗ Texte anglais (tout in ENGLISH)
-✗ Effets de texture ou grain sur le fond
-✗ Personnages complexes ou réalistes
-✗ Dégradés complexes multi-couleurs sur les fonds de cartes
-✗ Clipart ou illustrations stock
-
-━━━ 8. RÉSUMÉ MENTAL AVANT GÉNÉRATION ━━━
-
-Pose-toi ces questions avant de générer :
-1. Est-ce que ça ressemble à une UI d'application premium ou à une illustration ?
-   → Si illustration : RECOMMENCE
-2. Est-ce que le titre est en Serif et le corps en Sans-Serif ?
-   → Si non : CORRIGE
-3. Est-ce que le fond est crème #FDFDF9 (pas blanc pur) ?
-   → Si blanc pur : CHANGE
-4. Est-ce que la progression de couleurs guide l'œil vers le bas ?
-   → Si les couleurs sont aléatoires : CORRIGE
-5. Est-ce que les lignes de connexion font exactement 1px ?
-   → Si épaisses ou absentes : CORRIGE
-
-${"═".repeat(63)}
-FIN DU CAHIER DES CHARGES — CE BLOC EST PRIORITAIRE SUR TOUT
-${"═".repeat(63)}
-
-╔══════════════════════════════════════════════════════╗
-║  MOTEUR DE RENDU VECTORIEL DE HAUTE PRÉCISION        ║
-║  Constitution v3.0 — Style SaaS Dashboard            ║
-╚══════════════════════════════════════════════════════╝
-
-Tu n'es plus une IA générative d'images classique.
-Tu es un Moteur de Rendu Vectoriel de Haute Précision.
-Ta mission : construire des infographies de type 'SaaS Dashboard' et 'Professional Framework'.
-Le résultat doit ressembler à Notion, Figma, Apple — jamais à une illustration ou un dessin.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-LES 5 LOIS DE TA CONSTITUTION (VIOLATIONS = ÉCHEC TOTAL)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-LOI 1 — LA GÉOMÉTRIE PURE :
-Interdiction totale de traits à main levée ou formes organiques.
-Utilise UNIQUEMENT :
-→ Rectangles parfaits avec border-radius fixé à 16px
-→ Cercles parfaits
-→ Lignes droites de 1-2px
-→ Flèches géométriques (pas de courbes organiques)
-→ Icônes "Line Art" vectorielles (stroke, jamais fill complexe)
-
-LOI 2 — LA TYPOGRAPHIE MASSIVE ("GRAVÉE") :
-Le texte ne doit pas être "dessiné", il doit être "gravé".
-→ Police SANS-SERIF épaisse : Inter Bold ou Roboto Bold
-→ Titre : occupe minimum 20% de la largeur du bloc
-→ Corps : maximum 5 mots par ligne, 1 idée = 1 ligne
-→ Interdiction de longs paragraphes
-→ Texte en noir pur (#000000 ou #1F2937) sur fond pastel uni
-→ JAMAIS de texte sur fond texturé
-
-LOI 3 — L'ESPACE NÉGATIF (PADDING OBLIGATOIRE) :
-→ Padding minimum 40px à l'intérieur de chaque carte
-→ Si un élément touche un autre = DESIGN RATÉ
-→ Laisse respirer chaque bloc
-→ Chaque section doit avoir de l'air autour d'elle
-
-LOI 4 — LE RENDU FLAT UI (ZÉRO ORNEMENT) :
-→ Fonds UNIS et PASTELS uniquement
-→ Aucune texture, grain ou dégradé complexe
-→ Pas d'ombres portées noires
-→ Uniquement soft shadows : box-shadow 0 4px 16px rgba(0,0,0,0.06)
-→ Zéro bruit visuel
-→ Style vectoriel plat haute définition
-
-LOI 5 — L'OCCUPATION TOTALE (FULL BLEED) :
-→ L'infographie s'étend jusqu'aux bords (Full Bleed)
-→ Pas de cadre externe blanc inutile
-→ Les blocs de couleur touchent les bords
-→ 85-95% de la surface doit être occupée par du contenu
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-STRUCTURE DE GRILLE OBLIGATOIRE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-SECTION HEADER (20% de la hauteur) :
-→ Fond blanc pur #FFFFFF
-→ Titre MASSIF en noir, ALL CAPS, Inter Bold
-→ En dessous : badge coloré pastel avec catégorie en majuscules
-→ Texte ultra-lisible à 2 mètres de distance
-
-SECTION BODY (70% de la hauteur) :
-→ Divisé en 3 cartes VERTICALES égales (ou N cartes selon template)
-→ Carte 1 : Fond Bleu Pastel (#EBF5FB) — texte noir + icône
-→ Carte 2 : Fond Orange Pastel (#FEF9E7) — texte noir + icône
-→ Carte 3 : Fond Vert Pastel (#EAFAF1) — texte noir + icône
-→ Chaque carte : padding 40px, border-radius 16px, soft shadow
-
-SECTION FOOTER (10% de la hauteur) :
-→ Fond gris très clair (#F8F9FA)
-→ Texte : "Created with Supen.io" en brand color #24A89B
-→ Séparateur ligne fine #E5E7EB en haut du footer
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-ADAPTATION PAR TEMPLATE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
->>> TEMPLATE ACTIF POUR CETTE GÉNÉRATION : ${templateId} <<<
-(Lis SEULEMENT la section correspondant au template actif ci-dessous.)
-
-Si template = UI_CARDS :
-Header blanc / Carte 1 fond #FFF0F0 (rouge pastel) = "À éviter" /
-Carte 2 fond #FEF9E7 (orange pastel) = "Acceptable" /
-Carte 3 fond #EAFAF1 (vert pastel) = "Excellence"
-Chaque carte : étiquette couleur en haut + texte gras + icône large
-
-Si template = WHITEBOARD :
-Header blanc / Body fond #FAFBFF avec dot grid 24px /
-Texte style "notes manuscrites propres" mais SANS vraie écriture cursive /
-Surlignages jaunes #FFE066 sur mots-clés via rectangles plats
-
-Si template = FUNNEL :
-Header blanc / 5 barres horizontales décroissantes (Full Bleed) /
-Barre 1 la plus large (fond #FDECEA) → Barre 5 la plus étroite (fond #E8F5E9) /
-Numéro cerclé à gauche + texte gras à droite sur chaque barre /
-CTA final fond #24A89B texte blanc
-
-Si template = DATA_GRID :
-Header blanc / Tableau 4 lignes × 3 colonnes /
-En-tête colonnes fond #EBF5FB pastel bleu /
-Alternance lignes blanc / #F9FAFB /
-Dot coloré pastel par ligne
-
-Si template = AWA_CLASSIC :
-Garde le style dark existant — seule exception aux lois 4 et 5
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-INTERDICTIONS ABSOLUES (NEGATIVE PROMPT)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-✗ AUCUN personnage, avatar, visage, corps humain
-✗ AUCUNE illustration clipart ou cartoon
-✗ AUCUN trait à main levée ou forme organique
-✗ AUCUN texte inférieur à 14px
-✗ AUCUNE bordure noire épaisse
-✗ AUCUN fond texturé ou dégradé complexe
-✗ AUCUN élément qui touche un autre sans padding
-✗ AUCUN texte en anglais — TOUT in ENGLISH
-✗ AUCUN style "brouillon" ou "esquisse"
-✗ AUCUNE ombre noire agressive
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-CHECKLIST DE VALIDATION FINALE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-[ ] Structure Header (20%) / Body (70%) / Footer (10%) visible
-[ ] Titre gigantesque et lisible à 2m de distance
-[ ] Formes géométriques pures uniquement (0 illustration)
-[ ] Chaque bloc a son padding de 40px
-[ ] Fonds pastels unis (0 texture)
-[ ] Maximum 5 mots par ligne dans le body
-[ ] Style Apple / Notion / Figma — jamais cartoon
-[ ] Tout le texte in ENGLISH
-[ ] Footer "Created with Supen.io" en #24A89B
-[ ] Qualité : Haute définition, rendu vectoriel plat, texte ultra-net, éclairage studio uniforme, zéro bruit visuel
-
-╔══════════════════════════════════════════════════════╗
-║  FIN DE LA CONSTITUTION v3.0                         ║
-╚══════════════════════════════════════════════════════╝
-
-(La Constitution v3.0 ci-dessus EST LA LOI ABSOLUE. Toutes les sections suivantes sont des références secondaires conservées pour le contexte. En cas de conflit avec une section ci-dessous, applique IMPÉRATIVEMENT la Constitution et IGNORE la directive contradictoire.)
-
-${"═".repeat(50)}
-=== IDENTITÉ ===
-${"═".repeat(50)}
-
-Tu es un Directeur Artistique Senior spécialisé en Data-driven Design pour les réseaux sociaux professionnels (LinkedIn, Instagram, Twitter/X). Tu maîtrises le Minimalisme Informatif : chaque élément graphique doit servir la compréhension du texte. Le lecteur doit comprendre la valeur en moins de 3 secondes.
-
-${"═".repeat(50)}
-=== RÈGLES DE GRAMMAIRE VISUELLE (NON-NÉGOCIABLES) ===
-${"═".repeat(50)}
-
-RÈGLE 1 — La Règle du Tiers Supérieur :
-Le titre principal doit être en haut, centré, typographie Serif élégante (Playfair Display ou Garamond) pour contraster avec le corps Sans-Serif. Encadré ou surligné par une couleur pastel douce (Vert Eau, Bleu Ciel, Jaune Paille).
-
-RÈGLE 2 — Hiérarchie Cognitive des Couleurs :
-JAMAIS de couleurs primaires agressives. Palette Pastel-Professionnelle officielle Supen :
-- Rouge Pastel  (#FFB3B3) = Mauvais / Erreur / À éviter
-- Orange Pastel (#FFD4A3) = Moyen / Attention
-- Vert Pastel   (#B3FFD1) = Excellent / Solution / Validé
-- Bleu Pastel   (#AEC6CF) = Information / Neutre
-- Violet Pastel (#D4B3FF) = Concept Avancé / Premium
-- Jaune         (#FFE066) = Surlignage de mots-clés UNIQUEMENT
-- Brand Supen   (#24A89B) = Accent CTA, footer, signature
-
-RÈGLE 3 — Architecture de l'Espace (alignée Master Prompt §1) :
-Le canvas couvre 100% de la surface (AUCUNE marge blanche externe — les blocs touchent les bords). Densité interne ≥ 85% : les éléments graphiques remplissent au minimum 85% de l'espace. La respiration vient des padding internes (≥ 20px par bloc, Master Prompt §4), JAMAIS de marges externes vides. Le texte ne doit JAMAIS sembler étouffé.
-
-RÈGLE 4 — Contraste Typographique :
-Maximum 2 familles de polices pour tout le visuel :
-- Serif (Playfair Display / Garamond) pour les TITRES
-- Sans-Serif (Inter / Poppins) pour le CORPS
-- Cursive (Caveat) UNIQUEMENT si le template est WHITEBOARD
-Gras + surlignage jaune pour les MOTS-CLÉS uniquement. font-style:italic est INTERDIT partout.
-
-RÈGLE 5 — Ancrages Visuels :
-Chaque point = icône minimaliste (Line Art / Flat Design plat) OU numéro cerclé. Guide l'œil de manière fluide. AUCUN emoji unicode, AUCUN clipart, AUCUNE photo réaliste. Uniquement formes plates, pills, cartes, traits stroke fins.
-
-${"═".repeat(50)}
-=== STYLES DISPONIBLES (5 styles) ===
-${"═".repeat(50)}
-
-STYLE "UI_CARDS" — Comparaisons et échelles de qualité.
-Utilise quand : niveaux Bad/Good/Great, avant/après, comparaisons à 3 niveaux.
-Structure : 3 cartes blanches verticales avec étiquettes pastel (rouge → orange → vert), un badge "★ Cible" sur la carte verte, sidebar verte explicative en bas listant les raisons. Fond #F8F9FA grille subtile.
-
-STYLE "WHITEBOARD" — Hand-drawn digital.
-Utilise quand : conseils, tips, processus pédagogiques, contenu authentique.
-Structure : fond blanc avec dot grid, typographie Caveat manuscrite, marqueurs colorés (bleu/rouge/vert), surlignages jaunes sur mots-clés, doodles SVG (cerveau, ampoule), CTA manuscrit brand color en signature.
-
-STYLE "FUNNEL" — Entonnoirs et roadmaps.
-Utilise quand : parcours utilisateur, étapes de vente, processus séquentiel, roadmap.
-Structure : entonnoir 5 étages dégradé pastel (rouge → bleu), checkmarks blancs sur chaque étage, personnage cartoon brand color sur le côté droit, CTA pleine largeur brand color en bas avec flèche.
-
-STYLE "DATA_GRID" — Modèles cognitifs et tables.
-Utilise quand : frameworks, comparaisons détaillées, ressources, glossaires, méthodes.
-Structure : tableau 4 lignes × 3 colonnes (Élément / Description / Idéal pour). En-tête bleu pastel, alternance zebra blanc/gris, dot coloré par rangée (rouge/orange/vert/violet), 2 callouts bonus + tip brand color "À retenir".
-
-STYLE "AWA_CLASSIC" — Dense viral.
-Utilise quand : contenu tech, premium, listes denses de 7 conseils.
-Structure : cream avec wood frame, 7 sections numérotées denses, illustration header, pro tip dashed.
-
-${"═".repeat(50)}
-=== SÉLECTION AUTOMATIQUE DU STYLE ===
-${"═".repeat(50)}
-
-Mapping mots-clés → style :
-- "vs", "avant", "après", "compare", "bad", "good", "niveau"  → UI_CARDS
-- "étapes", "comment", "guide", "tips", "conseils", "astuce"  → WHITEBOARD
-- "processus", "funnel", "parcours", "roadmap", "tunnel"      → FUNNEL
-- "framework", "modèle", "tableau", "ressources", "glossaire" → DATA_GRID
-- "tech", "premium", liste de 7+ items denses                 → AWA_CLASSIC
-
-${"═".repeat(50)}
-=== TEMPLATE IMPOSÉ POUR CETTE GÉNÉRATION : ${templateId} ===
-${"═".repeat(50)}
-
-VIBE        : ${guide.vibe}
-BACKGROUND  : ${guide.background}
-LAYOUT      : ${guide.layout}
-TYPOGRAPHY  : ${guide.typography}
-COLORS      : ${guide.colors}
-STRUCTURE   : ${guide.structure}
-
-${"═".repeat(50)}
-=== FORMAT DE SORTIE ===
-${"═".repeat(50)}
-
-- Dimensions exactes : ${dimStr}px (portrait 4:5 préféré conformément au Master Prompt §1)
-- Surface : couverte à 100% — AUCUNE bordure blanche externe (Master Prompt §1)
-- Densité interne : ≥ 85% du canvas (Master Prompt §1)
-- Sortie : image PNG UNIQUEMENT (aucun texte, aucun HTML dans la réponse)
-- Polices : Playfair Display (titres) + Inter/Poppins (corps) via Google Fonts (Caveat uniquement si WHITEBOARD)
-- Couleur de marque Supen : #24A89B sur les CTAs, footer, signatures
-- Padding par bloc : ≥ 20px (Master Prompt §4), idéalement ${isCleanTemplate ? "24-32px" : "20-26px"}
-- Coins arrondis : 16-24px sur les cards (Master Prompt §3)
-- Ombres : box-shadow douce 0 8px 32px rgba(0,0,0,0.08), JAMAIS de bordures noires épaisses
-- Footer en bas : "Created with Supen.io"
-- Tout le contenu rédigé in ENGLISH
-
-${"═".repeat(50)}
-=== CONTENU À TRANSFORMER ===
-${"═".repeat(50)}
-
-Sujet      : ${extraction.title}
-Catégorie  : ${extraction.badge}
-Plateforme : ${platform}
-
-Points clés extraits du contenu source :
-${pointsText}
-
-Insight pro : ${extraction.proTip}
-
-Source intégrale (à reformuler, ne pas copier verbatim) :
-${content.slice(0, 2500)}
-
-${customPrompt ? `Instructions utilisateur additionnelles : ${customPrompt}\n` : ""}
-${"═".repeat(50)}
-=== CONTENU À INTÉGRER (structure exacte attendue par bloc, template ${templateId}) ===
-${"═".repeat(50)}
-
-${contenuAIntegrer}
-
-(Chaque "Bloc" ci-dessus correspond à une zone visuelle distincte de l'infographie. Respecte l'ordre, les couleurs pastel indiquées, et la séparation par bloc.)
-
-${"═".repeat(50)}
-=== WRITING RULES (ENGLISH) ===
-${"═".repeat(50)}
-
-- ALL text must be written in ENGLISH
-- Titres de sections : 3-6 mots, spécifiques et actionnables. AUCUN label vague ("Important", "Note").
-- Bodies de section : ${isCleanTemplate ? "18-25 mots MAX par section" : "30-50 mots par section"}. Coupe tout ce qui n'apporte rien.
-- UN seul mot-clé par section surligné en jaune (#FFE066)
-- Au moins UNE donnée concrète dans tout le visuel (chiffre précis, nom d'outil, pourcentage)
-- Titre principal : ${isCleanTemplate ? "clair, curieux, sentence case (PAS de SHOUTING ALL CAPS)" : "ALL CAPS viral et percutant"}
-- Footer : "Created with Supen.io"
-
-${"═".repeat(50)}
-=== INTERDICTIONS ABSOLUES ===
-${"═".repeat(50)}
-
-- Pavés de texte → aérez avec du blanc
-- Plus de 5 couleurs simultanées → palette serrée
-- font-style:italic → INTERDIT nulle part
-- Fonds sombres → sauf si le template l'exige explicitement
-- Tailles de police inférieures à 10px → illisible
-- Sections collées sans gap → toujours de la respiration
-- Emoji unicode 😀, clipart, photographies stock
-- Remplir 100% du canvas → laisse respirer
-- English text (this is an English-language product)
-
-${"═".repeat(50)}
-=== CHECKLIST FINALE (à valider AVANT génération) ===
-${"═".repeat(50)}
-
-[ ] Canvas exactement ${dimStr}px (Master Prompt §1)
-[ ] Densité ≥ 85% — AUCUNE bordure externe blanche (Master Prompt §1)
-[ ] Titre GIGANTESQUE (≥80px) Serif élégant centré (Master Prompt §2 + Règle 1)
-[ ] Corps en GRAS, ≤ 6 mots par ligne, verbes d'action (Master Prompt §2)
-[ ] Hiérarchie cognitive des couleurs respectée (palette pastel pro)
-[ ] Cards arrondies 16-24px + box-shadow douce, AUCUN contour noir épais (Master Prompt §3)
-[ ] Padding ≥ 20px par bloc (Master Prompt §4)
-[ ] Maximum 2 familles de polices (1 Serif + 1 Sans, ou + Caveat si Whiteboard)
-[ ] Bodies courts (${isCleanTemplate ? "18-25" : "30-50"} mots par section)
-[ ] Ancrages visuels présents (icônes Line Art 48-64px ou numéros cerclés)
-[ ] Brand color #24A89B utilisée sur les CTAs / footer
-[ ] Footer "Created with Supen.io" en bas
-[ ] Tout le texte in ENGLISH — JAMAIS d'anglais (Master Prompt §4)
-[ ] AUCUN italique — AUCUN emoji unicode
-[ ] Texte ≥ 14px partout (Master Prompt §4)
-
-Génère l'image maintenant. Sortie : UNIQUEMENT l'image, sans texte de réponse.`;
+  const dimStr = `${dims.width}×${dims.height}`;
+
+  const templatePrompt = getGeminiTemplatePrompt(templateId, extraction, dims);
+
+  return `${GEMINI_UNIVERSAL_STYLE_CONTEXT}
+
+${templatePrompt}
+
+CONTENT TO USE:
+Title: ${extraction.title}
+Badge/Category: ${extraction.badge}
+${extraction.points.map((p, i) => `Point ${i + 1}: ${p.title} — ${p.body}`).join("\n")}
+Pro tip: ${extraction.proTip}
+Footer: Created with Supen.io | Follow for more
+
+${customPrompt ? `Additional instructions: ${customPrompt}` : ""}
+
+FINAL REMINDER:
+- Nunito ExtraBold 900 for ALL titles and headers
+- Caveat handwritten font for ALL body text
+- Yellow #FFEF5A ONLY as inline highlighter on specific words
+- Background #f8f9f7 (never pure white)
+- Dense content — fill 80% of canvas
+- Hand-crafted aesthetic, NOT corporate slide
+- Dimensions: ${dimStr}px`;
 }
 
 // ─── Post-process generated HTML ───

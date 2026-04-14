@@ -12,6 +12,7 @@ import GenerationProgress, { INFOGRAPHIC_STEPS } from "@/components/GenerationPr
 import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic";
 import {
   buildInfographicPrompt,
+  buildGeminiImagePrompt,
   analyzeContent,
   getFormatDimensions,
   selectBestTemplate,
@@ -32,6 +33,61 @@ function injectFontsInHtml(html: string): string {
   return html.replace("</head>", FONT_LINK + "</head>");
 }
 
+// ─── Gemini Image Generation ───
+
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+const GEMINI_MODEL = "gemini-2.0-flash-preview-image-generation";
+
+async function generateWithGemini(
+  prompt: string,
+): Promise<string | null> {
+  if (!GEMINI_API_KEY) return null;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 90_000);
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseModalities: ["IMAGE", "TEXT"],
+            responseMimeType: "image/png",
+          },
+        }),
+        signal: controller.signal,
+      },
+    );
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      console.warn("[InfographicModal] Gemini HTTP", response.status);
+      return null;
+    }
+
+    const data = await response.json();
+    const base64 = data.candidates?.[0]?.content?.parts
+      ?.find((p: { inlineData?: { data: string } }) => p.inlineData)
+      ?.inlineData?.data;
+
+    return base64 || null;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    console.warn("[InfographicModal] Gemini error:", err);
+    return null;
+  }
+}
+
+function wrapBase64AsHtml(base64: string, dims: { width: number; height: number }): string {
+  return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><style>*{margin:0;padding:0;box-sizing:border-box}body{width:${dims.width}px;height:${dims.height}px;overflow:hidden}</style></head>
+<body><img src="data:image/png;base64,${base64}" width="${dims.width}" height="${dims.height}" style="display:block;width:${dims.width}px;height:${dims.height}px;object-fit:contain;" /></body></html>`;
+}
+
 // Loading messages moved to GenerationProgress component
 
 // ─── Types ───
@@ -46,7 +102,7 @@ interface Props {
   onGenerated?: (html: string) => void; // Callback after successful generation
 }
 
-type ResultMode = "claude" | null;
+type ResultMode = "claude" | "gemini" | null;
 type Step = "ready" | "generating" | "result";
 type StyleChoice = "auto" | "AWA_CLASSIC" | "UI_CARDS" | "WHITEBOARD" | "FUNNEL" | "DATA_GRID";
 
@@ -257,7 +313,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
   const previewWidth = 480;
   const iframeScale = previewWidth / dims.width;
 
-  // ─── Generation (Claude HTML only — Gemini disabled) ───
+  // ─── Generation (Gemini Image first → Claude HTML fallback) ───
 
   async function handleGenerate() {
     setStep("generating");
@@ -272,13 +328,46 @@ export default function InfographicModal({ open, onClose, content, platform, con
 
     try {
       assertOnline();
+
+      // ── Step 1: Try Gemini Image generation ──
+      const geminiPrompt = buildGeminiImagePrompt(content, platform, customPrompt || undefined, forcedTemplate);
+      console.log("[InfographicModal] Trying Gemini Image generation...");
+      const base64 = await generateWithGemini(geminiPrompt);
+
+      if (base64) {
+        console.log("[InfographicModal] Gemini succeeded — using generated image");
+        const html = wrapBase64AsHtml(base64, dims);
+        setHtmlCode(html);
+        setResultMode("gemini");
+        setStep("result");
+        await handleSave({ html, mode: "claude" });
+        return;
+      }
+
+      // ── Step 2: Fallback to Claude HTML with Awa K Penn style ──
+      console.log("[InfographicModal] Gemini failed/unavailable — falling back to Claude HTML");
+      const claudeAwaPennPrompt = `You are generating HTML that visually replicates the Awa K Penn infographic style exactly.
+The HTML must produce an image that looks IDENTICAL to hand-crafted whiteboard notes.
+
+Use these exact techniques:
+1. Embed SVG elements for hand-drawn decorations (wavy underlines, corner clips, spiral coils, oval badges)
+2. Use CSS that simulates paper texture (background-image with subtle SVG grain pattern)
+3. Nunito 900 for titles, Caveat for body — load from Google Fonts
+4. All styles INLINE (no CSS classes) — critical for html2canvas export
+5. Replicate EXACTLY: corner clips (dark gray rectangles at corners), wavy underlines (SVG path), oval number badges (SVG circles with stroke), yellow #FFEF5A highlights on key terms, colored section headers with 2px underlines
+6. Background MUST be #f8f9f7 (never pure white)
+7. Colors: Red #C0392B, Blue #2563EB, Green #4A8B35, Orange #F5922A only
+8. Yellow #FFEF5A ONLY as inline text highlighter (like Stabilo marker), NEVER as card/section background
+
+${buildInfographicPrompt(content, platform, customPrompt || undefined, forcedTemplate)}`;
+
       const response = await withTimeout(
         anthropic.messages.create({
           model: CLAUDE_MODEL,
           max_tokens: 4096,
           messages: [{
             role: "user",
-            content: buildInfographicPrompt(content, platform, customPrompt || undefined, forcedTemplate),
+            content: claudeAwaPennPrompt,
           }],
         }),
         60_000,
