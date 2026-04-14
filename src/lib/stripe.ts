@@ -4,7 +4,7 @@
 
 import { supabase } from "./supabase";
 
-export type Plan = "free" | "pro" | "business";
+export type Plan = "free" | "plus" | "pro";
 
 export interface PlanConfig {
   name: string;
@@ -24,32 +24,30 @@ export const PLANS: Record<Plan, PlanConfig> = {
       "5 generations / day",
       "3 sources max",
       "Basic infographics",
-      "AI Coach (10 msg/day)",
     ],
   },
-  pro: {
-    name: "Pro",
+  plus: {
+    name: "Plus",
     price: 10,
     color: "border-primary/40",
     badge: "Most popular",
     features: [
-      "Unlimited generations",
+      "100 generations / month",
       "Unlimited sources",
       "Premium infographics",
-      "Unlimited AI Coach",
       "Style memory & learning",
       "Real viral scoring",
       "Priority support",
     ],
   },
-  business: {
-    name: "Business",
+  pro: {
+    name: "Pro",
     price: 29,
     color: "border-amber-500/40",
     badge: "Best value",
     features: [
-      "Everything in Pro",
-      "Faster AI responses",
+      "Everything in Plus",
+      "Unlimited generations",
       "Advanced analytics",
       "Team collaboration (coming soon)",
       "API access (coming soon)",
@@ -59,7 +57,7 @@ export const PLANS: Record<Plan, PlanConfig> = {
 };
 
 export async function createCheckoutSession(
-  plan: "pro" | "business",
+  plan: "plus" | "pro",
   userId: string,
   email: string,
 ): Promise<string> {

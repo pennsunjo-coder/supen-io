@@ -62,9 +62,9 @@ interface Platform {
 }
 
 const platforms: Platform[] = [
-  { id: "instagram", name: "Instagram", icon: IconInstagram, formats: ["Post", "Carrousel", "Reel (script)"] },
+  { id: "instagram", name: "Instagram", icon: IconInstagram, formats: ["Post", "Reel (script)"] },
   { id: "tiktok", name: "TikTok", icon: IconTikTok, formats: ["Caption", "Video script"] },
-  { id: "linkedin", name: "LinkedIn", icon: IconLinkedIn, formats: ["Post", "Thread"] },
+  { id: "linkedin", name: "LinkedIn", icon: IconLinkedIn, formats: ["Post"] },
   { id: "facebook", name: "Facebook", icon: IconFacebook, formats: ["Post", "Thread"] },
   { id: "x", name: "X (Twitter)", icon: IconX, formats: ["Tweet", "Thread"] },
   { id: "youtube", name: "YouTube", icon: IconYouTube, formats: ["Script long", "Script Shorts"] },
@@ -1080,13 +1080,17 @@ Strict rules:
                               {isHumanizing ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
                               Humanize
                             </Button>
-                            <Button variant="ghost" size="sm" className={cn("h-7 text-[11px] gap-1.5 px-2.5", imagePanel === idx ? "text-primary" : generatedImages[idx] ? "text-emerald-400" : "text-muted-foreground hover:text-foreground")} disabled={imageGenerating !== null && imageGenerating !== idx} onClick={(e) => { e.stopPropagation(); handleGenerateImage(idx); }}>
-                              {imageGenerating === idx ? <Loader2 className="w-3 h-3 animate-spin" /> : <ImagePlus className="w-3 h-3" />}
-                              {generatedImages[idx] ? (imagePanel === idx ? "Hide" : "View image") : imageGenerating === idx ? "Generating..." : "Image"}
-                            </Button>
-                            <Button variant="ghost" size="sm" className={cn("h-7 text-[11px] gap-1.5 px-2.5", infraPanel === idx ? "text-primary" : "text-muted-foreground hover:text-foreground")} onClick={(e) => { e.stopPropagation(); handleInfraPrompt(idx); }}>
-                              <Layers className="w-3 h-3" /> Infographic
-                            </Button>
+                            {selectedFormat?.toLowerCase() !== "thread" && (
+                              <Button variant="ghost" size="sm" className={cn("h-7 text-[11px] gap-1.5 px-2.5", imagePanel === idx ? "text-primary" : generatedImages[idx] ? "text-emerald-400" : "text-muted-foreground hover:text-foreground")} disabled={imageGenerating !== null && imageGenerating !== idx} onClick={(e) => { e.stopPropagation(); handleGenerateImage(idx); }}>
+                                {imageGenerating === idx ? <Loader2 className="w-3 h-3 animate-spin" /> : <ImagePlus className="w-3 h-3" />}
+                                {generatedImages[idx] ? (imagePanel === idx ? "Hide" : "View image") : imageGenerating === idx ? "Generating..." : "Image"}
+                              </Button>
+                            )}
+                            {selectedFormat?.toLowerCase() !== "thread" && (
+                              <Button variant="ghost" size="sm" className={cn("h-7 text-[11px] gap-1.5 px-2.5", infraPanel === idx ? "text-primary" : "text-muted-foreground hover:text-foreground")} onClick={(e) => { e.stopPropagation(); handleInfraPrompt(idx); }}>
+                                <Layers className="w-3 h-3" /> Infographic
+                              </Button>
+                            )}
                             <Button variant="ghost" size="sm" className="h-7 text-[11px] gap-1.5 px-2.5 text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); setScheduleIdx(idx); setScheduleDate(new Date().toISOString().slice(0, 10)); }}>
                               <CalendarDays className="w-3 h-3" /> Schedule
                             </Button>

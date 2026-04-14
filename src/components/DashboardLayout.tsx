@@ -33,14 +33,14 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
         </Link>
 
         <div className="ml-auto flex items-center gap-1">
-          {planIsActive && currentPlan === "pro" && (
+          {planIsActive && currentPlan === "plus" && (
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 font-medium mr-1">
-              Pro
+              Plus
             </span>
           )}
-          {planIsActive && currentPlan === "business" && (
+          {planIsActive && currentPlan === "pro" && (
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-medium mr-1">
-              Business
+              Pro
             </span>
           )}
           {!planIsActive && currentPlan === "free" && (

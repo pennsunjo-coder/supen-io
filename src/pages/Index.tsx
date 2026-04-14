@@ -41,15 +41,9 @@ const steps = [
 ];
 
 const testimonials = [
-  { name: "Aminata Diallo", role: "Content Creator · Dakar, Sénégal", image: "https://randomuser.me/api/portraits/women/44.jpg", text: "In 3 weeks I doubled my Facebook engagement. My posts finally sound like something I would have written myself." },
-  { name: "Kwame Asante", role: "Entrepreneur · Accra, Ghana", image: "https://randomuser.me/api/portraits/men/32.jpg", text: "I generate 5 variations in 30 seconds. Before, I used to spend 2 hours on a single LinkedIn post." },
-  { name: "Chloé Mbeki", role: "Business Coach · Paris, France", image: "https://randomuser.me/api/portraits/women/68.jpg", text: "The Anti-AI mode is mind-blowing. Even my most demanding audience detects nothing." },
-  { name: "Patrick Nkomo", role: "YouTube Creator · Douala, Cameroun", image: "https://randomuser.me/api/portraits/men/75.jpg", text: "I finally have a tool that understands my niche. The generated content speaks directly to my Cameroonian audience." },
-  { name: "Fatou Sarr", role: "Influencer · Abidjan, Côte d'Ivoire", image: "https://randomuser.me/api/portraits/women/12.jpg", text: "The AI Coach helped me find angles I would never have thought of. My click-through rate increased by 40%." },
-  { name: "David Kouassi", role: "Digital Marketer · Lyon, France", image: "https://randomuser.me/api/portraits/men/54.jpg", text: "I post on 4 different platforms with the same adapted content. An incredible time saver." },
-  { name: "Nadia Okonkwo", role: "Consultant · London, UK", image: "https://randomuser.me/api/portraits/women/23.jpg", text: "Supen.io transformed the way I create. I focus on ideas, the AI handles the rest." },
-  { name: "Théo Mensah", role: "Creator Economy · Brussels, Belgium", image: "https://randomuser.me/api/portraits/men/18.jpg", text: "The Facebook threads generated are exactly in my style. My followers think I have a whole team." },
-  { name: "Grace Adeyemi", role: "Online Educator · Lagos, Nigeria", image: "https://randomuser.me/api/portraits/women/91.jpg", text: "The RAG feature is revolutionary. I upload my notes and the AI creates content based on MY own ideas." },
+  { name: "Nadia Okonkwo", role: "Consultant · London, UK", image: "https://randomuser.me/api/portraits/women/23.jpg", text: "Supen.io transformed the way I create. I focus on ideas, the AI handles the rest. My LinkedIn engagement tripled." },
+  { name: "Marcus Johnson", role: "Content Strategist · New York, USA", image: "https://randomuser.me/api/portraits/men/32.jpg", text: "I generate 5 variations in 30 seconds. Before, I used to spend 2 hours on a single LinkedIn post. Game over for writer's block." },
+  { name: "Elena Torres", role: "Digital Marketer · Washington, USA", image: "https://randomuser.me/api/portraits/women/68.jpg", text: "The Anti-AI mode is mind-blowing. Even my most demanding clients detect nothing. My content finally sounds human." },
 ];
 
 const resultsData = [
@@ -68,9 +62,7 @@ const resultsData = [
 ];
 const tierColors = { gold: "bg-amber-500/90", green: "bg-emerald-500/90", cyan: "bg-primary/90" };
 
-const firstColumn = testimonials.slice(0, 3);
-const secondColumn = testimonials.slice(3, 6);
-const thirdColumn = testimonials.slice(6, 9);
+// Testimonials displayed as a simple 3-column row
 
 const plans = [
   {
@@ -85,7 +77,7 @@ const plans = [
     rotation: "rotate-[-1deg]",
   },
   {
-    name: "Pro",
+    name: "Plus",
     icon: Sparkles,
     price: "$10",
     period: "/month",
@@ -99,7 +91,6 @@ const plans = [
       "Upload your documents (PDF, URL, notes)",
       "RAG — AI trained on YOUR content",
       "Image & infographic prompt generator",
-      "Unlimited AI Coach",
       "Priority support",
     ],
     cta: "Start for $10/month →",
@@ -107,13 +98,13 @@ const plans = [
     rotation: "rotate-[1deg]",
   },
   {
-    name: "Business",
+    name: "Pro",
     icon: Users,
     price: "$29",
     period: "/month",
     desc: "For agencies and content teams",
-    features: ["Everything in Pro", "Unlimited generations", "3 team members", "Shared workspaces", "Advanced analytics", "Dedicated onboarding", "Dedicated support"],
-    cta: "Get Business →",
+    features: ["Everything in Plus", "Unlimited generations", "3 team members", "Shared workspaces", "Advanced analytics", "Dedicated onboarding", "Dedicated support"],
+    cta: "Get Pro →",
     highlighted: false,
     rotation: "rotate-[-2deg]",
   },
@@ -522,37 +513,26 @@ const Index = () => {
             <p className="text-muted-foreground">Thousands of content creators trust Supen.io to create viral content every day.</p>
           </motion.div>
 
-          {/* Infinite scroll columns */}
-          <div className="flex justify-center gap-6 max-h-[740px] overflow-hidden [mask-image:linear-gradient(to_bottom,transparent,black_25%,black_75%,transparent)]">
-            {[
-              { items: firstColumn, dur: 15 },
-              { items: secondColumn, dur: 19, hide: "hidden md:flex" },
-              { items: thirdColumn, dur: 17, hide: "hidden lg:flex" },
-            ].map((col, ci) => (
-              <div key={ci} className={col.hide || "flex flex-col"}>
-                <motion.div
-                  animate={{ translateY: "-50%" }}
-                  transition={{ duration: col.dur, repeat: Infinity, ease: "linear", repeatType: "loop" }}
-                  className="flex flex-col gap-6 pb-6"
-                >
-                  {[0, 1].map((dup) => (
-                    <div key={dup} className="flex flex-col gap-6">
-                      {col.items.map((t) => (
-                        <div key={`${dup}-${t.name}`} className="p-5 rounded-xl border border-border/50 bg-card shadow-lg shadow-primary/5 max-w-xs w-full">
-                          <p className="text-sm text-foreground/80 leading-relaxed">{t.text}</p>
-                          <div className="flex items-center gap-3 mt-4">
-                            <img src={t.image} alt={t.name} width={40} height={40} className="w-10 h-10 rounded-full object-cover" />
-                            <div>
-                              <p className="text-sm font-medium text-foreground">{t.name}</p>
-                              <p className="text-xs text-muted-foreground">{t.role}</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ))}
-                </motion.div>
-              </div>
+          {/* 3 testimonials side by side */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {testimonials.map((t) => (
+              <motion.div
+                key={t.name}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5 }}
+                className="p-6 rounded-xl border border-border/50 bg-card shadow-lg shadow-primary/5"
+              >
+                <p className="text-sm text-foreground/80 leading-relaxed">{t.text}</p>
+                <div className="flex items-center gap-3 mt-4">
+                  <img src={t.image} alt={t.name} width={40} height={40} className="w-10 h-10 rounded-full object-cover" />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{t.name}</p>
+                    <p className="text-xs text-muted-foreground">{t.role}</p>
+                  </div>
+                </div>
+              </motion.div>
             ))}
           </div>
         </div>
