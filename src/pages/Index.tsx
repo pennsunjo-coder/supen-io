@@ -56,7 +56,7 @@ const resultsData = [
   { src: "/results/Screenshot_2026-04-02_004606.png", stat: "624 reactions · 63 reposts", platform: "LinkedIn", tier: "cyan" },
   { src: "/results/Screenshot_2026-04-02_004655.png", stat: "697 reactions · 93 reposts", platform: "LinkedIn", tier: "cyan" },
   { src: "/results/Screenshot_2026-04-02_004737.png", stat: "8,810 reactions · 1,350 reposts", platform: "LinkedIn", tier: "cyan" },
-  { src: "/results/Screenshot_2026-04-02_005007.png", stat: "17M views · 30K likes", platform: "X (Twitter)", tier: "gold" },
+  { src: "/results/Screenshot_2026-04-02_005007.png", stat: "850M+ views · 30K likes", platform: "X (Twitter)", tier: "gold" },
   { src: "/results/Screenshot_2026-04-02_005138.png", stat: "1.6M views · 9.8K likes", platform: "X (Twitter)", tier: "gold" },
   { src: "/results/Screenshot_2026-04-02_005256.png", stat: "257K views · 2.2K likes", platform: "X (Twitter)", tier: "green" },
 ];
@@ -553,7 +553,7 @@ const Index = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">
             {[
               { num: "260K+", label: "Likes", platform: "Facebook" },
-              { num: "17M", label: "Views", platform: "X (Twitter)" },
+              { num: "850M+", label: "Views", platform: "X (Twitter)" },
               { num: "50K", label: "Shares", platform: "Facebook" },
               { num: "8,810", label: "Reactions", platform: "LinkedIn" },
             ].map((s, i) => (
