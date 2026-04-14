@@ -59,6 +59,17 @@ export async function getUserStyleMemory(
       if (liked) likedData = liked;
     } catch { /* table may not exist yet */ }
 
+    // Fetch user profile for preferences
+    let profileData: { niche?: string; platforms?: string[]; preferred_tone?: string; preferred_length?: string; first_name?: string } = {};
+    try {
+      const { data: prof } = await supabase
+        .from("user_profiles")
+        .select("niche, platforms, preferred_tone, preferred_length, first_name")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (prof) profileData = prof;
+    } catch { /* silent */ }
+
     const allData = [...(data || []), ...likedData.map((l) => ({
       content: l.content_preview,
       angle: l.angle,
@@ -66,35 +77,52 @@ export async function getUserStyleMemory(
       interaction_type: "liked" as const,
     }))];
 
-    if (allData.length === 0) return "";
-
-    // Build style context
-    const examples = allData
-      .slice(0, 5)
-      .map((d) => `[${d.angle} - Score ${d.viral_score}/100 - ${d.interaction_type}]:\n${d.content.slice(0, 200)}`)
-      .join("\n\n");
-
-    // Detect favorite angle (combine both sources)
+    // Detect favorite angle
     const angleCounts: Record<string, number> = {};
     for (const d of allData) {
       if (d.angle) {
-        // Liked interactions count double
         angleCounts[d.angle] = (angleCounts[d.angle] || 0) + (d.interaction_type === "liked" ? 2 : 1);
       }
     }
     const favoriteAngle = Object.entries(angleCounts)
       .sort(([, a], [, b]) => b - a)[0]?.[0];
 
-    const avgScore = Math.round(allData.reduce((sum, d) => sum + (d.viral_score || 0), 0) / allData.length);
+    const avgScore = allData.length > 0
+      ? Math.round(allData.reduce((sum, d) => sum + (d.viral_score || 0), 0) / allData.length)
+      : 0;
 
-    return `\n\n## SECTION 5 — STYLE PREFERE DE CET UTILISATEUR
-Angle favori : ${favoriteAngle || "varie"}
-Score moyen de son contenu prefere : ${avgScore}/100
-Exemples de contenu qu'il a apprecie recemment :
+    // Build examples from interactions
+    const examples = allData
+      .slice(0, 5)
+      .map((d) => `[${d.angle} - Score ${d.viral_score}/100 - ${d.interaction_type}]:\n${d.content.slice(0, 200)}`)
+      .join("\n\n");
 
-${examples}
+    // Build enriched context
+    let memory = `\n\n## SECTION 5 — USER STYLE MEMORY`;
 
-Adapte le ton, la structure et le style a ces preferences. Donne plus de poids a l'angle "${favoriteAngle || "varie"}" (en faire 2 variations au lieu de 1 si c'est pertinent). Reste creatif mais ancre dans ce style.`;
+    if (profileData.first_name || profileData.niche || profileData.preferred_tone) {
+      memory += `\nProfile:`;
+      if (profileData.first_name) memory += `\n- Name: ${profileData.first_name}`;
+      if (profileData.niche) memory += `\n- Niche: ${profileData.niche}`;
+      if (profileData.platforms?.length) memory += `\n- Preferred platforms: ${profileData.platforms.join(", ")}`;
+      if (profileData.preferred_tone) memory += `\n- Preferred tone: ${profileData.preferred_tone}`;
+      if (profileData.preferred_length) memory += `\n- Preferred length: ${profileData.preferred_length}`;
+    }
+
+    if (favoriteAngle || avgScore > 0) {
+      memory += `\n\nContent patterns:`;
+      if (favoriteAngle) memory += `\n- Favorite angle: ${favoriteAngle}`;
+      if (avgScore > 0) memory += `\n- Average viral score: ${avgScore}/100`;
+      memory += `\n- Active platform: ${platform}`;
+    }
+
+    if (examples) {
+      memory += `\n\nContent they liked recently:\n${examples}`;
+    }
+
+    memory += `\n\nUse this to personalize ALL content. Never generate generic content — adapt to their style, niche, and preferences. Give more weight to "${favoriteAngle || "varied"}" angles.`;
+
+    return memory;
   } catch {
     return "";
   }

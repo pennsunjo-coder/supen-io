@@ -15,6 +15,7 @@ import { BookOpen, Sparkles, Bot } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { Button } from "@/components/ui/button";
+import { MotivationWidget } from "@/components/DashboardWidgets";
 
 type MobileTab = "sources" | "studio" | "coach";
 
@@ -115,6 +116,7 @@ const Dashboard = () => {
           "flex-1 flex-col min-w-0 md:flex",
           mobileTab === "studio" ? "flex" : "hidden md:flex",
         )}>
+          <MotivationWidget firstName={profile?.first_name} />
           <ErrorBoundary
             fallback={
               <div className="flex-1 flex items-center justify-center p-6">

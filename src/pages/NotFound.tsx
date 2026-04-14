@@ -71,10 +71,10 @@ const NotFound = () => {
               <span className="text-[11px] font-semibold text-amber-400 uppercase tracking-wider">Page not found</span>
             </div>
             <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
-              Lost your way?
+              This page went viral... somewhere else.
             </h2>
             <p className="text-sm text-muted-foreground mb-2 leading-relaxed">
-              The page you're looking for doesn't exist or has been moved.
+              We can't find this page. But your next viral post is waiting in the dashboard.
             </p>
             {location.pathname && location.pathname !== "/" && (
               <code className="text-[11px] text-muted-foreground/60 block mb-8 break-all">
