@@ -1,10 +1,10 @@
 /**
- * Real viral scoring via Claude Haiku.
- * Replaces the fake deterministic formula.
+ * Real viral scoring via OpenAI GPT-4o-mini.
+ * Replaces the old Claude Haiku scorer.
  * Evaluates content on 5 criteria (0-20 each) for a total /100.
  */
 
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 
 export interface ScoreDetails {
   total: number;
@@ -40,27 +40,25 @@ Respond ONLY with this exact JSON format (no markdown, no backticks):
 {"hook":N,"emotion":N,"specificity":N,"actionable":N,"cta":N,"feedback":"one sentence explaining the main strength or weakness"}`;
 
 /**
- * Score a single content variation using Claude Haiku.
- * Fast (~1-2s) and cheap ($0.25/1M input tokens).
+ * Score a single content variation using GPT-4o-mini.
+ * Fast (~1-2s) and cheap.
  */
 export async function scoreVariation(
   content: string,
   platform: string,
-  client: Anthropic,
+  client: OpenAI,
 ): Promise<ScoreDetails> {
   try {
-    const response = await client.messages.create({
-      model: "claude-haiku-4-5-20251001",
+    const response = await client.chat.completions.create({
+      model: "gpt-4o-mini",
       max_tokens: 200,
-      system: `Platform: ${platform}\n\n${SCORING_PROMPT}`,
-      messages: [{ role: "user", content: content.slice(0, 800) }],
+      messages: [
+        { role: "system", content: `Platform: ${platform}\n\n${SCORING_PROMPT}` },
+        { role: "user", content: content.slice(0, 800) },
+      ],
     });
 
-    const text = response.content
-      .filter((b) => b.type === "text")
-      .map((b) => b.text)
-      .join("")
-      .trim();
+    const text = (response.choices[0]?.message?.content || "").trim();
 
     // Extract JSON — handle possible markdown wrapping
     const jsonStr = text.replace(/```json?\s*/g, "").replace(/```/g, "").trim();
@@ -82,7 +80,7 @@ export async function scoreVariation(
       feedback: typeof data.feedback === "string" ? data.feedback.slice(0, 200) : "",
     };
   } catch {
-    // Fallback if Haiku fails or returns bad JSON
+    // Fallback if scoring fails or returns bad JSON
     return { total: 65, hook: 13, emotion: 13, specificity: 13, actionable: 13, cta: 13, feedback: "" };
   }
 }
@@ -94,7 +92,7 @@ export async function scoreVariation(
 export async function scoreAllVariations(
   variations: { content: string }[],
   platform: string,
-  client: Anthropic,
+  client: OpenAI,
 ): Promise<ScoreDetails[]> {
   return Promise.all(
     variations.map((v) => scoreVariation(v.content, platform, client))

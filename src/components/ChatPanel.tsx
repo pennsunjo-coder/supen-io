@@ -2,13 +2,12 @@ import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Send, Bot, User, Loader2, Trash2, Sparkles, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { anthropic, CLAUDE_MODEL, SYSTEM_PROMPT } from "@/lib/anthropic";
+import { openai, OPENAI_MODEL, SYSTEM_PROMPT } from "@/lib/openai";
 import { sanitizeInput, createRateLimiter } from "@/lib/security";
 import { assertOnline, friendlyError } from "@/lib/resilience";
 import { getUserStyleMemory } from "@/lib/user-memory";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import type { MessageParam } from "@anthropic-ai/sdk/resources/messages";
 import type { Source } from "@/types/database";
 import type { ConversationMessage } from "@/types/database";
 import type { UserProfile } from "@/hooks/use-profile";
@@ -202,18 +201,29 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
     const updatedMessages = [...messages, userMessage];
     onMessagesChange(() => updatedMessages);
 
-    const apiMessages: MessageParam[] = updatedMessages.map((msg) => ({ role: msg.role, content: msg.content }));
+    const apiMessages = updatedMessages.map((msg) => ({ role: msg.role as "user" | "assistant", content: msg.content }));
 
     try {
       abortRef.current = new AbortController();
       const systemPrompt = buildCoachPrompt(profile || null, sources, lastGeneratedContent, styleMemory);
-      const stream = anthropic.messages.stream(
-        { model: CLAUDE_MODEL, max_tokens: 2048, system: systemPrompt, messages: apiMessages },
+      const stream = await openai.chat.completions.create(
+        {
+          model: OPENAI_MODEL,
+          max_tokens: 2048,
+          stream: true,
+          messages: [
+            { role: "system", content: systemPrompt },
+            ...apiMessages,
+          ],
+        },
         { signal: abortRef.current.signal },
       );
       let fullResponse = "";
-      stream.on("text", (t) => { fullResponse += t; setStreamingContent(fullResponse); });
-      await stream.finalMessage();
+      for await (const chunk of stream) {
+        const delta = chunk.choices[0]?.delta?.content || "";
+        fullResponse += delta;
+        setStreamingContent(fullResponse);
+      }
       setStreamingContent("");
       onMessagesChange((prev) => [...prev, { role: "assistant", content: fullResponse }]);
     } catch (err: unknown) {

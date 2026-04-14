@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic";
+import { openai, OPENAI_MODEL } from "@/lib/openai";
 import { sanitizeInput } from "@/lib/security";
 import { toast } from "sonner";
 import { searchViralReferences, ViralReference, searchUserSources } from "@/lib/embeddings";
@@ -368,18 +368,20 @@ Strict rules:
       // Single call — no retry. SDK maxRetries is already 0.
       // On 529, the catch block shows a manual countdown button.
       const response = await withTimeout(
-        anthropic.messages.create({
-          model: CLAUDE_MODEL,
+        openai.chat.completions.create({
+          model: OPENAI_MODEL,
           max_tokens: 4096,
-          system: systemPrompt,
-          messages: [{ role: "user", content: userMessage }],
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userMessage },
+          ],
         }),
         60_000,
         "Generation took too long (60s). Try with shorter content.",
       );
 
       setError(null);
-      const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
+      const text = response.choices[0]?.message?.content || "";
       const parsed = parseVariations(text);
       setVariations(parsed);
 
@@ -389,7 +391,7 @@ Strict rules:
 
       // Score all variations in parallel via Haiku, then save with real scores
       try {
-        const scores = await scoreAllVariations(parsed, selectedPlatform.name, anthropic);
+        const scores = await scoreAllVariations(parsed, selectedPlatform.name, openai);
         const scored = parsed.map((v, i) => ({
           ...v,
           score: scores[i]?.total ?? 65,
@@ -509,14 +511,15 @@ Strict rules:
     setIsHumanizing(true);
     setError(null);
     try {
-      const response = await anthropic.messages.create({
-        model: CLAUDE_MODEL,
+      const response = await openai.chat.completions.create({
+        model: OPENAI_MODEL,
         max_tokens: 2048,
-        system: `You are an expert in content rewriting. Make this text undetectable by AI detectors while keeping the same message.
-Rules: English only. Natural, imperfect, human phrasing. Vary sentence length. Keep the format adapted to ${selectedPlatform.name}. Respond only with the rewritten text.`,
-        messages: [{ role: "user", content: `Humanize this content:\n\n${original.content}` }],
+        messages: [
+          { role: "system", content: `You are an expert in content rewriting. Make this text undetectable by AI detectors while keeping the same message.\nRules: English only. Natural, imperfect, human phrasing. Vary sentence length. Keep the format adapted to ${selectedPlatform.name}. Respond only with the rewritten text.` },
+          { role: "user", content: `Humanize this content:\n\n${original.content}` },
+        ],
       });
-      const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
+      const text = response.choices[0]?.message?.content || "";
       setVariations((prev) => prev.map((v, i) => i === idx ? { ...v, content: text, words: wordCount(text) } : v));
       toast.success("Humanized version. Undetectable by AI detectors.");
     } catch (err: unknown) {
@@ -626,13 +629,15 @@ Rules: English only. Natural, imperfect, human phrasing. Vary sentence length. K
     setInfraContent("");
     setGenInfra(true);
     try {
-      const response = await anthropic.messages.create({
-        model: CLAUDE_MODEL,
+      const response = await openai.chat.completions.create({
+        model: OPENAI_MODEL,
         max_tokens: 400,
-        system: `You are an expert in viral infographic design. Create an infographic structure for this ${selectedPlatform?.name || ""} content. Format: TITLE: [max 8 words]\nPOINT 1: [short text]\nPOINT 2: [short text]\nPOINT 3: [short text]\nCTA: [call to action]\nIn English. Respond ONLY with the structure.`,
-        messages: [{ role: "user", content: variations[idx].content.slice(0, 600) }],
+        messages: [
+          { role: "system", content: `You are an expert in viral infographic design. Create an infographic structure for this ${selectedPlatform?.name || ""} content. Format: TITLE: [max 8 words]\nPOINT 1: [short text]\nPOINT 2: [short text]\nPOINT 3: [short text]\nCTA: [call to action]\nIn English. Respond ONLY with the structure.` },
+          { role: "user", content: variations[idx].content.slice(0, 600) },
+        ],
       });
-      setInfraContent(response.content.filter((b) => b.type === "text").map((b) => b.text).join(""));
+      setInfraContent(response.choices[0]?.message?.content || "");
     } catch (err) {
       console.error("Infographic error:", err);
       toast.error("Infographic generation error");

@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic";
+import { openai, OPENAI_MODEL } from "@/lib/openai";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import type { DashboardContent, ContentSession } from "@/hooks/use-dashboard";
@@ -76,13 +76,15 @@ function TopContentCard({
     if (imagePrompt) return;
     setGenerating(true);
     try {
-      const response = await anthropic.messages.create({
-        model: CLAUDE_MODEL,
+      const response = await openai.chat.completions.create({
+        model: OPENAI_MODEL,
         max_tokens: 300,
-        system: `You are an expert in image generation prompts. Generate a prompt in English, optimized for ${item.platform}, that visually illustrates this content. Format: photographic style + subject + mood + colors + composition. Max 100 words. Respond ONLY with the prompt.`,
-        messages: [{ role: "user", content: item.content.slice(0, 600) }],
+        messages: [
+          { role: "system", content: `You are an expert in image generation prompts. Generate a prompt in English, optimized for ${item.platform}, that visually illustrates this content. Format: photographic style + subject + mood + colors + composition. Max 100 words. Respond ONLY with the prompt.` },
+          { role: "user", content: item.content.slice(0, 600) },
+        ],
       });
-      const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
+      const text = response.choices[0]?.message?.content || "";
       setImagePrompt(text);
       onUpdateImagePrompt(item.id, text);
     } catch (err) {
@@ -97,21 +99,15 @@ function TopContentCard({
     if (infographic) return;
     setGenerating(true);
     try {
-      const response = await anthropic.messages.create({
-        model: CLAUDE_MODEL,
+      const response = await openai.chat.completions.create({
+        model: OPENAI_MODEL,
         max_tokens: 400,
-        system: `You are an expert in viral infographic design. Create an infographic structure for this ${item.platform} content. Exact format:
-TITLE: [catchy title, max 8 words]
-POINT 1: [short text]
-POINT 2: [short text]
-POINT 3: [short text]
-POINT 4: [short text, optional]
-POINT 5: [short text, optional]
-CTA: [call to action]
-In English. Respond ONLY with the structure.`,
-        messages: [{ role: "user", content: item.content.slice(0, 600) }],
+        messages: [
+          { role: "system", content: `You are an expert in viral infographic design. Create an infographic structure for this ${item.platform} content. Exact format:\nTITLE: [catchy title, max 8 words]\nPOINT 1: [short text]\nPOINT 2: [short text]\nPOINT 3: [short text]\nPOINT 4: [short text, optional]\nPOINT 5: [short text, optional]\nCTA: [call to action]\nIn English. Respond ONLY with the structure.` },
+          { role: "user", content: item.content.slice(0, 600) },
+        ],
       });
-      const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
+      const text = response.choices[0]?.message?.content || "";
       setInfographic(text);
     } catch { /* silent */ }
     setGenerating(false);
@@ -121,13 +117,15 @@ In English. Respond ONLY with the structure.`,
     setImagePrompt("");
     setGenerating(true);
     try {
-      const response = await anthropic.messages.create({
-        model: CLAUDE_MODEL,
+      const response = await openai.chat.completions.create({
+        model: OPENAI_MODEL,
         max_tokens: 300,
-        system: `You are an expert in image generation prompts. Generate a prompt in English, optimized for ${item.platform}, that visually illustrates this content. Format: photographic style + subject + mood + colors + composition. Max 100 words. Respond ONLY with the prompt.`,
-        messages: [{ role: "user", content: item.content.slice(0, 600) }],
+        messages: [
+          { role: "system", content: `You are an expert in image generation prompts. Generate a prompt in English, optimized for ${item.platform}, that visually illustrates this content. Format: photographic style + subject + mood + colors + composition. Max 100 words. Respond ONLY with the prompt.` },
+          { role: "user", content: item.content.slice(0, 600) },
+        ],
       });
-      const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
+      const text = response.choices[0]?.message?.content || "";
       setImagePrompt(text);
       onUpdateImagePrompt(item.id, text);
     } catch { /* silent */ }
@@ -319,13 +317,15 @@ function SessionVariationCard({
     if (imagePrompt) return;
     setGenerating(true);
     try {
-      const r = await anthropic.messages.create({
-        model: CLAUDE_MODEL,
+      const r = await openai.chat.completions.create({
+        model: OPENAI_MODEL,
         max_tokens: 300,
-        system: `You are an expert in image generation prompts. Generate a prompt in English, optimized for ${platform}, that visually illustrates this content. Format: photographic style + subject + mood + colors + composition. Max 100 words. Respond ONLY with the prompt.`,
-        messages: [{ role: "user", content: item.content.slice(0, 600) }],
+        messages: [
+          { role: "system", content: `You are an expert in image generation prompts. Generate a prompt in English, optimized for ${platform}, that visually illustrates this content. Format: photographic style + subject + mood + colors + composition. Max 100 words. Respond ONLY with the prompt.` },
+          { role: "user", content: item.content.slice(0, 600) },
+        ],
       });
-      const t = r.content.filter((b) => b.type === "text").map((b) => b.text).join("");
+      const t = r.choices[0]?.message?.content || "";
       setImagePrompt(t);
       onUpdateImagePrompt(item.id, t);
     } catch (err) {
@@ -339,13 +339,15 @@ function SessionVariationCard({
     setImagePrompt("");
     setGenerating(true);
     try {
-      const r = await anthropic.messages.create({
-        model: CLAUDE_MODEL,
+      const r = await openai.chat.completions.create({
+        model: OPENAI_MODEL,
         max_tokens: 300,
-        system: `You are an expert in image generation prompts. Generate a prompt in English, optimized for ${platform}, that visually illustrates this content. Format: photographic style + subject + mood + colors + composition. Max 100 words. Respond ONLY with the prompt.`,
-        messages: [{ role: "user", content: item.content.slice(0, 600) }],
+        messages: [
+          { role: "system", content: `You are an expert in image generation prompts. Generate a prompt in English, optimized for ${platform}, that visually illustrates this content. Format: photographic style + subject + mood + colors + composition. Max 100 words. Respond ONLY with the prompt.` },
+          { role: "user", content: item.content.slice(0, 600) },
+        ],
       });
-      const t = r.content.filter((b) => b.type === "text").map((b) => b.text).join("");
+      const t = r.choices[0]?.message?.content || "";
       setImagePrompt(t);
       onUpdateImagePrompt(item.id, t);
     } catch (err) {
