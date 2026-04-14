@@ -91,7 +91,6 @@ const plans = [
       "Upload your documents (PDF, URL, notes)",
       "RAG — AI trained on YOUR content",
       "Image & infographic prompt generator",
-      "Priority support",
     ],
     cta: "Start for $10/month →",
     highlighted: true,
