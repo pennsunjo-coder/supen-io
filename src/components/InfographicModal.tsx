@@ -9,22 +9,17 @@ import {
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import GenerationProgress, { INFOGRAPHIC_STEPS } from "@/components/GenerationProgress";
-import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic";
 import {
-  buildInfographicPrompt,
   buildGeminiImagePrompt,
   analyzeContent,
   getFormatDimensions,
   selectBestTemplate,
   resetRegenerationCounter,
-  postProcessHtml,
-  scoreInfographic,
-  type QualityScore,
 } from "@/lib/infographic-style";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { assertOnline, withTimeout, sanitizeInfographicHtml, friendlyError } from "@/lib/resilience";
+import { assertOnline, friendlyError } from "@/lib/resilience";
 
 const FONT_LINK = '<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet">';
 
@@ -33,18 +28,18 @@ function injectFontsInHtml(html: string): string {
   return html.replace("</head>", FONT_LINK + "</head>");
 }
 
-// ─── Gemini Image Generation ───
+// ─── Gemini Image Generation (ONLY method — no Claude fallback) ───
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 const GEMINI_MODEL = "gemini-2.0-flash-preview-image-generation";
 
-async function generateWithGemini(
-  prompt: string,
-): Promise<string | null> {
-  if (!GEMINI_API_KEY) return null;
+async function generateWithGemini(prompt: string): Promise<string | null> {
+  if (!GEMINI_API_KEY) {
+    throw new Error("Gemini API key not configured. Add VITE_GEMINI_API_KEY to your .env file.");
+  }
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 90_000);
+  const timeoutId = setTimeout(() => controller.abort(), 120_000); // 2 minutes
 
   try {
     const response = await fetch(
@@ -55,8 +50,7 @@ async function generateWithGemini(
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
-            responseModalities: ["IMAGE", "TEXT"],
-            responseMimeType: "image/png",
+            responseModalities: ["IMAGE"],
           },
         }),
         signal: controller.signal,
@@ -65,8 +59,9 @@ async function generateWithGemini(
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      console.warn("[InfographicModal] Gemini HTTP", response.status);
-      return null;
+      const errorText = await response.text().catch(() => "");
+      console.error("[InfographicModal] Gemini HTTP", response.status, errorText);
+      throw new Error(`Gemini API error (${response.status}). Please try again.`);
     }
 
     const data = await response.json();
@@ -74,11 +69,18 @@ async function generateWithGemini(
       ?.find((p: { inlineData?: { data: string } }) => p.inlineData)
       ?.inlineData?.data;
 
-    return base64 || null;
+    if (!base64) {
+      console.error("[InfographicModal] Gemini returned no image data:", JSON.stringify(data).slice(0, 500));
+      throw new Error("Gemini did not return an image. Please try again.");
+    }
+
+    return base64;
   } catch (err) {
     clearTimeout(timeoutId);
-    console.warn("[InfographicModal] Gemini error:", err);
-    return null;
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new Error("Image generation timed out (2 min). Please try again with simpler content.");
+    }
+    throw err;
   }
 }
 
@@ -233,6 +235,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
   const [step, setStep] = useState<Step>("ready");
   const [resultMode, setResultMode] = useState<ResultMode>(null);
   const [htmlCode, setHtmlCode] = useState("");
+  const [imageBase64, setImageBase64] = useState("");
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -240,7 +243,6 @@ export default function InfographicModal({ open, onClose, content, platform, con
   const [showConfetti, setShowConfetti] = useState(false);
   const [customPrompt, setCustomPrompt] = useState("");
   const [showPrompt, setShowPrompt] = useState(false);
-  const [qualityScore, setQualityScore] = useState<QualityScore | null>(null);
   const [styleChoice, setStyleChoice] = useState<StyleChoice>("auto");
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [retryCountdown, setRetryCountdown] = useState(0);
@@ -259,10 +261,10 @@ export default function InfographicModal({ open, onClose, content, platform, con
       setShowPrompt(false);
       setShowZoom(false);
       setShowConfetti(false);
-      setQualityScore(null);
       setStyleChoice("auto");
       setGenerationError(null);
       setRetryCountdown(0);
+      setImageBase64("");
       if (retryIntervalRef.current) { clearInterval(retryIntervalRef.current); retryIntervalRef.current = null; }
       resetRegenerationCounter();
 
@@ -290,12 +292,12 @@ export default function InfographicModal({ open, onClose, content, platform, con
 
   // Visual confetti only — save is handled explicitly in handleGenerate
   useEffect(() => {
-    if (step === "result" && htmlCode) {
+    if (step === "result" && (htmlCode || imageBase64)) {
       setShowConfetti(true);
       const t = setTimeout(() => setShowConfetti(false), 1500);
       return () => clearTimeout(t);
     }
-  }, [step, htmlCode]);
+  }, [step, htmlCode, imageBase64]);
 
   // Reset save guard when the modal opens fresh
   useEffect(() => {
@@ -313,14 +315,14 @@ export default function InfographicModal({ open, onClose, content, platform, con
   const previewWidth = 480;
   const iframeScale = previewWidth / dims.width;
 
-  // ─── Generation (Gemini Image first → Claude HTML fallback) ───
+  // ─── Generation (Gemini Image ONLY) ───
 
   async function handleGenerate() {
     setStep("generating");
     setHtmlCode("");
+    setImageBase64("");
     setResultMode(null);
     setSaved(false);
-    setQualityScore(null);
     setGenerationError(null);
     setRetryCountdown(0);
     if (retryIntervalRef.current) { clearInterval(retryIntervalRef.current); retryIntervalRef.current = null; }
@@ -329,67 +331,26 @@ export default function InfographicModal({ open, onClose, content, platform, con
     try {
       assertOnline();
 
-      // ── Step 1: Try Gemini Image generation ──
       const geminiPrompt = buildGeminiImagePrompt(content, platform, customPrompt || undefined, forcedTemplate);
-      console.log("[InfographicModal] Trying Gemini Image generation...");
+      console.log("[InfographicModal] Generating with Gemini Image...");
+
       const base64 = await generateWithGemini(geminiPrompt);
 
-      if (base64) {
-        console.log("[InfographicModal] Gemini succeeded — using generated image");
-        const html = wrapBase64AsHtml(base64, dims);
-        setHtmlCode(html);
-        setResultMode("gemini");
-        setStep("result");
-        await handleSave({ html, mode: "claude" });
-        return;
+      if (!base64) {
+        throw new Error("Image generation failed. Please try again.");
       }
 
-      // ── Step 2: Fallback to Claude HTML with Awa K Penn style ──
-      console.log("[InfographicModal] Gemini failed/unavailable — falling back to Claude HTML");
-      const claudeAwaPennPrompt = `You are generating HTML that visually replicates the Awa K Penn infographic style exactly.
-The HTML must produce an image that looks IDENTICAL to hand-crafted whiteboard notes.
+      // Store the raw base64 for direct downloads
+      setImageBase64(base64);
 
-Use these exact techniques:
-1. Embed SVG elements for hand-drawn decorations (wavy underlines, corner clips, spiral coils, oval badges)
-2. Use CSS that simulates paper texture (background-image with subtle SVG grain pattern)
-3. Nunito 900 for titles, Caveat for body — load from Google Fonts
-4. All styles INLINE (no CSS classes) — critical for html2canvas export
-5. Replicate EXACTLY: corner clips (dark gray rectangles at corners), wavy underlines (SVG path), oval number badges (SVG circles with stroke), yellow #FFEF5A highlights on key terms, colored section headers with 2px underlines
-6. Background MUST be #f8f9f7 (never pure white)
-7. Colors: Red #C0392B, Blue #2563EB, Green #4A8B35, Orange #F5922A only
-8. Yellow #FFEF5A ONLY as inline text highlighter (like Stabilo marker), NEVER as card/section background
-
-${buildInfographicPrompt(content, platform, customPrompt || undefined, forcedTemplate)}`;
-
-      const response = await withTimeout(
-        anthropic.messages.create({
-          model: CLAUDE_MODEL,
-          max_tokens: 4096,
-          messages: [{
-            role: "user",
-            content: claudeAwaPennPrompt,
-          }],
-        }),
-        60_000,
-      );
-
-      const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
-      const htmlMatch = text.match(/<!DOCTYPE html>[\s\S]*<\/html>/i)
-        || text.match(/<html[\s\S]*<\/html>/i)
-        || text.match(/<div[\s\S]*<\/div>/);
-      const rawHtml = htmlMatch ? htmlMatch[0] : text;
-      const html = sanitizeInfographicHtml(postProcessHtml(rawHtml));
-
-      if (!html || html.trim().length < 100) {
-        throw new Error("Generated content is empty or too short. Try again.");
-      }
-
+      // Also wrap in HTML for iframe preview (backward-compatible display)
+      const html = wrapBase64AsHtml(base64, dims);
       setHtmlCode(html);
-      setResultMode("claude");
-      setQualityScore(scoreInfographic(html, dims));
+      setResultMode("gemini");
       setStep("result");
 
-      await handleSave({ html, mode: "claude" });
+      // Save to Supabase
+      await handleSave({ html, mode: "gemini" });
     } catch (err) {
       console.error("[InfographicModal] Generation failed:", err);
       const fallbackMsg = err instanceof Error ? err.message : "Generation failed";
@@ -417,154 +378,93 @@ ${buildInfographicPrompt(content, platform, customPrompt || undefined, forcedTem
     }, 1000);
   }
 
-  // ─── Downloads (PNG + JPEG + PDF from HTML via html2canvas) ───
+  // ─── Downloads (direct base64 for Gemini images) ───
 
-  async function renderHtmlToCanvas(): Promise<HTMLCanvasElement> {
-    const iframe = iframeRef.current;
-    if (!iframe) throw new Error("Iframe not available");
-
-    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-    if (!iframeDoc?.body) throw new Error("Cannot access iframe content");
-
-    // Wait for fonts to load inside the iframe
-    try { await iframe.contentWindow?.document.fonts.ready; } catch {}
-    await new Promise((r) => setTimeout(r, 1500));
-
-    const html2canvas = (await import("html2canvas")).default;
-    const rootEl = iframeDoc.body;
-
-    const canvas = await html2canvas(rootEl, {
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: "#f8f9f7",
-      scale: 2,
-      logging: false,
-      foreignObjectRendering: false,
-      imageTimeout: 5000,
-      onclone: (clonedDoc: Document) => {
-        try {
-          clonedDoc.querySelectorAll("*").forEach((el) => {
-            const htmlEl = el as HTMLElement;
-            try {
-              const computed = window.getComputedStyle(htmlEl);
-              const bg = computed.backgroundColor;
-              if (bg && bg !== "rgba(0, 0, 0, 0)" && bg !== "transparent") {
-                htmlEl.style.backgroundColor = bg;
-              }
-              if (computed.color) htmlEl.style.color = computed.color;
-              if (computed.fontFamily) htmlEl.style.fontFamily = computed.fontFamily;
-              if (computed.fontWeight) htmlEl.style.fontWeight = computed.fontWeight;
-              if (computed.fontSize) htmlEl.style.fontSize = computed.fontSize;
-              if (computed.borderLeftColor) htmlEl.style.borderLeftColor = computed.borderLeftColor;
-              if (computed.borderColor) htmlEl.style.borderColor = computed.borderColor;
-            } catch {}
-          });
-        } catch {}
-      },
-    });
-
-    return canvas;
+  function base64ToBlob(b64: string, type: string): Blob {
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return new Blob([bytes], { type });
   }
 
   async function handleDownload(format: "png" | "jpeg") {
-    if (downloading || !htmlCode) return;
+    if (downloading || !imageBase64) return;
     setDownloading(true);
 
     try {
-      const canvas = await renderHtmlToCanvas();
-      const link = document.createElement("a");
-      link.style.display = "none";
-      if (format === "jpeg") {
+      if (format === "png") {
+        // Direct download from base64 — no canvas conversion needed
+        const link = document.createElement("a");
+        link.href = `data:image/png;base64,${imageBase64}`;
+        link.download = `supen-infographic-${Date.now()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        // Convert PNG base64 to JPEG via canvas
+        const img = new Image();
+        img.src = `data:image/png;base64,${imageBase64}`;
+        await new Promise<void>((resolve, reject) => {
+          img.onload = () => resolve();
+          img.onerror = () => reject(new Error("Failed to load image"));
+        });
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) throw new Error("Canvas not supported");
+        ctx.fillStyle = "#f8f9f7";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+        const link = document.createElement("a");
         link.href = canvas.toDataURL("image/jpeg", 0.95);
         link.download = `supen-infographic-${Date.now()}.jpg`;
-      } else {
-        link.href = canvas.toDataURL("image/png");
-        link.download = `supen-infographic-${Date.now()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
       }
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
       toast.success(`${format.toUpperCase()} downloaded!`);
     } catch (err) {
       console.error("[InfographicModal] Download error:", err);
-      // Fallback: open HTML in new tab
-      try {
-        const blob = new Blob([htmlCode], { type: "text/html" });
-        const url = URL.createObjectURL(blob);
-        window.open(url, "_blank");
-        toast.info("Opened in new tab — right-click image to save");
-      } catch {
-        toast.error("Download failed — try again");
-      }
+      toast.error("Download failed — try again");
     } finally {
       setDownloading(false);
     }
   }
 
   async function handleCopyImage() {
-    if (!htmlCode) return;
+    if (!imageBase64) return;
     setDownloading(true);
     try {
-      const canvas = await renderHtmlToCanvas();
-      canvas.toBlob(async (blob) => {
-        if (blob) {
-          await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-          toast.success("Image copied!");
-        }
-        setDownloading(false);
-      }, "image/png");
+      const blob = base64ToBlob(imageBase64, "image/png");
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+      toast.success("Image copied!");
     } catch {
       toast.error("Copy failed — your browser may not support this.");
-      setDownloading(false);
     }
+    setDownloading(false);
   }
 
   async function handleDownloadPDF() {
-    if (downloading || !htmlCode) return;
+    if (downloading || !imageBase64) return;
     setDownloading(true);
 
     try {
-      const canvas = await renderHtmlToCanvas();
-      const imgData = canvas.toDataURL("image/png");
-      const imgW = canvas.width / 2;
-      const imgH = canvas.height / 2;
-      const ratio = imgH / imgW;
+      const imgData = `data:image/png;base64,${imageBase64}`;
+      const ratio = dims.height / dims.width;
 
-      // Try jsPDF first
-      try {
-        const { jsPDF } = await import("jspdf");
-        const pdfW = 210;
-        const pdfH = Math.round(pdfW * ratio);
-        const pdf = new jsPDF({
-          orientation: ratio > 1 ? "portrait" : "landscape",
-          unit: "mm",
-          format: [pdfW, pdfH],
-          compress: true,
-        });
-        pdf.addImage(imgData, "PNG", 0, 0, pdfW, pdfH, "", "FAST");
-        pdf.save(`supen-infographic-${Date.now()}.pdf`);
-        toast.success("PDF downloaded!");
-      } catch (pdfErr) {
-        console.warn("jsPDF failed, using print fallback:", pdfErr);
-        // Fallback: print dialog
-        const printWin = window.open("", "_blank", "width=1200,height=800");
-        if (!printWin) {
-          // Last fallback: save as PNG
-          const link = document.createElement("a");
-          link.href = imgData;
-          link.download = `supen-infographic-${Date.now()}.png`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          toast.info("Saved as PNG (popups blocked for PDF)");
-          setDownloading(false);
-          return;
-        }
-        const isPortrait = ratio > 1;
-        printWin.document.write(`<!DOCTYPE html><html><head><style>*{margin:0;padding:0;box-sizing:border-box}body{background:white}img{width:100%;height:auto;display:block;page-break-inside:avoid}@page{margin:0;size:${isPortrait ? "portrait" : "landscape"}}@media print{body{margin:0}img{width:100%}}</style></head><body><img src="${imgData}"/><script>window.onload=function(){setTimeout(function(){window.print();setTimeout(function(){window.close()},1000)},800)};<\/script></body></html>`);
-        printWin.document.close();
-        toast.success("Print dialog → Save as PDF");
-      }
+      const { jsPDF } = await import("jspdf");
+      const pdfW = 210;
+      const pdfH = Math.round(pdfW * ratio);
+      const pdf = new jsPDF({
+        orientation: ratio > 1 ? "portrait" : "landscape",
+        unit: "mm",
+        format: [pdfW, pdfH],
+        compress: true,
+      });
+      pdf.addImage(imgData, "PNG", 0, 0, pdfW, pdfH, "", "FAST");
+      pdf.save(`supen-infographic-${Date.now()}.pdf`);
+      toast.success("PDF downloaded!");
     } catch (err) {
       console.error("[InfographicModal] PDF error:", err);
       toast.error("PDF failed — use PNG instead");
@@ -577,7 +477,7 @@ ${buildInfographicPrompt(content, platform, customPrompt || undefined, forcedTem
   // Accepts fresh data via opts to avoid stale React state closures.
   // savedRef provides synchronous duplicate protection.
 
-  async function handleSave(opts?: { html?: string; mode?: "claude" }) {
+  async function handleSave(opts?: { html?: string; mode?: "claude" | "gemini" }) {
     if (!user) return;
     if (savedRef.current) return;
 
@@ -623,7 +523,7 @@ ${buildInfographicPrompt(content, platform, customPrompt || undefined, forcedTem
       } else {
         setSaved(true);
         toast.success("Infographic saved!");
-        if (onGenerated && infographicHtml) onGenerated(infographicHtml);
+        if (onGenerated && html) onGenerated(html);
       }
     } catch (err) {
       console.error("[InfographicModal] Network/unexpected error:", err);
@@ -665,7 +565,7 @@ ${buildInfographicPrompt(content, platform, customPrompt || undefined, forcedTem
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {step === "ready" && "AI analyzes your content and designs automatically"}
-                {step === "generating" && "This may take 30-60 seconds — don't close this window"}
+                {step === "generating" && "This may take up to 2 minutes — don't close this window"}
                 {step === "result" && `${platform} — ${dims.width}x${dims.height}`}
               </p>
             </div>
@@ -780,7 +680,7 @@ ${buildInfographicPrompt(content, platform, customPrompt || undefined, forcedTem
                       <Sparkles className="w-5 h-5 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                     </div>
                     <div className="w-full max-w-xs">
-                      <GenerationProgress isActive={step === "generating"} steps={INFOGRAPHIC_STEPS} estimatedSeconds={50} />
+                      <GenerationProgress isActive={step === "generating"} steps={INFOGRAPHIC_STEPS} estimatedSeconds={100} />
                     </div>
                   </div>
                 </div>
@@ -873,7 +773,7 @@ ${buildInfographicPrompt(content, platform, customPrompt || undefined, forcedTem
                 {/* Download status */}
                 {downloading && (
                   <p className="text-xs text-muted-foreground text-center animate-pulse mb-2">
-                    Preparing download... (may take a few seconds)
+                    Preparing download...
                   </p>
                 )}
 
@@ -924,35 +824,6 @@ ${buildInfographicPrompt(content, platform, customPrompt || undefined, forcedTem
                     <Copy className="w-3.5 h-3.5" /> Copy
                   </Button>
                 </div>
-
-                {/* Quality score */}
-                {qualityScore && resultMode === "claude" && (
-                  <div className="mb-3 p-3 rounded-lg bg-accent/20 border border-border/20">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-semibold">Quality Score</span>
-                      <span className={cn(
-                        "text-xs font-bold px-2 py-0.5 rounded-full",
-                        qualityScore.score >= 80 ? "bg-green-500/15 text-green-400" :
-                        qualityScore.score >= 60 ? "bg-yellow-500/15 text-yellow-400" :
-                        "bg-red-500/15 text-red-400",
-                      )}>
-                        {qualityScore.score}/100
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap gap-1">
-                      {qualityScore.checks.map((c) => (
-                        <span key={c.label} className={cn("text-[9px] px-1.5 py-0.5 rounded", c.pass ? "text-green-400/80" : "text-red-400/80 bg-red-500/10")}>
-                          {c.pass ? "✓" : "✗"} {c.label}
-                        </span>
-                      ))}
-                    </div>
-                    {qualityScore.score < 70 && (
-                      <button onClick={handleGenerate} className="mt-2 text-[10px] text-primary hover:underline">
-                        Score low — click to regenerate
-                      </button>
-                    )}
-                  </div>
-                )}
 
                 {/* History link */}
                 {saved && (

@@ -20,14 +20,15 @@ export const CONTENT_STEPS = [
 ];
 
 export const INFOGRAPHIC_STEPS = [
-  "Analyzing content...",
-  "Detecting content type...",
-  "Building the structure...",
-  "Applying the color palette...",
-  "Generating the design...",
-  "Typography adjustments...",
-  "Finalizing...",
-  "This may take up to 60 seconds...",
+  "Analyzing your content...",
+  "Selecting the best layout...",
+  "Drawing the title...",
+  "Adding handwritten elements...",
+  "Creating section headers...",
+  "Adding yellow highlights...",
+  "Drawing decorative elements...",
+  "Finalizing the design...",
+  "Almost done — this can take up to 2 minutes...",
 ];
 
 export default function GenerationProgress({ isActive, steps, estimatedSeconds = 20 }: Props) {
