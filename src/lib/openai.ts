@@ -1,17 +1,22 @@
 import OpenAI from "openai";
 
-const apiKey = import.meta.env.VITE_OPENAI_API_KEY || "";
+const apiKey = import.meta.env.VITE_OPENAI_API_KEY ?? "";
 
 if (!apiKey) {
-  console.warn("VITE_OPENAI_API_KEY is not set in .env");
+  console.warn("VITE_OPENAI_API_KEY is not set in .env — AI features will not work");
 }
 
 export const openai = new OpenAI({
-  apiKey,
+  apiKey: apiKey || "placeholder-key-not-configured",
   dangerouslyAllowBrowser: true,
 });
 
 export const OPENAI_MODEL = "gpt-4o";
+
+/** Check if the OpenAI API key is configured. Call before making requests. */
+export function isOpenAIConfigured(): boolean {
+  return !!import.meta.env.VITE_OPENAI_API_KEY;
+}
 
 export const SYSTEM_PROMPT = `You are a social media content creation assistant, integrated into Supen.io.
 

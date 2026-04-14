@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { openai, OPENAI_MODEL } from "@/lib/openai";
+import { openai, OPENAI_MODEL, isOpenAIConfigured } from "@/lib/openai";
 import { sanitizeInput } from "@/lib/security";
 import { toast } from "sonner";
 import { searchViralReferences, ViralReference, searchUserSources } from "@/lib/embeddings";
@@ -364,8 +364,11 @@ Strict rules:
 10. Write ALL content in ENGLISH only.${docInstruction}`;
 
       assertOnline();
+      if (!isOpenAIConfigured()) {
+        throw new Error("OpenAI API key not configured. Add VITE_OPENAI_API_KEY to your environment.");
+      }
 
-      // Single call — no retry. SDK maxRetries is already 0.
+      // Single call — no retry.
       // On 529, the catch block shows a manual countdown button.
       const response = await withTimeout(
         openai.chat.completions.create({

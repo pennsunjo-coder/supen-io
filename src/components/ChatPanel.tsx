@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Send, Bot, User, Loader2, Trash2, Sparkles, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { openai, OPENAI_MODEL, SYSTEM_PROMPT } from "@/lib/openai";
+import { openai, OPENAI_MODEL, SYSTEM_PROMPT, isOpenAIConfigured } from "@/lib/openai";
 import { sanitizeInput, createRateLimiter } from "@/lib/security";
 import { assertOnline, friendlyError } from "@/lib/resilience";
 import { getUserStyleMemory } from "@/lib/user-memory";
@@ -189,6 +189,10 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
 
     try { assertOnline(); } catch (e) {
       setError(e instanceof Error ? e.message : "Pas de connexion internet.");
+      return;
+    }
+    if (!isOpenAIConfigured()) {
+      setError("OpenAI API key not configured. Add VITE_OPENAI_API_KEY to your environment.");
       return;
     }
 
