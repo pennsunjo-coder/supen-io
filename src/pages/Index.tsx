@@ -34,10 +34,9 @@ const features = [
 ];
 
 const steps = [
-  { num: "01", title: "Upload Your Sources", desc: "Drop in files, URLs, videos, or notes. Supen.io organizes everything automatically.", icon: FileText },
-  { num: "02", title: "Chat & Brainstorm", desc: "Ask AI to analyze, summarize, and extract key insights from your sources.", icon: MessageSquare },
-  { num: "03", title: "Generate Content", desc: "Pick a platform, choose a template, and generate human-sounding posts instantly.", icon: PenTool },
-  { num: "04", title: "Publish & Track", desc: "Export ready-to-post content. Sound human, go viral, grow your audience.", icon: BarChart3 },
+  { num: "01", title: "Drop your idea", desc: "Paste a topic, URL, or keyword. That's all you need to start.", icon: FileText },
+  { num: "02", title: "Get 5 viral variations", desc: "AI generates platform-optimized content in seconds. Pick the best one.", icon: Sparkles },
+  { num: "03", title: "Post & track", desc: "Schedule directly or copy to your favorite tool. Watch it grow.", icon: BarChart3 },
 ];
 
 const testimonials = [
@@ -480,10 +479,10 @@ const Index = () => {
             viewport={{ once: true }} transition={{ duration: 0.5 }}
           >
             <span className="text-xs text-primary font-semibold uppercase tracking-widest">How it works</span>
-            <h2 className="text-3xl md:text-4xl font-bold mt-3 mb-4">From source to <span className="text-gradient">viral post</span> in 4 steps</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mt-3 mb-4">From idea to <span className="text-gradient">viral post</span> in 3 steps</h2>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid md:grid-cols-3 gap-8">
             {steps.map((s, i) => (
               <motion.div
                 key={s.num}

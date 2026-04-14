@@ -477,7 +477,7 @@ Strict rules:
       }
       setSaveStatus("saved");
       if (onGenerationComplete) onGenerationComplete();
-      toast.success(`${parsed.length} variations saved`);
+      toast.success(`${parsed.length} variations ready! 🎯`);
       // Propose creating a visual after 2s
       setTimeout(() => setShowInfographic(true), 2000);
       return true;
@@ -532,7 +532,7 @@ Strict rules:
       });
       const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
       setVariations((prev) => prev.map((v, i) => i === idx ? { ...v, content: text, words: wordCount(text) } : v));
-      toast.success("Humanized version. Undetectable by AI detectors.");
+      toast.success("Humanized! Undetectable by AI detectors ✓");
     } catch (err: unknown) {
       setError(`Humanization error: ${err instanceof Error ? err.message : "Unknown error"}`);
     } finally {
@@ -552,7 +552,7 @@ Strict rules:
     const v = variations[idx];
     navigator.clipboard.writeText(v.content);
     setCopiedIdx(idx);
-    toast.success(`Content copied! Ready to post on ${selectedPlatform?.name || "your platform"}.`);
+    toast.success("Copied to clipboard ✓");
     setTimeout(() => setCopiedIdx(null), 2000);
 
     // Track interaction for style memory
@@ -592,7 +592,7 @@ Strict rules:
 
       if (newRating === "liked") {
         saveInteraction(u.id, v.content, selectedPlatform?.name || "", v.angle, v.score, "liked");
-        toast.success("Noted! We'll adapt future generations to your style.");
+        toast.success(rating === "liked" ? "Noted! We'll generate more like this." : "Got it. We'll adjust your style.");
       }
     } catch { /* non-critical */ }
   }
@@ -1117,7 +1117,7 @@ Strict rules:
 
                         {/* Actions inline */}
                         {isSelected && (
-                          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-wrap items-center gap-1.5 mt-3 pt-3 border-t border-border/15">
+                          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-2 md:flex md:flex-wrap items-center gap-1.5 mt-3 pt-3 border-t border-border/15">
                             <Button variant="ghost" size="sm" className="h-7 text-[11px] gap-1.5 px-2.5 text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); handleCopy(idx); }}>
                               {copiedIdx === idx ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                               {copiedIdx === idx ? "Copied" : "Copy"}

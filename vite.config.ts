@@ -19,6 +19,7 @@ export default defineConfig(({ mode }) => ({
     include: ["pdfjs-dist"],
   },
   build: {
+    target: "esnext",
     rollupOptions: {
       output: {
         manualChunks: {
