@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { openai, OPENAI_MODEL } from "@/lib/openai";
+import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic";
 import { sanitizeInput } from "@/lib/security";
 import { searchViralReferences, ViralReference } from "@/lib/embeddings";
 
@@ -155,16 +155,14 @@ const Studio = () => {
             ? "Here is an idea to develop"
             : "Here is a topic / keyword";
 
-      const response = await openai.chat.completions.create({
-        model: OPENAI_MODEL,
+      const response = await anthropic.messages.create({
+        model: CLAUDE_MODEL,
         max_tokens: 4096,
-        messages: [
-          { role: "system", content: `You are an expert in viral content creation for social media. You generate ready-to-publish, engaging content optimized for each platform.\n\nRules:\n- Always respond in English.\n- Generate exactly 5 numbered variations (1. 2. 3. 4. 5.), each with a different angle or hook.\n- Separate each variation with a blank line and the number.\n- Direct, human writing. Short sentences.\n- No artificially enthusiastic phrases.\n- Adapt the tone to ${selectedPlatform.name}.\n- Requested format: ${selectedFormat}.${viralContext}` },
-          { role: "user", content: `${modeLabel}:\n\n${sanitized}\n\nGenerate 5 "${selectedFormat}" variations for ${selectedPlatform.name}.` },
-        ],
+        system: `You are an expert in viral content creation for social media. You generate ready-to-publish, engaging content optimized for each platform.\n\nRules:\n- Always respond in English.\n- Generate exactly 5 numbered variations (1. 2. 3. 4. 5.), each with a different angle or hook.\n- Separate each variation with a blank line and the number.\n- Direct, human writing. Short sentences.\n- No artificially enthusiastic phrases.\n- Adapt the tone to ${selectedPlatform.name}.\n- Requested format: ${selectedFormat}.${viralContext}`,
+        messages: [{ role: "user", content: `${modeLabel}:\n\n${sanitized}\n\nGenerate 5 "${selectedFormat}" variations for ${selectedPlatform.name}.` }],
       });
 
-      const text = response.choices[0]?.message?.content || "";
+      const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
 
       // Parser les 5 variations
       const parsed = text
@@ -191,16 +189,14 @@ const Studio = () => {
     setError(null);
 
     try {
-      const response = await openai.chat.completions.create({
-        model: OPENAI_MODEL,
+      const response = await anthropic.messages.create({
+        model: CLAUDE_MODEL,
         max_tokens: 2048,
-        messages: [
-          { role: "system", content: `You are an expert in content rewriting. Your mission: make this text undetectable by AI detectors while keeping the same message.\n\nRules:\n- English only.\n- Use natural, imperfect, human phrasing.\n- Vary sentence length. Add hesitations, casual expressions if appropriate.\n- Keep the format adapted to ${selectedPlatform.name}.\n- Respond only with the rewritten text, nothing else.` },
-          { role: "user", content: `Humanize this content:\n\n${original}` },
-        ],
+        system: `You are an expert in content rewriting. Your mission: make this text undetectable by AI detectors while keeping the same message.\n\nRules:\n- English only.\n- Use natural, imperfect, human phrasing.\n- Vary sentence length. Add hesitations, casual expressions if appropriate.\n- Keep the format adapted to ${selectedPlatform.name}.\n- Respond only with the rewritten text, nothing else.`,
+        messages: [{ role: "user", content: `Humanize this content:\n\n${original}` }],
       });
 
-      const text = response.choices[0]?.message?.content || "";
+      const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
 
       setVariations((prev) => prev.map((v, i) => (i === idx ? text : v)));
     } catch (err: unknown) {

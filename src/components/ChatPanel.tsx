@@ -2,7 +2,8 @@ import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Send, Bot, User, Loader2, Trash2, Sparkles, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { openai, OPENAI_MODEL, SYSTEM_PROMPT, isOpenAIConfigured } from "@/lib/openai";
+import { anthropic, CLAUDE_MODEL, SYSTEM_PROMPT, isAnthropicConfigured } from "@/lib/anthropic";
+import type { MessageParam } from "@anthropic-ai/sdk/resources/messages";
 import { sanitizeInput, createRateLimiter } from "@/lib/security";
 import { assertOnline, friendlyError } from "@/lib/resilience";
 import { getUserStyleMemory } from "@/lib/user-memory";
@@ -191,8 +192,8 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
       setError(e instanceof Error ? e.message : "Pas de connexion internet.");
       return;
     }
-    if (!isOpenAIConfigured()) {
-      setError("OpenAI API key not configured. Add VITE_OPENAI_API_KEY to your environment.");
+    if (!isAnthropicConfigured()) {
+      setError("Anthropic API key not configured. Add VITE_ANTHROPIC_API_KEY to your environment.");
       return;
     }
 
@@ -205,29 +206,18 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
     const updatedMessages = [...messages, userMessage];
     onMessagesChange(() => updatedMessages);
 
-    const apiMessages = updatedMessages.map((msg) => ({ role: msg.role as "user" | "assistant", content: msg.content }));
+    const apiMessages: MessageParam[] = updatedMessages.map((msg) => ({ role: msg.role, content: msg.content }));
 
     try {
       abortRef.current = new AbortController();
       const systemPrompt = buildCoachPrompt(profile || null, sources, lastGeneratedContent, styleMemory);
-      const stream = await openai.chat.completions.create(
-        {
-          model: OPENAI_MODEL,
-          max_tokens: 2048,
-          stream: true,
-          messages: [
-            { role: "system", content: systemPrompt },
-            ...apiMessages,
-          ],
-        },
+      const stream = anthropic.messages.stream(
+        { model: CLAUDE_MODEL, max_tokens: 2048, system: systemPrompt, messages: apiMessages },
         { signal: abortRef.current.signal },
       );
       let fullResponse = "";
-      for await (const chunk of stream) {
-        const delta = chunk.choices[0]?.delta?.content || "";
-        fullResponse += delta;
-        setStreamingContent(fullResponse);
-      }
+      stream.on("text", (t) => { fullResponse += t; setStreamingContent(fullResponse); });
+      await stream.finalMessage();
       setStreamingContent("");
       onMessagesChange((prev) => [...prev, { role: "assistant", content: fullResponse }]);
     } catch (err: unknown) {

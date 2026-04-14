@@ -1,10 +1,9 @@
 /**
- * Real viral scoring via OpenAI GPT-4o-mini.
- * Replaces the old Claude Haiku scorer.
+ * Real viral scoring via Claude Haiku.
  * Evaluates content on 5 criteria (0-20 each) for a total /100.
  */
 
-import OpenAI from "openai";
+import Anthropic from "@anthropic-ai/sdk";
 
 export interface ScoreDetails {
   total: number;
@@ -39,28 +38,25 @@ Be STRICT. Average social media content scores 50-65. Only truly viral content s
 Respond ONLY with this exact JSON format (no markdown, no backticks):
 {"hook":N,"emotion":N,"specificity":N,"actionable":N,"cta":N,"feedback":"one sentence explaining the main strength or weakness"}`;
 
-/**
- * Score a single content variation using GPT-4o-mini.
- * Fast (~1-2s) and cheap.
- */
 export async function scoreVariation(
   content: string,
   platform: string,
-  client: OpenAI,
+  client: Anthropic,
 ): Promise<ScoreDetails> {
   try {
-    const response = await client.chat.completions.create({
-      model: "gpt-4o-mini",
+    const response = await client.messages.create({
+      model: "claude-haiku-4-5-20251001",
       max_tokens: 200,
-      messages: [
-        { role: "system", content: `Platform: ${platform}\n\n${SCORING_PROMPT}` },
-        { role: "user", content: content.slice(0, 800) },
-      ],
+      system: `Platform: ${platform}\n\n${SCORING_PROMPT}`,
+      messages: [{ role: "user", content: content.slice(0, 800) }],
     });
 
-    const text = (response.choices[0]?.message?.content || "").trim();
+    const text = response.content
+      .filter((b) => b.type === "text")
+      .map((b) => b.text)
+      .join("")
+      .trim();
 
-    // Extract JSON — handle possible markdown wrapping
     const jsonStr = text.replace(/```json?\s*/g, "").replace(/```/g, "").trim();
     const data = JSON.parse(jsonStr);
 
@@ -72,40 +68,26 @@ export async function scoreVariation(
 
     return {
       total: hook + emotion + specificity + actionable + cta,
-      hook,
-      emotion,
-      specificity,
-      actionable,
-      cta,
+      hook, emotion, specificity, actionable, cta,
       feedback: typeof data.feedback === "string" ? data.feedback.slice(0, 200) : "",
     };
   } catch {
-    // Fallback if scoring fails or returns bad JSON
     return { total: 65, hook: 13, emotion: 13, specificity: 13, actionable: 13, cta: 13, feedback: "" };
   }
 }
 
-/**
- * Score all variations in parallel.
- * Returns scores in the same order as the input array.
- */
 export async function scoreAllVariations(
   variations: { content: string }[],
   platform: string,
-  client: OpenAI,
+  client: Anthropic,
 ): Promise<ScoreDetails[]> {
-  return Promise.all(
-    variations.map((v) => scoreVariation(v.content, platform, client))
-  );
+  return Promise.all(variations.map((v) => scoreVariation(v.content, platform, client)));
 }
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
-/**
- * Get the color class for a score.
- */
 export function scoreColor(total: number): string {
   if (total >= 86) return "text-emerald-400";
   if (total >= 76) return "text-blue-400";
