@@ -268,7 +268,7 @@ const Index = () => {
                 </motion.span>
               </AnimatePresence>
             </span>
-            <span className="text-gradient font-bold">.</span>
+            <span className="text-gradient font-bold"></span>
           </motion.h1>
 
           <motion.p variants={fadeUp} custom={2}
