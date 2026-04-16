@@ -103,6 +103,22 @@ interface ParsedVariation {
   scoring?: boolean;
 }
 
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/\*([^*]+)\*/g, "$1")
+    .replace(/__([^_]+)__/g, "$1")
+    .replace(/_([^_]+)_/g, "$1")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/^\s*[-*+]\s+/gm, "")
+    .replace(/^\s*\d+\.\s+/gm, "")
+    .replace(/```[\s\S]*?```/g, "")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/^---+$/gm, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 function parseVariations(raw: string): ParsedVariation[] {
   // Split by the requested separator
   let parts = raw.split(/---VARIATION---/).map((s) => s.trim()).filter((s) => s.length > 20);
@@ -117,8 +133,8 @@ function parseVariations(raw: string): ParsedVariation[] {
 
   return parts.map((content, idx) => ({
     angle: ANGLE_LABELS[idx % ANGLE_LABELS.length],
-    content,
-    words: wordCount(content),
+    content: stripMarkdown(content),
+    words: wordCount(stripMarkdown(content)),
     score: 0,
     scoring: true,
   }));
@@ -338,43 +354,68 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
         }
       } catch { /* memory is non-critical */ }
 
-      // === PROMPT STRUCTURÉ ===
-      const systemPrompt = `## SECTION 1 — IDENTITY
-You are an expert in viral content creation for social media. You create content that drives engagement, shares, and organic growth.${userSection}${viralSection}${styleSection}
+      // === GHOSTWRITER-STYLE PROMPT ===
+      const systemPrompt = `You are a world-class ghostwriter for social media creators.
+You write content that sounds like a real person talking — not a content machine producing templates.${userSection}${viralSection}${styleSection}
 
-## SECTION 4 — GENERATION INSTRUCTIONS
-Platform: ${selectedPlatform.name}
-Format: ${selectedFormat}
+YOUR WRITING STYLE:
+- Short punchy sentences. Like this. Then one longer one for contrast.
+- NO bold text. NO asterisks. NO markdown formatting ever.
+- NO numbered lists. Weave numbers into prose naturally.
+- NO bullet points. Write in flowing paragraphs.
+- Start with a specific moment, number, or bold claim.
+- Use "I" sparingly — maximum 3 times per post.
+- Specific details beat vague generalizations always.
+  ("My post got 2.3M views on a Tuesday at 2am" not "posts can go viral")
+- One idea per post. Not 5, not 8. ONE.
+- End with ONE short question. Never "What do you think?"
 
-Strict rules:
-1. Generate exactly 5 DISTINCT variations, separated by the marker ---VARIATION--- on its own line.
-2. Each variation must have a DIFFERENT ANGLE in this order:
-   - Variation 1: Educational (teach something concrete)
-   - Variation 2: Storytelling (tell a story, a lived experience)
-   - Variation 3: Provocative (challenge a belief, contrarian opinion)
-   - Variation 4: Practical (actionable list, concrete steps)
-   - Variation 5: Debate (ask an open question, invite comments)
-3. Each variation MUST start with an ultra-strong hook of max 10 words. The first line hooks or dies.
-4. If user sources are provided, anchor the content in those sources. Cite facts, figures or ideas from them.
-5. Direct, human writing. Grade 5 reading level. Short sentences. No jargon.
-6. NEVER use artificially enthusiastic phrases ("Perfect!", "Absolutely!", "Excellent!").
-7. No markdown (no bold, no italic, no headings) unless the format requires it.
-8. Adapt tone and length to ${selectedPlatform.name} + ${selectedFormat}.
-9. Respond ONLY with the 5 variations separated by ---VARIATION---. Nothing else.
-10. Write ALL content in ENGLISH only.${docInstruction}
+WHAT MAKES CONTENT FEEL GENERIC (NEVER DO THIS):
+- Starting with "Here's how to..." or "Want to..." or "Follow these X steps"
+- Using bold headers to organize content
+- Numbered lists (1. 2. 3. 4. 5.)
+- Phrases like "game changer", "leverage", "optimize", "actionable"
+- Giving 7-8 tips in one post
+- Ending with "Let me know in the comments" or "Drop a like if you agree"
+- Any sentence that could apply to ANY topic (not specific to THIS topic)
 
-## SECTION 5 — VIRAL CONTENT RULES
-- Hook in the first 3 words — make them stop scrolling
-- Use specific numbers (not "many" but "73%")
-- One clear emotion per post: curiosity, surprise, admiration, or controversy
-- End with an engagement trigger: a question or a bold statement
-- Write like a human, not a content machine
-- Reference real situations, not abstract concepts
-- Short sentences. Max 15 words per sentence.
-- Never start with "I" — start with action or insight
-- Never use: "In today's world", "game changer", "leverage", "optimize", "synergy"
-- No bullet points unless explicitly requested by the user
-- No hashtags unless explicitly requested by the user`;
+WHAT MAKES CONTENT FEEL REAL (ALWAYS DO THIS):
+- A specific story moment in the first 3 lines
+- One contrarian or uncomfortable truth
+- A personal mistake or failure
+- A specific number or date or person
+- Something that sounds like it could get the author in trouble
+- Raw emotion: frustration, surprise, regret, excitement
+- A question the reader is afraid to answer honestly
+
+PLATFORM RULES:
+- LinkedIn: 150-220 words. Conversational but professional. No emojis. Paragraphs of 1-3 lines max.
+- Instagram: 80-150 words. Punchy. Can use 1-2 emojis max.
+- X/Twitter: Under 280 chars for hook. Then thread if needed.
+- TikTok: Script format. Spoken word. Very casual.
+
+Current platform: ${selectedPlatform.name}
+Current format: ${selectedFormat}
+
+FOR EACH VARIATION, USE A DIFFERENT APPROACH:
+- Variation 1: Open with a specific failure or mistake
+- Variation 2: Open with a surprising number or stat
+- Variation 3: Open with a contrarian statement (challenge common wisdom)
+- Variation 4: Open with a specific moment in time
+- Variation 5: Open with a question that stings a little
+
+ABSOLUTE RULES:
+- Zero markdown formatting (no **, no ##, no -)
+- Zero numbered lists
+- Zero generic advice that applies to everyone
+- Every sentence must earn its place
+- If a sentence doesn't move the reader forward, delete it
+- Write ALL content in ENGLISH only
+- NEVER use artificially enthusiastic phrases ("Perfect!", "Absolutely!", "Excellent!")${docInstruction}
+
+OUTPUT FORMAT (STRICT):
+Generate exactly 5 DISTINCT variations, separated by the marker ---VARIATION--- on its own line.
+Respond ONLY with the 5 variations separated by ---VARIATION---. Nothing before, nothing after.`;
 
       assertOnline();
       if (!isAnthropicConfigured()) {
@@ -530,7 +571,8 @@ Strict rules:
         system: `You are an expert in content rewriting. Make this text undetectable by AI detectors while keeping the same message.\nRules: English only. Natural, imperfect, human phrasing. Vary sentence length. Keep the format adapted to ${selectedPlatform.name}. Respond only with the rewritten text.`,
         messages: [{ role: "user", content: `Humanize this content:\n\n${original.content}` }],
       });
-      const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
+      const raw = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
+      const text = stripMarkdown(raw);
       setVariations((prev) => prev.map((v, i) => i === idx ? { ...v, content: text, words: wordCount(text) } : v));
       toast.success("Humanized! Undetectable by AI detectors ✓");
     } catch (err: unknown) {
