@@ -145,15 +145,18 @@ const SourcePanel = ({
     }
 
     setPdfLoading(true);
-    toast("Extracting PDF...");
+    const sizeKb = Math.round(file.size / 1024);
+    const loadingToast = toast.loading(`Extracting PDF... (${sizeKb} KB)`);
     try {
       const result = await onAddPdf(file);
+      toast.dismiss(loadingToast);
       if (result.error) {
         toast.error(result.error);
       } else {
-        toast.success("PDF imported successfully!");
+        toast.success(`PDF imported successfully — "${file.name}"`);
       }
     } catch (err) {
+      toast.dismiss(loadingToast);
       toast.error(err instanceof Error ? err.message : "Unexpected error");
     } finally {
       setPdfLoading(false);

@@ -56,60 +56,70 @@ function extractTextFromHtml(html: string): string {
 }
 
 /**
- * Extracts text from a PDF.
- * Chrome/Firefox: client-side pdf.js (fast).
- * Safari: Edge Function directly (no pdf.js attempt).
+ * Extracts text from a PDF — client-side via pdf.js with CDN worker.
+ * Works in all modern browsers (Chrome, Firefox, Safari, Edge).
+ * Falls back to Edge Function "extract-pdf" if client-side extraction fails.
  */
-async function extractTextFromPdf(file: File): Promise<{ text: string; pages: number }> {
-  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+async function extractTextFromPdf(
+  file: File,
+  onProgress?: (page: number, total: number) => void,
+): Promise<{ text: string; pages: number }> {
+  // ── Strategy 1: client-side pdf.js ──
+  try {
+    const pdfjsLib = await import("pdfjs-dist");
 
-  if (!isSafari) {
-    try {
-      const pdfjsLib = await import("pdfjs-dist");
-      pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-        "pdfjs-dist/build/pdf.worker.mjs",
-        import.meta.url
-      ).toString();
+    // Worker URL — use CDN matching the installed pdfjs version.
+    // This is the most reliable approach across dev/prod/Vercel.
+    const version = (pdfjsLib as unknown as { version?: string }).version || "4.0.379";
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${version}/build/pdf.worker.min.mjs`;
 
-      const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({
-        data: new Uint8Array(arrayBuffer),
-        useSystemFonts: true,
-        disableFontFace: true,
-        verbosity: 0,
-      }).promise;
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({
+      data: new Uint8Array(arrayBuffer),
+      useSystemFonts: true,
+      disableFontFace: true,
+      verbosity: 0,
+    }).promise;
 
-      let fullText = "";
-      for (let i = 1; i <= pdf.numPages; i++) {
-        try {
-          const page = await pdf.getPage(i);
-          const tc = await page.getTextContent({ includeMarkedContent: false });
-          fullText += tc.items
-            .map((item) => ("str" in item ? (item.str as string) : ""))
-            .filter((s) => s.trim().length > 0)
-            .join(" ") + "\n";
-        } catch { /* skip page */ }
-      }
-
-      if (fullText.trim().length > 20) {
-        return { text: fullText.trim(), pages: pdf.numPages };
-      }
-    } catch (err) {
+    let fullText = "";
+    for (let i = 1; i <= pdf.numPages; i++) {
+      try {
+        const page = await pdf.getPage(i);
+        const tc = await page.getTextContent({ includeMarkedContent: false });
+        fullText += tc.items
+          .map((item) => ("str" in item ? (item.str as string) : ""))
+          .filter((s) => s.trim().length > 0)
+          .join(" ") + "\n";
+        onProgress?.(i, pdf.numPages);
+      } catch { /* skip page */ }
     }
+
+    if (fullText.trim().length > 20) {
+      return { text: fullText.trim(), pages: pdf.numPages };
+    }
+    // No text extracted — likely a scanned/image PDF
+    throw new Error("No extractable text (PDF may be scanned/image-based)");
+  } catch (clientErr) {
+    console.warn("[PDF] Client-side extraction failed, trying server fallback:", clientErr);
   }
 
-  // Safari or fallback: Edge Function via supabase.functions.invoke
-  const formData = new FormData();
-  formData.append("file", file);
+  // ── Strategy 2: Edge Function fallback ──
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
 
-  const { data, error } = await supabase.functions.invoke("extract-pdf", {
-    body: formData,
-  });
+    const { data, error } = await supabase.functions.invoke("extract-pdf", {
+      body: formData,
+    });
 
-  if (error) throw new Error(error.message || "Edge Function failed");
-  if (!data?.text) throw new Error("No text extracted by the server");
+    if (error) throw new Error(error.message || "Edge Function failed");
+    if (!data?.text) throw new Error("No text extracted by the server");
 
-  return { text: data.text, pages: data.pages };
+    return { text: data.text, pages: data.pages || 0 };
+  } catch (serverErr) {
+    const msg = serverErr instanceof Error ? serverErr.message : "Unknown error";
+    throw new Error(`PDF extraction failed. ${msg}. If this is a scanned PDF, try OCR first.`);
+  }
 }
 
 export interface GroupedSource {
