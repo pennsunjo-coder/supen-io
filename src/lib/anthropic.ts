@@ -12,7 +12,7 @@ export const anthropic = new Anthropic({
   maxRetries: 0,
 });
 
-export const CLAUDE_MODEL = "claude-sonnet-4-20250514";
+export const CLAUDE_MODEL = "claude-sonnet-4-5";
 
 export function isAnthropicConfigured(): boolean {
   return !!import.meta.env.VITE_ANTHROPIC_API_KEY;
