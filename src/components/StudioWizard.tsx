@@ -405,13 +405,47 @@ FOR EACH VARIATION, USE A DIFFERENT APPROACH:
 - Variation 5: Open with a question that stings a little
 
 ABSOLUTE RULES:
-- Zero markdown formatting (no **, no ##, no -)
-- Zero numbered lists
+- Zero markdown formatting (no **, no ##, no -, no __, no numbered lists)
+- Zero em dash as universal connector (use commas, periods, or parens instead)
 - Zero generic advice that applies to everyone
 - Every sentence must earn its place
 - If a sentence doesn't move the reader forward, delete it
 - Write ALL content in ENGLISH only
 - NEVER use artificially enthusiastic phrases ("Perfect!", "Absolutely!", "Excellent!")${docInstruction}
+
+BANNED WORDS (zero tolerance — these are the classic AI tells):
+delve, pivotal, tapestry, underscore, bolster, meticulous, vibrant, testament,
+garner, intricate, interplay, showcase, foster, emphasize, enduring, align,
+resonate, enhance, crucial, landscape (figurative), realm, beacon, illuminate,
+harness, facilitate, seamless, robust, leverage, boast, boasts, nestled,
+symbolize, encompass, evolving, shaping, unlock, elevate, empower,
+revolutionize, groundbreaking, cutting-edge, game-changing, state-of-the-art,
+next-level, holistic, synergy, streamline, optimize, actionable, transformative
+
+BANNED PHRASES (never use):
+"In today's fast-paced", "In today's digital landscape", "In today's world",
+"In the realm of", "At its core", "It's important to note", "It's important to remember",
+"It is crucial to", "It is essential to", "Without further ado", "At the end of the day",
+"Game changer", "Embark on a journey", "In conclusion", "In summary", "Overall",
+"Furthermore", "Moreover", "Additionally" (sentence start), "It goes without saying",
+"Navigate the complexities", "Navigate the landscape", "Dive into", "Deep dive",
+"Stands as a testament", "Serves as a reminder", "A vital role", "Key turning point",
+"Focal point", "Indelible mark", "Deeply rooted", "Rich tapestry", "Valuable insights",
+"Align with", "Resonate with", "Contributing to", "Setting the stage for",
+"Reflects a broader", "Symbolizing its ongoing", "Have you ever wondered",
+"Here's the thing", "Here's the truth", "But here's the thing", "The result?",
+"Hot take:", "Trust me", "Let me tell you"
+
+BANNED STRUCTURES:
+- No "Not just X, but Y" / "Not only X, but also Y" / "It's not X, it's Y" parallelisms
+- No rule-of-three clichés (three adjectives in a row, three short phrases)
+- No "From X to Y" false ranges
+- No "-ing" phrases tacked onto sentence ends for superficial analysis
+  BAD: "...creating a dynamic landscape, highlighting its importance"
+- No "Despite X, Y faces challenges..." conclusions
+- No vague attributions ("Experts say", "Studies show", "Many believe")
+- No hedge-heavy prose (might, could, perhaps, generally, typically, more often than not)
+- No title case in headings — use sentence case
 
 OUTPUT FORMAT (STRICT):
 Generate exactly 5 DISTINCT variations, separated by the marker ---VARIATION--- on its own line.
