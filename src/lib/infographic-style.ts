@@ -583,7 +583,7 @@ RAPPEL FINAL :
 }
 
 
-// ─── Gemini Image prompt builder — simple, focused, effective ───
+// ─── Gemini Image prompt builder — distinct style per template ───
 
 export function buildGeminiImagePrompt(
   content: string,
@@ -601,32 +601,26 @@ export function buildGeminiImagePrompt(
     ? "square (1:1)"
     : "vertical portrait (4:5)";
 
-  const templateStyle: Record<string, string> = {
-    WHITEBOARD: "vertical whiteboard with hand-drawn marker style",
-    NOTEBOOK: "spiral notebook page with ruled lines and handwritten notes",
-    FUNNEL: "funnel diagram on a whiteboard showing a process flow",
-    COMPARISON: "3-column comparison table on a clean whiteboard",
-    DATA_GRID: "structured data table with colored headers",
-    AWA_CLASSIC: "framed educational poster with numbered sections",
-  };
-
-  const style = templateStyle[templateId] || "vertical whiteboard";
-
   const points = extraction.points
     .map((p, i) => `${i + 1}. ${p.title}: ${p.body}`)
     .join("\n");
 
-  return `Draw a professional educational infographic in ${aspectRatio} format.
+  // Pick a distinct style per template
+  let stylePrompt = "";
 
-STYLE: ${style}
+  if (templateId === "WHITEBOARD" || templateId === "UI_CARDS" || templateId === "CHEAT_SHEET" || templateId === "AWA_MASTERCLASS" || templateId === "DARK_TECH") {
+    // Style Awa K Penn — hand-drawn whiteboard
+    stylePrompt = `Draw a professional educational infographic in ${aspectRatio} format.
+
+STYLE: Vertical whiteboard with hand-drawn marker style.
 Use a hand-drawn style with markers (blue #2563EB, red #C0392B, and black).
 Add arrows, simple doodle icons, and handwritten-style text.
 The layout must be clean and very legible, similar to a viral creator post on LinkedIn.
-Background: off-white or light cream paper texture.
-Fonts: bold heavy sans-serif for titles, casual handwritten style for body text.
+Background: off-white or light cream paper texture (#f8f9f7).
+Fonts: bold heavy sans-serif for titles (Nunito Black style), casual handwritten style for body text (Caveat style).
 
 TITLE: "${extraction.title}"
-CATEGORY BADGE: "${extraction.badge}" (small pill badge above title)
+CATEGORY BADGE: "${extraction.badge}" (small dark pill badge above title)
 
 MAIN CONTENT:
 ${points}
@@ -636,16 +630,162 @@ PRO TIP: ${extraction.proTip}
 FOOTER: "Created with Supen.io | Follow for more"
 
 VISUAL REQUIREMENTS:
-- Title must be extremely bold and dominant
-- Each point gets a numbered circle badge (hand-drawn oval)
-- Yellow highlighter marks on 2-3 key terms
+- Title ultra-bold, dominant, with [square brackets] around it
+- Each point in a numbered hand-drawn oval badge
+- Yellow highlighter (#FFEF5A) on 2-3 key terms (flat, like a Stabilo marker)
 - Colored underlines under section headers
 - Decorative arrows connecting elements
-- Fill 85% of the canvas with content
-- No empty whitespace
-- Professional but approachable, NOT corporate slide aesthetic
+- 4 small metal clips at corners (whiteboard mounting clips)
+- Fill 85% of canvas with content
+- Hand-crafted study notes aesthetic, NOT corporate slide`;
+  }
 
-${customPrompt ? `ADDITIONAL INSTRUCTIONS: ${customPrompt}` : ""}`;
+  else if (templateId === "NOTEBOOK") {
+    // Spiral notebook style
+    stylePrompt = `Draw a professional educational infographic in ${aspectRatio} format.
+
+STYLE: Spiral notebook page with ruled lines and colorful handwritten notes.
+Top: metallic spiral binding (20 silver coils across full width).
+Left side: vertical red margin line.
+Background: warm white paper (#fffef8) with subtle horizontal ruled lines.
+Fonts: bold colorful handwritten style for title, casual marker for body.
+
+TITLE: "${extraction.title}"
+Each word of the title in a different color (green, red, blue).
+
+MAIN CONTENT (as notebook entries):
+${points}
+
+FOOTER: "Follow for more | Repost ↺" with curved arrows flanking text.
+
+VISUAL REQUIREMENTS:
+- Spiral binding must look realistic and 3D
+- Numbers in hand-drawn oval badges (01, 02, 03...)
+- Yellow highlights (#FFEF5A) on key tool/concept names
+- Colored bullet points
+- Feels like energetic student study notes
+- Dense, fills the page completely`;
+  }
+
+  else if (templateId === "FUNNEL") {
+    // Funnel / process flow
+    stylePrompt = `Draw a professional educational infographic in ${aspectRatio} format.
+
+STYLE: Funnel/process flow diagram on warm off-white background.
+Hand-illustrated feel, slightly imperfect, warm and approachable.
+Background: warm off-white (#fffef5) with subtle paper grain.
+
+TITLE: "${extraction.title}" — very large, Nunito Black style, centered.
+
+FUNNEL SHAPE: Large trapezoid, wide at top, narrow at bottom.
+Divided into ${Math.min(extraction.points.length, 5)} sections.
+Fill: warm cream/tan, slightly darker at bottom.
+Outline: hand-drawn irregular strokes, 2.5px.
+Each section has a label box and 2-3 checkmarks ✓.
+
+SECTIONS:
+${points}
+
+SIDE ELEMENTS:
+- Two large red curved arrows (↙ ↘) flanking the funnel
+- 6-8 gold sparkle stars ✦ scattered around
+- Simple cartoon character on right side pointing at funnel
+
+FOOTER: Discreet, gray, italic.
+
+VISUAL REQUIREMENTS:
+- Warm, human, approachable feel
+- Checkmarks in red #C0392B
+- Label boxes with thin red border, white fill`;
+  }
+
+  else if (templateId === "COMPARISON") {
+    // Master Infographic — dark mode corporate
+    stylePrompt = `A professional high-fidelity infographic for LinkedIn in ${aspectRatio} format.
+
+STYLE: Flat design, clean corporate aesthetic, dark mode.
+Background: deep charcoal (#1a1a2e) professional dark background.
+Accents: Electric Blue (#2563EB) and Neon Green (#10b981) highlights.
+Fonts: Ultra-legible bold sans-serif throughout.
+
+TITLE: "${extraction.title}" — bold white text, large and dominant.
+BADGE: "${extraction.badge}" — small colored pill above title.
+
+STRUCTURE: 3-column comparison table with rounded rectangular containers.
+Each column has subtle drop shadows and clean straight separator lines.
+Minimalist vector icons for each concept.
+
+COLUMNS CONTENT:
+${extraction.points.slice(0, 3).map((p, i) =>
+  `Column ${i + 1}: "${p.title}" — ${p.body}`).join("\n")}
+
+VISUAL REQUIREMENTS:
+- Rounded rectangular containers with subtle drop shadows
+- High contrast white text on dark background
+- Clean straight lines, pixel-perfect alignment
+- No clutter, 4K resolution quality
+- Modern tech creator aesthetic
+- Professional dark mode LinkedIn post style`;
+  }
+
+  else if (templateId === "DATA_GRID" || templateId === "STATS_IMPACT" || templateId === "AWA_BREAKING") {
+    // Master Infographic — roadmap/table
+    stylePrompt = `A professional high-fidelity infographic for LinkedIn in ${aspectRatio} format.
+
+STYLE: Flat design, clean modern aesthetic, light background.
+Background: clean white (#ffffff) with subtle grid lines.
+Accents: Deep Blue (#2563EB), Green (#10b981), Orange (#f59e0b).
+Fonts: Ultra-legible bold sans-serif. Clean and corporate.
+
+TITLE: "${extraction.title}" — bold dark text, prominent.
+BADGE: "${extraction.badge}" — colored pill badge.
+
+STRUCTURE: Structured comparison table with colored column headers.
+Rounded rectangular containers with subtle drop shadows.
+Minimalist icons for each row concept.
+
+TABLE CONTENT:
+${points}
+
+PRO TIP BOX: "${extraction.proTip}"
+(yellow background box, border-left accent, star icon)
+
+VISUAL REQUIREMENTS:
+- Rounded rectangular containers with drop shadows
+- Color-coded columns (blue, green, orange)
+- High contrast, pixel-perfect alignment
+- Clean minimalist vector icons
+- Professional LinkedIn post style
+- No clutter, modern tech aesthetic`;
+  }
+
+  else {
+    // AWA_CLASSIC — framed poster style
+    const colors = ["#C0392B", "#2563EB", "#2E7D32", "#D4A017", "#8B5CF6", "#C0392B", "#0D9488"];
+    stylePrompt = `Draw a professional educational reference poster in ${aspectRatio} format.
+
+STYLE: Framed educational poster, dense and comprehensive.
+Outer frame: dark brown wood-grain border (28px thick, #3d2b1a).
+Inner background: warm cream (#FFFFF5).
+Fonts: bold heavy sans-serif for titles, casual handwritten for body.
+
+TITLE: "${extraction.title}" — very bold, centered, with underline.
+BADGE: "${extraction.badge}" — dark brown pill badge above title.
+
+7 NUMBERED SECTIONS:
+${extraction.points.slice(0, 7).map((p, i) =>
+  `${i + 1}. [${colors[i]} colored badge] "${p.title}": ${p.body}`).join("\n")}
+
+VISUAL REQUIREMENTS:
+- Realistic wood grain frame around entire poster
+- Each item has a colored rounded square number badge
+- Simple sketch-style icons next to each item
+- Dense information layout, fills the frame completely
+- Educational reference poster aesthetic
+- Warm, academic, authoritative feel`;
+  }
+
+  return stylePrompt + (customPrompt ? `\n\nADDITIONAL: ${customPrompt}` : "");
 }
 
 // Retry prompt (used on first failure) — adds corrections to the original prompt
