@@ -29,14 +29,14 @@ function injectFontsInHtml(html: string): string {
   return html.replace("</head>", FONT_LINK + "</head>");
 }
 
-// ─── Gemini Image Generation via Imagen 3.0 ───
+// ─── Gemini Image Generation via gemini-2.0-flash ───
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const GEMINI_MODEL = "imagen-3.0-generate-002";
+const GEMINI_MODEL = "gemini-2.0-flash";
 
 async function generateWithGemini(
   prompt: string,
-  dims: { width: number; height: number },
+  _dims: { width: number; height: number },
 ): Promise<string | null> {
   if (!GEMINI_API_KEY) {
     throw new Error("Gemini API key not configured. Add VITE_GEMINI_API_KEY to your .env file.");
@@ -47,15 +47,14 @@ async function generateWithGemini(
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:predict?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          instances: [{ prompt }],
-          parameters: {
-            sampleCount: 1,
-            aspectRatio: dims.width === dims.height ? "1:1" : "4:5",
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseModalities: ["IMAGE", "TEXT"],
           },
         }),
         signal: controller.signal,
@@ -65,16 +64,19 @@ async function generateWithGemini(
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => "");
-      console.error("[InfographicModal] Imagen HTTP", response.status, errorText);
-      throw new Error(`Imagen API error (${response.status}). Please try again.`);
+      console.error("[InfographicModal] Gemini HTTP", response.status, errorText);
+      throw new Error(`Gemini API error (${response.status}). Please try again.`);
     }
 
     const data = await response.json();
-    const base64 = data.predictions?.[0]?.bytesBase64Encoded;
+    const imagePart = data.candidates?.[0]?.content?.parts
+      ?.find((p: { inlineData?: { mimeType?: string; data?: string } }) =>
+        p.inlineData?.mimeType?.startsWith("image/"));
+    const base64 = imagePart?.inlineData?.data;
 
     if (!base64) {
-      console.error("[InfographicModal] Imagen returned no image data:", JSON.stringify(data).slice(0, 500));
-      throw new Error("Imagen did not return an image. Please try again.");
+      console.error("[InfographicModal] Gemini returned no image data:", JSON.stringify(data).slice(0, 500));
+      throw new Error("Gemini did not return an image. Please try again.");
     }
 
     return base64;
