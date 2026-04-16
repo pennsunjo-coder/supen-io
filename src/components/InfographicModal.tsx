@@ -29,12 +29,15 @@ function injectFontsInHtml(html: string): string {
   return html.replace("</head>", FONT_LINK + "</head>");
 }
 
-// ─── Gemini Image Generation (ONLY method — no Claude fallback) ───
+// ─── Gemini Image Generation via Imagen 3.0 ───
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const GEMINI_MODEL = "gemini-2.0-flash-exp";
+const GEMINI_MODEL = "imagen-3.0-generate-002";
 
-async function generateWithGemini(prompt: string): Promise<string | null> {
+async function generateWithGemini(
+  prompt: string,
+  dims: { width: number; height: number },
+): Promise<string | null> {
   if (!GEMINI_API_KEY) {
     throw new Error("Gemini API key not configured. Add VITE_GEMINI_API_KEY to your .env file.");
   }
@@ -44,14 +47,15 @@ async function generateWithGemini(prompt: string): Promise<string | null> {
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:predict?key=${GEMINI_API_KEY}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            responseModalities: ["IMAGE"],
+          instances: [{ prompt }],
+          parameters: {
+            sampleCount: 1,
+            aspectRatio: dims.width === dims.height ? "1:1" : "4:5",
           },
         }),
         signal: controller.signal,
@@ -61,18 +65,16 @@ async function generateWithGemini(prompt: string): Promise<string | null> {
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => "");
-      console.error("[InfographicModal] Gemini HTTP", response.status, errorText);
-      throw new Error(`Gemini API error (${response.status}). Please try again.`);
+      console.error("[InfographicModal] Imagen HTTP", response.status, errorText);
+      throw new Error(`Imagen API error (${response.status}). Please try again.`);
     }
 
     const data = await response.json();
-    const base64 = data.candidates?.[0]?.content?.parts
-      ?.find((p: { inlineData?: { data: string } }) => p.inlineData)
-      ?.inlineData?.data;
+    const base64 = data.predictions?.[0]?.bytesBase64Encoded;
 
     if (!base64) {
-      console.error("[InfographicModal] Gemini returned no image data:", JSON.stringify(data).slice(0, 500));
-      throw new Error("Gemini did not return an image. Please try again.");
+      console.error("[InfographicModal] Imagen returned no image data:", JSON.stringify(data).slice(0, 500));
+      throw new Error("Imagen did not return an image. Please try again.");
     }
 
     return base64;
@@ -335,10 +337,10 @@ export default function InfographicModal({ open, onClose, content, platform, con
       const geminiPrompt = buildGeminiImagePrompt(content, platform, customPrompt || undefined, forcedTemplate);
 
       // Attempt 1: standard prompt
-      console.log("[InfographicModal] Attempt 1 — generating with Gemini Image...");
+      console.log("[InfographicModal] Attempt 1 — generating with Imagen 3.0...");
       let base64: string | null = null;
       try {
-        base64 = await generateWithGemini(geminiPrompt);
+        base64 = await generateWithGemini(geminiPrompt, dims);
       } catch (firstErr) {
         console.warn("[InfographicModal] Attempt 1 failed:", firstErr);
 
@@ -346,7 +348,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
         console.log("[InfographicModal] Attempt 2 — retrying with correction prompt...");
         try {
           const retryPrompt = buildGeminiRetryPrompt(geminiPrompt, 2);
-          base64 = await generateWithGemini(retryPrompt);
+          base64 = await generateWithGemini(retryPrompt, dims);
         } catch (secondErr) {
           console.error("[InfographicModal] Attempt 2 also failed:", secondErr);
           throw secondErr; // propagate the final error

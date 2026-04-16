@@ -22,15 +22,15 @@ export async function generateContentImage(
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${GEMINI_API_KEY}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            responseModalities: ["IMAGE", "TEXT"],
-            responseMimeType: "image/jpeg",
+          instances: [{ prompt }],
+          parameters: {
+            sampleCount: 1,
+            aspectRatio: "1:1",
           },
         }),
         signal: controller.signal,
@@ -39,14 +39,12 @@ export async function generateContentImage(
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      console.warn("[image-generator] Gemini HTTP", response.status);
+      console.warn("[image-generator] Imagen HTTP", response.status);
       return null;
     }
 
     const data = await response.json();
-    const base64 = data.candidates?.[0]?.content?.parts
-      ?.find((p: { inlineData?: { data: string } }) => p.inlineData)
-      ?.inlineData?.data;
+    const base64 = data.predictions?.[0]?.bytesBase64Encoded;
 
     return base64 || null;
   } catch (err) {
