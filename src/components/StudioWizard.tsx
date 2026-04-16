@@ -35,6 +35,8 @@ import InfographicModal from "@/components/InfographicModal";
 import { StickyNote, Globe as GlobeIcon, Brain, ThumbsUp, ThumbsDown, TrendingUp, ChevronDown, CalendarDays } from "lucide-react";
 import { useCalendar } from "@/hooks/use-calendar";
 
+const IS_DEV = import.meta.env.DEV;
+
 /* ─── Platform icons ─── */
 
 const IconX = ({ className }: { className?: string }) => (
@@ -731,7 +733,7 @@ Respond ONLY with the 5 variations separated by ---VARIATION---. Nothing before,
       });
       setInfraContent(response.content.filter((b) => b.type === "text").map((b) => b.text).join(""));
     } catch (err) {
-      console.error("Infographic error:", err);
+      if (IS_DEV) console.error("Infographic error:", err);
       toast.error("Infographic generation error");
       setGenInfra(false);
     }

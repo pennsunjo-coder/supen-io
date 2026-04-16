@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 
+const IS_DEV = import.meta.env.DEV;
+
 export interface HeatmapDay {
   date: string;
   count: number;
@@ -99,7 +101,7 @@ export function useActivity() {
 
       setData({ thisWeek, thisMonth, total, streak, heatmap, loading: false });
     } catch (err) {
-      console.warn("useActivity error:", err);
+      if (IS_DEV) console.warn("useActivity error:", err);
       setData((p) => ({ ...p, loading: false }));
     }
   }, [user]);

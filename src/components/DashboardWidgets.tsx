@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import type { DashboardContent, ContentSession } from "@/hooks/use-dashboard";
 import InfographicModal from "@/components/InfographicModal";
 
+const IS_DEV = import.meta.env.DEV;
+
 /* ─── Motivation + Quick Tips ─── */
 
 function getMotivation(): string {
@@ -137,7 +139,7 @@ function TopContentCard({
       setImagePrompt(text);
       onUpdateImagePrompt(item.id, text);
     } catch (err) {
-      console.error("[DashboardWidgets] Image prompt error:", err);
+      if (IS_DEV) console.error("[DashboardWidgets] Image prompt error:", err);
       toast.error("Erreur lors de la génération du prompt image");
     }
     setGenerating(false);
@@ -372,7 +374,7 @@ function SessionVariationCard({
       setImagePrompt(t);
       onUpdateImagePrompt(item.id, t);
     } catch (err) {
-      console.error("[SessionCard] Image prompt error:", err);
+      if (IS_DEV) console.error("[SessionCard] Image prompt error:", err);
       toast.error("Erreur lors de la génération du prompt image");
     }
     setGenerating(false);
@@ -392,7 +394,7 @@ function SessionVariationCard({
       setImagePrompt(t);
       onUpdateImagePrompt(item.id, t);
     } catch (err) {
-      console.error("[SessionCard] Image regen error:", err);
+      if (IS_DEV) console.error("[SessionCard] Image regen error:", err);
       toast.error("Erreur lors de la régénération");
     }
     setGenerating(false);

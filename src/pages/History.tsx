@@ -97,13 +97,13 @@ function HistoryCard({ item }: { item: GeneratedItem }) {
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {(item as any).viral_score > 0 && (
+          {(item.viral_score ?? 0) > 0 && (
             <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded-full",
-              (item as any).viral_score >= 80 ? "bg-emerald-500/15 text-emerald-400" :
-              (item as any).viral_score >= 50 ? "bg-amber-500/15 text-amber-400" :
+              (item.viral_score ?? 0) >= 80 ? "bg-emerald-500/15 text-emerald-400" :
+              (item.viral_score ?? 0) >= 50 ? "bg-amber-500/15 text-amber-400" :
               "bg-red-500/15 text-red-400"
             )}>
-              {(item as any).viral_score}%
+              {(item.viral_score ?? 0)}%
             </span>
           )}
           <span className="text-[10px] text-muted-foreground/50">{formatTime(item.created_at)}</span>

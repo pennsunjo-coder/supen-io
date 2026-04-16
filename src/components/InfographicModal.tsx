@@ -22,6 +22,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { assertOnline, friendlyError } from "@/lib/resilience";
 
+const IS_DEV = import.meta.env.DEV;
+
 const FONT_LINK = '<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet">';
 
 function injectFontsInHtml(html: string): string {
@@ -64,7 +66,7 @@ async function generateWithGemini(
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => "");
-      console.error("[InfographicModal] Gemini HTTP", response.status, errorText);
+      if (IS_DEV) console.error("[InfographicModal] Gemini HTTP", response.status, errorText);
       throw new Error(`Gemini API error (${response.status}). Please try again.`);
     }
 
@@ -75,7 +77,7 @@ async function generateWithGemini(
     const base64 = imagePart?.inlineData?.data;
 
     if (!base64) {
-      console.error("[InfographicModal] Gemini returned no image data:", JSON.stringify(data).slice(0, 500));
+      if (IS_DEV) console.error("[InfographicModal] Gemini returned no image data:", JSON.stringify(data).slice(0, 500));
       throw new Error("Gemini did not return an image. Please try again.");
     }
 
@@ -339,20 +341,20 @@ export default function InfographicModal({ open, onClose, content, platform, con
       const geminiPrompt = buildGeminiImagePrompt(content, platform, customPrompt || undefined, forcedTemplate);
 
       // Attempt 1: standard prompt
-      console.log("[InfographicModal] Attempt 1 — generating with Imagen 3.0...");
+      if (IS_DEV) console.log("[InfographicModal] Attempt 1 — generating with Gemini...");
       let base64: string | null = null;
       try {
         base64 = await generateWithGemini(geminiPrompt, dims);
       } catch (firstErr) {
-        console.warn("[InfographicModal] Attempt 1 failed:", firstErr);
+        if (IS_DEV) console.warn("[InfographicModal] Attempt 1 failed:", firstErr);
 
         // Attempt 2: retry with correction prompt
-        console.log("[InfographicModal] Attempt 2 — retrying with correction prompt...");
+        if (IS_DEV) console.log("[InfographicModal] Attempt 2 — retrying with correction prompt...");
         try {
           const retryPrompt = buildGeminiRetryPrompt(geminiPrompt, 2);
           base64 = await generateWithGemini(retryPrompt, dims);
         } catch (secondErr) {
-          console.error("[InfographicModal] Attempt 2 also failed:", secondErr);
+          if (IS_DEV) console.error("[InfographicModal] Attempt 2 also failed:", secondErr);
           throw secondErr; // propagate the final error
         }
       }
@@ -373,7 +375,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
       // Save to Supabase
       await handleSave({ html, mode: "gemini" });
     } catch (err) {
-      console.error("[InfographicModal] Generation failed:", err);
+      if (IS_DEV) console.error("[InfographicModal] Generation failed:", err);
       const fallbackMsg = err instanceof Error ? err.message : "Generation failed";
       const msg = friendlyError(err) || fallbackMsg;
       setStep("ready");
@@ -483,7 +485,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
         toast.error("Nothing to download yet");
       }
     } catch (err) {
-      console.error("[InfographicModal] Download error:", err);
+      if (IS_DEV) console.error("[InfographicModal] Download error:", err);
       toast.error("Download failed — try again");
     } finally {
       setDownloading(false);
@@ -514,7 +516,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
 
     const html = opts?.html ?? htmlCode;
     if (!html) {
-      console.warn("[InfographicModal] handleSave bailed — no html");
+      if (IS_DEV) console.warn("[InfographicModal] handleSave bailed — no html");
       return;
     }
 
@@ -548,7 +550,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
       }
 
       if (error) {
-        console.error("[InfographicModal] Supabase save error:", error.message, error.details, error.hint);
+        if (IS_DEV) console.error("[InfographicModal] Supabase save error:", error.message, error.details, error.hint);
         toast.error(`Save error: ${error.message}`);
         savedRef.current = false;
       } else {
@@ -557,7 +559,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
         if (onGenerated && html) onGenerated(html);
       }
     } catch (err) {
-      console.error("[InfographicModal] Network/unexpected error:", err);
+      if (IS_DEV) console.error("[InfographicModal] Network/unexpected error:", err);
       toast.error("Network error while saving");
       savedRef.current = false;
     }

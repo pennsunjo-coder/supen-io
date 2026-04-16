@@ -49,6 +49,7 @@ export async function generateContentImage(
       return null;
     }
 
+
     const data = await response.json();
     // Pick the part whose inlineData is an image — ignore text parts.
     const imagePart = data.candidates?.[0]?.content?.parts

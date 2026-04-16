@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 
+const IS_DEV = import.meta.env.DEV;
+
 export interface ScheduledPost {
   id: string;
   content: string;
@@ -31,13 +33,13 @@ export function useCalendar() {
         .gte("scheduled_at", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
         .order("scheduled_at", { ascending: true });
       if (error) {
-        console.error("[useCalendar] fetch error:", error.message);
+        if (IS_DEV) console.error("[useCalendar] fetch error:", error.message);
         setPosts([]);
       } else {
         setPosts((data as ScheduledPost[]) || []);
       }
     } catch (err) {
-      console.error("[useCalendar] exception:", err);
+      if (IS_DEV) console.error("[useCalendar] exception:", err);
       setPosts([]);
     }
     setLoading(false);

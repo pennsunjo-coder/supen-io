@@ -29,6 +29,8 @@ const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 
 const queryClient = new QueryClient();
 
+const IS_DEV = import.meta.env.DEV;
+
 function PageLoader() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
@@ -41,7 +43,7 @@ const App = () => {
   // Global unhandled promise rejection handler
   useEffect(() => {
     function handleRejection(event: PromiseRejectionEvent) {
-      console.error("[Unhandled Promise Rejection]", event.reason);
+      if (IS_DEV) console.error("[Unhandled Promise Rejection]", event.reason);
       const msg = event.reason?.message || "";
       // Skip errors already handled locally (529/overloaded in StudioWizard/InfographicModal,
       // network retries, and normal abort/cancel from AbortController timeouts)
@@ -54,7 +56,7 @@ const App = () => {
       }
     }
     function handleError(event: ErrorEvent) {
-      console.error("[Window Error]", event.error || event.message);
+      if (IS_DEV) console.error("[Window Error]", event.error || event.message);
     }
     window.addEventListener("unhandledrejection", handleRejection);
     window.addEventListener("error", handleError);

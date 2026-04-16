@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,8 +6,10 @@ import {
   ArrowLeft, LayoutDashboard, Users, FileText,
   BarChart3, CreditCard, Loader2, TrendingUp, Calendar,
   ChevronLeft, ChevronRight, Zap, DollarSign, Crown,
-  Search, RefreshCw,
+  Search, RefreshCw, Download, Mail,
 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
@@ -17,7 +19,7 @@ import type { DistributionItem } from "@/hooks/use-admin-stats";
 
 /* ─── Types ─── */
 
-type Section = "overview" | "users" | "contents" | "analytics" | "revenue";
+type Section = "overview" | "users" | "contents" | "analytics" | "revenue" | "waitlist";
 
 const NAV_ITEMS: { id: Section; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
@@ -25,7 +27,40 @@ const NAV_ITEMS: { id: Section; label: string; icon: typeof LayoutDashboard }[] 
   { id: "contents", label: "Generated Content", icon: FileText },
   { id: "analytics", label: "Analytics", icon: BarChart3 },
   { id: "revenue", label: "Revenue", icon: CreditCard },
+  { id: "waitlist", label: "Waitlist", icon: Mail },
 ];
+
+/* ─── Waitlist types ─── */
+
+interface WaitlistEntry {
+  id: string;
+  email: string;
+  first_name: string;
+  plan: string;
+  paid: boolean;
+  notified: boolean;
+  created_at: string;
+}
+
+function useWaitlist() {
+  const [entries, setEntries] = useState<WaitlistEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetch = useCallback(async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from("waitlist")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(500);
+    setEntries((data as WaitlistEntry[]) ?? []);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { fetch(); }, [fetch]);
+
+  return { entries, loading, refetch: fetch };
+}
 
 /* ─── Helpers ─── */
 
@@ -55,6 +90,8 @@ export default function Admin() {
   const { users, loading: usersLoading, refetch: refetchUsers } = useAdminUsers();
   const { contents, loading: contentsLoading, page, hasMore, fetchPage } = useAdminContent();
 
+  const { entries: waitlistEntries, loading: waitlistLoading, refetch: refetchWaitlist } = useWaitlist();
+  const [waitlistFilter, setWaitlistFilter] = useState<"all" | "free" | "plus" | "pro">("all");
   const [userSearch, setUserSearch] = useState("");
 
   const filteredUsers = useMemo(() => {
@@ -66,6 +103,39 @@ export default function Admin() {
       u.user_id.includes(q)
     );
   }, [users, userSearch]);
+
+  const filteredWaitlist = useMemo(() => {
+    if (waitlistFilter === "all") return waitlistEntries;
+    return waitlistEntries.filter((e) => e.plan === waitlistFilter);
+  }, [waitlistEntries, waitlistFilter]);
+
+  const waitlistStats = useMemo(() => ({
+    total: waitlistEntries.length,
+    free: waitlistEntries.filter((e) => e.plan === "free").length,
+    plus: waitlistEntries.filter((e) => e.plan === "plus").length,
+    pro: waitlistEntries.filter((e) => e.plan === "pro").length,
+  }), [waitlistEntries]);
+
+  function exportWaitlistCsv() {
+    if (filteredWaitlist.length === 0) {
+      toast.error("No entries to export");
+      return;
+    }
+    const header = "Email,First Name,Plan,Paid,Notified,Joined At\n";
+    const rows = filteredWaitlist.map((e) =>
+      `"${e.email}","${e.first_name}","${e.plan}",${e.paid},${e.notified},"${e.created_at}"`
+    ).join("\n");
+    const blob = new Blob([header + rows], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `waitlist-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${filteredWaitlist.length} entries`);
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -486,6 +556,112 @@ export default function Admin() {
                   <Crown className="w-4 h-4" /> Configure Stripe
                 </Button>
               </div>
+            </>
+          )}
+
+          {/* ═══════════════════════════════════════════════ */}
+          {/* ═══ WAITLIST ═══ */}
+          {/* ═══════════════════════════════════════════════ */}
+          {section === "waitlist" && (
+            <>
+              <div className="flex items-center justify-between gap-4">
+                <h2 className="text-lg font-bold shrink-0">Waitlist ({waitlistStats.total})</h2>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={exportWaitlistCsv}>
+                    <Download className="w-3 h-3" /> Export CSV
+                  </Button>
+                  <Button variant="outline" size="sm" className="h-8 text-xs shrink-0" onClick={refetchWaitlist} disabled={waitlistLoading}>
+                    {waitlistLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Stats cards */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <StatCard icon={Users} label="Total Waitlist" value={waitlistStats.total} accent />
+                <StatCard icon={Mail} label="Free" value={waitlistStats.free} />
+                <StatCard icon={Zap} label="Plus ($10)" value={waitlistStats.plus} />
+                <StatCard icon={Crown} label="Pro ($29)" value={waitlistStats.pro} />
+              </div>
+
+              {/* Filter */}
+              <div className="flex items-center gap-1.5">
+                {(["all", "free", "plus", "pro"] as const).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setWaitlistFilter(f)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all",
+                      waitlistFilter === f
+                        ? "bg-primary/10 text-primary border border-primary/30"
+                        : "text-muted-foreground border border-border/20 hover:border-border/40 hover:text-foreground",
+                    )}
+                  >
+                    {f === "all" ? "All" : f.charAt(0).toUpperCase() + f.slice(1)}
+                  </button>
+                ))}
+              </div>
+
+              {/* Send launch email — placeholder */}
+              <div className="bg-card border border-border/20 rounded-xl p-5 flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold">Send Launch Email</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Notify all {waitlistStats.total} waitlist members when you launch.
+                  </p>
+                </div>
+                <Button size="sm" className="h-8 text-xs gap-1.5" disabled>
+                  <Mail className="w-3 h-3" /> Send to All (Coming Soon)
+                </Button>
+              </div>
+
+              {/* Table */}
+              {waitlistLoading && waitlistEntries.length === 0 ? (
+                <div className="flex justify-center py-16">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                </div>
+              ) : (
+                <div className="bg-card border border-border/20 rounded-xl p-5 overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="text-muted-foreground border-b border-border/20">
+                        <th className="text-left py-2 pr-3 font-medium">Email</th>
+                        <th className="text-left py-2 pr-3 font-medium">Name</th>
+                        <th className="text-left py-2 pr-3 font-medium">Plan</th>
+                        <th className="text-left py-2 pr-3 font-medium">Paid</th>
+                        <th className="text-left py-2 pr-3 font-medium">Notified</th>
+                        <th className="text-left py-2 font-medium">Joined</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredWaitlist.map((e) => (
+                        <tr key={e.id} className="border-b border-border/10 hover:bg-accent/20 transition-colors">
+                          <td className="py-2.5 pr-3 font-medium">{e.email}</td>
+                          <td className="py-2.5 pr-3 text-muted-foreground">{e.first_name || "—"}</td>
+                          <td className="py-2.5 pr-3">
+                            <span className={cn(
+                              "px-1.5 py-0.5 rounded text-[10px] font-medium",
+                              e.plan === "pro" ? "bg-purple-500/15 text-purple-400" :
+                              e.plan === "plus" ? "bg-primary/15 text-primary" :
+                              "bg-accent/40 text-muted-foreground",
+                            )}>
+                              {e.plan.charAt(0).toUpperCase() + e.plan.slice(1)}
+                            </span>
+                          </td>
+                          <td className="py-2.5 pr-3"><Badge ok={e.paid} /></td>
+                          <td className="py-2.5 pr-3"><Badge ok={e.notified} /></td>
+                          <td className="py-2.5 text-muted-foreground">{formatDate(e.created_at)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {filteredWaitlist.length === 0 && (
+                    <p className="text-center text-muted-foreground text-xs py-8">
+                      {waitlistFilter !== "all" ? `No ${waitlistFilter} entries` : "No waitlist entries yet"}
+                    </p>
+                  )}
+                </div>
+              )}
             </>
           )}
 

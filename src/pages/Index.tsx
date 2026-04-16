@@ -13,6 +13,7 @@ import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/contexts/ThemeContext";
 import { LogoFull } from "@/components/Logo";
+import WaitlistSection from "@/components/WaitlistSection";
 
 const ROTATING_WORDS = ["Viral", "Compelling", "Human", "Irresistible"];
 
@@ -213,6 +214,7 @@ const Index = () => {
               { label: "Features", href: "#features" },
               { label: "Results", href: "#results" },
               { label: "Pricing", href: "#pricing" },
+              { label: "Waitlist", href: "#waitlist" },
               { label: "FAQ", href: "#faq" },
             ].map((item) => (
               <a key={item.label} href={item.href} className="px-4 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-all">{item.label}</a>
@@ -681,6 +683,9 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* ═══════════ WAITLIST ═══════════ */}
+      <WaitlistSection />
 
       {/* ═══════════ FAQ ═══════════ */}
       <section id="faq" className="py-24 px-6">

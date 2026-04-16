@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 
+const IS_DEV = import.meta.env.DEV;
+
 export interface DashboardContent {
   id: string;
   platform: string;
@@ -168,6 +170,7 @@ export function useDashboard() {
           .order("created_at", { ascending: false })
           .limit(25);
         if (topErr2) {
+          if (IS_DEV) console.warn("useDashboard fallback select also failed:", topErr2.message);
         } else if (td2) {
           topData = td2.map((r) => ({ ...r, viral_score: 0, image_prompt: "" })) as DashboardContent[];
         }
@@ -190,7 +193,7 @@ export function useDashboard() {
         setSessions([]);
       }
     } catch (err) {
-      console.warn("useDashboard error:", err);
+      if (IS_DEV) console.warn("useDashboard error:", err);
     }
 
     setLoading(false);

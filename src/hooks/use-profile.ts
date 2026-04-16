@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 
+const IS_DEV = import.meta.env.DEV;
+
 export interface UserProfile {
   id: string;
   user_id: string;
@@ -15,6 +17,14 @@ export interface UserProfile {
   stripe_customer_id?: string;
   stripe_subscription_id?: string;
   plan_expires_at?: string;
+  // Personalization (see migration 20260402000015_extend_user_profiles.sql)
+  content_frequency?: string;
+  target_audience?: string;
+  content_goals?: string[];
+  preferred_tone?: string;
+  preferred_length?: string;
+  last_topics?: string[];
+  avg_score?: number;
 }
 
 export function useProfile() {
@@ -42,14 +52,28 @@ export function useProfile() {
         .maybeSingle();
 
       if (error) {
-        setProfile(null);
+        // Most common case: one of the newer columns is missing on an older
+        // database. Retry with a minimal column set so the app still works,
+        // then surface a warning in dev so the user knows to run migrations.
+        if (IS_DEV) console.warn("useProfile select(*) failed, retrying with core columns:", error.message);
+        const { data: retryData, error: retryErr } = await supabase
+          .from("user_profiles")
+          .select("id, user_id, first_name, platforms, source_platform, niche, onboarding_completed, created_at, plan, stripe_customer_id, stripe_subscription_id, plan_expires_at")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (retryErr) {
+          if (IS_DEV) console.warn("useProfile retry also failed:", retryErr.message);
+          setProfile(null);
+        } else {
+          setProfile((retryData as UserProfile) ?? null);
+        }
       } else if (data) {
         setProfile(data as UserProfile);
       } else {
         setProfile(null);
       }
     } catch (err) {
-      console.warn("useProfile fetch error:", err);
+      if (IS_DEV) console.warn("useProfile fetch error:", err);
       setProfile(null);
     }
 

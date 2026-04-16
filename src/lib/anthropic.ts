@@ -2,7 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 
 const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY ?? "";
 
-if (!apiKey) {
+if (!apiKey && import.meta.env.DEV) {
   console.warn("VITE_ANTHROPIC_API_KEY is not set");
 }
 

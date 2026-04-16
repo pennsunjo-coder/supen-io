@@ -10,6 +10,7 @@ export interface GeneratedItem {
   content: string;
   source_ids: string[];
   created_at: string;
+  viral_score?: number;
 }
 
 export interface HistoryGroup {
