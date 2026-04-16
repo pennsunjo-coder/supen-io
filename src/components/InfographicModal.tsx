@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
   X, RefreshCw, Download, Sparkles, Check,
-  Loader2, Copy, Maximize2, FileText,
+  Loader2, Copy, Maximize2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -409,42 +409,79 @@ export default function InfographicModal({ open, onClose, content, platform, con
   }
 
   async function handleDownload(format: "png" | "jpeg") {
-    if (downloading || !imageBase64) return;
+    if (downloading) return;
     setDownloading(true);
 
     try {
-      if (format === "png") {
-        // Direct download from base64 — no canvas conversion needed
-        const link = document.createElement("a");
-        link.href = `data:image/png;base64,${imageBase64}`;
-        link.download = `supen-infographic-${Date.now()}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      } else {
-        // Convert PNG base64 to JPEG via canvas
-        const img = new Image();
-        img.src = `data:image/png;base64,${imageBase64}`;
-        await new Promise<void>((resolve, reject) => {
-          img.onload = () => resolve();
-          img.onerror = () => reject(new Error("Failed to load image"));
+      if (imageBase64) {
+        // ── Gemini image path: base64 → direct or canvas conversion ──
+        if (format === "png") {
+          const link = document.createElement("a");
+          link.style.display = "none";
+          link.href = `data:image/png;base64,${imageBase64}`;
+          link.download = `supen-infographic-${Date.now()}.png`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          toast.success("PNG downloaded!");
+        } else {
+          // JPEG: composite over white to avoid transparent-black artifacts
+          const img = new Image();
+          img.src = `data:image/png;base64,${imageBase64}`;
+          await new Promise<void>((resolve, reject) => {
+            img.onload = () => resolve();
+            img.onerror = () => reject(new Error("Failed to load image"));
+          });
+          const canvas = document.createElement("canvas");
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) throw new Error("Canvas not supported");
+          ctx.fillStyle = "#f8f9f7";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0);
+          const link = document.createElement("a");
+          link.style.display = "none";
+          link.href = canvas.toDataURL("image/jpeg", 0.95);
+          link.download = `supen-infographic-${Date.now()}.jpg`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          toast.success("JPEG downloaded!");
+        }
+      } else if (htmlCode) {
+        // ── HTML fallback path: capture iframe via html2canvas ──
+        await new Promise((r) => setTimeout(r, 1500));
+        const iframe = iframeRef.current;
+        if (!iframe) throw new Error("Iframe not available");
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+        if (!iframeDoc) throw new Error("Cannot access iframe content");
+
+        const html2canvas = (await import("html2canvas")).default;
+        const canvas = await html2canvas(iframeDoc.documentElement, {
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: "#f8f9f7",
+          scale: 2,
+          logging: false,
         });
-        const canvas = document.createElement("canvas");
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) throw new Error("Canvas not supported");
-        ctx.fillStyle = "#f8f9f7";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0);
+
         const link = document.createElement("a");
-        link.href = canvas.toDataURL("image/jpeg", 0.95);
-        link.download = `supen-infographic-${Date.now()}.jpg`;
+        link.style.display = "none";
+        if (format === "jpeg") {
+          link.href = canvas.toDataURL("image/jpeg", 0.95);
+          link.download = `supen-infographic-${Date.now()}.jpg`;
+        } else {
+          link.href = canvas.toDataURL("image/png");
+          link.download = `supen-infographic-${Date.now()}.png`;
+        }
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        toast.success(`${format.toUpperCase()} downloaded!`);
+      } else {
+        toast.error("Nothing to download yet");
       }
-      toast.success(`${format.toUpperCase()} downloaded!`);
     } catch (err) {
       console.error("[InfographicModal] Download error:", err);
       toast.error("Download failed — try again");
@@ -462,46 +499,6 @@ export default function InfographicModal({ open, onClose, content, platform, con
       toast.success("Image copied!");
     } catch {
       toast.error("Copy failed — your browser may not support this.");
-    }
-    setDownloading(false);
-  }
-
-  async function handleDownloadPDF() {
-    if (downloading || !imageBase64) return;
-    setDownloading(true);
-
-    try {
-      const imgData = `data:image/png;base64,${imageBase64}`;
-      const ratio = dims.height / dims.width;
-      const pdfW = 210;
-      const pdfH = Math.round(pdfW * ratio);
-
-      try {
-        const { jsPDF } = await import("jspdf");
-        const pdf = new jsPDF({
-          orientation: ratio > 1 ? "portrait" : "landscape",
-          unit: "mm",
-          format: [pdfW, pdfH],
-          compress: true,
-        });
-        pdf.addImage(imgData, "PNG", 0, 0, pdfW, pdfH, "", "FAST");
-        pdf.save(`supen-infographic-${Date.now()}.pdf`);
-        toast.success("PDF downloaded!");
-      } catch {
-        // Fallback: print dialog
-        const win = window.open("", "_blank");
-        if (!win) {
-          toast.error("Allow popups for PDF download");
-          setDownloading(false);
-          return;
-        }
-        win.document.write(`<!DOCTYPE html><html><head><style>*{margin:0;padding:0}body{background:white}img{width:100%;height:auto;display:block}@page{margin:0}@media print{body{margin:0}}</style></head><body><img src="${imgData}"/><script>window.onload=function(){setTimeout(function(){window.print();setTimeout(function(){window.close()},1000)},500)};<\/script></body></html>`);
-        win.document.close();
-        toast.success("Print dialog → Save as PDF");
-      }
-    } catch (err) {
-      console.error("[InfographicModal] PDF error:", err);
-      toast.error("PDF failed — use PNG instead");
     }
     setDownloading(false);
   }
@@ -811,7 +808,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
                   </p>
                 )}
 
-                {/* Primary actions — PNG + JPEG + PDF download */}
+                {/* Primary actions — PNG + JPEG download */}
                 <div className="flex gap-2 mb-3">
                   <Button
                     onClick={() => handleDownload("png")}
@@ -833,17 +830,6 @@ export default function InfographicModal({ open, onClose, content, platform, con
                     {downloading
                       ? <><Loader2 className="w-3 h-3 animate-spin" /> ...</>
                       : <><Download className="w-3 h-3" /> JPEG</>
-                    }
-                  </Button>
-                  <Button
-                    onClick={handleDownloadPDF}
-                    variant="outline"
-                    className="flex-1 gap-1.5 h-9 text-xs font-semibold"
-                    disabled={downloading}
-                  >
-                    {downloading
-                      ? <><Loader2 className="w-3 h-3 animate-spin" /> ...</>
-                      : <><FileText className="w-3 h-3" /> PDF</>
                     }
                   </Button>
                 </div>
