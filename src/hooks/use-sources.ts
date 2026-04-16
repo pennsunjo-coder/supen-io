@@ -68,16 +68,19 @@ async function extractTextFromPdf(
   try {
     const pdfjsLib = await import("pdfjs-dist");
 
-    // Worker URL — use CDN matching the installed pdfjs version.
-    // This is the most reliable approach across dev/prod/Vercel.
-    const version = (pdfjsLib as unknown as { version?: string }).version || "4.0.379";
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${version}/build/pdf.worker.min.mjs`;
+    // Worker URL — use local copy in /public for guaranteed version match.
+    // The file is copied from node_modules/pdfjs-dist/build/pdf.worker.min.mjs
+    // at build time. Same-origin, no CDN, no CSP issues, works offline.
+    // Version must match the installed pdfjs-dist version (5.6.205).
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({
       data: new Uint8Array(arrayBuffer),
       useSystemFonts: true,
       disableFontFace: true,
+      useWorkerFetch: false,
+      isEvalSupported: false,
       verbosity: 0,
     }).promise;
 
@@ -94,13 +97,23 @@ async function extractTextFromPdf(
       } catch { /* skip page */ }
     }
 
-    if (fullText.trim().length > 20) {
-      return { text: fullText.trim(), pages: pdf.numPages };
+    const cleaned = fullText
+      .replace(/[ \t]+/g, " ")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+
+    if (cleaned.length > 20) {
+      return { text: cleaned, pages: pdf.numPages };
     }
     // No text extracted — likely a scanned/image PDF
     throw new Error("No extractable text (PDF may be scanned/image-based)");
   } catch (clientErr) {
-    console.warn("[PDF] Client-side extraction failed, trying server fallback:", clientErr);
+    const errMsg = clientErr instanceof Error ? clientErr.message : String(clientErr);
+    console.warn("[PDF] Client-side extraction failed:", errMsg, clientErr);
+    // If the error is a password-protected PDF, surface it immediately
+    if (/password/i.test(errMsg)) {
+      throw new Error("This PDF is password-protected.");
+    }
   }
 
   // ── Strategy 2: Edge Function fallback ──
