@@ -430,8 +430,8 @@ Respond ONLY with the 5 variations separated by ---VARIATION---. Nothing before,
           system: systemPrompt,
           messages: [{ role: "user", content: userMessage }],
         }),
-        60_000,
-        "Generation took too long (60s). Try with shorter content.",
+        120_000,
+        "Generation took too long. Try again with shorter content.",
       );
 
       setError(null);
