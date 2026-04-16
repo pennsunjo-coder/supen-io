@@ -29,10 +29,10 @@ function injectFontsInHtml(html: string): string {
   return html.replace("</head>", FONT_LINK + "</head>");
 }
 
-// ─── Gemini Image Generation via gemini-2.0-flash ───
+// ─── Gemini Image Generation via gemini-2.0-flash-preview-image-generation ───
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const GEMINI_MODEL = "gemini-2.0-flash";
+const GEMINI_MODEL = "gemini-2.0-flash-preview-image-generation";
 
 async function generateWithGemini(
   prompt: string,
