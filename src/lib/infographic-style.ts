@@ -583,22 +583,7 @@ RAPPEL FINAL :
 }
 
 
-// ─── Gemini Image prompt builder v5.0 — simple, focused, effective ───
-
-const TEMPLATE_STYLE_DESC: Record<string, string> = {
-  WHITEBOARD: "vertical whiteboard with hand-drawn marker style",
-  UI_CARDS: "vertical whiteboard with hand-drawn marker style",
-  CHEAT_SHEET: "vertical whiteboard with hand-drawn marker style",
-  AWA_MASTERCLASS: "vertical whiteboard with hand-drawn marker style",
-  DARK_TECH: "vertical whiteboard with hand-drawn marker style",
-  NOTEBOOK: "spiral notebook page with ruled lines and handwritten notes",
-  FUNNEL: "funnel diagram on a whiteboard showing a process flow",
-  COMPARISON: "3-column comparison table on a clean whiteboard",
-  DATA_GRID: "structured data table with colored headers on a whiteboard",
-  STATS_IMPACT: "structured data table with colored headers on a whiteboard",
-  AWA_BREAKING: "structured data table with colored headers on a whiteboard",
-  AWA_CLASSIC: "framed educational poster with numbered sections on cream paper",
-};
+// ─── Gemini Image prompt builder — simple, focused, effective ───
 
 export function buildGeminiImagePrompt(
   content: string,
@@ -612,8 +597,20 @@ export function buildGeminiImagePrompt(
   const selection = selectBestTemplate(content, platform, forcedTemplate);
   const templateId = selection.templateId;
 
-  const aspectRatio = dims.width === dims.height ? "square (1:1)" : "vertical portrait (4:5)";
-  const templateStyle = TEMPLATE_STYLE_DESC[templateId] || "vertical whiteboard with hand-drawn marker style";
+  const aspectRatio = dims.width === dims.height
+    ? "square (1:1)"
+    : "vertical portrait (4:5)";
+
+  const templateStyle: Record<string, string> = {
+    WHITEBOARD: "vertical whiteboard with hand-drawn marker style",
+    NOTEBOOK: "spiral notebook page with ruled lines and handwritten notes",
+    FUNNEL: "funnel diagram on a whiteboard showing a process flow",
+    COMPARISON: "3-column comparison table on a clean whiteboard",
+    DATA_GRID: "structured data table with colored headers",
+    AWA_CLASSIC: "framed educational poster with numbered sections",
+  };
+
+  const style = templateStyle[templateId] || "vertical whiteboard";
 
   const points = extraction.points
     .map((p, i) => `${i + 1}. ${p.title}: ${p.body}`)
@@ -621,7 +618,7 @@ export function buildGeminiImagePrompt(
 
   return `Draw a professional educational infographic in ${aspectRatio} format.
 
-STYLE: ${templateStyle}
+STYLE: ${style}
 Use a hand-drawn style with markers (blue #2563EB, red #C0392B, and black).
 Add arrows, simple doodle icons, and handwritten-style text.
 The layout must be clean and very legible, similar to a viral creator post on LinkedIn.

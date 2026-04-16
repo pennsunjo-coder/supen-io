@@ -32,7 +32,7 @@ function injectFontsInHtml(html: string): string {
 // ─── Gemini Image Generation via gemini-2.0-flash-preview-image-generation ───
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const GEMINI_MODEL = "gemini-2.0-flash-preview-image-generation";
+const GEMINI_MODEL = "gemini-2.5-flash-image";
 
 async function generateWithGemini(
   prompt: string,
