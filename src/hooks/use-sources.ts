@@ -1,9 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { getCache, setCache, invalidateCache } from "@/lib/cache";
 import { embedSource } from "@/lib/embeddings";
 import type { Source } from "@/types/database";
+
+const IS_DEV = import.meta.env.DEV;
 
 const CHUNK_SIZE = 400; // words per chunk (target 300-500)
 const CHUNK_OVERLAP = 50; // overlap words
@@ -109,7 +111,7 @@ async function extractTextFromPdf(
     throw new Error("No extractable text (PDF may be scanned/image-based)");
   } catch (clientErr) {
     const errMsg = clientErr instanceof Error ? clientErr.message : String(clientErr);
-    console.warn("[PDF] Client-side extraction failed:", errMsg, clientErr);
+    if (IS_DEV) console.warn("[PDF] Client-side extraction failed:", errMsg, clientErr);
     // If the error is a password-protected PDF, surface it immediately
     if (/password/i.test(errMsg)) {
       throw new Error("This PDF is password-protected.");
@@ -192,11 +194,15 @@ export function useSources() {
     if (cached) { setSources(cached); setLoading(false); return; }
 
     try {
+      // Only select columns needed for the list view.
+      // Exclude `embedding` (huge pgvector blob — loaded server-side only
+      // when searching) and any other heavy columns.
       const { data, error } = await supabase
         .from("sources")
-        .select("*")
+        .select("id, user_id, type, title, content, file_path, created_at")
         .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(200);
 
       if (!error && data) {
         const typed = data as Source[];
@@ -320,13 +326,11 @@ export function useSources() {
 
       // 1. Extract text client-side with pdf.js
       let pdfText: string;
-      let pageCount: number;
       try {
         const result = await extractTextFromPdf(file);
         pdfText = result.text;
-        pageCount = result.pages;
       } catch (err) {
-        console.error("🔴 PDF extraction failed:", err);
+        if (IS_DEV) console.error("🔴 PDF extraction failed:", err);
         return { error: "Unable to read this PDF. The file may be protected or corrupted." };
       }
 
@@ -334,53 +338,74 @@ export function useSources() {
         return { error: "No extractable text in this PDF." };
       }
 
-      // 2. Upload to Storage
+      // 2. Upload to Storage (fire-and-forget — don't block on this)
       const filePath = `${user.id}/${Date.now()}_${file.name}`;
-      try {
-        const { error: uploadError } = await supabase.storage
-          .from("sources")
-          .upload(filePath, file, { contentType: "application/pdf" });
-
-        if (uploadError) {
-          console.warn("Storage upload failed:", uploadError.message);
-          // Continue even if storage fails — text is extracted
-        }
-      } catch {
-        // Storage not configured — continue with text
-      }
+      supabase.storage
+        .from("sources")
+        .upload(filePath, file, { contentType: "application/pdf" })
+        .then((res) => {
+          if (res.error && IS_DEV) console.warn("Storage upload failed:", res.error.message);
+        })
+        .catch(() => { /* storage not configured — continue */ });
 
       // 3. Split into chunks and insert
       const title = file.name.replace(/\.pdf$/i, "");
       const chunks = chunkText(pdfText);
-      invalidateCache(`sources:${user.id}`);
 
-      if (chunks.length === 1) {
-        const { data: inserted, error } = await supabase.from("sources").insert({
-          user_id: user.id,
-          type: "pdf",
-          title,
-          content: chunks[0],
-          file_path: filePath,
-        }).select("id, content");
-        if (error) return { error: error.message };
-        if (inserted) inserted.forEach((s) => embedSource(s.id, s.content).catch(() => {}));
-      } else {
+      // Optimistic update: inject temp placeholders immediately so the UI
+      // reflects the new source without waiting for the Supabase round-trip.
+      const nowIso = new Date().toISOString();
+      const tempSources: Source[] = chunks.map((chunk, i) => ({
+        id: `temp-${Date.now()}-${i}`,
+        user_id: user.id,
+        type: "pdf",
+        title: chunks.length === 1 ? title : `${title} (${i + 1}/${chunks.length})`,
+        content: chunk,
+        file_path: i === 0 ? filePath : null,
+        created_at: nowIso,
+      } as Source));
+      setSources((prev) => [...tempSources, ...prev]);
+
+      try {
         const inserts = chunks.map((chunk, i) => ({
           user_id: user.id,
           type: "pdf" as const,
-          title: `${title} (${i + 1}/${chunks.length})`,
+          title: chunks.length === 1 ? title : `${title} (${i + 1}/${chunks.length})`,
           content: chunk,
           file_path: i === 0 ? filePath : null,
         }));
-        const { data: inserted, error } = await supabase.from("sources").insert(inserts).select("id, content");
-        if (error) return { error: error.message };
-        if (inserted) inserted.forEach((s) => embedSource(s.id, s.content).catch(() => {}));
-      }
+        const { data: inserted, error } = await supabase
+          .from("sources")
+          .insert(inserts)
+          .select("id, user_id, type, title, content, file_path, created_at");
 
-      await fetchSources();
-      return { error: null };
+        if (error) {
+          // Roll back optimistic update
+          setSources((prev) => prev.filter((s) => !tempSources.some((t) => t.id === s.id)));
+          return { error: error.message };
+        }
+
+        if (inserted) {
+          // Replace temp sources with real ones
+          const realSources = inserted as Source[];
+          setSources((prev) => [
+            ...realSources,
+            ...prev.filter((s) => !tempSources.some((t) => t.id === s.id)),
+          ]);
+          // Fire-and-forget embeddings
+          realSources.forEach((s) => {
+            if (s.content) embedSource(s.id, s.content).catch(() => {});
+          });
+        }
+
+        invalidateCache(`sources:${user.id}`);
+        return { error: null };
+      } catch (err) {
+        setSources((prev) => prev.filter((s) => !tempSources.some((t) => t.id === s.id)));
+        return { error: err instanceof Error ? err.message : "Insert failed" };
+      }
     },
-    [user, fetchSources]
+    [user]
   );
 
   const searchWeb = useCallback(
@@ -489,7 +514,9 @@ export function useSources() {
     [user]
   );
 
-  const grouped = groupSources(sources);
+  // Memoize the grouping so re-renders from unrelated state don't
+  // recompute the Map/regex/reduce for every source on each render.
+  const grouped = useMemo(() => groupSources(sources), [sources]);
 
   return { sources, grouped, loading, addUrl, addNote, addPdf, searchWeb, removeSource, removeGrouped };
 }
