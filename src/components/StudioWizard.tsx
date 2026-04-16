@@ -22,6 +22,7 @@ import { saveInteraction, getUserStyleMemory, hasStyleMemory } from "@/lib/user-
 import { getHooks, detectNiche, getDailyHook, type Hook } from "@/lib/viral-hooks";
 import { buildThreadPlaybook } from "@/lib/thread-playbook";
 import { buildReelPlaybook } from "@/lib/reel-playbook";
+import { buildYoutubePlaybook } from "@/lib/youtube-playbook";
 import { fetchTrends, type Trend } from "@/lib/trends";
 import type { Source } from "@/types/database";
 import type { UserProfile } from "@/hooks/use-profile";
@@ -400,6 +401,7 @@ Current platform: ${selectedPlatform.name}
 Current format: ${selectedFormat}
 ${selectedFormat?.toLowerCase() === "thread" ? buildThreadPlaybook(profile?.niche || "", sanitized) : ""}
 ${/reel|video script|script shorts/i.test(selectedFormat || "") ? buildReelPlaybook(profile?.niche || "", sanitized) : ""}
+${/script long/i.test(selectedFormat || "") ? buildYoutubePlaybook(profile?.niche || "", sanitized) : ""}
 FOR EACH VARIATION, USE A DIFFERENT APPROACH:
 - Variation 1: Open with a specific failure or mistake
 - Variation 2: Open with a surprising number or stat
