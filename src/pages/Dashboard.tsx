@@ -146,7 +146,7 @@ const Dashboard = () => {
                   )}
                 </div>
                 <Button onClick={() => navigate("/dashboard/studio")} className="gap-2 h-9 text-sm font-semibold shrink-0">
-                  <Plus className="w-4 h-4" /> Create
+                  <Plus className="w-4 h-4" /> Create Content
                 </Button>
               </div>
               {hasContent && (
@@ -188,19 +188,19 @@ const Dashboard = () => {
               ) : (
                 /* Content grid */
                 <div className="p-5">
-                  <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
                     {/* + New card */}
                     <motion.div
                       whileHover={{ scale: 1.02, y: -2 }}
                       whileTap={{ scale: 0.97 }}
-                      className="rounded-2xl border-2 border-dashed border-border/25 hover:border-primary/40 hover:bg-primary/5 transition-colors cursor-pointer flex flex-col items-center justify-center aspect-[3/4] p-4 group"
+                      className="rounded-2xl border-2 border-dashed border-border/25 hover:border-primary/40 hover:bg-primary/5 transition-colors cursor-pointer flex flex-col items-center justify-center aspect-[4/5] p-3 group"
                       onClick={() => navigate("/dashboard/studio")}
                     >
                       <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-3 group-hover:bg-primary/20 transition-colors">
                         <Plus className="w-6 h-6 text-primary" />
                       </div>
-                      <p className="text-sm font-semibold">New</p>
-                      <p className="text-xs text-muted-foreground/60 mt-0.5 text-center">Posts + Visual</p>
+                      <p className="text-xs font-semibold">Create Content</p>
+                      <p className="text-[10px] text-muted-foreground/60 mt-0.5 text-center">Posts + Visual</p>
                     </motion.div>
 
                     {/* Session cards */}
@@ -211,7 +211,7 @@ const Dashboard = () => {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: Math.min(i * 0.04, 0.4) }}
                         whileHover={{ y: -3 }}
-                        className="rounded-2xl border border-border/20 overflow-hidden hover:border-border/40 hover:shadow-xl hover:shadow-black/10 transition-all cursor-pointer group flex flex-col aspect-[3/4]"
+                        className="rounded-2xl border border-border/20 overflow-hidden hover:border-border/40 hover:shadow-xl hover:shadow-black/10 transition-all cursor-pointer group flex flex-col aspect-[4/5]"
                         onClick={() => navigate(`/editor/${s.sessionId}`)}
                       >
                         <div className="relative flex-1 overflow-hidden bg-accent/10 min-h-0">
@@ -235,8 +235,8 @@ const Dashboard = () => {
                             </div>
                           )}
                         </div>
-                        <div className="p-3 bg-card shrink-0">
-                          <p className="text-[11px] font-medium line-clamp-2 leading-relaxed mb-2 min-h-[2.5rem]">
+                        <div className="p-2.5 bg-card shrink-0">
+                          <p className="text-[10px] font-medium line-clamp-2 leading-relaxed mb-1.5 min-h-[2rem]">
                             {s.topic || "Untitled"}
                           </p>
                           <div className="flex items-center justify-between">
