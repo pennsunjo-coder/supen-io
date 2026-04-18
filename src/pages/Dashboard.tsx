@@ -63,11 +63,32 @@ const Dashboard = () => {
     if (!user) return;
     setDeleting(true);
     try {
+      // Fetch all user items to find matches (session_id may be null for old content)
+      const { data: allItems, error: fetchError } = await supabase
+        .from("generated_content")
+        .select("id, session_id")
+        .eq("user_id", user.id);
+
+      if (fetchError) {
+        toast.error("Error: " + fetchError.message);
+        return;
+      }
+
+      // Match by session_id OR by id (for items without session_id)
+      const toDelete = (allItems || []).filter((i) =>
+        i.session_id === sessionId || i.id === sessionId,
+      );
+
+      if (toDelete.length === 0) {
+        toast.error("No items found for this session.");
+        return;
+      }
+
+      const ids = toDelete.map((i) => i.id);
       const { error } = await supabase
         .from("generated_content")
         .delete()
-        .eq("user_id", user.id)
-        .eq("session_id", sessionId);
+        .in("id", ids);
 
       if (error) {
         console.error("Delete error:", error.message, error.details, error.hint);
@@ -78,7 +99,7 @@ const Dashboard = () => {
       setDeletingId(null);
       invalidateCache("history:");
       refetchHistory();
-      toast.success("Content deleted.");
+      toast.success("Content deleted!");
     } catch (err) {
       console.error("Delete exception:", err);
       toast.error("Delete failed. Try again.");
