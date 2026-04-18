@@ -53,7 +53,9 @@ const Dashboard = () => {
   } = useConversation();
 
   // Content grid
-  const { sessions, loading: historyLoading, refetch: refetchHistory } = useHistory();
+  const { sessions: hookSessions, loading: historyLoading, refetch: refetchHistory } = useHistory();
+  const [localDeleted, setLocalDeleted] = useState<Set<string>>(new Set());
+  const sessions = useMemo(() => hookSessions.filter((s) => !localDeleted.has(s.sessionId)), [hookSessions, localDeleted]);
   const [search, setSearch] = useState("");
   const [mobileTab, setMobileTab] = useState<MobileTab>("content");
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -65,9 +67,19 @@ const Dashboard = () => {
     try {
       // Get item IDs from our local session data
       const session = sessions.find((s) => s.sessionId === sessionId);
-      const ids = session?.itemIds;
+      let ids = session?.itemIds || [];
 
-      if (!ids || ids.length === 0) {
+      // Fallback: if no itemIds, query Supabase
+      if (ids.length === 0) {
+        const { data } = await supabase
+          .from("generated_content")
+          .select("id")
+          .eq("user_id", user.id)
+          .or(`session_id.eq.${sessionId},id.eq.${sessionId}`);
+        ids = (data || []).map((i) => i.id);
+      }
+
+      if (ids.length === 0) {
         toast.error("No items found for this session.");
         return;
       }
@@ -75,7 +87,8 @@ const Dashboard = () => {
       const { error } = await supabase
         .from("generated_content")
         .delete()
-        .in("id", ids);
+        .in("id", ids)
+        .eq("user_id", user.id);
 
       if (error) {
         console.error("Delete error:", error.message, error.details, error.hint);
@@ -83,10 +96,14 @@ const Dashboard = () => {
         return;
       }
 
+      // Immediate local update (counter + grid)
+      setLocalDeleted((prev) => new Set(prev).add(sessionId));
       setDeletingId(null);
+      toast.success("Content deleted!");
+
+      // Refresh from Supabase in background
       invalidateCache("history:");
       refetchHistory();
-      toast.success("Content deleted!");
     } catch (err) {
       console.error("Delete exception:", err);
       toast.error("Delete failed. Try again.");
