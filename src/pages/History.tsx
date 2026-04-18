@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Copy, Check, Loader2, ChevronDown, Clock, Filter, RotateCcw, Search,
-  ExternalLink,
+  ExternalLink, Download, Sparkles, Image as ImageIcon, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -53,7 +53,13 @@ function formatTime(dateStr: string): string {
 
 /* ─── Card item ─── */
 
-function HistoryCard({ item }: { item: GeneratedItem }) {
+function HistoryCard({
+  item,
+  onViewInfographic,
+}: {
+  item: GeneratedItem;
+  onViewInfographic: (base64: string) => void;
+}) {
   const [expanded, setExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
   const navigate = useNavigate();
@@ -90,6 +96,11 @@ function HistoryCard({ item }: { item: GeneratedItem }) {
           <div className="flex items-center gap-2">
             <span className="text-xs font-medium text-foreground">{item.platform}</span>
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent/40 text-muted-foreground">{item.format}</span>
+            {item.hasInfographic && (
+              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-0.5">
+                <Check className="w-2 h-2" /> Visual
+              </span>
+            )}
           </div>
           {!expanded && (
             <p className="text-[11px] text-muted-foreground/70 mt-0.5 truncate">
@@ -132,7 +143,7 @@ function HistoryCard({ item }: { item: GeneratedItem }) {
                   {item.content}
                 </p>
               )}
-              <div className="flex items-center gap-2 mt-3">
+              <div className="flex items-center gap-2 mt-3 flex-wrap">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -152,16 +163,26 @@ function HistoryCard({ item }: { item: GeneratedItem }) {
                     <RotateCcw className="w-3 h-3" /> Reuse
                   </Button>
                 )}
-                {item.session_id && (
+                {/* Infographic button — intelligent state */}
+                {item.hasInfographic && item.sessionInfographicBase64 ? (
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
-                    className="h-7 text-[11px] gap-1.5 px-2.5 text-primary/70 hover:text-primary"
+                    className="h-7 text-[11px] gap-1.5 px-2.5 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+                    onClick={(e) => { e.stopPropagation(); onViewInfographic(item.sessionInfographicBase64!); }}
+                  >
+                    <ImageIcon className="w-3 h-3" /> View Infographic
+                  </Button>
+                ) : item.session_id ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-[11px] gap-1.5 px-2.5 border-primary/30 text-primary hover:bg-primary/10"
                     onClick={(e) => { e.stopPropagation(); navigate(`/content/${item.session_id}`); }}
                   >
-                    <ExternalLink className="w-3 h-3" /> View details
+                    <Sparkles className="w-3 h-3" /> View session
                   </Button>
-                )}
+                ) : null}
                 <span className="text-[10px] text-muted-foreground/40 ml-auto">
                   {isInfographicHtml(item.content) ? "HTML Infographic" : `${item.content.split(/\s+/).length} words`}
                 </span>
@@ -180,6 +201,7 @@ const History = () => {
   const { grouped, loading } = useHistory();
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
+  const [viewingInfographic, setViewingInfographic] = useState<string | null>(null);
 
   const filteredGroups = useMemo(
     () => grouped
@@ -276,7 +298,11 @@ const History = () => {
                   </div>
                   <div className="space-y-2">
                     {group.items.map((item) => (
-                      <HistoryCard key={item.id} item={item} />
+                      <HistoryCard
+                        key={item.id}
+                        item={item}
+                        onViewInfographic={setViewingInfographic}
+                      />
                     ))}
                   </div>
                 </div>
@@ -285,6 +311,75 @@ const History = () => {
           )}
         </div>
       </div>
+
+      {/* ═══ INFOGRAPHIC VIEWER MODAL ═══ */}
+      <AnimatePresence>
+        {viewingInfographic && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+            onClick={() => setViewingInfographic(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative max-w-2xl w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                className="absolute -top-10 right-0 text-white/70 hover:text-white flex items-center gap-1.5 text-sm"
+                onClick={() => setViewingInfographic(null)}
+              >
+                <X className="w-4 h-4" /> Close
+              </button>
+
+              <img
+                src={`data:image/png;base64,${viewingInfographic}`}
+                alt="Infographic"
+                className="w-full h-auto rounded-xl"
+              />
+
+              <div className="flex gap-2 mt-3">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1 bg-white/10 border-white/20 text-white hover:bg-white/20"
+                  onClick={() => {
+                    const link = document.createElement("a");
+                    link.href = `data:image/png;base64,${viewingInfographic}`;
+                    link.download = `supen-infographic-${Date.now()}.png`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    toast.success("PNG downloaded!");
+                  }}
+                >
+                  <Download className="w-3 h-3 mr-1.5" /> PNG
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1 bg-white/10 border-white/20 text-white hover:bg-white/20"
+                  onClick={() => {
+                    const link = document.createElement("a");
+                    link.href = `data:image/jpeg;base64,${viewingInfographic}`;
+                    link.download = `supen-infographic-${Date.now()}.jpg`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    toast.success("JPEG downloaded!");
+                  }}
+                >
+                  <Download className="w-3 h-3 mr-1.5" /> JPEG
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </DashboardLayout>
   );
 };

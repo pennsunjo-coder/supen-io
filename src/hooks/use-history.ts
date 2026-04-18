@@ -12,6 +12,11 @@ export interface GeneratedItem {
   created_at: string;
   viral_score?: number;
   session_id?: string;
+  infographic_base64?: string | null;
+  infographic_html?: string | null;
+  // Enriched fields (computed, not from DB)
+  hasInfographic?: boolean;
+  sessionInfographicBase64?: string | null;
 }
 
 export interface HistoryGroup {
@@ -62,18 +67,46 @@ export function useHistory() {
     if (cached) { setItems(cached); setLoading(false); return; }
 
     try {
+      // Fetch ALL items including infographics to cross-reference
       const { data, error } = await supabase
         .from("generated_content")
-        .select("*")
+        .select("id, platform, format, content, source_ids, created_at, viral_score, session_id, infographic_base64, infographic_html")
         .eq("user_id", user.id)
-        .neq("format", "Infographic")
         .order("created_at", { ascending: false })
-        .limit(200);
+        .limit(300);
 
       if (!error && data) {
-        const typed = data as GeneratedItem[];
-        setItems(typed);
-        setCache(cacheKey, typed);
+        const allItems = data as GeneratedItem[];
+
+        // Build a map: session_id → infographic base64
+        const sessionInfographics = new Map<string, string>();
+        for (const item of allItems) {
+          if (!item.session_id) continue;
+          // Check if this item IS an infographic
+          if (item.format === "Infographic" && item.infographic_base64) {
+            sessionInfographics.set(item.session_id, item.infographic_base64);
+          }
+          // Check if this post variation HAS an attached infographic
+          if (item.infographic_base64 && item.format !== "Infographic") {
+            sessionInfographics.set(item.session_id, item.infographic_base64);
+          }
+        }
+
+        // Filter to only post variations (not infographic rows), enrich with infographic info
+        const posts = allItems
+          .filter((i) => i.format !== "Infographic")
+          .filter((i) => i.content && i.content.trim().length >= 20)
+          .map((item) => {
+            const infraBase64 = item.session_id ? sessionInfographics.get(item.session_id) : null;
+            return {
+              ...item,
+              hasInfographic: !!infraBase64 || !!item.infographic_base64,
+              sessionInfographicBase64: infraBase64 || item.infographic_base64 || null,
+            };
+          });
+
+        setItems(posts);
+        setCache(cacheKey, posts);
       }
     } catch { /* réseau */ }
     setLoading(false);
