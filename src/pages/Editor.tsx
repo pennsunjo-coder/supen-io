@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Copy, Check, Download, Trash2, Plus,
+  ArrowLeft, Copy, Check, Download, Trash2, Plus, ChevronRight,
   Sparkles, Share2, Loader2, ZoomIn, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -118,27 +118,34 @@ export default function Editor() {
     <div className="h-screen flex flex-col bg-background overflow-hidden">
 
       {/* ── HEADER ── */}
-      <div className="flex items-center gap-3 px-4 h-13 border-b border-border/20 shrink-0 bg-background/95 backdrop-blur-sm z-20">
-        <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")} className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground shrink-0">
-          <ArrowLeft className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">My Content</span>
+      <div className="flex items-center gap-3 px-5 py-3.5 border-b border-border/20 shrink-0 bg-background/98 backdrop-blur-sm z-20 min-h-[56px]">
+        <Button variant="outline" size="sm" onClick={() => navigate("/dashboard")} className="h-9 gap-2 text-sm font-medium border-border/40 hover:border-border/80 shrink-0">
+          <ArrowLeft className="w-4 h-4" /> My Content
         </Button>
-        <div className="w-px h-4 bg-border/30 hidden sm:block shrink-0" />
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold truncate">{topic}</p>
-          <p className="text-[10px] text-muted-foreground/60 hidden sm:block">
+        <div className="flex-1 min-w-0 px-2">
+          <p className="text-sm font-semibold truncate">{topic || "Content"}</p>
+          <p className="text-[10px] text-muted-foreground/60">
             {platform}
             {infographic && <span className="text-emerald-400 ml-2">✓ Visual saved</span>}
           </p>
         </div>
-        <div className="flex items-center gap-1 shrink-0">
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => { navigator.clipboard.writeText(window.location.href); toast.success("Link copied!"); }}>
-            <Share2 className="w-3.5 h-3.5" />
+        <div className="flex items-center gap-2 shrink-0">
+          <Button variant="ghost" size="sm" className="h-9 gap-2 text-sm" onClick={() => { navigator.clipboard.writeText(window.location.href); toast.success("Link copied!"); }}>
+            <Share2 className="w-4 h-4" />
+            <span className="hidden sm:inline">Share</span>
           </Button>
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-red-400 hover:bg-red-500/10" onClick={() => setShowDeleteConfirm(true)}>
-            <Trash2 className="w-3.5 h-3.5" />
+          <Button variant="ghost" size="sm" className="h-9 gap-2 text-sm text-red-400/70 hover:text-red-400 hover:bg-red-500/10" onClick={() => setShowDeleteConfirm(true)}>
+            <Trash2 className="w-4 h-4" />
+            <span className="hidden sm:inline">Delete</span>
           </Button>
         </div>
+      </div>
+
+      {/* ── BREADCRUMB ── */}
+      <div className="flex items-center gap-1.5 px-5 py-2 border-b border-border/10 bg-accent/[0.02] shrink-0">
+        <button onClick={() => navigate("/dashboard")} className="text-[11px] text-muted-foreground/60 hover:text-foreground transition-colors">My Content</button>
+        <ChevronRight className="w-3 h-3 text-muted-foreground/30" />
+        <span className="text-[11px] text-foreground/70 truncate max-w-[200px]">{topic || "Content"}</span>
       </div>
 
       {/* ── MOBILE TABS ── */}
@@ -305,6 +312,13 @@ export default function Editor() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ── MOBILE FLOATING BACK ── */}
+      <div className="fixed bottom-6 left-6 z-30 md:hidden">
+        <Button onClick={() => navigate("/dashboard")} size="sm" variant="outline" className="h-10 gap-2 shadow-lg bg-background/95 backdrop-blur-sm border-border/40">
+          <ArrowLeft className="w-4 h-4" /> My Content
+        </Button>
+      </div>
 
       {/* ── INFOGRAPHIC MODAL ── */}
       <InfographicModal open={showModal} onClose={() => { setShowModal(false); fetchData(); }} content={variations[0]?.content || ""} platform={platform} sessionId={sessionId} />

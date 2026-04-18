@@ -204,7 +204,7 @@ const Dashboard = () => {
                     </p>
                   )}
                 </div>
-                <Button onClick={() => navigate("/dashboard/studio")} className="gap-2 h-9 text-sm font-semibold shrink-0">
+                <Button onClick={() => navigate("/dashboard/studio")} className="gap-2 h-10 text-sm font-bold px-5 shrink-0">
                   <Plus className="w-4 h-4" /> Create Content
                 </Button>
               </div>
@@ -238,7 +238,7 @@ const Dashboard = () => {
                     <p className="text-sm text-muted-foreground mb-8 max-w-xs leading-relaxed">
                       Generate viral posts for LinkedIn, Instagram, TikTok and more — with AI-powered visuals.
                     </p>
-                    <Button size="lg" onClick={() => navigate("/dashboard/studio")} className="gap-2 font-semibold px-8">
+                    <Button size="lg" onClick={() => navigate("/dashboard/studio")} className="gap-2 font-bold px-8 h-12 text-base">
                       <Plus className="w-5 h-5" /> Create New Content
                     </Button>
                     <p className="text-xs text-muted-foreground/50 mt-4">Your content will appear here</p>
