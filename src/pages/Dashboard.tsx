@@ -57,22 +57,33 @@ const Dashboard = () => {
   const [search, setSearch] = useState("");
   const [mobileTab, setMobileTab] = useState<MobileTab>("content");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function deleteSession(sessionId: string) {
     if (!user) return;
+    setDeleting(true);
     try {
       const { error } = await supabase
         .from("generated_content")
         .delete()
-        .eq("session_id", sessionId)
-        .eq("user_id", user.id);
-      if (error) throw error;
+        .eq("user_id", user.id)
+        .eq("session_id", sessionId);
+
+      if (error) {
+        console.error("Delete error:", error.message, error.details, error.hint);
+        toast.error(`Delete failed: ${error.message}`);
+        return;
+      }
+
       setDeletingId(null);
       invalidateCache("history:");
       refetchHistory();
       toast.success("Content deleted.");
-    } catch {
+    } catch (err) {
+      console.error("Delete exception:", err);
       toast.error("Delete failed. Try again.");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -211,19 +222,18 @@ const Dashboard = () => {
               ) : (
                 /* Content grid */
                 <div className="p-5">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
                     {/* + New card */}
                     <motion.div
-                      whileHover={{ scale: 1.02, y: -2 }}
+                      whileHover={{ scale: 1.03, y: -2 }}
                       whileTap={{ scale: 0.97 }}
-                      className="rounded-2xl border-2 border-dashed border-border/25 hover:border-primary/40 hover:bg-primary/5 transition-colors cursor-pointer flex flex-col items-center justify-center aspect-[4/5] p-3 group"
+                      className="rounded-xl border-2 border-dashed border-border/25 hover:border-primary/40 hover:bg-primary/5 transition-colors cursor-pointer flex flex-col items-center justify-center aspect-square p-2 group"
                       onClick={() => navigate("/dashboard/studio")}
                     >
-                      <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-3 group-hover:bg-primary/20 transition-colors">
-                        <Plus className="w-6 h-6 text-primary" />
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-2 group-hover:bg-primary/20 transition-colors">
+                        <Plus className="w-5 h-5 text-primary" />
                       </div>
-                      <p className="text-xs font-semibold">Create Content</p>
-                      <p className="text-[10px] text-muted-foreground/60 mt-0.5 text-center">Posts + Visual</p>
+                      <p className="text-[10px] font-semibold">New</p>
                     </motion.div>
 
                     {/* Session cards */}
@@ -234,15 +244,15 @@ const Dashboard = () => {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: Math.min(i * 0.04, 0.4) }}
                         whileHover={{ y: -3 }}
-                        className="rounded-2xl border border-border/20 overflow-hidden hover:border-border/40 hover:shadow-xl hover:shadow-black/10 transition-all cursor-pointer group flex flex-col aspect-[4/5] relative"
+                        className="rounded-xl border border-border/20 overflow-hidden hover:border-border/40 hover:shadow-lg hover:shadow-black/10 transition-all cursor-pointer group flex flex-col aspect-square relative"
                         onClick={() => navigate(`/editor/${s.sessionId}`)}
                       >
                         {/* Delete button — hover only */}
                         <button
-                          className="absolute top-2 left-2 z-10 w-7 h-7 rounded-full bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/80"
+                          className="absolute top-1.5 left-1.5 z-10 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/80"
                           onClick={(e) => { e.stopPropagation(); setDeletingId(s.sessionId); }}
                         >
-                          <Trash2 className="w-3.5 h-3.5 text-white" />
+                          <Trash2 className="w-3 h-3 text-white" />
                         </button>
 
                         <div className="relative flex-1 overflow-hidden bg-accent/10 min-h-0">
@@ -250,14 +260,14 @@ const Dashboard = () => {
                             <>
                               <img src={`data:image/png;base64,${s.infographic}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="" />
                               <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-                              <span className="absolute top-2 right-2 text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/90 text-white font-semibold flex items-center gap-1">
-                                <Check className="w-2.5 h-2.5" /> Visual
+                              <span className="absolute top-1.5 right-1.5 text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/90 text-white font-semibold flex items-center gap-0.5">
+                                <Check className="w-2 h-2" /> Visual
                               </span>
                             </>
                           ) : (
                             <div className="w-full h-full flex flex-col items-center justify-center relative">
-                              <FileText className="w-8 h-8 text-muted-foreground/15 mb-1" />
-                              <p className="text-[10px] text-muted-foreground/25">No visual</p>
+                              <FileText className="w-5 h-5 text-muted-foreground/15 mb-1" />
+                              <p className="text-[9px] text-muted-foreground/25">No visual</p>
                               <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                 <span className="text-[10px] px-3 py-1.5 rounded-full bg-primary text-primary-foreground font-medium flex items-center gap-1.5">
                                   <Sparkles className="w-3 h-3" /> Add visual
@@ -266,16 +276,15 @@ const Dashboard = () => {
                             </div>
                           )}
                         </div>
-                        <div className="p-2.5 bg-card shrink-0">
-                          <p className="text-[10px] font-medium line-clamp-2 leading-relaxed mb-1.5 min-h-[2rem]">
+                        <div className="p-2 bg-card shrink-0">
+                          <p className="text-[10px] font-medium line-clamp-1 leading-snug mb-1">
                             {s.topic || "Untitled"}
                           </p>
                           <div className="flex items-center justify-between">
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent/40 text-muted-foreground font-medium truncate max-w-[60%]">
+                            <span className="text-[9px] text-muted-foreground/60 truncate max-w-[65%]">
                               {s.platform || "—"}
                             </span>
-                            <span className="text-[10px] text-muted-foreground/40 flex items-center gap-0.5 shrink-0">
-                              <Clock className="w-2.5 h-2.5" />
+                            <span className="text-[9px] text-muted-foreground/30">
                               {timeAgo(s.createdAt)}
                             </span>
                           </div>
@@ -339,11 +348,12 @@ const Dashboard = () => {
                 This will permanently delete all variations and the infographic. This cannot be undone.
               </p>
               <div className="flex gap-3">
-                <Button variant="outline" className="flex-1 h-9 text-sm" onClick={() => setDeletingId(null)}>
+                <Button variant="outline" className="flex-1 h-9 text-sm" onClick={() => setDeletingId(null)} disabled={deleting}>
                   Cancel
                 </Button>
-                <Button variant="destructive" className="flex-1 h-9 text-sm gap-2" onClick={() => deleteSession(deletingId)}>
-                  <Trash2 className="w-3.5 h-3.5" /> Delete
+                <Button variant="destructive" className="flex-1 h-9 text-sm gap-2" disabled={deleting} onClick={() => deleteSession(deletingId)}>
+                  {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                  {deleting ? "Deleting..." : "Delete"}
                 </Button>
               </div>
             </motion.div>
