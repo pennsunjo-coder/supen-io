@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import SourcePanel from "@/components/SourcePanel";
 import StudioWizard from "@/components/StudioWizard";
@@ -7,7 +8,7 @@ import { useProfile } from "@/hooks/use-profile";
 import { useDashboard } from "@/hooks/use-dashboard";
 import { useActivity } from "@/hooks/use-activity";
 import { invalidateCache } from "@/lib/cache";
-import { BookOpen, Sparkles } from "lucide-react";
+import { BookOpen, Sparkles, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import { Button } from "@/components/ui/button";
 type MobileTab = "sources" | "studio";
 
 export default function Studio() {
+  const navigate = useNavigate();
   const { profile } = useProfile();
   const {
     sources, grouped, loading: sourcesLoading,
@@ -46,7 +48,18 @@ export default function Studio() {
 
   return (
     <DashboardLayout>
-      <div className="flex-1 flex min-h-0 pb-16 md:pb-0">
+      <div className="flex-1 flex flex-col min-h-0 pb-16 md:pb-0">
+        {/* Header */}
+        <div className="flex items-center gap-4 px-5 py-4 border-b border-border/20 shrink-0 bg-background">
+          <Button variant="secondary" size="sm" onClick={() => navigate("/dashboard")} className="h-9 gap-2 font-semibold bg-accent hover:bg-accent/80 border border-border/40 shrink-0">
+            <ArrowLeft className="w-4 h-4" /> Dashboard
+          </Button>
+          <div className="flex-1">
+            <h1 className="text-sm font-bold">Create Content</h1>
+            <p className="text-xs text-muted-foreground">Generate viral posts + visuals</p>
+          </div>
+        </div>
+        <div className="flex-1 flex min-h-0">
         {/* Sources panel */}
         <div className={cn(
           "shrink-0 border-r border-border/20 bg-accent/[0.02] md:w-auto md:flex md:flex-col",
@@ -91,6 +104,7 @@ export default function Studio() {
               onGenerationComplete={handleGenerationComplete}
             />
           </ErrorBoundary>
+        </div>
         </div>
       </div>
 

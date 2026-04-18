@@ -118,34 +118,37 @@ export default function Editor() {
     <div className="h-screen flex flex-col bg-background overflow-hidden">
 
       {/* ── HEADER ── */}
-      <div className="flex items-center gap-3 px-5 py-3.5 border-b border-border/20 shrink-0 bg-background/98 backdrop-blur-sm z-20 min-h-[56px]">
-        <Button variant="outline" size="sm" onClick={() => navigate("/dashboard")} className="h-9 gap-2 text-sm font-medium border-border/40 hover:border-border/80 shrink-0">
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-border/20 shrink-0 bg-background z-20">
+        <Button variant="secondary" size="sm" onClick={() => navigate("/dashboard")} className="h-9 gap-2 font-semibold bg-accent hover:bg-accent/80 border border-border/40 shrink-0">
           <ArrowLeft className="w-4 h-4" /> My Content
         </Button>
-        <div className="flex-1 min-w-0 px-2">
+        <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold truncate">{topic || "Content"}</p>
-          <p className="text-[10px] text-muted-foreground/60">
-            {platform}
-            {infographic && <span className="text-emerald-400 ml-2">✓ Visual saved</span>}
-          </p>
+          <div className="flex items-center gap-2 mt-0.5">
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/50 text-muted-foreground font-medium">{platform}</span>
+            {infographic && (
+              <span className="text-[10px] text-emerald-400 flex items-center gap-1">
+                <Check className="w-2.5 h-2.5" /> Visual saved
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <Button variant="ghost" size="sm" className="h-9 gap-2 text-sm" onClick={() => { navigator.clipboard.writeText(window.location.href); toast.success("Link copied!"); }}>
-            <Share2 className="w-4 h-4" />
-            <span className="hidden sm:inline">Share</span>
+          <Button variant="outline" size="sm" className="h-9 gap-2 text-xs font-medium border-border/40 hidden sm:flex" onClick={() => { navigator.clipboard.writeText(window.location.href); toast.success("Link copied!"); }}>
+            <Share2 className="w-3.5 h-3.5" /> Share
           </Button>
-          <Button variant="ghost" size="sm" className="h-9 gap-2 text-sm text-red-400/70 hover:text-red-400 hover:bg-red-500/10" onClick={() => setShowDeleteConfirm(true)}>
-            <Trash2 className="w-4 h-4" />
+          <Button variant="outline" size="sm" className="h-9 gap-2 text-xs font-medium border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50" onClick={() => setShowDeleteConfirm(true)}>
+            <Trash2 className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Delete</span>
           </Button>
         </div>
       </div>
 
       {/* ── BREADCRUMB ── */}
-      <div className="flex items-center gap-1.5 px-5 py-2 border-b border-border/10 bg-accent/[0.02] shrink-0">
-        <button onClick={() => navigate("/dashboard")} className="text-[11px] text-muted-foreground/60 hover:text-foreground transition-colors">My Content</button>
+      <div className="flex items-center gap-1.5 px-5 py-2 bg-accent/[0.03] border-b border-border/10 shrink-0">
+        <button onClick={() => navigate("/dashboard")} className="text-[11px] text-primary hover:underline font-medium cursor-pointer">My Content</button>
         <ChevronRight className="w-3 h-3 text-muted-foreground/30" />
-        <span className="text-[11px] text-foreground/70 truncate max-w-[200px]">{topic || "Content"}</span>
+        <span className="text-[11px] text-muted-foreground truncate max-w-[250px]">{topic || "Content"}</span>
       </div>
 
       {/* ── MOBILE TABS ── */}
@@ -199,7 +202,7 @@ export default function Editor() {
                     <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">{v.content}</p>
                   </div>
                   <div className="px-3 pb-3 pt-2 shrink-0 border-t border-border/10">
-                    <Button size="sm" variant="ghost" className="h-7 text-xs gap-1.5 w-full text-muted-foreground hover:text-foreground" onClick={() => copyText(v.content, v.id)}>
+                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1.5 w-full font-medium border-border/30 hover:border-border/60 hover:bg-accent/50" onClick={() => copyText(v.content, v.id)}>
                       {copied === v.id ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                       {copied === v.id ? "Copied!" : "Copy"}
                     </Button>
@@ -226,10 +229,10 @@ export default function Editor() {
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={() => downloadInfographic("png")}><Download className="w-3 h-3" /> PNG</Button>
-                  <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={() => downloadInfographic("jpeg")}><Download className="w-3 h-3" /> JPEG</Button>
+                  <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5 font-semibold border-border/50 hover:border-border" onClick={() => downloadInfographic("png")}><Download className="w-3.5 h-3.5" /> PNG</Button>
+                  <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5 font-semibold border-border/50 hover:border-border" onClick={() => downloadInfographic("jpeg")}><Download className="w-3.5 h-3.5" /> JPEG</Button>
                 </div>
-                <Button size="sm" variant="ghost" className="w-full h-7 text-xs gap-1.5 text-muted-foreground" onClick={() => setShowModal(true)}>
+                <Button size="sm" variant="ghost" className="w-full h-8 text-xs gap-1.5 text-muted-foreground hover:text-foreground border border-dashed border-border/30 hover:border-border/60" onClick={() => setShowModal(true)}>
                   <Sparkles className="w-3 h-3" /> Regenerate
                 </Button>
               </div>
@@ -240,8 +243,8 @@ export default function Editor() {
                 </div>
                 <p className="text-sm font-semibold mb-1">No visual yet</p>
                 <p className="text-xs text-muted-foreground mb-4 leading-relaxed">Turn your best post into a shareable infographic</p>
-                <Button className="gap-2 w-full font-semibold text-sm" onClick={() => setShowModal(true)}>
-                  <Sparkles className="w-3.5 h-3.5" /> Generate Visual
+                <Button className="gap-2 w-full font-bold text-sm h-11 shadow-sm" onClick={() => setShowModal(true)}>
+                  <Sparkles className="w-4 h-4" /> Generate Visual
                 </Button>
               </div>
             )}
