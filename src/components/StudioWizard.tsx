@@ -184,9 +184,9 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
   const [retryCountdown, setRetryCountdown] = useState(0);
   const retryIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [showInfographic, setShowInfographic] = useState(false);
-  const [showInfographicPrompt, setShowInfographicPrompt] = useState(false);
   const [infographics, setInfographics] = useState<Record<number, string>>({});
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [generatedInfographicBase64, setGeneratedInfographicBase64] = useState<string | null>(null);
   const [styleMemoryActive, setStyleMemoryActive] = useState(false);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<Record<number, "liked" | "disliked" | null>>({});
@@ -270,7 +270,7 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
     setError(null);
     setFeedback({});
     setStyleMemoryActive(false);
-    setShowInfographicPrompt(false);
+    setGeneratedInfographicBase64(null);
   }
 
   function toggleDocumentId(id: string) {
@@ -304,7 +304,7 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
     setSelectedVariation(null);
     setError(null);
     setShowInfographic(false);
-    setShowInfographicPrompt(false);
+    setGeneratedInfographicBase64(null);
 
     try {
       // === SECTION 2 : Contexte utilisateur (RAG sources) ===
@@ -584,7 +584,13 @@ Respond ONLY with the 5 variations separated by ---VARIATION---. Nothing before,
         toast.error("Content not saved. Check your connection.");
         setSaveStatus("failed");
         // Still show infographic prompt despite save failure
-        setTimeout(() => setShowInfographicPrompt(true), 5000);
+        setTimeout(() => {
+          toast("Turn this into a visual?", {
+            description: "Generate an infographic for your best variation.",
+            duration: 10000,
+            action: { label: "Generate →", onClick: () => setShowInfographic(true) },
+          });
+        }, 5000);
         return false;
       }
       // Merge returned IDs into variations so InfographicModal can UPDATE the correct row
@@ -1321,6 +1327,61 @@ Respond ONLY with the 5 variations separated by ---VARIATION---. Nothing before,
                     </div>
                   );
                 })}
+                {/* ═══ INLINE INFOGRAPHIC SECTION ═══ */}
+                {saveStatus === "saved" && (
+                  <div className="border-t border-border/20 mt-4 pt-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-semibold flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-primary" />
+                        Infographic
+                      </h3>
+                      {generatedInfographicBase64 && (
+                        <div className="flex gap-1.5">
+                          <Button size="sm" variant="ghost" className="h-7 text-[10px] gap-1 px-2 text-muted-foreground" onClick={() => {
+                            const link = document.createElement("a");
+                            link.href = `data:image/png;base64,${generatedInfographicBase64}`;
+                            link.download = `supen-infographic-${Date.now()}.png`;
+                            link.click();
+                            toast.success("PNG downloaded!");
+                          }}>
+                            <Download className="w-3 h-3" /> PNG
+                          </Button>
+                          <Button size="sm" variant="ghost" className="h-7 text-[10px] gap-1 px-2 text-muted-foreground" onClick={() => {
+                            const link = document.createElement("a");
+                            link.href = `data:image/jpeg;base64,${generatedInfographicBase64}`;
+                            link.download = `supen-infographic-${Date.now()}.jpg`;
+                            link.click();
+                            toast.success("JPEG downloaded!");
+                          }}>
+                            <Download className="w-3 h-3" /> JPEG
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+
+                    {generatedInfographicBase64 ? (
+                      <div className="rounded-xl overflow-hidden border border-border/20">
+                        <img
+                          src={`data:image/png;base64,${generatedInfographicBase64}`}
+                          alt="Generated infographic"
+                          className="w-full h-auto"
+                        />
+                      </div>
+                    ) : (
+                      <div
+                        className="flex items-center justify-center h-32 bg-accent/5 rounded-xl border-2 border-dashed border-border/20 cursor-pointer hover:border-primary/30 hover:bg-primary/[0.03] transition-all"
+                        onClick={() => setShowInfographic(true)}
+                      >
+                        <div className="text-center">
+                          <Sparkles className="w-6 h-6 text-primary/50 mx-auto mb-2" />
+                          <p className="text-sm font-medium">Generate Infographic</p>
+                          <p className="text-xs text-muted-foreground mt-1">Turn this into a shareable visual</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Spacer for the fixed bar */}
                 <div className="h-14" />
               </div>
@@ -1393,51 +1454,6 @@ Respond ONLY with the 5 variations separated by ---VARIATION---. Nothing before,
         </div>
       )}
 
-      {/* ═══ INFOGRAPHIC PROMPT (floating card) ═══ */}
-      <AnimatePresence>
-        {showInfographicPrompt && variations.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-            className="fixed bottom-6 right-6 z-50 bg-card border border-border/30 rounded-2xl shadow-2xl p-5 max-w-sm w-full"
-          >
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                <Sparkles className="w-5 h-5 text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm mb-1">Turn this into a visual?</p>
-                <p className="text-xs text-muted-foreground mb-3">
-                  Generate an infographic for your best variation.
-                </p>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    className="flex-1 h-8 text-xs gap-1.5"
-                    onClick={() => {
-                      setShowInfographicPrompt(false);
-                      setShowInfographic(true);
-                    }}
-                  >
-                    <Sparkles className="w-3 h-3" /> Generate
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 text-xs text-muted-foreground"
-                    onClick={() => setShowInfographicPrompt(false)}
-                  >
-                    Skip
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       <InfographicModal
         open={showInfographic}
         onClose={() => setShowInfographic(false)}
@@ -1446,9 +1462,10 @@ Respond ONLY with the 5 variations separated by ---VARIATION---. Nothing before,
         contentId={variations[selectedVariation ?? 0]?.dbId}
         sessionId={currentSessionId || undefined}
         existingHtml={infographics[selectedVariation ?? 0]}
-        onGenerated={(html) => {
+        onGenerated={(html, base64) => {
           const idx = selectedVariation ?? 0;
           setInfographics((prev) => ({ ...prev, [idx]: html }));
+          if (base64) setGeneratedInfographicBase64(base64);
         }}
       />
 

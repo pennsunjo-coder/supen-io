@@ -109,7 +109,7 @@ interface Props {
   contentId?: string;        // ID of the parent variation row in generated_content
   sessionId?: string;        // Session ID to link infographic to same generation batch
   existingHtml?: string;     // Pre-generated infographic HTML (skip generation)
-  onGenerated?: (html: string) => void; // Callback after successful generation
+  onGenerated?: (html: string, base64?: string) => void; // Callback after successful generation
 }
 
 type ResultMode = "claude" | "gemini" | null;
@@ -589,7 +589,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
       } else {
         setSaved(true);
         toast.success("Infographic saved!");
-        if (onGenerated && html) onGenerated(html);
+        if (onGenerated && html) onGenerated(html, image || undefined);
       }
     } catch (err) {
       if (IS_DEV) console.error("[InfographicModal] Network/unexpected error:", err);
