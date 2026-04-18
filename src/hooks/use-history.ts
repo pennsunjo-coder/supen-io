@@ -11,6 +11,7 @@ export interface GeneratedItem {
   source_ids: string[];
   created_at: string;
   viral_score?: number;
+  session_id?: string;
 }
 
 export interface HistoryGroup {

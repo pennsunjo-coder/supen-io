@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Copy, Check, Loader2, ChevronDown, Clock, Filter, RotateCcw, Search,
+  ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -149,6 +150,16 @@ function HistoryCard({ item }: { item: GeneratedItem }) {
                     onClick={(e) => { e.stopPropagation(); handleReuse(); }}
                   >
                     <RotateCcw className="w-3 h-3" /> Reuse
+                  </Button>
+                )}
+                {item.session_id && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-[11px] gap-1.5 px-2.5 text-primary/70 hover:text-primary"
+                    onClick={(e) => { e.stopPropagation(); navigate(`/content/${item.session_id}`); }}
+                  >
+                    <ExternalLink className="w-3 h-3" /> View details
                   </Button>
                 )}
                 <span className="text-[10px] text-muted-foreground/40 ml-auto">

@@ -185,6 +185,7 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
   const retryIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [showInfographic, setShowInfographic] = useState(false);
   const [infographics, setInfographics] = useState<Record<number, string>>({});
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [styleMemoryActive, setStyleMemoryActive] = useState(false);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<Record<number, "liked" | "disliked" | null>>({});
@@ -540,6 +541,19 @@ Respond ONLY with the 5 variations separated by ---VARIATION---. Nothing before,
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setSaveStatus("failed"); return false; }
 
+      const sessionId = crypto.randomUUID();
+      setCurrentSessionId(sessionId);
+
+      // Create a content_sessions row (best-effort — table may not exist yet)
+      const topic = sourceText.trim().slice(0, 200) || "Untitled";
+      await supabase.from("content_sessions").insert({
+        id: sessionId,
+        user_id: user.id,
+        topic,
+        platform: selectedPlatform.name,
+        format: selectedFormat,
+      }).then(() => {}, () => {}); // Ignore errors if table doesn't exist yet
+
       const allSourceIds = [...new Set([...activeSourceIds, ...selectedDocumentIds])];
       const inserts = parsed.map((v) => ({
         user_id: user.id,
@@ -549,6 +563,7 @@ Respond ONLY with the 5 variations separated by ---VARIATION---. Nothing before,
         viral_score: v.score || 0,
         image_prompt: v.scoreDetails ? JSON.stringify(v.scoreDetails) : null,
         source_ids: allSourceIds,
+        session_id: sessionId,
       }));
       const { data: savedRows, error: saveErr } = await supabase.from("generated_content").insert(inserts).select("id");
       if (saveErr) {
@@ -1363,6 +1378,7 @@ Respond ONLY with the 5 variations separated by ---VARIATION---. Nothing before,
         content={variations[selectedVariation ?? 0]?.content || ""}
         platform={selectedPlatform?.name || ""}
         contentId={variations[selectedVariation ?? 0]?.dbId}
+        sessionId={currentSessionId || undefined}
         existingHtml={infographics[selectedVariation ?? 0]}
         onGenerated={(html) => {
           const idx = selectedVariation ?? 0;

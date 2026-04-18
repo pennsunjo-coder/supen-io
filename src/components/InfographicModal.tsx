@@ -107,6 +107,7 @@ interface Props {
   content: string;
   platform: string;
   contentId?: string;        // ID of the parent variation row in generated_content
+  sessionId?: string;        // Session ID to link infographic to same generation batch
   existingHtml?: string;     // Pre-generated infographic HTML (skip generation)
   onGenerated?: (html: string) => void; // Callback after successful generation
 }
@@ -235,7 +236,7 @@ const STYLE_OPTIONS: { id: StyleChoice; label: string; desc: string }[] = [
 
 // ─── Component ───
 
-export default function InfographicModal({ open, onClose, content, platform, contentId, existingHtml, onGenerated }: Props) {
+export default function InfographicModal({ open, onClose, content, platform, contentId, sessionId, existingHtml, onGenerated }: Props) {
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -373,7 +374,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
       setStep("result");
 
       // Save to Supabase
-      await handleSave({ html, mode: "gemini" });
+      await handleSave({ html, image: base64, mode: "gemini" });
     } catch (err) {
       if (IS_DEV) console.error("[InfographicModal] Generation failed:", err);
       const fallbackMsg = err instanceof Error ? err.message : "Generation failed";
@@ -510,13 +511,15 @@ export default function InfographicModal({ open, onClose, content, platform, con
   // Accepts fresh data via opts to avoid stale React state closures.
   // savedRef provides synchronous duplicate protection.
 
-  async function handleSave(opts?: { html?: string; mode?: "claude" | "gemini" }) {
+  async function handleSave(opts?: { html?: string; image?: string; mode?: "claude" | "gemini" }) {
     if (!user) return;
     if (savedRef.current) return;
 
     const html = opts?.html ?? htmlCode;
-    if (!html) {
-      if (IS_DEV) console.warn("[InfographicModal] handleSave bailed — no html");
+    const image = opts?.image ?? imageBase64;
+    const mode = opts?.mode ?? resultMode ?? "gemini";
+    if (!html && !image) {
+      if (IS_DEV) console.warn("[InfographicModal] handleSave bailed — no html/image");
       return;
     }
 
@@ -532,19 +535,26 @@ export default function InfographicModal({ open, onClose, content, platform, con
           .from("generated_content")
           .update({
             infographic_html: html,
+            infographic_base64: image || null,
+            infographic_mode: mode,
             infographic_generated_at: new Date().toISOString(),
           })
           .eq("id", contentId);
         error = res.error;
       } else {
-        // Legacy INSERT fallback (no parent variation to link to)
+        // INSERT as a separate infographic row linked to the same session
         const res = await supabase.from("generated_content").insert({
           user_id: user.id,
           platform,
           format: "Infographic",
-          content: html,
+          content: `[INFOGRAPHIC] ${content.slice(0, 200)}`,
           viral_score: 85,
-          image_prompt: "HTML infographic",
+          image_prompt: "Generated infographic",
+          infographic_html: html,
+          infographic_base64: image || null,
+          infographic_mode: mode,
+          parent_content: content,
+          session_id: sessionId || null,
         });
         error = res.error;
       }
