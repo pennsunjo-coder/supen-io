@@ -6,9 +6,8 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Copy, Check, Download, Trash2,
-  Sparkles, ChevronDown, Share2,
-  Loader2, ZoomIn, X,
+  ArrowLeft, Copy, Check, Download, Trash2, Plus,
+  Sparkles, Share2, Loader2, ZoomIn, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import InfographicModal from "@/components/InfographicModal";
@@ -22,10 +21,10 @@ export default function Editor() {
   const [infographic, setInfographic] = useState<string | null>(null);
   const [topic, setTopic] = useState("");
   const [platform, setPlatform] = useState("");
+  const [createdAt, setCreatedAt] = useState("");
   const [loading, setLoading] = useState(true);
 
   const [copied, setCopied] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -50,7 +49,7 @@ export default function Editor() {
       setInfographic(inf?.infographic_base64 || attached?.infographic_base64 || infFallback?.infographic_base64 || null);
       setTopic(posts[0]?.content?.split(/\s+/).slice(0, 10).join(" ") || "Untitled");
       setPlatform(posts[0]?.platform || "");
-      if (posts.length > 0) setExpanded(posts[0].id);
+      setCreatedAt(posts[0]?.created_at || "");
     }
     setLoading(false);
   }, [user, sessionId]);
@@ -61,14 +60,9 @@ export default function Editor() {
     if (!user || !sessionId) return;
     setDeleting(true);
     try {
-      const { data: items } = await supabase
-        .from("generated_content")
-        .select("id")
-        .eq("user_id", user.id)
-        .or(`session_id.eq.${sessionId},id.eq.${sessionId}`);
+      const { data: items } = await supabase.from("generated_content").select("id").eq("user_id", user.id).or(`session_id.eq.${sessionId},id.eq.${sessionId}`);
       const ids = (items || []).map((i) => i.id);
       if (ids.length === 0) ids.push(sessionId);
-
       await supabase.from("generated_content").delete().in("id", ids).eq("user_id", user.id);
       toast.success("Content deleted.");
       navigate("/dashboard");
@@ -86,6 +80,12 @@ export default function Editor() {
     setTimeout(() => setCopied(null), 2000);
   }
 
+  function copyAll() {
+    const all = variations.map((v, i) => `--- Variation ${i + 1} (${v.angle || ""}) ---\n${v.content}`).join("\n\n");
+    navigator.clipboard.writeText(all);
+    toast.success("All variations copied!");
+  }
+
   function downloadInfographic(fmt: "png" | "jpeg") {
     if (!infographic) return;
     const a = document.createElement("a");
@@ -94,6 +94,10 @@ export default function Editor() {
     a.click();
     toast.success(`${fmt.toUpperCase()} downloaded!`);
   }
+
+  const avgScore = variations.length > 0
+    ? Math.round(variations.reduce((s, v) => s + (v.viral_score || 0), 0) / variations.length)
+    : 0;
 
   if (loading) return (
     <div className="h-screen flex items-center justify-center bg-background">
@@ -152,101 +156,118 @@ export default function Editor() {
       {/* ── 2 COLUMNS ── */}
       <div className="flex-1 flex overflow-hidden min-h-0">
 
-        {/* LEFT — VISUAL */}
-        <div className={cn("w-80 border-r border-border/20 flex flex-col shrink-0", mobileView !== "visual" ? "hidden md:flex" : "flex w-full")}>
-          <div className="px-4 py-3 border-b border-border/10 shrink-0">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">Visual</p>
-          </div>
-          <div className="flex-1 overflow-y-auto p-4">
-            {infographic ? (
-              <div className="space-y-3">
-                <div className="rounded-xl overflow-hidden border border-border/20 cursor-zoom-in group relative" onClick={() => setLightbox(true)}>
-                  <img src={`data:image/png;base64,${infographic}`} alt="Infographic" className="w-full h-auto" />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                    <ZoomIn className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </div>
-                </div>
-                <p className="text-[10px] text-muted-foreground/40 text-center">Click to view full screen</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5" onClick={() => downloadInfographic("png")}><Download className="w-3 h-3" /> PNG</Button>
-                  <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5" onClick={() => downloadInfographic("jpeg")}><Download className="w-3 h-3" /> JPEG</Button>
-                </div>
-                <Button size="sm" variant="ghost" className="w-full h-8 text-xs gap-1.5 text-muted-foreground hover:text-foreground" onClick={() => setShowModal(true)}>
-                  <Sparkles className="w-3 h-3" /> Regenerate
-                </Button>
-              </div>
-            ) : (
-              <div className="h-full flex flex-col items-center justify-center text-center py-6">
-                <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 border border-primary/20">
-                  <Sparkles className="w-7 h-7 text-primary/60" />
-                </div>
-                <p className="text-sm font-semibold mb-1">No visual yet</p>
-                <p className="text-xs text-muted-foreground mb-5 leading-relaxed max-w-[180px]">
-                  Turn your best post into a shareable infographic
-                </p>
-                <div className="flex flex-wrap gap-1.5 mb-5 justify-center">
-                  {["Whiteboard", "Notebook", "Funnel"].map((s) => (
-                    <span key={s} className="text-[10px] px-2.5 py-1 rounded-full border border-border/30 text-muted-foreground">{s}</span>
-                  ))}
-                </div>
-                <Button className="gap-2 w-full max-w-[200px] font-semibold" onClick={() => setShowModal(true)}>
-                  <Sparkles className="w-3.5 h-3.5" /> Generate Visual
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* RIGHT — VARIATIONS */}
+        {/* LEFT — ALL VARIATIONS (visible, no accordion) */}
         <div className={cn("flex-1 flex flex-col overflow-hidden min-w-0", mobileView !== "posts" ? "hidden md:flex" : "flex")}>
           <div className="px-5 py-3 border-b border-border/10 flex items-center justify-between shrink-0">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">Generated Posts</p>
-            <Button size="sm" variant="ghost" className="h-6 text-[10px] gap-1 text-muted-foreground px-2" onClick={() => {
-              const all = variations.map((v, i) => `--- #${i + 1} ---\n${v.content}`).join("\n\n");
-              navigator.clipboard.writeText(all);
-              toast.success("All copied!");
-            }}>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">
+              {variations.length} Variations
+            </p>
+            <Button size="sm" variant="ghost" className="h-6 text-[10px] gap-1 text-muted-foreground px-2" onClick={copyAll}>
               <Copy className="w-3 h-3" /> Copy all
             </Button>
           </div>
           <div className="flex-1 overflow-y-auto">
-            <div className="p-5 space-y-3 max-w-2xl mx-auto">
+            <div className="p-4 space-y-3 max-w-2xl mx-auto">
               {variations.map((v, i) => (
                 <motion.div
                   key={v.id}
-                  initial={{ opacity: 0, y: 6 }}
+                  initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  className={cn("rounded-xl border transition-all overflow-hidden", expanded === v.id ? "border-primary/30 bg-primary/[0.02]" : "border-border/20 hover:border-border/40")}
+                  transition={{ delay: i * 0.06 }}
+                  className={cn(
+                    "rounded-xl border border-border/20 border-l-2 overflow-hidden",
+                    v.viral_score >= 80 ? "border-l-emerald-400 bg-emerald-500/[0.02]" :
+                    v.viral_score >= 60 ? "border-l-amber-400 bg-amber-500/[0.02]" :
+                    "border-l-border/40",
+                  )}
                 >
-                  <div className="flex items-center gap-2 p-3.5 cursor-pointer select-none" onClick={() => setExpanded(expanded === v.id ? null : v.id)}>
+                  <div className="flex items-center gap-2 px-4 pt-3 pb-2">
                     {i === 0 && <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 font-semibold shrink-0">🔥 Top</span>}
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/40 text-muted-foreground shrink-0 truncate max-w-[120px]">{v.angle || `Variation ${i + 1}`}</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/40 text-muted-foreground font-medium truncate max-w-[140px]">{v.angle || `Variation ${i + 1}`}</span>
                     {v.viral_score > 0 && (
                       <span className={cn("text-[10px] font-bold ml-auto shrink-0", v.viral_score >= 80 ? "text-emerald-400" : v.viral_score >= 60 ? "text-amber-400" : "text-muted-foreground/50")}>
                         {v.viral_score}%
                       </span>
                     )}
-                    <ChevronDown className={cn("w-3.5 h-3.5 text-muted-foreground/30 transition-transform shrink-0", !v.viral_score && "ml-auto", expanded === v.id && "rotate-180")} />
                   </div>
-                  <AnimatePresence>
-                    {expanded === v.id && (
-                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden">
-                        <div className="px-4 pb-4">
-                          <div className="bg-background/80 rounded-lg p-4 mb-3 border border-border/10">
-                            <p className="text-sm leading-relaxed whitespace-pre-wrap">{v.content}</p>
-                          </div>
-                          <Button size="sm" variant="ghost" className="h-7 text-xs gap-1.5" onClick={() => copyText(v.content, v.id)}>
-                            {copied === v.id ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                            {copied === v.id ? "Copied!" : "Copy"}
-                          </Button>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  <div className="px-4 pb-2">
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">{v.content}</p>
+                  </div>
+                  <div className="px-3 pb-3">
+                    <Button size="sm" variant="ghost" className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-foreground" onClick={() => copyText(v.content, v.id)}>
+                      {copied === v.id ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                      {copied === v.id ? "Copied!" : "Copy"}
+                    </Button>
+                  </div>
                 </motion.div>
               ))}
             </div>
+          </div>
+        </div>
+
+        {/* RIGHT — VISUAL + DETAILS */}
+        <div className={cn("w-80 border-l border-border/20 flex flex-col shrink-0", mobileView !== "visual" ? "hidden md:flex" : "flex w-full")}>
+          <div className="px-4 py-3 border-b border-border/10 shrink-0">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">Visual</p>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {/* Infographic or generate */}
+            {infographic ? (
+              <div className="space-y-2">
+                <div className="rounded-xl overflow-hidden border border-border/20 cursor-zoom-in group relative" onClick={() => setLightbox(true)}>
+                  <img src={`data:image/png;base64,${infographic}`} alt="Infographic" className="w-full h-auto" />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                    <ZoomIn className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={() => downloadInfographic("png")}><Download className="w-3 h-3" /> PNG</Button>
+                  <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={() => downloadInfographic("jpeg")}><Download className="w-3 h-3" /> JPEG</Button>
+                </div>
+                <Button size="sm" variant="ghost" className="w-full h-7 text-xs gap-1.5 text-muted-foreground" onClick={() => setShowModal(true)}>
+                  <Sparkles className="w-3 h-3" /> Regenerate
+                </Button>
+              </div>
+            ) : (
+              <div className="rounded-xl border-2 border-dashed border-border/20 p-6 text-center">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-3 mx-auto">
+                  <Sparkles className="w-6 h-6 text-primary/60" />
+                </div>
+                <p className="text-sm font-semibold mb-1">No visual yet</p>
+                <p className="text-xs text-muted-foreground mb-4 leading-relaxed">Turn your best post into a shareable infographic</p>
+                <Button className="gap-2 w-full font-semibold text-sm" onClick={() => setShowModal(true)}>
+                  <Sparkles className="w-3.5 h-3.5" /> Generate Visual
+                </Button>
+              </div>
+            )}
+
+            {/* Separator */}
+            <div className="border-t border-border/10" />
+
+            {/* Details */}
+            <div className="space-y-2">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50 mb-3">Details</p>
+              {[
+                { label: "Platform", value: platform },
+                { label: "Variations", value: `${variations.length}` },
+                { label: "Avg score", value: avgScore > 0 ? `${avgScore}%` : "—" },
+                { label: "Visual", value: infographic ? "✓ Saved" : "Not generated", cls: infographic ? "text-emerald-400" : "text-muted-foreground/50" },
+                { label: "Created", value: createdAt ? new Date(createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—" },
+              ].map((item) => (
+                <div key={item.label} className="flex items-center justify-between py-1.5 border-b border-border/10 last:border-0">
+                  <span className="text-xs text-muted-foreground">{item.label}</span>
+                  <span className={cn("text-xs font-medium", (item as any).cls || "text-foreground")}>{item.value}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Actions */}
+            <Button variant="outline" size="sm" className="w-full h-9 text-xs gap-2" onClick={copyAll}>
+              <Copy className="w-3.5 h-3.5" /> Copy All Variations
+            </Button>
+            <Button variant="ghost" size="sm" className="w-full h-9 text-xs gap-2 text-muted-foreground" onClick={() => navigate("/dashboard/studio")}>
+              <Plus className="w-3.5 h-3.5" /> Create New Content
+            </Button>
           </div>
         </div>
       </div>
@@ -272,9 +293,7 @@ export default function Editor() {
         {showDeleteConfirm && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setShowDeleteConfirm(false)}>
             <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="bg-card border border-border/30 rounded-2xl p-6 max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
-              <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center mb-4">
-                <Trash2 className="w-6 h-6 text-red-400" />
-              </div>
+              <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center mb-4"><Trash2 className="w-6 h-6 text-red-400" /></div>
               <h3 className="text-base font-bold mb-2">Delete this content?</h3>
               <p className="text-sm text-muted-foreground mb-6">All variations and the visual will be permanently deleted.</p>
               <div className="flex gap-3">
@@ -290,13 +309,7 @@ export default function Editor() {
       </AnimatePresence>
 
       {/* ── INFOGRAPHIC MODAL ── */}
-      <InfographicModal
-        open={showModal}
-        onClose={() => { setShowModal(false); fetchData(); }}
-        content={variations[0]?.content || ""}
-        platform={platform}
-        sessionId={sessionId}
-      />
+      <InfographicModal open={showModal} onClose={() => { setShowModal(false); fetchData(); }} content={variations[0]?.content || ""} platform={platform} sessionId={sessionId} />
     </div>
   );
 }
