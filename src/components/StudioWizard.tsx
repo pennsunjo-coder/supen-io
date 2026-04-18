@@ -184,6 +184,7 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
   const [retryCountdown, setRetryCountdown] = useState(0);
   const retryIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [showInfographic, setShowInfographic] = useState(false);
+  const [showInfographicPrompt, setShowInfographicPrompt] = useState(false);
   const [infographics, setInfographics] = useState<Record<number, string>>({});
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [styleMemoryActive, setStyleMemoryActive] = useState(false);
@@ -269,6 +270,7 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
     setError(null);
     setFeedback({});
     setStyleMemoryActive(false);
+    setShowInfographicPrompt(false);
   }
 
   function toggleDocumentId(id: string) {
@@ -302,6 +304,7 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
     setSelectedVariation(null);
     setError(null);
     setShowInfographic(false);
+    setShowInfographicPrompt(false);
 
     try {
       // === SECTION 2 : Contexte utilisateur (RAG sources) ===
@@ -578,8 +581,8 @@ Respond ONLY with the 5 variations separated by ---VARIATION---. Nothing before,
 
       if (saveErr) {
         setSaveStatus("failed");
-        // Still show infographic popup despite save failure
-        setTimeout(() => setShowInfographic(true), 2000);
+        // Still show infographic prompt despite save failure
+        setTimeout(() => setShowInfographicPrompt(true), 5000);
         return false;
       }
       // Merge returned IDs into variations so InfographicModal can UPDATE the correct row
@@ -589,13 +592,13 @@ Respond ONLY with the 5 variations separated by ---VARIATION---. Nothing before,
       setSaveStatus("saved");
       if (onGenerationComplete) onGenerationComplete();
       toast.success(`${parsed.length} variations ready! 🎯`);
-      // Propose creating a visual after 2s
-      setTimeout(() => setShowInfographic(true), 2000);
+      // Propose creating an infographic after 5s
+      setTimeout(() => setShowInfographicPrompt(true), 5000);
       return true;
     } catch (err) {
       setSaveStatus("failed");
-      // Still show infographic popup despite save failure
-      setTimeout(() => setShowInfographic(true), 2000);
+      // Still show infographic prompt despite save failure
+      setTimeout(() => setShowInfographicPrompt(true), 5000);
       return false;
     }
   }
@@ -1385,6 +1388,51 @@ Respond ONLY with the 5 variations separated by ---VARIATION---. Nothing before,
           )}
         </div>
       )}
+
+      {/* ═══ INFOGRAPHIC PROMPT (floating card) ═══ */}
+      <AnimatePresence>
+        {showInfographicPrompt && variations.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="fixed bottom-6 right-6 z-50 bg-card border border-border/30 rounded-2xl shadow-2xl p-5 max-w-sm w-full"
+          >
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <Sparkles className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm mb-1">Turn this into a visual?</p>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Generate an infographic for your best variation.
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    className="flex-1 h-8 text-xs gap-1.5"
+                    onClick={() => {
+                      setShowInfographicPrompt(false);
+                      setShowInfographic(true);
+                    }}
+                  >
+                    <Sparkles className="w-3 h-3" /> Generate
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 text-xs text-muted-foreground"
+                    onClick={() => setShowInfographicPrompt(false)}
+                  >
+                    Skip
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <InfographicModal
         open={showInfographic}
