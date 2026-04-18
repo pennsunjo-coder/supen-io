@@ -26,6 +26,7 @@ export interface HistoryGroup {
 
 export interface HistorySession {
   sessionId: string;
+  itemIds: string[];
   topic: string;
   platform: string;
   format: string;
@@ -161,6 +162,7 @@ export function useHistory() {
         const bestScore = Math.max(...sessionItems.map((i) => i.viral_score || 0));
         return {
           sessionId: key,
+          itemIds: sessionItems.map((i) => i.id),
           topic: first.content.split(/\s+/).slice(0, 12).join(" "),
           platform: first.platform,
           format: first.format,

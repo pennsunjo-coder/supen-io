@@ -63,28 +63,15 @@ const Dashboard = () => {
     if (!user) return;
     setDeleting(true);
     try {
-      // Fetch all user items to find matches (session_id may be null for old content)
-      const { data: allItems, error: fetchError } = await supabase
-        .from("generated_content")
-        .select("id, session_id")
-        .eq("user_id", user.id);
+      // Get item IDs from our local session data
+      const session = sessions.find((s) => s.sessionId === sessionId);
+      const ids = session?.itemIds;
 
-      if (fetchError) {
-        toast.error("Error: " + fetchError.message);
-        return;
-      }
-
-      // Match by session_id OR by id (for items without session_id)
-      const toDelete = (allItems || []).filter((i) =>
-        i.session_id === sessionId || i.id === sessionId,
-      );
-
-      if (toDelete.length === 0) {
+      if (!ids || ids.length === 0) {
         toast.error("No items found for this session.");
         return;
       }
 
-      const ids = toDelete.map((i) => i.id);
       const { error } = await supabase
         .from("generated_content")
         .delete()
