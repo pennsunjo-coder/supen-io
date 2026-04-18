@@ -77,14 +77,24 @@ async function extractTextFromPdf(
     pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
     const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({
+    const loadingTask = pdfjsLib.getDocument({
       data: new Uint8Array(arrayBuffer),
       useSystemFonts: true,
       disableFontFace: true,
       useWorkerFetch: false,
       isEvalSupported: false,
+      disableAutoFetch: true,
+      disableStream: true,
       verbosity: 0,
-    }).promise;
+    });
+
+    // Timeout for Safari (slower PDF processing)
+    const pdf = await Promise.race([
+      loadingTask.promise,
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("PDF loading timeout — try a smaller file")), 30000),
+      ),
+    ]);
 
     let fullText = "";
     for (let i = 1; i <= pdf.numPages; i++) {
