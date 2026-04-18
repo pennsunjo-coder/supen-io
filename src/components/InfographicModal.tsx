@@ -541,7 +541,19 @@ export default function InfographicModal({ open, onClose, content, platform, con
           })
           .eq("id", contentId);
 
-        // Fallback: if new columns don't exist, update only the original ones
+        // Fallback 1: keep infographic_base64, drop mode
+        if (res.error) {
+          res = await supabase
+            .from("generated_content")
+            .update({
+              infographic_html: html,
+              infographic_base64: image || null,
+              infographic_generated_at: new Date().toISOString(),
+            })
+            .eq("id", contentId);
+        }
+
+        // Fallback 2: only HTML
         if (res.error) {
           res = await supabase
             .from("generated_content")
@@ -568,7 +580,34 @@ export default function InfographicModal({ open, onClose, content, platform, con
           session_id: sessionId || null,
         });
 
-        // Fallback: if new columns don't exist, insert without them
+        // Fallback 1: keep session_id + infographic_base64, drop other new cols
+        if (res.error) {
+          res = await supabase.from("generated_content").insert({
+            user_id: user.id,
+            platform,
+            format: "Infographic",
+            content: `[INFOGRAPHIC] ${content.slice(0, 200)}`,
+            viral_score: 85,
+            image_prompt: "Generated infographic",
+            infographic_base64: image || null,
+            session_id: sessionId || null,
+          });
+        }
+
+        // Fallback 2: keep session_id only
+        if (res.error) {
+          res = await supabase.from("generated_content").insert({
+            user_id: user.id,
+            platform,
+            format: "Infographic",
+            content: html,
+            viral_score: 85,
+            image_prompt: "Generated infographic",
+            session_id: sessionId || null,
+          });
+        }
+
+        // Fallback 3: bare minimum
         if (res.error) {
           res = await supabase.from("generated_content").insert({
             user_id: user.id,

@@ -43,10 +43,11 @@ export default function Editor() {
 
     if (data && data.length > 0) {
       const posts = data.filter((r) => r.format !== "Infographic");
-      const inf = data.find((r) => r.format === "Infographic");
+      const inf = data.find((r) => r.format === "Infographic" && r.infographic_base64);
+      const infFallback = data.find((r) => r.format === "Infographic");
       const attached = posts.find((r) => r.infographic_base64);
       setVariations(posts);
-      setInfographic(inf?.infographic_base64 || attached?.infographic_base64 || null);
+      setInfographic(inf?.infographic_base64 || attached?.infographic_base64 || infFallback?.infographic_base64 || null);
       setTopic(posts[0]?.content?.split(/\s+/).slice(0, 10).join(" ") || "Untitled");
       setPlatform(posts[0]?.platform || "");
       if (posts.length > 0) setExpanded(posts[0].id);
