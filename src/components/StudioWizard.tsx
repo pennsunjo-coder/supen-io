@@ -599,16 +599,14 @@ Respond ONLY with the 5 variations separated by ---VARIATION---. Nothing before,
       }
       setSaveStatus("saved");
       if (onGenerationComplete) onGenerationComplete();
-      toast.success(`${parsed.length} variations ready! 🎯`);
-      // Propose creating an infographic after 5s
-      setTimeout(() => setShowInfographicPrompt(true), 5000);
+      toast.success("Saved! Opening workspace...");
+      // Navigate to immersive editor after short delay
+      setTimeout(() => navigate(`/editor/${sessionId}`), 1500);
       return true;
     } catch (err) {
       console.error("[StudioWizard] Save exception:", err);
       toast.error("Content not saved. Check your connection.");
       setSaveStatus("failed");
-      // Still show infographic prompt despite save failure
-      setTimeout(() => setShowInfographicPrompt(true), 5000);
       return false;
     }
   }
