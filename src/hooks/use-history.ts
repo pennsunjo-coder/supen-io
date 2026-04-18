@@ -78,13 +78,25 @@ export function useHistory() {
     if (cached) { setItems(cached); setLoading(false); return; }
 
     try {
-      // Fetch ALL items including infographics to cross-reference
-      const { data, error } = await supabase
+      // Fetch ALL items — try with all columns, fallback if newer columns missing
+      let { data, error } = await supabase
         .from("generated_content")
         .select("id, platform, format, content, source_ids, created_at, viral_score, session_id, infographic_base64, infographic_html")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(300);
+
+      if (error) {
+        // Fallback: columns may not exist yet
+        const fallback = await supabase
+          .from("generated_content")
+          .select("id, platform, format, content, source_ids, created_at, viral_score")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(300);
+        data = fallback.data;
+        error = fallback.error;
+      }
 
       if (!error && data) {
         const allItems = data as GeneratedItem[];
