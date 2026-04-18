@@ -538,7 +538,7 @@ export function ContentSessionGrid({
                 onClick={() => {
                   if (isConfirming) return;
                   if (session.sessionId) {
-                    navigate(`/content/${session.sessionId}`);
+                    navigate(`/editor/${session.sessionId}`);
                   } else {
                     setExpanded(isExpanded ? null : session.id);
                   }

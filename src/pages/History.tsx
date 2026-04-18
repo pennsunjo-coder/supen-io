@@ -141,7 +141,7 @@ const History = () => {
                   transition={{ delay: Math.min(i * 0.05, 0.4) }}
                   whileHover={{ y: -2 }}
                   className="rounded-2xl border border-border/20 overflow-hidden hover:border-border/50 hover:shadow-xl hover:shadow-black/10 transition-all cursor-pointer group flex flex-col aspect-[3/4]"
-                  onClick={() => navigate(`/content/${session.sessionId}`)}
+                  onClick={() => navigate(`/editor/${session.sessionId}`)}
                 >
                   {/* THUMBNAIL */}
                   <div className="relative flex-1 overflow-hidden bg-accent/10">

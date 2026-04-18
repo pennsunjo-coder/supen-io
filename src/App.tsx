@@ -26,6 +26,7 @@ const Terms = lazy(() => import("./pages/Terms.tsx"));
 const FAQ = lazy(() => import("./pages/FAQ.tsx"));
 const Contact = lazy(() => import("./pages/Contact.tsx"));
 const ContentDetail = lazy(() => import("./pages/ContentDetail.tsx"));
+const Editor = lazy(() => import("./pages/Editor.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 
 const queryClient = new QueryClient();
@@ -87,6 +88,7 @@ const App = () => {
                     <Route path="/dashboard/tools" element={<ProtectedRoute><Tools /></ProtectedRoute>} />
                     <Route path="/dashboard/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
                     <Route path="/content/:id" element={<ProtectedRoute><ContentDetail /></ProtectedRoute>} />
+                    <Route path="/editor/:sessionId" element={<ProtectedRoute><Editor /></ProtectedRoute>} />
                     <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                     <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
                     <Route path="/privacy" element={<Privacy />} />
