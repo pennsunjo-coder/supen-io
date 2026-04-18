@@ -166,35 +166,33 @@ export default function Editor() {
               <Copy className="w-3 h-3" /> Copy all
             </Button>
           </div>
-          <div className="flex-1 overflow-y-auto">
-            <div className="p-4 space-y-3 max-w-2xl mx-auto">
+          <div className="flex-1 overflow-hidden p-4">
+            <div className="flex gap-3 h-full">
               {variations.map((v, i) => (
                 <motion.div
                   key={v.id}
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.06 }}
                   className={cn(
-                    "rounded-xl border border-border/20 border-l-2 overflow-hidden",
-                    v.viral_score >= 80 ? "border-l-emerald-400 bg-emerald-500/[0.02]" :
-                    v.viral_score >= 60 ? "border-l-amber-400 bg-amber-500/[0.02]" :
-                    "border-l-border/40",
+                    "flex flex-col rounded-xl border border-border/20 border-t-2 overflow-hidden bg-card hover:border-border/40 transition-all flex-1 min-w-[220px]",
+                    v.viral_score >= 80 ? "border-t-emerald-400" : v.viral_score >= 60 ? "border-t-amber-400" : "border-t-border/30",
                   )}
                 >
-                  <div className="flex items-center gap-2 px-4 pt-3 pb-2">
-                    {i === 0 && <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 font-semibold shrink-0">🔥 Top</span>}
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/40 text-muted-foreground font-medium truncate max-w-[140px]">{v.angle || `Variation ${i + 1}`}</span>
+                  <div className="flex items-center gap-2 px-3 pt-3 pb-2 shrink-0">
+                    {i === 0 && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 font-semibold shrink-0">🔥</span>}
+                    <span className="text-[10px] font-medium text-muted-foreground truncate flex-1">{v.angle || `Variation ${i + 1}`}</span>
                     {v.viral_score > 0 && (
-                      <span className={cn("text-[10px] font-bold ml-auto shrink-0", v.viral_score >= 80 ? "text-emerald-400" : v.viral_score >= 60 ? "text-amber-400" : "text-muted-foreground/50")}>
+                      <span className={cn("text-[10px] font-bold shrink-0", v.viral_score >= 80 ? "text-emerald-400" : v.viral_score >= 60 ? "text-amber-400" : "text-muted-foreground/50")}>
                         {v.viral_score}%
                       </span>
                     )}
                   </div>
-                  <div className="px-4 pb-2">
+                  <div className="flex-1 overflow-y-auto px-3 pb-2 min-h-0">
                     <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">{v.content}</p>
                   </div>
-                  <div className="px-3 pb-3">
-                    <Button size="sm" variant="ghost" className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-foreground" onClick={() => copyText(v.content, v.id)}>
+                  <div className="px-3 pb-3 pt-2 shrink-0 border-t border-border/10">
+                    <Button size="sm" variant="ghost" className="h-7 text-xs gap-1.5 w-full text-muted-foreground hover:text-foreground" onClick={() => copyText(v.content, v.id)}>
                       {copied === v.id ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                       {copied === v.id ? "Copied!" : "Copy"}
                     </Button>
