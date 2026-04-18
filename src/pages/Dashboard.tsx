@@ -9,10 +9,13 @@ import { useConversation } from "@/hooks/use-conversation";
 import { useProfile } from "@/hooks/use-profile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
+import { invalidateCache } from "@/lib/cache";
 import {
-  Plus, Search, FileText, Sparkles,
+  Plus, Search, FileText, Sparkles, Trash2,
   Clock, Check, Loader2, BookOpen, Bot,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -34,6 +37,7 @@ type MobileTab = "sources" | "content" | "coach";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { profile } = useProfile();
 
   // Sources
@@ -49,9 +53,28 @@ const Dashboard = () => {
   } = useConversation();
 
   // Content grid
-  const { sessions, loading: historyLoading } = useHistory();
+  const { sessions, loading: historyLoading, refetch: refetchHistory } = useHistory();
   const [search, setSearch] = useState("");
   const [mobileTab, setMobileTab] = useState<MobileTab>("content");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  async function deleteSession(sessionId: string) {
+    if (!user) return;
+    try {
+      const { error } = await supabase
+        .from("generated_content")
+        .delete()
+        .eq("session_id", sessionId)
+        .eq("user_id", user.id);
+      if (error) throw error;
+      setDeletingId(null);
+      invalidateCache("history:");
+      refetchHistory();
+      toast.success("Content deleted.");
+    } catch {
+      toast.error("Delete failed. Try again.");
+    }
+  }
 
   // Stripe redirect
   const [searchParams, setSearchParams] = useSearchParams();
@@ -211,9 +234,17 @@ const Dashboard = () => {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: Math.min(i * 0.04, 0.4) }}
                         whileHover={{ y: -3 }}
-                        className="rounded-2xl border border-border/20 overflow-hidden hover:border-border/40 hover:shadow-xl hover:shadow-black/10 transition-all cursor-pointer group flex flex-col aspect-[4/5]"
+                        className="rounded-2xl border border-border/20 overflow-hidden hover:border-border/40 hover:shadow-xl hover:shadow-black/10 transition-all cursor-pointer group flex flex-col aspect-[4/5] relative"
                         onClick={() => navigate(`/editor/${s.sessionId}`)}
                       >
+                        {/* Delete button — hover only */}
+                        <button
+                          className="absolute top-2 left-2 z-10 w-7 h-7 rounded-full bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/80"
+                          onClick={(e) => { e.stopPropagation(); setDeletingId(s.sessionId); }}
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-white" />
+                        </button>
+
                         <div className="relative flex-1 overflow-hidden bg-accent/10 min-h-0">
                           {s.infographic ? (
                             <>
@@ -283,6 +314,42 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+      {/* DELETE CONFIRMATION MODAL */}
+      <AnimatePresence>
+        {deletingId && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
+            onClick={() => setDeletingId(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-card border border-border/30 rounded-2xl p-6 max-w-sm w-full shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center mb-4">
+                <Trash2 className="w-6 h-6 text-red-400" />
+              </div>
+              <h3 className="text-base font-bold mb-2">Delete this content?</h3>
+              <p className="text-sm text-muted-foreground mb-6">
+                This will permanently delete all variations and the infographic. This cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <Button variant="outline" className="flex-1 h-9 text-sm" onClick={() => setDeletingId(null)}>
+                  Cancel
+                </Button>
+                <Button variant="destructive" className="flex-1 h-9 text-sm gap-2" onClick={() => deleteSession(deletingId)}>
+                  <Trash2 className="w-3.5 h-3.5" /> Delete
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </DashboardLayout>
   );
 };

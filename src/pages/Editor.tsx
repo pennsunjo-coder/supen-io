@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Copy, Check, Download, Plus,
+  ArrowLeft, Copy, Check, Download, Plus, Trash2,
   Sparkles, ChevronDown, Share2,
   FileText, Loader2, ZoomIn, X,
 } from "lucide-react";
@@ -43,6 +43,7 @@ export default function Editor() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState(false);
   const [showInfographicModal, setShowInfographicModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [mobileTab, setMobileTab] = useState<MobileTab>("posts");
 
   const fetchData = useCallback(async () => {
@@ -110,6 +111,22 @@ export default function Editor() {
     a.click();
     document.body.removeChild(a);
     toast.success(`${fmt.toUpperCase()} downloaded!`);
+  }
+
+  async function handleDeleteSession() {
+    if (!user || !sessionId) return;
+    try {
+      const { error } = await supabase
+        .from("generated_content")
+        .delete()
+        .eq("session_id", sessionId)
+        .eq("user_id", user.id);
+      if (error) throw error;
+      toast.success("Content deleted.");
+      navigate("/dashboard");
+    } catch {
+      toast.error("Delete failed. Try again.");
+    }
   }
 
   if (loading) return (
@@ -181,6 +198,13 @@ export default function Editor() {
         >
           <Share2 className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Share</span>
+        </Button>
+        <Button
+          variant="ghost" size="sm"
+          className="h-8 gap-1.5 text-xs shrink-0 text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
+          onClick={() => setShowDeleteConfirm(true)}
+        >
+          <Trash2 className="w-3.5 h-3.5" />
         </Button>
       </motion.header>
 
@@ -500,6 +524,43 @@ export default function Editor() {
               className="max-w-2xl w-full max-h-[90vh] object-contain rounded-2xl"
               onClick={(e) => e.stopPropagation()}
             />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ══════════ DELETE CONFIRMATION ══════════ */}
+      <AnimatePresence>
+        {showDeleteConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
+            onClick={() => setShowDeleteConfirm(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-card border border-border/30 rounded-2xl p-6 max-w-sm w-full shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center mb-4">
+                <Trash2 className="w-6 h-6 text-red-400" />
+              </div>
+              <h3 className="text-base font-bold mb-2">Delete this content?</h3>
+              <p className="text-sm text-muted-foreground mb-6">
+                This will permanently delete all variations and the infographic. This cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <Button variant="outline" className="flex-1 h-9 text-sm" onClick={() => setShowDeleteConfirm(false)}>
+                  Cancel
+                </Button>
+                <Button variant="destructive" className="flex-1 h-9 text-sm gap-2" onClick={handleDeleteSession}>
+                  <Trash2 className="w-3.5 h-3.5" /> Delete
+                </Button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
