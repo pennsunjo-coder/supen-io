@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Settings, LogOut, LayoutGrid, Sun, Moon, Shield, CalendarDays } from "lucide-react";
+import { Settings, LogOut, LayoutGrid, Sparkles, Sun, Moon, Shield, CalendarDays } from "lucide-react";
 import { LogoFull } from "@/components/Logo";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -67,6 +67,18 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
             </Link>
           )}
           <Link
+            to="/dashboard/studio"
+            className={cn(
+              "w-8 h-8 rounded-lg flex items-center justify-center transition-all",
+              location.pathname === "/dashboard/studio"
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
+            )}
+            title="Create"
+          >
+            <Sparkles className="w-4 h-4" />
+          </Link>
+          <Link
             to="/dashboard/calendar"
             className={cn(
               "w-8 h-8 rounded-lg flex items-center justify-center transition-all",
@@ -79,10 +91,10 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
             <CalendarDays className="w-4 h-4" />
           </Link>
           <Link
-            to="/dashboard/history"
+            to="/dashboard"
             className={cn(
               "w-8 h-8 rounded-lg flex items-center justify-center transition-all",
-              location.pathname === "/dashboard/history"
+              location.pathname === "/dashboard"
                 ? "bg-primary/10 text-primary"
                 : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
             )}

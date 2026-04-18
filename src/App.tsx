@@ -25,6 +25,7 @@ const Privacy = lazy(() => import("./pages/Privacy.tsx"));
 const Terms = lazy(() => import("./pages/Terms.tsx"));
 const FAQ = lazy(() => import("./pages/FAQ.tsx"));
 const Contact = lazy(() => import("./pages/Contact.tsx"));
+const Studio = lazy(() => import("./pages/Studio.tsx"));
 const ContentDetail = lazy(() => import("./pages/ContentDetail.tsx"));
 const Editor = lazy(() => import("./pages/Editor.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
@@ -83,8 +84,8 @@ const App = () => {
                     <Route path="/login" element={<Login />} />
                     <Route path="/onboarding" element={<ProtectedRoute skipOnboardingCheck><Onboarding /></ProtectedRoute>} />
                     <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                    <Route path="/dashboard/studio" element={<Navigate to="/dashboard" replace />} />
-                    <Route path="/dashboard/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
+                    <Route path="/dashboard/studio" element={<ProtectedRoute><Studio /></ProtectedRoute>} />
+                    <Route path="/dashboard/history" element={<Navigate to="/dashboard" replace />} />
                     <Route path="/dashboard/tools" element={<ProtectedRoute><Tools /></ProtectedRoute>} />
                     <Route path="/dashboard/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
                     <Route path="/content/:id" element={<ProtectedRoute><ContentDetail /></ProtectedRoute>} />
