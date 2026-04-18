@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Plus, Loader2, Search, Filter, FileText, Check, Sparkles, Download,
-  Image as ImageIcon, X,
+  Image as ImageIcon, X, Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -115,92 +115,95 @@ const History = () => {
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {/* New Content card */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {/* + CREATE CARD */}
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="rounded-2xl border-2 border-dashed border-border/30 hover:border-primary/40 hover:bg-primary/[0.03] transition-all cursor-pointer flex flex-col items-center justify-center aspect-[4/5] p-6 group"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="rounded-2xl border-2 border-dashed border-border/30 hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer flex flex-col items-center justify-center aspect-[3/4] p-5 group"
                 onClick={() => navigate("/dashboard")}
               >
-                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-3 group-hover:bg-primary/20 transition-all">
-                  <Plus className="w-6 h-6 text-primary" />
+                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-3 group-hover:bg-primary/20 transition-all">
+                  <Plus className="w-7 h-7 text-primary" />
                 </div>
-                <p className="text-sm font-semibold">New Content</p>
-                <p className="text-xs text-muted-foreground mt-1">Generate posts + visual</p>
+                <p className="text-sm font-semibold text-center">New Content</p>
+                <p className="text-xs text-muted-foreground mt-1 text-center">Generate posts + visual</p>
               </motion.div>
 
-              {/* Session cards */}
+              {/* SESSION CARDS */}
               {filtered.map((session, i) => (
                 <motion.div
                   key={session.sessionId}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: Math.min(i * 0.04, 0.4) }}
-                  className="rounded-2xl border border-border/20 overflow-hidden hover:border-border/40 hover:shadow-lg transition-all cursor-pointer group flex flex-col"
+                  transition={{ delay: Math.min(i * 0.05, 0.4) }}
+                  whileHover={{ y: -2 }}
+                  className="rounded-2xl border border-border/20 overflow-hidden hover:border-border/50 hover:shadow-xl hover:shadow-black/10 transition-all cursor-pointer group flex flex-col aspect-[3/4]"
                   onClick={() => navigate(`/content/${session.sessionId}`)}
                 >
-                  {/* Thumbnail */}
-                  <div className="aspect-video overflow-hidden bg-accent/10 relative">
+                  {/* THUMBNAIL */}
+                  <div className="relative flex-1 overflow-hidden bg-accent/10">
                     {session.infographic ? (
                       <>
                         <img
                           src={`data:image/png;base64,${session.infographic}`}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           alt="Visual"
                         />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                         <div className="absolute top-2 right-2">
-                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/90 text-white font-medium">
-                            ✓ Visual
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/90 text-white font-semibold flex items-center gap-1">
+                            <Check className="w-2.5 h-2.5" /> Visual
                           </span>
                         </div>
-                        {/* Quick view button */}
                         <button
                           className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setViewingInfographic(session.infographic!);
-                          }}
+                          onClick={(e) => { e.stopPropagation(); setViewingInfographic(session.infographic!); }}
                         >
-                          <span className="text-[10px] bg-black/60 text-white px-3 py-1 rounded-full backdrop-blur-sm">
-                            Quick view
-                          </span>
+                          <span className="text-[10px] bg-black/60 text-white px-3 py-1.5 rounded-full backdrop-blur-sm">Quick view</span>
                         </button>
                       </>
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <div className="text-center opacity-30">
-                          <FileText className="w-6 h-6 mx-auto mb-1" />
-                          <p className="text-[10px]">No visual</p>
+                      <div className="w-full h-full flex flex-col items-center justify-center p-4 relative">
+                        <div className="w-12 h-12 rounded-xl bg-accent/20 flex items-center justify-center mb-2">
+                          <FileText className="w-6 h-6 text-muted-foreground/40" />
+                        </div>
+                        <p className="text-xs text-muted-foreground/40 text-center">No visual</p>
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-accent/5">
+                          <span className="text-xs px-3 py-1.5 rounded-full bg-primary text-primary-foreground font-medium flex items-center gap-1.5">
+                            <Sparkles className="w-3 h-3" /> Generate visual
+                          </span>
                         </div>
                       </div>
                     )}
                   </div>
 
-                  {/* Info */}
-                  <div className="p-3 flex-1 flex flex-col">
-                    <p className="text-xs font-medium line-clamp-2 mb-2 flex-1 leading-relaxed">
+                  {/* INFO */}
+                  <div className="p-3 bg-card shrink-0">
+                    <p className="text-xs font-medium line-clamp-2 mb-2 leading-relaxed">
                       {session.topic || "Untitled"}
                     </p>
-                    <div className="flex items-center justify-between mt-auto">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-accent/30 text-muted-foreground font-medium">
+                        {session.platform || "—"}
+                      </span>
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent/40 text-muted-foreground">
-                          {session.platform}
-                        </span>
                         <span className="text-[10px] text-muted-foreground/50">
                           {session.variationCount} post{session.variationCount > 1 ? "s" : ""}
                         </span>
+                        {session.bestScore > 0 && (
+                          <span className={cn(
+                            "text-[10px] font-semibold",
+                            session.bestScore >= 80 ? "text-emerald-400" :
+                            session.bestScore >= 60 ? "text-amber-400" :
+                            "text-muted-foreground/50",
+                          )}>
+                            {session.bestScore}%
+                          </span>
+                        )}
                       </div>
-                      {session.bestScore > 0 && (
-                        <span className={cn(
-                          "text-[10px] font-semibold",
-                          session.bestScore >= 80 ? "text-emerald-400" :
-                          session.bestScore >= 60 ? "text-amber-400" :
-                          "text-muted-foreground/50",
-                        )}>
-                          {session.bestScore}%
-                        </span>
-                      )}
                     </div>
                     <p className="text-[10px] text-muted-foreground/40 mt-1.5">
                       {formatRelativeTime(session.createdAt)}
