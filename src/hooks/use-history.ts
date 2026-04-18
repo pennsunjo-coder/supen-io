@@ -24,6 +24,17 @@ export interface HistoryGroup {
   items: GeneratedItem[];
 }
 
+export interface HistorySession {
+  sessionId: string;
+  topic: string;
+  platform: string;
+  format: string;
+  createdAt: string;
+  variationCount: number;
+  bestScore: number;
+  infographic: string | null;
+}
+
 function getDateLabel(dateStr: string): string {
   const date = new Date(dateStr);
   const now = new Date();
@@ -118,5 +129,37 @@ export function useHistory() {
 
   const grouped = groupByDate(items);
 
-  return { items, grouped, loading, refetch: fetchHistory };
+  // Build session-based view for grid display
+  const sessions: HistorySession[] = (() => {
+    const map = new Map<string, { items: GeneratedItem[]; infographic: string | null }>();
+    for (const item of items) {
+      const key = item.session_id || item.id;
+      if (!map.has(key)) {
+        map.set(key, { items: [], infographic: null });
+      }
+      const entry = map.get(key)!;
+      entry.items.push(item);
+      if (item.sessionInfographicBase64 && !entry.infographic) {
+        entry.infographic = item.sessionInfographicBase64;
+      }
+    }
+    return Array.from(map.entries())
+      .map(([key, { items: sessionItems, infographic }]) => {
+        const first = sessionItems[0];
+        const bestScore = Math.max(...sessionItems.map((i) => i.viral_score || 0));
+        return {
+          sessionId: key,
+          topic: first.content.split(/\s+/).slice(0, 12).join(" "),
+          platform: first.platform,
+          format: first.format,
+          createdAt: first.created_at,
+          variationCount: sessionItems.length,
+          bestScore,
+          infographic,
+        };
+      })
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  })();
+
+  return { items, grouped, sessions, loading, refetch: fetchHistory };
 }

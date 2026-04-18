@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Settings, LogOut, Clock, Sun, Moon, Shield, CalendarDays } from "lucide-react";
+import { Settings, LogOut, LayoutGrid, Sun, Moon, Shield, CalendarDays } from "lucide-react";
 import { LogoFull } from "@/components/Logo";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -86,9 +86,9 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
                 ? "bg-primary/10 text-primary"
                 : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
             )}
-            title="History"
+            title="My Content"
           >
-            <Clock className="w-4 h-4" />
+            <LayoutGrid className="w-4 h-4" />
           </Link>
           <button
             onClick={toggleTheme}

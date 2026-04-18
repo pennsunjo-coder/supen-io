@@ -2,9 +2,10 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useContentDetail } from "@/hooks/use-content-detail";
+import InfographicModal from "@/components/InfographicModal";
 import { Button } from "@/components/ui/button";
 import {
-  ArrowLeft, Copy, Check, Download, Loader2, Image, FileText, Flame,
+  ArrowLeft, Copy, Check, Download, Loader2, Image, FileText, Flame, Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -39,6 +40,7 @@ const ContentDetail = () => {
   const { session, variations, infographic, loading } = useContentDetail(id);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [mobileTab, setMobileTab] = useState<MobileTab>("posts");
+  const [showInfographicModal, setShowInfographicModal] = useState(false);
 
   function handleCopy(idx: number) {
     const v = variations[idx];
@@ -300,18 +302,17 @@ const ContentDetail = () => {
                       <Image className="w-5 h-5 text-muted-foreground/50" />
                     </div>
                     <p className="text-sm font-medium text-muted-foreground mb-1">
-                      No infographic
+                      No infographic yet
                     </p>
                     <p className="text-xs text-muted-foreground/60 mb-4">
-                      Generate an infographic from the Studio.
+                      Generate a visual for your best variation.
                     </p>
                     <Button
-                      variant="outline"
                       size="sm"
-                      className="h-8 text-xs"
-                      onClick={() => navigate("/dashboard")}
+                      className="h-8 text-xs gap-1.5"
+                      onClick={() => setShowInfographicModal(true)}
                     >
-                      Go to Studio
+                      <Sparkles className="w-3 h-3" /> Generate Visual
                     </Button>
                   </div>
                 )}
@@ -320,6 +321,18 @@ const ContentDetail = () => {
           </div>
         </div>
       </div>
+      {/* InfographicModal for generating from detail page */}
+      <InfographicModal
+        open={showInfographicModal}
+        onClose={() => {
+          setShowInfographicModal(false);
+          // Reload to show the newly generated infographic
+          window.location.reload();
+        }}
+        content={variations[0]?.content || ""}
+        platform={platform}
+        sessionId={id}
+      />
     </DashboardLayout>
   );
 };
