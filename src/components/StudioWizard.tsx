@@ -546,16 +546,16 @@ Respond ONLY with the 5 variations separated by ---VARIATION---. Nothing before,
 
       // Create a content_sessions row (best-effort — table may not exist yet)
       const topic = sourceText.trim().slice(0, 200) || "Untitled";
-      await supabase.from("content_sessions").insert({
+      supabase.from("content_sessions").insert({
         id: sessionId,
         user_id: user.id,
         topic,
         platform: selectedPlatform.name,
         format: selectedFormat,
-      }).then(() => {}, () => {}); // Ignore errors if table doesn't exist yet
+      }).then(() => {}, () => {}); // Fire-and-forget, ignore errors
 
       const allSourceIds = [...new Set([...activeSourceIds, ...selectedDocumentIds])];
-      const inserts = parsed.map((v) => ({
+      const baseInserts = parsed.map((v) => ({
         user_id: user.id,
         platform: selectedPlatform.name,
         format: selectedFormat,
@@ -563,11 +563,23 @@ Respond ONLY with the 5 variations separated by ---VARIATION---. Nothing before,
         viral_score: v.score || 0,
         image_prompt: v.scoreDetails ? JSON.stringify(v.scoreDetails) : null,
         source_ids: allSourceIds,
-        session_id: sessionId,
       }));
-      const { data: savedRows, error: saveErr } = await supabase.from("generated_content").insert(inserts).select("id");
+
+      // Try with session_id first, fallback without if column doesn't exist
+      const insertsWithSession = baseInserts.map((ins) => ({ ...ins, session_id: sessionId }));
+      let { data: savedRows, error: saveErr } = await supabase.from("generated_content").insert(insertsWithSession).select("id");
+
+      if (saveErr) {
+        // Retry without session_id (column may not exist yet)
+        const retryResult = await supabase.from("generated_content").insert(baseInserts).select("id");
+        savedRows = retryResult.data;
+        saveErr = retryResult.error;
+      }
+
       if (saveErr) {
         setSaveStatus("failed");
+        // Still show infographic popup despite save failure
+        setTimeout(() => setShowInfographic(true), 2000);
         return false;
       }
       // Merge returned IDs into variations so InfographicModal can UPDATE the correct row
@@ -582,6 +594,8 @@ Respond ONLY with the 5 variations separated by ---VARIATION---. Nothing before,
       return true;
     } catch (err) {
       setSaveStatus("failed");
+      // Still show infographic popup despite save failure
+      setTimeout(() => setShowInfographic(true), 2000);
       return false;
     }
   }

@@ -530,8 +530,8 @@ export default function InfographicModal({ open, onClose, content, platform, con
       let error: { message: string; details?: string; hint?: string } | null = null;
 
       if (contentId) {
-        // UPDATE the parent variation row — no new row created
-        const res = await supabase
+        // UPDATE the parent variation row — try with new columns first
+        let res = await supabase
           .from("generated_content")
           .update({
             infographic_html: html,
@@ -540,10 +540,21 @@ export default function InfographicModal({ open, onClose, content, platform, con
             infographic_generated_at: new Date().toISOString(),
           })
           .eq("id", contentId);
+
+        // Fallback: if new columns don't exist, update only the original ones
+        if (res.error) {
+          res = await supabase
+            .from("generated_content")
+            .update({
+              infographic_html: html,
+              infographic_generated_at: new Date().toISOString(),
+            })
+            .eq("id", contentId);
+        }
         error = res.error;
       } else {
-        // INSERT as a separate infographic row linked to the same session
-        const res = await supabase.from("generated_content").insert({
+        // INSERT as a separate infographic row — try with all columns
+        let res = await supabase.from("generated_content").insert({
           user_id: user.id,
           platform,
           format: "Infographic",
@@ -556,6 +567,18 @@ export default function InfographicModal({ open, onClose, content, platform, con
           parent_content: content,
           session_id: sessionId || null,
         });
+
+        // Fallback: if new columns don't exist, insert without them
+        if (res.error) {
+          res = await supabase.from("generated_content").insert({
+            user_id: user.id,
+            platform,
+            format: "Infographic",
+            content: html,
+            viral_score: 85,
+            image_prompt: "Generated infographic",
+          });
+        }
         error = res.error;
       }
 
