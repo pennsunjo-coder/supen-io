@@ -121,7 +121,7 @@ export default function Editor() {
   if (!data) return (
     <div className="h-screen flex flex-col items-center justify-center bg-background gap-3">
       <p className="text-sm font-medium text-muted-foreground">Content not found</p>
-      <Button size="sm" variant="outline" onClick={() => navigate("/dashboard/history")} className="gap-1.5 text-xs">
+      <Button size="sm" variant="outline" onClick={() => navigate("/dashboard")} className="gap-1.5 text-xs">
         <ArrowLeft className="w-3 h-3" /> Back to My Content
       </Button>
     </div>
@@ -138,7 +138,7 @@ export default function Editor() {
       >
         <Button
           variant="ghost" size="sm"
-          onClick={() => navigate("/dashboard/history")}
+          onClick={() => navigate("/dashboard")}
           className="h-8 gap-1.5 text-xs shrink-0 text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="w-3.5 h-3.5" />

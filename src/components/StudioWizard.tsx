@@ -167,7 +167,7 @@ interface StudioWizardProps {
 
 const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = [], onUpdateImagePrompt, activityData, onContentGenerated, onGenerationComplete }: StudioWizardProps) => {
   const navigate = useNavigate();
-  const [started, setStarted] = useState(false);
+  const [started, setStarted] = useState(true);
   const [step, setStep] = useState(0);
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(null);
   const [selectedFormat, setSelectedFormat] = useState<string | null>(null);
@@ -257,7 +257,7 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
   const dailyHook = useMemo<Hook>(() => getDailyHook(profile?.niche), [profile?.niche]);
 
   function reset() {
-    setStarted(false);
+    setStarted(true);
     setStep(0);
     setSelectedPlatform(null);
     setSelectedFormat(null);
@@ -281,7 +281,7 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
 
   function goBack() {
     if (variations.length > 0) { setVariations([]); setSelectedVariation(null); return; }
-    if (step === 0) { reset(); return; }
+    if (step === 0) { navigate("/dashboard"); return; }
     setStep(step - 1);
     if (step === 1) setSelectedFormat(null);
     if (step === 2) setSourceText("");
@@ -801,118 +801,6 @@ Respond ONLY with the 5 variations separated by ---VARIATION---. Nothing before,
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <AnimatePresence mode="wait">
-
-        {/* ═══════ HOME ═══════ */}
-        {!started && variations.length === 0 && (
-          <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }} className={cn("flex-1 flex flex-col", sessions.length > 0 ? "overflow-y-auto" : "items-center justify-center")}>
-
-            {/* 1. BIENVENUE + CTA */}
-            <div className={cn("px-6 text-center", sessions.length > 0 ? "pt-6 pb-5" : "pb-0")}>
-              <h2 className="text-2xl font-bold text-foreground mb-1.5">{greeting}</h2>
-              <p className="text-base text-muted-foreground leading-relaxed mb-6">{subtitle}</p>
-              <Button onClick={() => setStarted(true)} className="h-12 px-8 text-base font-semibold glow-sm gap-2.5">
-                <Sparkles className="w-4 h-4" /> Create content
-              </Button>
-              <div className="flex items-center justify-center gap-5 mt-4">
-                <div className="flex items-center gap-1.5 text-muted-foreground/40">
-                  <Layers className="w-3 h-3" /><span className="text-[10px]">5 variations</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-muted-foreground/40">
-                  <Shield className="w-3 h-3" /><span className="text-[10px]">Anti-IA</span>
-                </div>
-                <div className={cn("flex items-center gap-1.5", activeSourceIds.length > 0 ? "text-primary/60" : "text-muted-foreground/40")}>
-                  <Globe className="w-3 h-3" />
-                  <span className="text-[10px]">{activeSourceIds.length > 0 ? `${activeSourceIds.length} source${activeSourceIds.length > 1 ? "s" : ""}` : "6 platforms"}</span>
-                </div>
-              </div>
-
-              {/* Hook du jour */}
-              <div className="mt-6 max-w-md mx-auto px-4 py-3 rounded-xl bg-gradient-to-br from-amber-500/[0.05] to-orange-500/[0.03] border border-amber-500/15">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[9px] font-medium text-amber-400/70 uppercase tracking-wider flex items-center gap-1">
-                    <Lightbulb className="w-2.5 h-2.5" /> Hook of the day
-                  </span>
-                  <span className="text-[8px] text-muted-foreground/40 uppercase">{dailyHook.type}</span>
-                </div>
-                <p className="text-[12px] text-foreground/85 leading-relaxed text-left mb-2">"{dailyHook.text}"</p>
-                <button
-                  onClick={() => { navigator.clipboard.writeText(dailyHook.text); toast.success("Hook copied!"); }}
-                  className="text-[10px] text-amber-400/70 hover:text-amber-400 transition-colors flex items-center gap-1"
-                >
-                  <Copy className="w-2.5 h-2.5" /> Copy this hook
-                </button>
-              </div>
-
-              {/* Tendances de ta niche */}
-              <div className="mt-3 max-w-md mx-auto rounded-xl border border-emerald-500/15 bg-gradient-to-br from-emerald-500/[0.05] to-teal-500/[0.03] overflow-hidden">
-                <button
-                  onClick={loadTrends}
-                  className="w-full flex items-center gap-2 px-4 py-3 text-left"
-                >
-                  <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="text-[11px] font-semibold text-emerald-400/90 flex-1">Trends in your niche</span>
-                  {trendsLoading ? (
-                    <RefreshCw className="w-3 h-3 animate-spin text-emerald-400/60" />
-                  ) : (
-                    <ChevronDown className={cn("w-3.5 h-3.5 text-emerald-400/60 transition-transform", trendsOpen && "rotate-180")} />
-                  )}
-                </button>
-                <AnimatePresence>
-                  {trendsOpen && trends.length > 0 && (
-                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="px-4 pb-3 space-y-2">
-                      {trends.map((trend, i) => (
-                        <div key={i} className="rounded-lg border border-border/15 bg-background/40 p-2.5 text-left">
-                          <p className="text-[11px] font-medium text-foreground/90 leading-snug mb-1 line-clamp-2">{trend.title}</p>
-                          {trend.snippet && (
-                            <p className="text-[10px] text-muted-foreground/60 line-clamp-2 mb-1.5">{trend.snippet}</p>
-                          )}
-                          <div className="flex items-center justify-between">
-                            <span className="text-[9px] text-muted-foreground/40">{trend.source}</span>
-                            <button
-                              onClick={() => useTrend(trend)}
-                              className="text-[10px] text-emerald-400/80 hover:text-emerald-400 font-medium flex items-center gap-1"
-                            >
-                              Create content <ArrowRight className="w-2.5 h-2.5" />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </motion.div>
-                  )}
-                  {trendsOpen && !trendsLoading && trends.length === 0 && (
-                    <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} className="px-4 pb-3 text-[10px] text-muted-foreground/50 text-center">
-                      No trends found. Try again later.
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </div>
-
-            {/* 2. DERNIÈRES CRÉATIONS (si > 0) */}
-            {sessions.length > 0 && onUpdateImagePrompt && (
-              <>
-                <div className="flex items-center gap-3 px-5 py-2">
-                  <div className="flex-1 h-px bg-border/20" />
-                  <span className="text-[11px] text-muted-foreground/40">Your latest creations</span>
-                  <div className="flex-1 h-px bg-border/20" />
-                </div>
-                <ContentSessionGrid sessions={sessions} onUpdateImagePrompt={onUpdateImagePrompt} onDelete={onGenerationComplete} />
-              </>
-            )}
-
-            {/* 3. STATS D'ACTIVITÉ (si > 0) */}
-            {activityData && activityData.total > 0 && (
-              <>
-                <div className="flex items-center gap-3 px-5 py-2">
-                  <div className="flex-1 h-px bg-border/20" />
-                  <span className="text-[11px] text-muted-foreground/40">Your activity</span>
-                  <div className="flex-1 h-px bg-border/20" />
-                </div>
-                <ActivityWidget data={activityData} daysLabels={activityData.DAYS_FR} />
-              </>
-            )}
-          </motion.div>
-        )}
 
         {/* ═══════ WIZARD ═══════ */}
         {started && variations.length === 0 && (
