@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -487,6 +488,7 @@ export function ContentSessionGrid({
   onUpdateImagePrompt: (id: string, prompt: string) => void;
   onDelete?: () => void;
 }) {
+  const navigate = useNavigate();
   const [expanded, setExpanded] = useState<string | null>(null);
   const [confirming, setConfirming] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -533,7 +535,14 @@ export function ContentSessionGrid({
             >
               {/* Card */}
               <div
-                onClick={() => { if (!isConfirming) setExpanded(isExpanded ? null : session.id); }}
+                onClick={() => {
+                  if (isConfirming) return;
+                  if (session.sessionId) {
+                    navigate(`/content/${session.sessionId}`);
+                  } else {
+                    setExpanded(isExpanded ? null : session.id);
+                  }
+                }}
                 className={cn(
                   "group relative h-[130px] rounded-xl border p-3.5 cursor-pointer transition-all flex flex-col justify-between overflow-hidden",
                   isExpanded
@@ -588,6 +597,9 @@ export function ContentSessionGrid({
                   <span>{session.variations.length} variation{session.variations.length > 1 ? "s" : ""}</span>
                   <span>·</span>
                   <span>{relativeTime(session.createdAt)}</span>
+                  {session.hasInfographic && (
+                    <span className="text-emerald-400/70 text-[9px] font-medium">✓ Infographic</span>
+                  )}
                   <span className="ml-auto text-primary/60 flex items-center gap-0.5">View <ArrowRight className="w-2.5 h-2.5" /></span>
                 </div>
               </div>

@@ -580,6 +580,8 @@ Respond ONLY with the 5 variations separated by ---VARIATION---. Nothing before,
       }
 
       if (saveErr) {
+        console.error("[StudioWizard] Save failed:", saveErr.message, saveErr.details, saveErr.hint);
+        toast.error("Content not saved. Check your connection.");
         setSaveStatus("failed");
         // Still show infographic prompt despite save failure
         setTimeout(() => setShowInfographicPrompt(true), 5000);
@@ -596,6 +598,8 @@ Respond ONLY with the 5 variations separated by ---VARIATION---. Nothing before,
       setTimeout(() => setShowInfographicPrompt(true), 5000);
       return true;
     } catch (err) {
+      console.error("[StudioWizard] Save exception:", err);
+      toast.error("Content not saved. Check your connection.");
       setSaveStatus("failed");
       // Still show infographic prompt despite save failure
       setTimeout(() => setShowInfographicPrompt(true), 5000);

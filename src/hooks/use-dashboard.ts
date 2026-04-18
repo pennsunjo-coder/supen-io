@@ -12,37 +12,67 @@ export interface DashboardContent {
   viral_score: number;
   image_prompt: string;
   infographic_html?: string | null;
+  infographic_base64?: string | null;
   infographic_generated_at?: string | null;
+  session_id?: string | null;
   created_at: string;
 }
 
 export interface ContentSession {
   id: string;
+  sessionId?: string | null;
   platform: string;
   format: string;
   variations: DashboardContent[];
   bestScore: number;
   createdAt: string;
   preview: string;
+  hasInfographic: boolean;
 }
 
 function groupIntoSessions(items: DashboardContent[]): ContentSession[] {
   if (items.length === 0) return [];
-  const sessions: ContentSession[] = [];
-  let current: DashboardContent[] = [items[0]];
 
-  for (let i = 1; i < items.length; i++) {
-    const prev = current[current.length - 1];
-    const curr = items[i];
-    const timeDiff = Math.abs(new Date(prev.created_at).getTime() - new Date(curr.created_at).getTime());
-    if (curr.platform === prev.platform && curr.format === prev.format && timeDiff < 120000) {
-      current.push(curr);
+  // Group by session_id first, then fallback to time-based grouping for old content
+  const sessionMap = new Map<string, DashboardContent[]>();
+  const noSession: DashboardContent[] = [];
+
+  for (const item of items) {
+    if (item.session_id) {
+      const existing = sessionMap.get(item.session_id) || [];
+      existing.push(item);
+      sessionMap.set(item.session_id, existing);
     } else {
-      sessions.push(buildSession(current));
-      current = [curr];
+      noSession.push(item);
     }
   }
-  sessions.push(buildSession(current));
+
+  const sessions: ContentSession[] = [];
+
+  // Session-grouped items
+  for (const [, group] of sessionMap) {
+    sessions.push(buildSession(group));
+  }
+
+  // Time-based fallback for items without session_id
+  if (noSession.length > 0) {
+    let current: DashboardContent[] = [noSession[0]];
+    for (let i = 1; i < noSession.length; i++) {
+      const prev = current[current.length - 1];
+      const curr = noSession[i];
+      const timeDiff = Math.abs(new Date(prev.created_at).getTime() - new Date(curr.created_at).getTime());
+      if (curr.platform === prev.platform && curr.format === prev.format && timeDiff < 120000) {
+        current.push(curr);
+      } else {
+        sessions.push(buildSession(current));
+        current = [curr];
+      }
+    }
+    sessions.push(buildSession(current));
+  }
+
+  // Sort by creation date descending
+  sessions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   return sessions;
 }
 
@@ -52,16 +82,22 @@ function isInfographicHtml(s: string): boolean {
 
 function buildSession(items: DashboardContent[]): ContentSession {
   const best = items.reduce((max, i) => ((i.viral_score || 0) > max ? (i.viral_score || 0) : max), 0);
-  const raw = items[0].content;
+  const firstPost = items.find((i) => !isInfographicHtml(i.content)) || items[0];
+  const raw = firstPost.content;
   const preview = isInfographicHtml(raw) ? "Infographie" : raw.split(/\s+/).slice(0, 15).join(" ");
+  const hasInfographic = items.some((i) =>
+    i.infographic_base64 || i.infographic_html || i.format === "Infographic"
+  );
   return {
     id: items[0].id,
-    platform: items[0].platform,
-    format: items[0].format,
-    variations: items,
+    sessionId: items[0].session_id || null,
+    platform: firstPost.platform,
+    format: firstPost.format,
+    variations: items.filter((i) => i.format !== "Infographic"),
     bestScore: best,
     createdAt: items[0].created_at,
     preview,
+    hasInfographic,
   };
 }
 
@@ -154,32 +190,42 @@ export function useDashboard() {
       let topData: DashboardContent[] | null = null;
       const { data: td1, error: topErr1 } = await supabase
         .from("generated_content")
-        .select("id, platform, format, content, viral_score, image_prompt, infographic_html, infographic_generated_at, created_at")
+        .select("id, platform, format, content, viral_score, image_prompt, infographic_html, infographic_base64, infographic_generated_at, session_id, created_at")
         .eq("user_id", user.id)
-        .neq("format", "Infographic")
         .order("created_at", { ascending: false })
-        .limit(25);
+        .limit(100);
 
       if (topErr1) {
-        // Fallback : essayer sans viral_score et image_prompt (colonnes peut-être absentes)
+        // Fallback: try without newer columns
         const { data: td2, error: topErr2 } = await supabase
           .from("generated_content")
-          .select("id, platform, format, content, created_at")
+          .select("id, platform, format, content, viral_score, image_prompt, infographic_html, infographic_generated_at, created_at")
           .eq("user_id", user.id)
-          .neq("format", "Infographic")
           .order("created_at", { ascending: false })
-          .limit(25);
+          .limit(100);
+
         if (topErr2) {
-          if (IS_DEV) console.warn("useDashboard fallback select also failed:", topErr2.message);
+          // Ultimate fallback
+          const { data: td3, error: topErr3 } = await supabase
+            .from("generated_content")
+            .select("id, platform, format, content, created_at")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false })
+            .limit(100);
+          if (topErr3) {
+            if (IS_DEV) console.warn("useDashboard fallback select also failed:", topErr3.message);
+          } else if (td3) {
+            topData = td3.map((r) => ({ ...r, viral_score: 0, image_prompt: "" })) as DashboardContent[];
+          }
         } else if (td2) {
-          topData = td2.map((r) => ({ ...r, viral_score: 0, image_prompt: "" })) as DashboardContent[];
+          topData = td2 as DashboardContent[];
         }
       } else {
         topData = td1 as DashboardContent[];
       }
 
       if (topData && topData.length > 0) {
-        // Filter out empty, too-short, and raw HTML content
+        // Filter out empty/too-short for topContent display
         const cleaned = topData.filter((item) => {
           if (!item.content || item.content.trim().length < 20) return false;
           if (isInfographicHtml(item.content)) return false;
@@ -187,7 +233,8 @@ export function useDashboard() {
           return true;
         });
         setTopContent(cleaned);
-        setSessions(groupIntoSessions(cleaned).slice(0, 10));
+        // Group ALL items (including infographics) into sessions
+        setSessions(groupIntoSessions(topData).slice(0, 10));
       } else {
         setTopContent([]);
         setSessions([]);
