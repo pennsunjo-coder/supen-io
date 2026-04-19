@@ -70,11 +70,12 @@ async function extractTextFromPdf(
   try {
     const pdfjsLib = await import("pdfjs-dist");
 
-    // Worker URL — use local copy in /public for guaranteed version match.
-    // The file is copied from node_modules/pdfjs-dist/build/pdf.worker.min.mjs
-    // at build time. Same-origin, no CDN, no CSP issues, works offline.
-    // Version must match the installed pdfjs-dist version (5.6.205).
-    pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+    // Worker URL — try local copy first, CDN fallback for Safari/compatibility
+    try {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+    } catch {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+    }
 
     const arrayBuffer = await file.arrayBuffer();
     const loadingTask = pdfjsLib.getDocument({
@@ -337,11 +338,15 @@ export function useSources() {
       // 1. Extract text client-side with pdf.js
       let pdfText: string;
       try {
+        if (IS_DEV) console.log("[PDF] Upload started:", file.name, `${(file.size / 1024).toFixed(0)}KB`, file.type);
+        if (IS_DEV) console.log("[PDF] Step 1: extracting text...");
         const result = await extractTextFromPdf(file);
         pdfText = result.text;
+        if (IS_DEV) console.log("[PDF] Step 1 OK:", result.pages, "pages,", pdfText.length, "chars");
       } catch (err) {
-        if (IS_DEV) console.error("🔴 PDF extraction failed:", err);
-        return { error: "Unable to read this PDF. The file may be protected or corrupted." };
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error("[PDF] Extraction failed:", msg);
+        return { error: msg.includes("password") ? "This PDF is password-protected." : msg.includes("timeout") ? "PDF took too long. Try a smaller file." : msg.includes("No text") || msg.includes("No extractable") ? "No text found. This PDF may be scanned (image-only)." : `PDF error: ${msg}` };
       }
 
       if (!pdfText || pdfText.length < 10) {
