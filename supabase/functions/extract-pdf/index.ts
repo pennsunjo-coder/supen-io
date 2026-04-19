@@ -103,8 +103,25 @@ async function extractPdfText(data: Uint8Array): Promise<string> {
   // Fallback : texte brut du PDF
   extractTextOps(pdfStr, texts);
 
-  return [...new Set(texts)]
+  const raw = [...new Set(texts)]
     .filter((t) => t.trim().length > 1)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  // Clean PDF artifacts from extracted text
+  return raw
+    .replace(/\/(Type|Font|Page|Catalog|Encoding|BaseFont)\b/g, " ")
+    .replace(/<<[^>]*>>/g, " ")
+    .replace(/\d+\s+\d+\s+obj/g, " ")
+    .replace(/endobj|endstream|stream/g, " ")
+    .replace(/[0-9a-fA-F]{20,}/g, " ")
+    .split(" ")
+    .filter((word) => {
+      if (word.length < 2) return false;
+      const alpha = (word.match(/[a-zA-ZÀ-ÿ]/g) || []).length;
+      return alpha / Math.max(word.length, 1) > 0.3;
+    })
     .join(" ")
     .replace(/\s+/g, " ")
     .trim();

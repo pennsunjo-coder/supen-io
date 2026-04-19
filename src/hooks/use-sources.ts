@@ -62,12 +62,37 @@ function extractTextFromHtml(html: string): string {
  * Works in all modern browsers (Chrome, Firefox, Safari, Edge).
  * Falls back to Edge Function "extract-pdf" if client-side extraction fails.
  */
+function cleanExtractedText(raw: string): string {
+  return raw
+    .replace(/[^\x20-\x7E\xA0-\xFF\n\r\t]/g, " ")
+    .replace(/\\[0-9]{3}/g, " ")
+    .replace(/\\[nrtfb\\]/g, " ")
+    .replace(/\/(Type|Subtype|Font|Page|Catalog|Info|Encoding|BaseFont|Resources|Contents|MediaBox|CropBox)\b/g, " ")
+    .replace(/<<[^>]*>>/g, " ")
+    .replace(/\d+\s+\d+\s+obj/g, " ")
+    .replace(/endobj|endstream|stream/g, " ")
+    .replace(/\bBT\b|\bET\b|\bTf\b|\bTd\b|\bTD\b|\bTm\b|\bTr\b|\bTs\b|\bTw\b|\bTz\b|\bTL\b|\bTc\b|\bBDC\b|\bEMC\b/g, " ")
+    .replace(/[0-9a-fA-F]{20,}/g, " ")
+    .replace(/(\d+\.?\d*\s){5,}/g, " ")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .split("\n")
+    .filter((line) => {
+      const t = line.trim();
+      if (t.length < 3) return false;
+      const alpha = (t.match(/[a-zA-ZÀ-ÿ]/g) || []).length;
+      return alpha / Math.max(t.length, 1) > 0.3;
+    })
+    .join("\n")
+    .trim();
+}
+
 async function extractTextFromPdf(
   file: File,
   onProgress?: (page: number, total: number) => void,
 ): Promise<{ text: string; pages: number }> {
 
-  // ── Edge Function extract-pdf (server-side, no browser issues) ──
+  // ── Edge Function extract-pdf (server-side) ──
   try {
     console.log("[PDF] Sending to Edge Function...");
     const formData = new FormData();
@@ -75,41 +100,41 @@ async function extractTextFromPdf(
     const { data, error } = await supabase.functions.invoke("extract-pdf", { body: formData });
 
     if (error) throw new Error(error.message || "Edge Function error");
-    if (!data?.text || data.text.length < 20) {
-      throw new Error("No text found in this PDF. It may be scanned or image-only.");
+
+    const cleaned = cleanExtractedText(data?.text || "");
+    if (cleaned.length < 50) {
+      throw new Error("No readable text found in this PDF.");
     }
 
-    console.log("[PDF] Edge Function OK:", data.text.length, "chars,", data.pages, "pages");
+    console.log("[PDF] Edge Function OK:", cleaned.length, "chars (raw:", data.text.length, ")");
     onProgress?.(data.pages || 1, data.pages || 1);
-    return { text: data.text, pages: data.pages || 1 };
+    return { text: cleaned, pages: data.pages || 1 };
   } catch (edgeErr) {
     const msg = edgeErr instanceof Error ? edgeErr.message : String(edgeErr);
     console.warn("[PDF] Edge Function failed:", msg);
     if (/password/i.test(msg)) throw new Error("This PDF is password-protected.");
   }
 
-  // ── Fallback: raw binary text extraction (no pdfjs needed) ──
+  // ── Fallback: raw binary text extraction ──
   try {
     console.log("[PDF] Trying raw text fallback...");
-    const text = await new Promise<string>((resolve, reject) => {
+    const rawText = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = (e) => {
-        const raw = e.target?.result as string;
-        const readable = raw.replace(/[^\x20-\x7E\n\r\t]/g, " ").replace(/\s+/g, " ").trim();
-        if (readable.length > 100) resolve(readable);
-        else reject(new Error("No readable text"));
-      };
+      reader.onload = (e) => resolve(e.target?.result as string);
       reader.onerror = () => reject(new Error("File read failed"));
       reader.readAsBinaryString(file);
     });
 
-    console.log("[PDF] Raw fallback OK:", text.length, "chars");
-    return { text: text.slice(0, 15000), pages: 1 };
+    const cleaned = cleanExtractedText(rawText);
+    if (cleaned.length < 50) throw new Error("No readable text");
+
+    console.log("[PDF] Raw fallback OK:", cleaned.length, "chars");
+    return { text: cleaned.slice(0, 15000), pages: 1 };
   } catch {
-    // Raw fallback also failed
+    // Also failed
   }
 
-  throw new Error("Could not read this PDF. Try a different file or paste the text manually.");
+  throw new Error("Could not extract readable text. Try pasting the text manually.");
 }
 
 export interface GroupedSource {
