@@ -97,7 +97,7 @@ async function extractTextFromPdf(
     let match;
     while ((match = parenRegex.exec(raw)) !== null) {
       const t = match[1].replace(/\\n/g, " ").replace(/\\r/g, " ").replace(/\\\(/g, "(").replace(/\\\)/g, ")").replace(/\\\\/g, "\\").replace(/\\[0-7]{3}/g, " ").trim();
-      if (t.length > 2 && /[a-zA-ZÀ-ÿ]/.test(t)) texts.push(t);
+      if (t.length > 2 && /[a-zA-Z]/.test(t)) texts.push(t);
     }
 
     const tjRegex = /\[((?:\([^)]*\)|[^\]])*)\]\s*TJ/g;
@@ -110,7 +110,7 @@ async function extractTextFromPdf(
     }
 
     const fullText = texts.join(" ").replace(/\s+/g, " ").trim();
-    const ratio = (fullText.match(/[a-zA-ZÀ-ÿ\s]/g) || []).length / Math.max(fullText.length, 1);
+    const ratio = (fullText.match(/[a-zA-Z\s]/g) || []).length / Math.max(fullText.length, 1);
     console.log("[PDF] S2:", fullText.length, "chars, ratio:", ratio.toFixed(2));
 
     if (fullText.length > 100 && ratio > 0.4) {
