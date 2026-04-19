@@ -75,7 +75,7 @@ async function extractTextFromPdf(
     const formData = new FormData();
     formData.append("file", file);
     const { data, error } = await supabase.functions.invoke("extract-pdf", { body: formData });
-    console.log("[PDF] S1 result:", { error: error?.message, hasText: !!data?.text, len: data?.text?.length });
+    console.log("[PDF] S1 result:", { error: error?.message || error, hasText: !!data?.text, len: data?.text?.length, dataType: typeof data });
 
     if (!error && data?.text && data.text.length > 30) {
       console.log("[PDF] S1 OK:", data.text.slice(0, 200));
