@@ -62,79 +62,74 @@ function extractTextFromHtml(html: string): string {
  * Works in all modern browsers (Chrome, Firefox, Safari, Edge).
  * Falls back to Edge Function "extract-pdf" if client-side extraction fails.
  */
-function cleanExtractedText(raw: string): string {
-  return raw
-    .replace(/[^\x20-\x7E\xA0-\xFF\n\r\t]/g, " ")
-    .replace(/\\[0-9]{3}/g, " ")
-    .replace(/\\[nrtfb\\]/g, " ")
-    .replace(/\/(Type|Subtype|Font|Page|Catalog|Info|Encoding|BaseFont|Resources|Contents|MediaBox|CropBox)\b/g, " ")
-    .replace(/<<[^>]*>>/g, " ")
-    .replace(/\d+\s+\d+\s+obj/g, " ")
-    .replace(/endobj|endstream|stream/g, " ")
-    .replace(/\bBT\b|\bET\b|\bTf\b|\bTd\b|\bTD\b|\bTm\b|\bTr\b|\bTs\b|\bTw\b|\bTz\b|\bTL\b|\bTc\b|\bBDC\b|\bEMC\b/g, " ")
-    .replace(/[0-9a-fA-F]{20,}/g, " ")
-    .replace(/(\d+\.?\d*\s){5,}/g, " ")
-    .replace(/[ \t]+/g, " ")
-    .replace(/\n{3,}/g, "\n\n")
-    .split("\n")
-    .filter((line) => {
-      const t = line.trim();
-      if (t.length < 3) return false;
-      const alpha = (t.match(/[a-zA-ZÀ-ÿ]/g) || []).length;
-      return alpha / Math.max(t.length, 1) > 0.3;
-    })
-    .join("\n")
-    .trim();
-}
-
 async function extractTextFromPdf(
   file: File,
   onProgress?: (page: number, total: number) => void,
 ): Promise<{ text: string; pages: number }> {
 
-  // ── Edge Function extract-pdf (server-side) ──
-  try {
-    console.log("[PDF] Sending to Edge Function...");
-    const formData = new FormData();
-    formData.append("file", file);
-    const { data, error } = await supabase.functions.invoke("extract-pdf", { body: formData });
+  console.log("[PDF] Using Claude native PDF support...");
 
-    if (error) throw new Error(error.message || "Edge Function error");
+  const arrayBuffer = await file.arrayBuffer();
+  const uint8Array = new Uint8Array(arrayBuffer);
 
-    const cleaned = cleanExtractedText(data?.text || "");
-    if (cleaned.length < 50) {
-      throw new Error("No readable text found in this PDF.");
-    }
-
-    console.log("[PDF] Edge Function OK:", cleaned.length, "chars (raw:", data.text.length, ")");
-    onProgress?.(data.pages || 1, data.pages || 1);
-    return { text: cleaned, pages: data.pages || 1 };
-  } catch (edgeErr) {
-    const msg = edgeErr instanceof Error ? edgeErr.message : String(edgeErr);
-    console.warn("[PDF] Edge Function failed:", msg);
-    if (/password/i.test(msg)) throw new Error("This PDF is password-protected.");
+  // Convert to base64 in chunks (avoid call stack overflow)
+  let binary = "";
+  const chunkSize = 8192;
+  for (let i = 0; i < uint8Array.length; i += chunkSize) {
+    const chunk = uint8Array.subarray(i, i + chunkSize);
+    binary += String.fromCharCode(...chunk);
   }
+  const base64 = btoa(binary);
 
-  // ── Fallback: raw binary text extraction ──
+  console.log("[PDF] File:", file.name, `${(file.size / 1024).toFixed(0)}KB`, "base64:", base64.length);
+
   try {
-    console.log("[PDF] Trying raw text fallback...");
-    const rawText = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => resolve(e.target?.result as string);
-      reader.onerror = () => reject(new Error("File read failed"));
-      reader.readAsBinaryString(file);
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": import.meta.env.VITE_ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+        "anthropic-beta": "pdfs-2024-09-25",
+      },
+      body: JSON.stringify({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 4000,
+        messages: [{
+          role: "user",
+          content: [
+            { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64 } },
+            { type: "text", text: "Extract ALL the text from this PDF. Return ONLY the raw text content, nothing else. No commentary, no formatting instructions, just the text." },
+          ],
+        }],
+      }),
     });
 
-    const cleaned = cleanExtractedText(rawText);
-    if (cleaned.length < 50) throw new Error("No readable text");
+    console.log("[PDF] Claude response:", response.status);
 
-    console.log("[PDF] Raw fallback OK:", cleaned.length, "chars");
-    return { text: cleaned.slice(0, 15000), pages: 1 };
-  } catch {
-    // Also failed
+    if (!response.ok) {
+      const err = await response.text().catch(() => "");
+      console.error("[PDF] Claude error:", err);
+      throw new Error(`Claude API error (${response.status})`);
+    }
+
+    const data = await response.json();
+    const text = data.content?.filter((b: { type: string }) => b.type === "text")?.map((b: { text: string }) => b.text)?.join("") || "";
+
+    console.log("[PDF] Extracted:", text.length, "chars");
+
+    if (text.length < 20) {
+      throw new Error("No text found in PDF");
+    }
+
+    onProgress?.(1, 1);
+    return { text, pages: 1 };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[PDF] Failed:", msg);
+    if (/password/i.test(msg)) throw new Error("This PDF is password-protected.");
+    throw new Error("Could not read this PDF. Please paste the text manually.");
   }
-
-  throw new Error("Could not extract readable text. Try pasting the text manually.");
 }
 
 export interface GroupedSource {
