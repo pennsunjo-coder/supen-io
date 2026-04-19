@@ -67,78 +67,31 @@ async function extractTextFromPdf(
   onProgress?: (page: number, total: number) => void,
 ): Promise<{ text: string; pages: number }> {
 
-  console.log("[PDF] Using Claude native PDF support...");
+  console.log("[PDF] Sending to Edge Function:", file.name, `${(file.size / 1024).toFixed(0)}KB`);
 
-  const arrayBuffer = await file.arrayBuffer();
-  const uint8Array = new Uint8Array(arrayBuffer);
+  const formData = new FormData();
+  formData.append("file", file);
 
-  // Convert to base64 in chunks (avoid call stack overflow)
-  let binary = "";
-  const chunkSize = 8192;
-  for (let i = 0; i < uint8Array.length; i += chunkSize) {
-    const chunk = uint8Array.subarray(i, i + chunkSize);
-    binary += String.fromCharCode(...chunk);
-  }
-  const base64 = btoa(binary);
+  const { data, error } = await supabase.functions.invoke("extract-pdf", { body: formData });
 
-  console.log("[PDF] File:", file.name, `${(file.size / 1024).toFixed(0)}KB`, "base64:", base64.length);
+  console.log("[PDF] Edge Function response:", { hasData: !!data, hasText: !!data?.text, textLen: data?.text?.length, error });
 
-  try {
-    const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
-    console.log("[PDF] Calling Claude API...");
-    console.log("[PDF] API key present:", !!apiKey, "length:", apiKey?.length || 0);
-    console.log("[PDF] Base64 length:", base64.length);
-
-    if (!apiKey) {
-      throw new Error("VITE_ANTHROPIC_API_KEY is not configured");
-    }
-
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "anthropic-beta": "pdfs-2024-09-25",
-      },
-      body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
-        max_tokens: 4000,
-        messages: [{
-          role: "user",
-          content: [
-            { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64 } },
-            { type: "text", text: "Extract ALL the text from this PDF. Return ONLY the raw text content, nothing else. No commentary, no formatting instructions, just the text." },
-          ],
-        }],
-      }),
-    });
-
-    console.log("[PDF] Claude response status:", response.status);
-
-    if (!response.ok) {
-      const errBody = await response.text().catch(() => "unknown");
-      console.error("[PDF] Claude API error:", response.status, errBody);
-      throw new Error(`Claude API ${response.status}: ${errBody.slice(0, 200)}`);
-    }
-
-    const data = await response.json();
-    const text = data.content?.filter((b: { type: string }) => b.type === "text")?.map((b: { text: string }) => b.text)?.join("") || "";
-
-    console.log("[PDF] Extracted:", text.length, "chars");
-
-    if (text.length < 20) {
-      throw new Error("No text found in PDF");
-    }
-
-    onProgress?.(1, 1);
-    return { text, pages: 1 };
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error("[PDF] Failed:", msg);
+  if (error) {
+    const msg = error.message || String(error);
+    console.error("[PDF] Edge Function error:", msg);
     if (/password/i.test(msg)) throw new Error("This PDF is password-protected.");
-    throw new Error("Could not read this PDF. Please paste the text manually.");
+    throw new Error(`PDF extraction failed: ${msg}`);
   }
+
+  if (!data?.text || data.text.length < 20) {
+    throw new Error("No readable text found. Try a different PDF or paste the text manually.");
+  }
+
+  console.log("[PDF] Success:", data.text.length, "chars");
+  console.log("[PDF] Preview:", data.text.slice(0, 150));
+
+  onProgress?.(1, 1);
+  return { text: data.text, pages: data.pages || 1 };
 }
 
 export interface GroupedSource {

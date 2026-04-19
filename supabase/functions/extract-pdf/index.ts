@@ -38,6 +38,7 @@ Deno.serve(async (req) => {
             "Content-Type": "application/json",
             "x-api-key": anthropicKey,
             "anthropic-version": "2023-06-01",
+            "anthropic-beta": "pdfs-2024-09-25",
           },
           body: JSON.stringify({
             model: "claude-haiku-4-5-20251001",
