@@ -5,6 +5,7 @@ export interface Source {
   title: string;
   content: string;
   file_path: string | null;
+  directive?: string;
   created_at: string;
 }
 

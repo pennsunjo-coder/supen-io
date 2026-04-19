@@ -9,7 +9,9 @@ import {
   Trash2,
   Loader2,
   X,
+  Lightbulb,
 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -64,6 +66,19 @@ const SourcePanel = ({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [editingDirective, setEditingDirective] = useState<string | null>(null);
+  const [directiveText, setDirectiveText] = useState("");
+  const [savingDirective, setSavingDirective] = useState(false);
+
+  async function saveDirective(groupId: string, ids: string[], text: string) {
+    setSavingDirective(true);
+    try {
+      await supabase.from("sources").update({ directive: text }).in("id", ids);
+      toast.success(text ? "Focus instruction saved" : "Focus instruction removed");
+    } catch { /* column may not exist */ }
+    setEditingDirective(null);
+    setSavingDirective(false);
+  }
   const fileRef = useRef<HTMLInputElement>(null);
   const urlRef = useRef<HTMLInputElement>(null);
   const noteTitleRef = useRef<HTMLInputElement>(null);
@@ -360,6 +375,16 @@ const SourcePanel = ({
                     {group.chunkCount > 1 && <span> · {group.chunkCount} parts</span>}
                     {group.wordCount > 0 && <span> · {group.wordCount} words</span>}
                   </span>
+                  {isActive && group.directive ? (
+                    <button onClick={() => { setEditingDirective(group.id); setDirectiveText(group.directive || ""); }} className="flex items-center gap-1 mt-0.5 text-[10px] text-amber-400/80 hover:text-amber-400 transition-colors truncate">
+                      <Lightbulb className="w-2.5 h-2.5 shrink-0" />
+                      <span className="truncate">{group.directive}</span>
+                    </button>
+                  ) : isActive ? (
+                    <button onClick={() => { setEditingDirective(group.id); setDirectiveText(""); }} className="text-[10px] text-muted-foreground/40 hover:text-primary transition-colors mt-0.5">
+                      + Add focus instruction
+                    </button>
+                  ) : null}
                 </div>
                 <button
                   type="button"
@@ -375,6 +400,32 @@ const SourcePanel = ({
           })
         )}
       </div>
+
+      {/* Directive editor modal */}
+      {editingDirective && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-4" onClick={() => setEditingDirective(null)}>
+          <div className="bg-card border border-border/30 rounded-2xl p-5 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-semibold text-sm mb-1">What should the AI focus on?</h3>
+            <p className="text-xs text-muted-foreground mb-4">Guide the AI to create content about a specific topic from this document.</p>
+            <textarea
+              autoFocus
+              value={directiveText}
+              onChange={(e) => setDirectiveText(e.target.value)}
+              placeholder={"Examples:\n- Focus on LinkedIn growth strategies\n- Extract key statistics and data points\n- Summarize the monetization methods"}
+              className="w-full text-sm rounded-xl border border-border/20 bg-accent/20 p-3 resize-none h-28 placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/40 mb-4"
+            />
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" className="flex-1 h-9" onClick={() => setEditingDirective(null)}>Cancel</Button>
+              <Button size="sm" className="flex-1 h-9 gap-1.5" disabled={savingDirective} onClick={() => {
+                const group = groupedSources.find((g) => g.id === editingDirective);
+                if (group) saveDirective(group.id, group.ids, directiveText);
+              }}>
+                <Lightbulb className="w-3.5 h-3.5" /> Save Focus
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

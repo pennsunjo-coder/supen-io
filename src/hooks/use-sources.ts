@@ -121,6 +121,7 @@ export interface GroupedSource {
   wordCount: number;
   content: string;     // first chunk for preview
   file_path: string | null;
+  directive?: string;
 }
 
 /**
@@ -152,6 +153,7 @@ function groupSources(sources: Source[]): GroupedSource[] {
       wordCount: totalWords,
       content: first.content,
       file_path: chunks.find((c) => c.file_path)?.file_path ?? null,
+      directive: chunks.find((c) => c.directive)?.directive || "",
     };
   });
 }

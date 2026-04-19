@@ -331,6 +331,15 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
         }
       }
 
+      // Inject source directives if any
+      const sourceDirectives = sources
+        .filter((s) => ragIds.includes(s.id) && s.directive)
+        .map((s) => `- "${s.directive}" (from ${s.title})`)
+        .join("\n");
+      if (sourceDirectives) {
+        userSection += `\n\n## DOCUMENT FOCUS INSTRUCTIONS\nThe user wants to focus on these specific aspects:\n${sourceDirectives}\nGenerate content that specifically addresses these topics from the provided documents.`;
+      }
+
       // === SECTION 3 : Modèles viraux (RAG viral) ===
       let viralSection = "";
       try {
