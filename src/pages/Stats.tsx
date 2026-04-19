@@ -97,7 +97,7 @@ export default function Stats() {
 
   return (
     <DashboardLayout>
-      <div className="h-full flex flex-col overflow-hidden">
+      <div className="flex-1 w-full flex flex-col overflow-hidden">
         <div className="flex items-center gap-3 px-5 py-4 border-b border-border/20 shrink-0">
           <Button variant="secondary" onClick={() => navigate("/dashboard")} className="h-10 gap-2 text-sm font-bold px-5 bg-accent hover:bg-accent/80 border border-border/40">
             <ArrowLeft className="w-4 h-4" /> Dashboard
@@ -108,7 +108,7 @@ export default function Stats() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto px-8 py-6">
           {loading ? (
             <div className="flex items-center justify-center h-48">
               <div className="animate-spin w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full" />
