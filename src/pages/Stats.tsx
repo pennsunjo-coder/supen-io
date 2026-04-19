@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import {
   ArrowLeft, FileText, Image as ImageIcon,
   TrendingUp, Zap, Calendar,
-  BarChart3, Target, Award, Sparkles,
+  BarChart3, Target, Award, Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -33,7 +33,6 @@ export default function Stats() {
 
   useEffect(() => {
     if (!user) return;
-
     async function fetchStats() {
       const { data } = await supabase
         .from("generated_content")
@@ -75,20 +74,13 @@ export default function Stats() {
       });
 
       setStats({
-        totalContent: posts.length,
-        totalSessions: sessions.size,
-        totalInfographics: infographics.length,
-        avgViralScore: avgScore,
-        topPlatform,
-        contentThisWeek,
-        contentThisMonth,
-        bestScore,
+        totalContent: posts.length, totalSessions: sessions.size, totalInfographics: infographics.length,
+        avgViralScore: avgScore, topPlatform, contentThisWeek, contentThisMonth, bestScore,
         platformBreakdown,
         recentActivity: Object.entries(activityMap).map(([date, count]) => ({ date, count })),
       });
       setLoading(false);
     }
-
     fetchStats();
   }, [user]);
 
@@ -107,7 +99,7 @@ export default function Stats() {
     <DashboardLayout>
       <div className="h-full flex flex-col overflow-hidden">
         <div className="flex items-center gap-3 px-5 py-4 border-b border-border/20 shrink-0">
-          <Button variant="secondary" size="sm" onClick={() => navigate("/dashboard")} className="h-9 gap-2 font-semibold bg-accent hover:bg-accent/80 border border-border/40">
+          <Button variant="secondary" onClick={() => navigate("/dashboard")} className="h-10 gap-2 text-sm font-bold px-5 bg-accent hover:bg-accent/80 border border-border/40">
             <ArrowLeft className="w-4 h-4" /> Dashboard
           </Button>
           <div className="flex-1">
@@ -121,77 +113,80 @@ export default function Stats() {
             <div className="flex items-center justify-center h-48">
               <div className="animate-spin w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full" />
             </div>
-          ) : (
-            <div className="max-w-4xl mx-auto space-y-8">
-              {/* Stat cards */}
-              <div>
-                <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/50 mb-4">Overview</h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {statCards.map((card, i) => (
-                    <motion.div key={card.label} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className={cn("rounded-xl border p-4", card.border, card.bg)}>
-                      <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center mb-3", card.bg)}>
-                        <card.icon className={cn("w-4 h-4", card.color)} />
-                      </div>
-                      <p className="text-2xl font-bold mb-1">{card.value}</p>
-                      <p className="text-xs text-muted-foreground">{card.label}</p>
-                    </motion.div>
-                  ))}
-                </div>
+          ) : stats && (
+            <div className="h-full flex flex-col gap-6">
+              {/* Stat cards — full width */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+                {statCards.map((card, i) => (
+                  <motion.div key={card.label} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }} className={cn("rounded-2xl border p-4 flex flex-col", card.border, card.bg)}>
+                    <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center mb-3", card.bg)}>
+                      <card.icon className={cn("w-4 h-4", card.color)} />
+                    </div>
+                    <p className="text-2xl font-bold mb-0.5">{card.value}</p>
+                    <p className="text-[10px] text-muted-foreground leading-relaxed">{card.label}</p>
+                  </motion.div>
+                ))}
               </div>
 
-              {/* Activity chart */}
-              {stats && stats.recentActivity.length > 0 && (
-                <div>
-                  <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/50 mb-4">Activity — Last 7 Days</h2>
-                  <div className="rounded-xl border border-border/20 p-5 bg-accent/[0.02]">
-                    <div className="flex items-end gap-3 h-24">
-                      {stats.recentActivity.map((day, i) => {
-                        const maxCount = Math.max(...stats.recentActivity.map((d) => d.count), 1);
-                        const height = Math.max((day.count / maxCount) * 100, 4);
-                        return (
-                          <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                            <div className="w-full flex items-end justify-center" style={{ height: "72px" }}>
-                              <motion.div initial={{ height: 0 }} animate={{ height: `${height}%` }} transition={{ delay: i * 0.05, duration: 0.4 }} className={cn("w-full rounded-t-md min-h-[4px]", day.count > 0 ? "bg-primary/60" : "bg-accent/40")} />
-                            </div>
-                            <span className="text-[10px] text-muted-foreground/60">{day.date}</span>
-                            {day.count > 0 && <span className="text-[10px] font-bold text-primary">{day.count}</span>}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Platform breakdown */}
-              {stats && stats.platformBreakdown.length > 0 && (
-                <div>
-                  <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/50 mb-4">By Platform</h2>
-                  <div className="rounded-xl border border-border/20 overflow-hidden">
-                    {stats.platformBreakdown.map((p, i) => {
-                      const maxCount = stats.platformBreakdown[0].count;
-                      const pct = Math.round((p.count / stats.totalContent) * 100);
+              {/* Charts side by side */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1 min-h-0">
+                {/* Activity */}
+                <div className="rounded-2xl border border-border/20 p-5 bg-accent/[0.02] flex flex-col">
+                  <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/50 mb-5">Activity — Last 7 Days</h2>
+                  <div className="flex-1 flex items-end gap-2">
+                    {stats.recentActivity.map((day, i) => {
+                      const maxCount = Math.max(...stats.recentActivity.map((d) => d.count), 1);
+                      const height = Math.max((day.count / maxCount) * 100, 4);
                       return (
-                        <div key={p.platform} className={cn("flex items-center gap-4 px-5 py-3.5", i !== 0 && "border-t border-border/10")}>
-                          <span className="text-sm font-medium w-24 shrink-0">{p.platform}</span>
-                          <div className="flex-1 bg-accent/20 rounded-full h-2 overflow-hidden">
-                            <motion.div initial={{ width: 0 }} animate={{ width: `${(p.count / maxCount) * 100}%` }} transition={{ delay: i * 0.05, duration: 0.5 }} className="h-full bg-primary/60 rounded-full" />
+                        <div key={i} className="flex-1 flex flex-col items-center gap-2">
+                          <div className="w-full flex items-end justify-center h-32">
+                            <motion.div initial={{ height: 0 }} animate={{ height: `${height}%` }} transition={{ delay: i * 0.06, duration: 0.5 }} className={cn("w-full rounded-t-lg min-h-[4px]", day.count > 0 ? "bg-primary" : "bg-accent/40")} />
                           </div>
-                          <span className="text-sm font-bold w-12 text-right shrink-0">{p.count}</span>
-                          <span className="text-xs text-muted-foreground w-10 text-right shrink-0">{pct}%</span>
+                          <span className="text-[10px] text-muted-foreground/60 font-medium">{day.date}</span>
+                          <span className={cn("text-[10px] font-bold", day.count > 0 ? "text-primary" : "text-transparent")}>{day.count}</span>
                         </div>
                       );
                     })}
                   </div>
                 </div>
-              )}
+
+                {/* Platforms */}
+                <div className="rounded-2xl border border-border/20 p-5 bg-accent/[0.02] flex flex-col">
+                  <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/50 mb-5">By Platform</h2>
+                  <div className="flex-1 space-y-3">
+                    {stats.platformBreakdown.map((p, i) => {
+                      const maxCount = stats.platformBreakdown[0]?.count || 1;
+                      const pct = Math.round((p.count / stats.totalContent) * 100);
+                      return (
+                        <div key={p.platform}>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-sm font-medium">{p.platform}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-bold">{p.count}</span>
+                              <span className="text-xs text-muted-foreground w-8 text-right">{pct}%</span>
+                            </div>
+                          </div>
+                          <div className="w-full bg-accent/30 rounded-full h-2.5 overflow-hidden">
+                            <motion.div initial={{ width: 0 }} animate={{ width: `${(p.count / maxCount) * 100}%` }} transition={{ delay: i * 0.08, duration: 0.6 }} className="h-full bg-primary rounded-full" />
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {stats.platformBreakdown.length === 0 && (
+                      <div className="flex items-center justify-center h-full text-muted-foreground/40 text-sm">No data yet</div>
+                    )}
+                  </div>
+                </div>
+              </div>
 
               {/* CTA */}
-              <div className="rounded-xl border border-border/20 p-6 text-center bg-accent/[0.02]">
-                <p className="text-sm font-semibold mb-1">Ready to create more?</p>
-                <p className="text-xs text-muted-foreground mb-4">Keep the momentum going.</p>
-                <Button onClick={() => navigate("/dashboard/studio")} className="gap-2 font-bold">
-                  <Sparkles className="w-4 h-4" /> Create New Content
+              <div className="rounded-2xl border border-border/20 p-6 bg-gradient-to-r from-primary/5 to-primary/10 flex items-center justify-between">
+                <div>
+                  <p className="font-bold text-base mb-1">Keep the momentum going</p>
+                  <p className="text-sm text-muted-foreground">You've generated {stats.totalContent} posts. Create more to grow faster.</p>
+                </div>
+                <Button onClick={() => navigate("/dashboard/studio")} className="gap-2 font-bold h-11 px-6 shrink-0 ml-4">
+                  <Plus className="w-5 h-5" /> Create Content
                 </Button>
               </div>
             </div>

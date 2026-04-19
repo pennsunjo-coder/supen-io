@@ -15,7 +15,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { invalidateCache } from "@/lib/cache";
 import {
-  Plus, Search, FileText, Sparkles, Trash2,
+  Plus, Search, FileText, Sparkles, Trash2, BarChart3,
   Clock, Check, Loader2, BookOpen, Bot,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -197,15 +197,15 @@ const Dashboard = () => {
             <div className="px-5 py-4 border-b border-border/10 shrink-0">
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <h1 className="text-base font-bold">{greeting}</h1>
+                  <h1 className="text-xl font-bold">{hasContent ? "My Content" : greeting}</h1>
                   {hasContent && (
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {sessions.length} session{sessions.length !== 1 ? "s" : ""} generated
                     </p>
                   )}
                 </div>
-                <Button onClick={() => navigate("/dashboard/studio")} className="gap-2 h-11 text-sm font-bold px-6 shadow-sm shrink-0">
-                  <Plus className="w-4 h-4" /> Create Content
+                <Button variant="ghost" size="sm" onClick={() => navigate("/stats")} className="h-9 gap-2 text-xs text-muted-foreground hover:text-foreground shrink-0">
+                  <BarChart3 className="w-4 h-4" /> Stats
                 </Button>
               </div>
               {hasContent && (
@@ -348,6 +348,15 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+      {/* FLOATING CREATE BUTTON */}
+      {hasContent && (
+        <div className="fixed bottom-6 right-6 z-30 hidden md:block">
+          <Button onClick={() => navigate("/dashboard/studio")} className="gap-2 h-12 text-sm font-bold px-6 shadow-xl rounded-2xl">
+            <Plus className="w-5 h-5" /> Create Content
+          </Button>
+        </div>
+      )}
+
       {/* DELETE CONFIRMATION MODAL */}
       <AnimatePresence>
         {deletingId && (
