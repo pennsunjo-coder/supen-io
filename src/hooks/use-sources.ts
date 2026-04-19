@@ -67,31 +67,66 @@ async function extractTextFromPdf(
   onProgress?: (page: number, total: number) => void,
 ): Promise<{ text: string; pages: number }> {
 
-  console.log("[PDF] Sending to Edge Function:", file.name, `${(file.size / 1024).toFixed(0)}KB`);
+  console.log("[PDF] Reading:", file.name, `${(file.size / 1024).toFixed(0)}KB`);
 
-  const formData = new FormData();
-  formData.append("file", file);
+  const buffer = await file.arrayBuffer();
+  const raw = new TextDecoder("latin1").decode(new Uint8Array(buffer));
+  const texts: string[] = [];
 
-  const { data, error } = await supabase.functions.invoke("extract-pdf", { body: formData });
-
-  console.log("[PDF] Edge Function response:", { hasData: !!data, hasText: !!data?.text, textLen: data?.text?.length, error });
-
-  if (error) {
-    const msg = error.message || String(error);
-    console.error("[PDF] Edge Function error:", msg);
-    if (/password/i.test(msg)) throw new Error("This PDF is password-protected.");
-    throw new Error(`PDF extraction failed: ${msg}`);
+  // Extract text from PDF parenthesis operators: (Hello World) Tj
+  const parenRegex = /\(([^\\)]{2,200})\)/g;
+  let match;
+  while ((match = parenRegex.exec(raw)) !== null) {
+    const t = match[1]
+      .replace(/\\n/g, " ").replace(/\\r/g, " ").replace(/\\t/g, " ")
+      .replace(/\\\(/g, "(").replace(/\\\)/g, ")").replace(/\\\\/g, "\\")
+      .replace(/\\[0-7]{3}/g, " ").trim();
+    if (t.length > 2 && /[a-zA-ZÀ-ÿ]/.test(t)) texts.push(t);
   }
 
-  if (!data?.text || data.text.length < 20) {
-    throw new Error("No readable text found. Try a different PDF or paste the text manually.");
+  // Extract from TJ arrays: [(text) -100 (more)] TJ
+  const tjRegex = /\[((?:\([^)]*\)|[^\]])*)\]\s*TJ/g;
+  while ((match = tjRegex.exec(raw)) !== null) {
+    const parts: string[] = [];
+    const inner = /\(([^)]{1,200})\)/g;
+    let m;
+    while ((m = inner.exec(match[1])) !== null) {
+      if (m[1].trim()) parts.push(m[1].trim());
+    }
+    if (parts.length) texts.push(parts.join(""));
   }
 
-  console.log("[PDF] Success:", data.text.length, "chars");
-  console.log("[PDF] Preview:", data.text.slice(0, 150));
+  let fullText = texts.join(" ").replace(/\s+/g, " ").trim();
+  const alphaCount = (fullText.match(/[a-zA-ZÀ-ÿ\s]/g) || []).length;
+  const ratio = alphaCount / Math.max(fullText.length, 1);
 
-  onProgress?.(1, 1);
-  return { text: data.text, pages: data.pages || 1 };
+  console.log("[PDF] Client extracted:", fullText.length, "chars, readable:", (ratio * 100).toFixed(0) + "%");
+
+  // If client extraction got good text, use it
+  if (fullText.length > 100 && ratio > 0.5) {
+    console.log("[PDF] Client OK. Preview:", fullText.slice(0, 150));
+    onProgress?.(1, 1);
+    return { text: fullText.slice(0, 20000), pages: 1 };
+  }
+
+  // Fallback: Edge Function (Claude Vision server-side)
+  console.log("[PDF] Client insufficient — trying Edge Function...");
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    const { data, error } = await supabase.functions.invoke("extract-pdf", { body: formData });
+
+    if (!error && data?.text && data.text.length > 50) {
+      console.log("[PDF] Edge Function OK:", data.text.length, "chars");
+      onProgress?.(1, 1);
+      return { text: data.text, pages: data.pages || 1 };
+    }
+    if (error) console.warn("[PDF] Edge Function error:", error.message);
+  } catch (e) {
+    console.warn("[PDF] Edge Function unavailable:", e);
+  }
+
+  throw new Error("Could not extract text. Please paste the content manually.");
 }
 
 export interface GroupedSource {
