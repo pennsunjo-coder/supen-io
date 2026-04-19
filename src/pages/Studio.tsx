@@ -51,7 +51,7 @@ export default function Studio() {
       <div className="flex-1 flex flex-col min-h-0 pb-16 md:pb-0">
         {/* Header */}
         <div className="flex items-center gap-4 px-5 py-4 border-b border-border/20 shrink-0 bg-background">
-          <Button variant="secondary" size="sm" onClick={() => navigate("/dashboard")} className="h-9 gap-2 font-semibold bg-accent hover:bg-accent/80 border border-border/40 shrink-0">
+          <Button variant="secondary" onClick={() => navigate("/dashboard")} className="h-10 gap-2 text-sm font-bold px-5 bg-accent hover:bg-accent/80 border border-border/40 shrink-0">
             <ArrowLeft className="w-4 h-4" /> Dashboard
           </Button>
           <div className="flex-1">

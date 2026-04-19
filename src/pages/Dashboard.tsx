@@ -204,7 +204,7 @@ const Dashboard = () => {
                     </p>
                   )}
                 </div>
-                <Button onClick={() => navigate("/dashboard/studio")} className="gap-2 h-10 text-sm font-bold px-5 shrink-0">
+                <Button onClick={() => navigate("/dashboard/studio")} className="gap-2 h-11 text-sm font-bold px-6 shadow-sm shrink-0">
                   <Plus className="w-4 h-4" /> Create Content
                 </Button>
               </div>
@@ -238,7 +238,7 @@ const Dashboard = () => {
                     <p className="text-sm text-muted-foreground mb-8 max-w-xs leading-relaxed">
                       Generate viral posts for LinkedIn, Instagram, TikTok and more — with AI-powered visuals.
                     </p>
-                    <Button size="lg" onClick={() => navigate("/dashboard/studio")} className="gap-2 font-bold px-8 h-12 text-base">
+                    <Button size="lg" onClick={() => navigate("/dashboard/studio")} className="gap-3 font-bold px-10 h-14 text-lg shadow-md">
                       <Plus className="w-5 h-5" /> Create New Content
                     </Button>
                     <p className="text-xs text-muted-foreground/50 mt-4">Your content will appear here</p>
@@ -255,10 +255,10 @@ const Dashboard = () => {
                       className="rounded-xl border-2 border-dashed border-border/25 hover:border-primary/40 hover:bg-primary/5 transition-colors cursor-pointer flex flex-col items-center justify-center aspect-square p-2 group"
                       onClick={() => navigate("/dashboard/studio")}
                     >
-                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-2 group-hover:bg-primary/20 transition-colors">
-                        <Plus className="w-5 h-5 text-primary" />
+                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-2 group-hover:bg-primary/20 transition-colors">
+                        <Plus className="w-7 h-7 text-primary" />
                       </div>
-                      <p className="text-[10px] font-semibold">New</p>
+                      <p className="text-xs font-bold">New Content</p>
                     </motion.div>
 
                     {/* Session cards */}

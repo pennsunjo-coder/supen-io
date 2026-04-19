@@ -119,7 +119,7 @@ export default function Editor() {
 
       {/* ── HEADER ── */}
       <div className="flex items-center gap-3 px-5 py-4 border-b border-border/20 shrink-0 bg-background z-20">
-        <Button variant="secondary" size="sm" onClick={() => navigate("/dashboard")} className="h-9 gap-2 font-semibold bg-accent hover:bg-accent/80 border border-border/40 shrink-0">
+        <Button variant="secondary" onClick={() => navigate("/dashboard")} className="h-10 gap-2 text-sm font-bold px-5 bg-accent hover:bg-accent/80 border border-border/40 shrink-0">
           <ArrowLeft className="w-4 h-4" /> My Content
         </Button>
         <div className="flex-1 min-w-0">
@@ -229,8 +229,8 @@ export default function Editor() {
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5 font-semibold border-border/50 hover:border-border" onClick={() => downloadInfographic("png")}><Download className="w-3.5 h-3.5" /> PNG</Button>
-                  <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5 font-semibold border-border/50 hover:border-border" onClick={() => downloadInfographic("jpeg")}><Download className="w-3.5 h-3.5" /> JPEG</Button>
+                  <Button size="sm" variant="outline" className="h-10 text-sm gap-2 font-semibold border-border/50 hover:border-border" onClick={() => downloadInfographic("png")}><Download className="w-4 h-4" /> PNG</Button>
+                  <Button size="sm" variant="outline" className="h-10 text-sm gap-2 font-semibold border-border/50 hover:border-border" onClick={() => downloadInfographic("jpeg")}><Download className="w-4 h-4" /> JPEG</Button>
                 </div>
                 <Button size="sm" variant="ghost" className="w-full h-8 text-xs gap-1.5 text-muted-foreground hover:text-foreground border border-dashed border-border/30 hover:border-border/60" onClick={() => setShowModal(true)}>
                   <Sparkles className="w-3 h-3" /> Regenerate
@@ -243,8 +243,8 @@ export default function Editor() {
                 </div>
                 <p className="text-sm font-semibold mb-1">No visual yet</p>
                 <p className="text-xs text-muted-foreground mb-4 leading-relaxed">Turn your best post into a shareable infographic</p>
-                <Button className="gap-2 w-full font-bold text-sm h-11 shadow-sm" onClick={() => setShowModal(true)}>
-                  <Sparkles className="w-4 h-4" /> Generate Visual
+                <Button className="gap-2 w-full font-bold text-base h-12 shadow-sm" onClick={() => setShowModal(true)}>
+                  <Sparkles className="w-5 h-5" /> Generate Visual
                 </Button>
               </div>
             )}
