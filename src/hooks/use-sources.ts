@@ -66,74 +66,106 @@ async function extractTextFromPdf(
   file: File,
   onProgress?: (page: number, total: number) => void,
 ): Promise<{ text: string; pages: number }> {
-  // ── Strategy 1: client-side pdf.js ──
+  const pdfjsLib = await import("pdfjs-dist");
+
+  // Worker URL — try local copy first, CDN fallback
   try {
-    const pdfjsLib = await import("pdfjs-dist");
-
-    // Worker URL — try local copy first, CDN fallback for Safari/compatibility
-    try {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
-    } catch {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
-    }
-
-    const arrayBuffer = await file.arrayBuffer();
-    const loadingTask = pdfjsLib.getDocument({
-      data: new Uint8Array(arrayBuffer),
-      useSystemFonts: true,
-      disableFontFace: true,
-      useWorkerFetch: false,
-      isEvalSupported: false,
-      disableAutoFetch: true,
-      disableStream: true,
-      verbosity: 0,
-    });
-
-    // Timeout for Safari (slower PDF processing)
-    const pdf = await Promise.race([
-      loadingTask.promise,
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("PDF loading timeout — try a smaller file")), 30000),
-      ),
-    ]);
-
-    let fullText = "";
-    for (let i = 1; i <= pdf.numPages; i++) {
-      try {
-        const page = await pdf.getPage(i);
-        const tc = await page.getTextContent({ includeMarkedContent: false });
-        fullText += tc.items
-          .map((item) => ("str" in item ? (item.str as string) : ""))
-          .filter((s) => s.trim().length > 0)
-          .join(" ") + "\n";
-        onProgress?.(i, pdf.numPages);
-      } catch { /* skip page */ }
-    }
-
-    const cleaned = fullText
-      .replace(/[ \t]+/g, " ")
-      .replace(/\n{3,}/g, "\n\n")
-      .trim();
-
-    if (cleaned.length > 20) {
-      return { text: cleaned, pages: pdf.numPages };
-    }
-    // No text extracted — likely a scanned/image PDF
-    throw new Error("No extractable text (PDF may be scanned/image-based)");
-  } catch (clientErr) {
-    const errMsg = clientErr instanceof Error ? clientErr.message : String(clientErr);
-    console.error("[PDF] Extraction failed:", errMsg);
-    if (/password/i.test(errMsg)) {
-      throw new Error("This PDF is password-protected.");
-    }
-    if (/timeout/i.test(errMsg)) {
-      throw new Error("PDF took too long to load. Try a smaller file.");
-    }
-    if (/No extractable|No text/i.test(errMsg)) {
-      throw new Error("No text found. This PDF may be scanned (image-only).");
-    }
-    throw new Error(`Could not read this PDF: ${errMsg}`);
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+  } catch {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
   }
+
+  const arrayBuffer = await file.arrayBuffer();
+  const loadingTask = pdfjsLib.getDocument({
+    data: new Uint8Array(arrayBuffer),
+    useSystemFonts: true,
+    disableFontFace: true,
+    useWorkerFetch: false,
+    isEvalSupported: false,
+    disableAutoFetch: true,
+    disableStream: true,
+    verbosity: 0,
+  });
+
+  const pdf = await Promise.race([
+    loadingTask.promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("PDF loading timeout — try a smaller file")), 30000),
+    ),
+  ]);
+
+  // ── Strategy 1: native text extraction ──
+  let fullText = "";
+  for (let i = 1; i <= pdf.numPages; i++) {
+    try {
+      const page = await pdf.getPage(i);
+      const tc = await page.getTextContent({ includeMarkedContent: false });
+      fullText += tc.items
+        .map((item) => ("str" in item ? (item.str as string) : ""))
+        .filter((s) => s.trim().length > 0)
+        .join(" ") + "\n";
+      onProgress?.(i, pdf.numPages);
+    } catch { /* skip page */ }
+  }
+
+  const cleaned = fullText.replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim();
+
+  if (cleaned.length > 20) {
+    return { text: cleaned, pages: pdf.numPages };
+  }
+
+  // ── Strategy 2: OCR via Claude Vision (scanned PDFs) ──
+  console.log("[PDF] No native text — trying OCR with Claude Vision...");
+  const { anthropic, CLAUDE_MODEL, isAnthropicConfigured } = await import("@/lib/anthropic");
+  if (!isAnthropicConfigured()) {
+    throw new Error("No text found. This PDF appears to be scanned. Configure your API key to enable OCR.");
+  }
+
+  const maxPages = Math.min(pdf.numPages, 5);
+  const pageTexts: string[] = [];
+
+  for (let i = 1; i <= maxPages; i++) {
+    try {
+      const page = await pdf.getPage(i);
+      const viewport = page.getViewport({ scale: 1.5 });
+      const canvas = document.createElement("canvas");
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) continue;
+
+      await page.render({ canvasContext: ctx, viewport }).promise;
+
+      const base64 = canvas.toDataURL("image/jpeg", 0.8).replace("data:image/jpeg;base64,", "");
+
+      const response = await anthropic.messages.create({
+        model: CLAUDE_MODEL,
+        max_tokens: 2000,
+        messages: [{
+          role: "user",
+          content: [
+            { type: "image", source: { type: "base64", media_type: "image/jpeg", data: base64 } },
+            { type: "text", text: "Extract ALL text from this PDF page image. Return only the extracted text, nothing else. Keep the original formatting and structure." },
+          ],
+        }],
+      });
+
+      const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
+      if (text.trim()) pageTexts.push(text.trim());
+      onProgress?.(i, maxPages);
+      console.log(`[PDF] OCR page ${i}/${maxPages}: ${text.length} chars`);
+    } catch (err) {
+      console.warn(`[PDF] OCR failed for page ${i}:`, err);
+      continue;
+    }
+  }
+
+  const ocrText = pageTexts.join("\n\n");
+  if (ocrText.length > 20) {
+    return { text: ocrText, pages: pdf.numPages };
+  }
+
+  throw new Error("Could not extract text from this PDF. Please paste the text manually.");
 }
 
 export interface GroupedSource {
@@ -334,7 +366,7 @@ export function useSources() {
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         console.error("[PDF] Extraction failed:", msg);
-        return { error: msg.includes("password") ? "This PDF is password-protected." : msg.includes("timeout") ? "PDF took too long. Try a smaller file." : msg.includes("No text") || msg.includes("No extractable") ? "No text found. This PDF may be scanned (image-only)." : `PDF error: ${msg}` };
+        return { error: msg };
       }
 
       if (!pdfText || pdfText.length < 10) {
