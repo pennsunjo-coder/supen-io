@@ -174,6 +174,7 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
   const [sourceMode, setSourceMode] = useState<SourceMode>("keyword");
   const [sourceText, setSourceText] = useState("");
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
+  const [sourceDirectives, setSourceDirectives] = useState<Record<string, string>>({});
 
   const [variations, setVariations] = useState<ParsedVariation[]>([]);
   const [selectedVariation, setSelectedVariation] = useState<number | null>(null);
@@ -354,9 +355,23 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
         ? "Here are source documents to transform into content"
         : sourceMode === "idea" ? "Here is an idea to develop" : "Here is a topic / keyword";
 
-      const userMessage = isDocMode
+      // Build directive context from selected sources
+      const directiveLines = selectedDocumentIds
+        .filter((id) => sourceDirectives[id]?.trim())
+        .map((id) => {
+          const src = sources.find((s) => s.id === id);
+          const title = src?.title.replace(/\s*\(\d+\/\d+\)\s*$/, "").trim();
+          return `From "${title}": ${sourceDirectives[id].trim()}`;
+        })
+        .join("\n");
+
+      let userMessage = isDocMode
         ? `${modeLabel}. The selected sources are: ${sanitized}. Generate content based ONLY on these sources.`
         : `${modeLabel}:\n\n${sanitized}`;
+
+      if (directiveLines) {
+        userMessage += `\n\nFOCUS INSTRUCTIONS:\n${directiveLines}\nUse these focus areas to guide the content. Extract specific insights from these topics.`;
+      }
 
       // === Instruction spéciale mode document ===
       const docInstruction = isDocMode
@@ -761,6 +776,17 @@ Respond ONLY with the 5 variations. Nothing before, nothing after.`;
     setGenInfra(false);
   }
 
+  // Deduplicate sources by base title (PDF chunks → 1 entry)
+  const uniqueSources = useMemo(() => {
+    const seen = new Set<string>();
+    return sources.filter((s) => {
+      const base = s.title.replace(/\s*\(\d+\/\d+\)\s*$/, "").trim();
+      if (seen.has(base)) return false;
+      seen.add(base);
+      return true;
+    });
+  }, [sources]);
+
   const breadcrumb = [selectedPlatform?.name, selectedFormat].filter(Boolean).join(" / ");
 
   // Sort platforms: favorites (from onboarding) first
@@ -855,53 +881,51 @@ Respond ONLY with the 5 variations. Nothing before, nothing after.`;
                               <p className="text-[11px] text-muted-foreground/70 mb-2">
                                 Select the documents to use as a base ({selectedDocumentIds.length} selected)
                               </p>
-                              <div className="space-y-1.5 max-h-[240px] overflow-y-auto">
-                                {sources.map((s) => {
+                              <div className="space-y-1.5 max-h-[200px] overflow-y-auto">
+                                {uniqueSources.map((s) => {
                                   const isChecked = selectedDocumentIds.includes(s.id);
                                   const TypeIcon = sourceTypeIcons[s.type] || StickyNote;
-                                  const words = s.content ? s.content.split(/\s+/).length : 0;
+                                  const baseTitle = s.title.replace(/\s*\(\d+\/\d+\)\s*$/, "").trim();
                                   return (
-                                    <button
-                                      key={s.id}
-                                      type="button"
-                                      onClick={() => toggleDocumentId(s.id)}
-                                      className={cn(
-                                        "w-full flex items-center gap-2.5 p-2.5 rounded-lg border text-left transition-all",
-                                        isChecked
-                                          ? "border-primary/40 bg-primary/5"
-                                          : "border-border/20 hover:border-border/40 hover:bg-accent/20",
-                                      )}
-                                    >
-                                      {/* Checkbox */}
-                                      <div className={cn(
-                                        "w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors",
-                                        isChecked ? "bg-primary border-primary" : "border-border/40",
-                                      )}>
+                                    <button key={s.id} type="button" onClick={() => toggleDocumentId(s.id)} className={cn("w-full flex items-center gap-2.5 p-2.5 rounded-lg border text-left transition-all", isChecked ? "border-primary/40 bg-primary/5" : "border-border/20 hover:border-border/40 hover:bg-accent/20")}>
+                                      <div className={cn("w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors", isChecked ? "bg-primary border-primary" : "border-border/40")}>
                                         {isChecked && <Check className="w-2.5 h-2.5 text-primary-foreground" />}
                                       </div>
-                                      {/* Icon */}
-                                      <div className={cn(
-                                        "w-6 h-6 rounded-md flex items-center justify-center shrink-0",
-                                        isChecked ? "bg-primary/15 text-primary" : "bg-accent/50 text-muted-foreground",
-                                      )}>
+                                      <div className={cn("w-6 h-6 rounded-md flex items-center justify-center shrink-0", isChecked ? "bg-primary/15 text-primary" : "bg-accent/50 text-muted-foreground")}>
                                         <TypeIcon className="w-3 h-3" />
                                       </div>
-                                      {/* Info */}
                                       <div className="flex-1 min-w-0">
-                                        <p className={cn("text-xs truncate", isChecked ? "text-foreground font-medium" : "text-muted-foreground")}>{s.title}</p>
-                                        <p className="text-[10px] text-muted-foreground/50">
-                                          {s.type === "url" ? "Link" : s.type === "pdf" ? "PDF" : "Note"}
-                                          {words > 0 && ` · ${words} words`}
-                                        </p>
+                                        <p className={cn("text-xs truncate", isChecked ? "text-foreground font-medium" : "text-muted-foreground")}>{baseTitle}</p>
+                                        <p className="text-[10px] text-muted-foreground/50">{s.type === "url" ? "Link" : s.type === "pdf" ? "PDF" : "Note"}</p>
                                       </div>
                                     </button>
                                   );
                                 })}
                               </div>
+
+                              {/* Directive fields for selected sources */}
                               {selectedDocumentIds.length > 0 && (
-                                <p className="text-[10px] text-primary/70 mt-2">
-                                  AI will generate content based on these {selectedDocumentIds.length} document{selectedDocumentIds.length > 1 ? "s" : ""}
-                                </p>
+                                <div className="mt-3 space-y-2">
+                                  {selectedDocumentIds.map((id) => {
+                                    const src = sources.find((s) => s.id === id);
+                                    if (!src) return null;
+                                    const title = src.title.replace(/\s*\(\d+\/\d+\)\s*$/, "").trim();
+                                    return (
+                                      <div key={id} className="p-2.5 rounded-lg bg-accent/20 border border-border/20">
+                                        <div className="flex items-center gap-1.5 mb-1.5">
+                                          <FileText className="w-3 h-3 text-primary/60" />
+                                          <span className="text-[10px] font-medium truncate">{title}</span>
+                                        </div>
+                                        <textarea
+                                          value={sourceDirectives[id] || ""}
+                                          onChange={(e) => setSourceDirectives((prev) => ({ ...prev, [id]: e.target.value }))}
+                                          placeholder={`What to focus on? (optional)\ne.g. key stats, chapter 3, growth tips...`}
+                                          className="w-full text-[11px] rounded-md border border-border/20 bg-background/60 p-2 resize-none h-14 placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/30 leading-relaxed"
+                                        />
+                                      </div>
+                                    );
+                                  })}
+                                </div>
                               )}
                             </>
                           )}
