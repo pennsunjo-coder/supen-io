@@ -67,63 +67,59 @@ async function extractTextFromPdf(
   onProgress?: (page: number, total: number) => void,
 ): Promise<{ text: string; pages: number }> {
 
-  console.log("[PDF] Reading:", file.name, `${(file.size / 1024).toFixed(0)}KB`);
+  console.log("=== PDF EXTRACT v2 ===", file.name, file.size, file.type);
 
-  const buffer = await file.arrayBuffer();
-  const raw = new TextDecoder("latin1").decode(new Uint8Array(buffer));
-  const texts: string[] = [];
-
-  // Extract text from PDF parenthesis operators: (Hello World) Tj
-  const parenRegex = /\(([^\\)]{2,200})\)/g;
-  let match;
-  while ((match = parenRegex.exec(raw)) !== null) {
-    const t = match[1]
-      .replace(/\\n/g, " ").replace(/\\r/g, " ").replace(/\\t/g, " ")
-      .replace(/\\\(/g, "(").replace(/\\\)/g, ")").replace(/\\\\/g, "\\")
-      .replace(/\\[0-7]{3}/g, " ").trim();
-    if (t.length > 2 && /[a-zA-ZÀ-ÿ]/.test(t)) texts.push(t);
-  }
-
-  // Extract from TJ arrays: [(text) -100 (more)] TJ
-  const tjRegex = /\[((?:\([^)]*\)|[^\]])*)\]\s*TJ/g;
-  while ((match = tjRegex.exec(raw)) !== null) {
-    const parts: string[] = [];
-    const inner = /\(([^)]{1,200})\)/g;
-    let m;
-    while ((m = inner.exec(match[1])) !== null) {
-      if (m[1].trim()) parts.push(m[1].trim());
-    }
-    if (parts.length) texts.push(parts.join(""));
-  }
-
-  let fullText = texts.join(" ").replace(/\s+/g, " ").trim();
-  const alphaCount = (fullText.match(/[a-zA-ZÀ-ÿ\s]/g) || []).length;
-  const ratio = alphaCount / Math.max(fullText.length, 1);
-
-  console.log("[PDF] Client extracted:", fullText.length, "chars, readable:", (ratio * 100).toFixed(0) + "%");
-
-  // If client extraction got good text, use it
-  if (fullText.length > 100 && ratio > 0.5) {
-    console.log("[PDF] Client OK. Preview:", fullText.slice(0, 150));
-    onProgress?.(1, 1);
-    return { text: fullText.slice(0, 20000), pages: 1 };
-  }
-
-  // Fallback: Edge Function (Claude Vision server-side)
-  console.log("[PDF] Client insufficient — trying Edge Function...");
+  // Strategy 1: Edge Function (Claude Vision server-side, most reliable)
   try {
+    console.log("[PDF] S1: Edge Function...");
     const formData = new FormData();
     formData.append("file", file);
     const { data, error } = await supabase.functions.invoke("extract-pdf", { body: formData });
+    console.log("[PDF] S1 result:", { error: error?.message, hasText: !!data?.text, len: data?.text?.length });
 
-    if (!error && data?.text && data.text.length > 50) {
-      console.log("[PDF] Edge Function OK:", data.text.length, "chars");
+    if (!error && data?.text && data.text.length > 30) {
+      console.log("[PDF] S1 OK:", data.text.slice(0, 200));
       onProgress?.(1, 1);
       return { text: data.text, pages: data.pages || 1 };
     }
-    if (error) console.warn("[PDF] Edge Function error:", error.message);
   } catch (e) {
-    console.warn("[PDF] Edge Function unavailable:", e);
+    console.warn("[PDF] S1 failed:", e);
+  }
+
+  // Strategy 2: Client-side PDF text parsing (no deps)
+  try {
+    console.log("[PDF] S2: Client latin1 parsing...");
+    const buffer = await file.arrayBuffer();
+    const raw = new TextDecoder("latin1").decode(new Uint8Array(buffer));
+    const texts: string[] = [];
+
+    const parenRegex = /\(([^\\)]{2,200})\)/g;
+    let match;
+    while ((match = parenRegex.exec(raw)) !== null) {
+      const t = match[1].replace(/\\n/g, " ").replace(/\\r/g, " ").replace(/\\\(/g, "(").replace(/\\\)/g, ")").replace(/\\\\/g, "\\").replace(/\\[0-7]{3}/g, " ").trim();
+      if (t.length > 2 && /[a-zA-ZÀ-ÿ]/.test(t)) texts.push(t);
+    }
+
+    const tjRegex = /\[((?:\([^)]*\)|[^\]])*)\]\s*TJ/g;
+    while ((match = tjRegex.exec(raw)) !== null) {
+      const parts: string[] = [];
+      const inner = /\(([^)]{1,200})\)/g;
+      let m;
+      while ((m = inner.exec(match[1])) !== null) if (m[1].trim()) parts.push(m[1].trim());
+      if (parts.length) texts.push(parts.join(""));
+    }
+
+    const fullText = texts.join(" ").replace(/\s+/g, " ").trim();
+    const ratio = (fullText.match(/[a-zA-ZÀ-ÿ\s]/g) || []).length / Math.max(fullText.length, 1);
+    console.log("[PDF] S2:", fullText.length, "chars, ratio:", ratio.toFixed(2));
+
+    if (fullText.length > 100 && ratio > 0.4) {
+      console.log("[PDF] S2 OK:", fullText.slice(0, 200));
+      onProgress?.(1, 1);
+      return { text: fullText.slice(0, 20000), pages: 1 };
+    }
+  } catch (e) {
+    console.warn("[PDF] S2 failed:", e);
   }
 
   throw new Error("Could not extract text. Please paste the content manually.");
@@ -312,38 +308,28 @@ export function useSources() {
 
   const addPdf = useCallback(
     async (file: File): Promise<{ error: string | null; insertedIds?: string[] }> => {
-      if (!user) return { error: "Not connected" };
-
-      if (file.size > 10 * 1024 * 1024) {
-        return { error: "File must not exceed 10 MB." };
-      }
+      console.log("=== addPdf START ===", file?.name, file?.size);
+      if (!user) { console.error("[addPdf] No user"); return { error: "Not authenticated" }; }
+      if (file.size > 10 * 1024 * 1024) return { error: "File must not exceed 10 MB." };
 
       // 1. Extract text
       let pdfText: string;
       try {
-        console.log("[addPdf] START:", file.name, `${(file.size / 1024).toFixed(0)}KB`, file.type);
-        const result = await extractTextFromPdf(file);
+        console.log("[addPdf] Calling extractTextFromPdf...");
+        const result = await extractTextFromPdf(file, (p, t) => console.log(`[addPdf] Progress: ${p}/${t}`));
         pdfText = result.text;
-        console.log("[addPdf] Extracted:", pdfText.length, "chars");
+        console.log("[addPdf] Got text:", pdfText.length, "chars");
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
-        console.error("[addPdf] Extraction error:", msg);
+        console.error("[addPdf] Extract failed:", msg);
         return { error: msg };
       }
 
-      if (!pdfText || pdfText.length < 10) {
-        return { error: "No extractable text in this PDF." };
-      }
+      if (!pdfText || pdfText.length < 10) return { error: "No extractable text in this PDF." };
 
-      // 2. Upload to Storage (fire-and-forget — don't block on this)
+      // 2. Storage upload (fire-and-forget)
       const filePath = `${user.id}/${Date.now()}_${file.name}`;
-      supabase.storage
-        .from("sources")
-        .upload(filePath, file, { contentType: "application/pdf" })
-        .then((res) => {
-          if (res.error && IS_DEV) console.warn("Storage upload failed:", res.error.message);
-        })
-        .catch(() => { /* storage not configured — continue */ });
+      supabase.storage.from("sources").upload(filePath, file, { contentType: "application/pdf" }).catch(() => {});
 
       // 3. Split into chunks and insert
       const title = file.name.replace(/\.pdf$/i, "");
