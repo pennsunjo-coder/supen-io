@@ -318,17 +318,16 @@ export function useSources() {
         return { error: "File must not exceed 10 MB." };
       }
 
-      // 1. Extract text client-side with pdf.js
+      // 1. Extract text
       let pdfText: string;
       try {
-        if (IS_DEV) console.log("[PDF] Upload started:", file.name, `${(file.size / 1024).toFixed(0)}KB`, file.type);
-        if (IS_DEV) console.log("[PDF] Step 1: extracting text...");
+        console.log("[addPdf] START:", file.name, `${(file.size / 1024).toFixed(0)}KB`, file.type);
         const result = await extractTextFromPdf(file);
         pdfText = result.text;
-        if (IS_DEV) console.log("[PDF] Step 1 OK:", result.pages, "pages,", pdfText.length, "chars");
+        console.log("[addPdf] Extracted:", pdfText.length, "chars");
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
-        console.error("[PDF] Extraction failed:", msg);
+        console.error("[addPdf] Extraction error:", msg);
         return { error: msg };
       }
 
