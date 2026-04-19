@@ -114,9 +114,9 @@ export default function Stats() {
               <div className="animate-spin w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full" />
             </div>
           ) : stats && (
-            <div className="h-full flex flex-col gap-6">
-              {/* Stat cards — full width */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+            <div className="h-full flex flex-col gap-6 items-center">
+              {/* Stat cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-4xl mx-auto w-full">
                 {statCards.map((card, i) => (
                   <motion.div key={card.label} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }} className={cn("rounded-2xl border p-4 flex flex-col", card.border, card.bg)}>
                     <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center mb-3", card.bg)}>
@@ -129,7 +129,7 @@ export default function Stats() {
               </div>
 
               {/* Charts side by side */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1 min-h-0">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto w-full">
                 {/* Activity */}
                 <div className="rounded-2xl border border-border/20 p-5 bg-accent/[0.02] flex flex-col">
                   <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/50 mb-5">Activity — Last 7 Days</h2>
@@ -180,7 +180,7 @@ export default function Stats() {
               </div>
 
               {/* CTA */}
-              <div className="rounded-2xl border border-border/20 p-6 bg-gradient-to-r from-primary/5 to-primary/10 flex items-center justify-between">
+              <div className="rounded-2xl border border-border/20 p-6 bg-gradient-to-r from-primary/5 to-primary/10 flex items-center justify-between max-w-4xl mx-auto w-full">
                 <div>
                   <p className="font-bold text-base mb-1">Keep the momentum going</p>
                   <p className="text-sm text-muted-foreground">You've generated {stats.totalContent} posts. Create more to grow faster.</p>
