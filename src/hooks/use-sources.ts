@@ -84,11 +84,20 @@ async function extractTextFromPdf(
   console.log("[PDF] File:", file.name, `${(file.size / 1024).toFixed(0)}KB`, "base64:", base64.length);
 
   try {
+    const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
+    console.log("[PDF] Calling Claude API...");
+    console.log("[PDF] API key present:", !!apiKey, "length:", apiKey?.length || 0);
+    console.log("[PDF] Base64 length:", base64.length);
+
+    if (!apiKey) {
+      throw new Error("VITE_ANTHROPIC_API_KEY is not configured");
+    }
+
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": import.meta.env.VITE_ANTHROPIC_API_KEY,
+        "x-api-key": apiKey,
         "anthropic-version": "2023-06-01",
         "anthropic-beta": "pdfs-2024-09-25",
       },
@@ -105,12 +114,12 @@ async function extractTextFromPdf(
       }),
     });
 
-    console.log("[PDF] Claude response:", response.status);
+    console.log("[PDF] Claude response status:", response.status);
 
     if (!response.ok) {
-      const err = await response.text().catch(() => "");
-      console.error("[PDF] Claude error:", err);
-      throw new Error(`Claude API error (${response.status})`);
+      const errBody = await response.text().catch(() => "unknown");
+      console.error("[PDF] Claude API error:", response.status, errBody);
+      throw new Error(`Claude API ${response.status}: ${errBody.slice(0, 200)}`);
     }
 
     const data = await response.json();
