@@ -122,29 +122,17 @@ async function extractTextFromPdf(
     throw new Error("No extractable text (PDF may be scanned/image-based)");
   } catch (clientErr) {
     const errMsg = clientErr instanceof Error ? clientErr.message : String(clientErr);
-    if (IS_DEV) console.warn("[PDF] Client-side extraction failed:", errMsg, clientErr);
-    // If the error is a password-protected PDF, surface it immediately
+    console.error("[PDF] Extraction failed:", errMsg);
     if (/password/i.test(errMsg)) {
       throw new Error("This PDF is password-protected.");
     }
-  }
-
-  // ── Strategy 2: Edge Function fallback ──
-  try {
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const { data, error } = await supabase.functions.invoke("extract-pdf", {
-      body: formData,
-    });
-
-    if (error) throw new Error(error.message || "Edge Function failed");
-    if (!data?.text) throw new Error("No text extracted by the server");
-
-    return { text: data.text, pages: data.pages || 0 };
-  } catch (serverErr) {
-    const msg = serverErr instanceof Error ? serverErr.message : "Unknown error";
-    throw new Error(`PDF extraction failed. ${msg}. If this is a scanned PDF, try OCR first.`);
+    if (/timeout/i.test(errMsg)) {
+      throw new Error("PDF took too long to load. Try a smaller file.");
+    }
+    if (/No extractable|No text/i.test(errMsg)) {
+      throw new Error("No text found. This PDF may be scanned (image-only).");
+    }
+    throw new Error(`Could not read this PDF: ${errMsg}`);
   }
 }
 
