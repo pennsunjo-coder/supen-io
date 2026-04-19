@@ -292,7 +292,7 @@ export function useSources() {
   );
 
   const addPdf = useCallback(
-    async (file: File): Promise<{ error: string | null }> => {
+    async (file: File): Promise<{ error: string | null; insertedIds?: string[] }> => {
       if (!user) return { error: "Not connected" };
 
       if (file.size > 10 * 1024 * 1024) {
@@ -378,7 +378,8 @@ export function useSources() {
         }
 
         invalidateCache(`sources:${user.id}`);
-        return { error: null };
+        const ids = inserted ? (inserted as Source[]).map((s) => s.id) : [];
+        return { error: null, insertedIds: ids };
       } catch (err) {
         setSources((prev) => prev.filter((s) => !tempSources.some((t) => t.id === s.id)));
         return { error: err instanceof Error ? err.message : "Insert failed" };

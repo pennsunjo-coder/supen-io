@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import OnboardingTour from "@/components/OnboardingTour";
 
 function timeAgo(date: string): string {
   const diff = Date.now() - new Date(date).getTime();
@@ -171,7 +172,7 @@ const Dashboard = () => {
         <div className="flex-1 flex overflow-hidden min-h-0">
 
           {/* LEFT — SOURCES */}
-          <div className={cn(
+          <div data-tour="sources" className={cn(
             "shrink-0 border-r border-border/20 bg-accent/[0.02] md:w-auto md:flex md:flex-col",
             mobileTab === "sources" ? "flex flex-col w-full" : "hidden md:flex",
           )}>
@@ -182,7 +183,17 @@ const Dashboard = () => {
               onToggleGroup={handleToggleGroup}
               onAddUrl={addUrl}
               onAddNote={addNote}
-              onAddPdf={addPdf}
+              onAddPdf={async (file) => {
+                const result = await addPdf(file);
+                if (!result.error && result.insertedIds?.length) {
+                  setActiveSourceIds((prev) => {
+                    const next = new Set(prev);
+                    result.insertedIds!.forEach((id) => next.add(id));
+                    return next;
+                  });
+                }
+                return result;
+              }}
               onSearchWeb={searchWeb}
               onRemoveGroup={removeGrouped}
             />
@@ -204,7 +215,7 @@ const Dashboard = () => {
                     </p>
                   )}
                 </div>
-                <Button onClick={() => navigate("/dashboard/studio")} className="gap-2 h-11 text-sm font-bold px-6 shadow-sm shrink-0">
+                <Button data-tour="create-btn" onClick={() => navigate("/dashboard/studio")} className="gap-2 h-11 text-sm font-bold px-6 shadow-sm shrink-0">
                   <Plus className="w-5 h-5" /> Create Content
                 </Button>
               </div>
@@ -331,7 +342,7 @@ const Dashboard = () => {
           </div>
 
           {/* RIGHT — COACH */}
-          <div className={cn(
+          <div data-tour="coach" className={cn(
             "shrink-0 border-l border-border/20 bg-accent/[0.02] lg:w-[300px] lg:flex lg:flex-col",
             mobileTab === "coach" ? "flex flex-col w-full" : "hidden lg:flex",
           )}>
@@ -348,6 +359,8 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+      <OnboardingTour />
+
       {/* DELETE CONFIRMATION MODAL */}
       <AnimatePresence>
         {deletingId && (
