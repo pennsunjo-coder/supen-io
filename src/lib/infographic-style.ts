@@ -332,10 +332,7 @@ Badge: ${extraction.badge}
 ${pointsList}
 Pro tip: ${extraction.proTip}
 
-FOOTER (bottom 7%):
-- Separator: 0.5px #cccccc
-- Text: "Follow @creator for more | Repost ↻" — Nunito Bold 20-22px
-- Creator name: blue #2B4DAF bold underlined`;
+NO FOOTER — no signature, no branding, no "follow" text.`;
 
     case "UI_CARDS":
       return `Generate a 3-TIER COMPARISON infographic at ${dimStr}px.
@@ -356,7 +353,7 @@ Key terms: yellow #E8F044 background inline highlight
 CONTENT:
 ${pointsList}
 
-FOOTER: "Follow @creator for more | Repost ↻" — Nunito Bold, #333333`;
+NO footer, NO signature, NO watermark. The infographic ends after the last content card.`;
 
     case "FUNNEL":
       return `Generate a FUNNEL / PROCESS FLOW infographic at ${dimStr}px.
@@ -382,7 +379,7 @@ STAGES TO RENDER:
 ${pointsList}
 Pro tip: ${extraction.proTip}
 
-FOOTER: "Follow @creator for more | Repost ↻" — Nunito Bold`;
+NO footer, NO signature, NO branding. End after the last content point.`;
 
     case "DATA_GRID":
       return `Generate a DATA TABLE infographic at ${dimStr}px.
@@ -409,7 +406,7 @@ CONTENT:
 ${pointsList}
 Pro tip: ${extraction.proTip}
 
-FOOTER: "Follow @creator for more | Repost ↻"`;
+NO footer, NO "follow" text, NO branding.`;
 
     default: // AWA_CLASSIC
       return `Generate a DENSE GUIDE SKETCHBOARD infographic at ${dimStr}px.
@@ -439,10 +436,7 @@ SECTIONS TO RENDER:
 ${pointsList}
 Pro tip: ${extraction.proTip}
 
-FOOTER:
-- Dark band #1a1a1a, height 48-56px
-- Text: "Follow @creator for more" white Nunito Bold 16-18px
-- Creator: light blue #93c5fd. "Repost ↻": light green #86efac`;
+NO FOOTER — do not add any dark band, signature, or "follow" text at the bottom.`;
   }
 }
 
@@ -479,7 +473,7 @@ MANDATORY AESTHETIC RULES — NO EXCEPTIONS
 5. NO gradients. NO dark cards. NO corporate slide aesthetic.
 6. Dense information — every section packed with useful content
 7. Each section header has colored underline in accent color
-8. Footer ALWAYS: "Follow @supen for more | Repost ↺" Nunito Bold centered
+8. NO footer, NO signature, NO watermark, NO "follow for more" text
 9. ALL CSS MUST BE INLINE (style="...") — NEVER use CSS classes
    This is critical for PNG export with html2canvas
 
@@ -536,14 +530,14 @@ DIMENSIONS : ${dimStr}px
 
 ${templatePrompt}
 
-CONTENU À INTÉGRER :
-Titre : ${extraction.title}
-Badge : ${extraction.badge}
+CONTENT TO INCLUDE:
+Title: ${extraction.title}
+Badge: ${extraction.badge}
 ${extraction.points.map((p, i) => `P${i+1}_TITLE: ${p.title}\nP${i+1}_BODY: ${p.body}`).join('\n')}
-Pro tip : ${extraction.proTip}
-Footer : Created with Supen.io
+Pro tip: ${extraction.proTip}
+NO footer or branding text.
 
-${customInstructions ? `Instructions supplémentaires : ${customInstructions}` : ""}
+${customInstructions ? `Additional instructions: ${customInstructions}` : ""}
 
 TYPOGRAPHY RULES — MANDATORY:
 - Title: Nunito font-weight 900, font-size minimum 44px
@@ -627,7 +621,7 @@ ${points}
 
 PRO TIP: ${extraction.proTip}
 
-FOOTER: "Created with Supen.io | Follow for more"
+NO FOOTER — no branding, no "follow for more", no watermark.
 
 VISUAL REQUIREMENTS:
 - Title ultra-bold, dominant, with [square brackets] around it
@@ -656,7 +650,7 @@ Each word of the title in a different color (green, red, blue).
 MAIN CONTENT (as notebook entries):
 ${points}
 
-FOOTER: "Follow for more | Repost ↺" with curved arrows flanking text.
+NO FOOTER — no "follow" text, no arrows, no branding.
 
 VISUAL REQUIREMENTS:
 - Spiral binding must look realistic and 3D
@@ -691,7 +685,7 @@ SIDE ELEMENTS:
 - 6-8 gold sparkle stars ✦ scattered around
 - Simple cartoon character on right side pointing at funnel
 
-FOOTER: Discreet, gray, italic.
+NO FOOTER — no branding, no signature.
 
 VISUAL REQUIREMENTS:
 - Warm, human, approachable feel
@@ -785,7 +779,9 @@ VISUAL REQUIREMENTS:
 - Warm, academic, authoritative feel`;
   }
 
-  return stylePrompt + (customPrompt ? `\n\nADDITIONAL: ${customPrompt}` : "");
+  const englishRule = `\n\nLANGUAGE: ALL text in the infographic MUST be in ENGLISH. Never use French or any other language. Titles, body text, labels, badges — everything in English.\n\nNO FOOTER: Do NOT add any footer, signature, watermark, or "follow for more" text. No branding. The infographic ends with the last content point.`;
+
+  return stylePrompt + englishRule + (customPrompt ? `\n\nADDITIONAL: ${customPrompt}` : "");
 }
 
 // Retry prompt (used on first failure) — adds corrections to the original prompt
