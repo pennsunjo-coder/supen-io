@@ -126,18 +126,40 @@ function stripMarkdown(text: string): string {
 }
 
 function parseVariations(raw: string): ParsedVariation[] {
-  // Split by the requested separator
-  let parts = raw.split(/---VARIATION---/).map((s) => s.trim()).filter((s) => s.length > 20);
+  let parts: string[] = [];
 
-  // Fallback: split by numbering if the model doesn't use the separator
-  if (parts.length < 2) {
-    parts = raw.split(/\n\s*(?=\d\.\s)/).map((v) => v.replace(/^\d\.\s*/, "").trim()).filter((v) => v.length > 20);
+  // Method 1: [VARIATION_N_START] ... [VARIATION_N_END]
+  const tagged = raw.match(/\[VARIATION_\d+_START\]([\s\S]*?)\[VARIATION_\d+_END\]/g);
+  if (tagged && tagged.length >= 3) {
+    parts = tagged.map((b) => b.replace(/\[VARIATION_\d+_START\]/, "").replace(/\[VARIATION_\d+_END\]/, "").trim()).filter((v) => v.length > 30);
+    if (parts.length >= 3) console.log("[Parser] Tagged format:", parts.length, "variations");
   }
 
-  // Ultimate fallback: everything as a single variation
-  if (parts.length === 0) parts = [raw.trim()];
+  // Method 2: ---VARIATION---
+  if (parts.length < 2) {
+    parts = raw.split(/---VARIATION---/).map((s) => s.trim()).filter((s) => s.length > 30);
+    if (parts.length >= 2) console.log("[Parser] Dash format:", parts.length, "variations");
+  }
 
-  return parts.map((content, idx) => ({
+  // Method 3: Numbered (1. 2. 3.)
+  if (parts.length < 2) {
+    parts = raw.split(/\n\s*(?=\d\.\s)/).map((v) => v.replace(/^\d\.\s*/, "").trim()).filter((v) => v.length > 30);
+    if (parts.length >= 2) console.log("[Parser] Numbered format:", parts.length, "variations");
+  }
+
+  // Method 4: Triple newline blocks
+  if (parts.length < 2) {
+    parts = raw.split(/\n\n\n+/).map((v) => v.trim()).filter((v) => v.length > 50);
+    if (parts.length >= 2) console.log("[Parser] Newline format:", parts.length, "variations");
+  }
+
+  // Fallback: single variation
+  if (parts.length === 0) {
+    console.warn("[Parser] Could not split — returning as single variation");
+    parts = [raw.trim()];
+  }
+
+  return parts.slice(0, 5).map((content, idx) => ({
     angle: ANGLE_LABELS[idx % ANGLE_LABELS.length],
     content: stripMarkdown(content),
     words: wordCount(stripMarkdown(content)),
@@ -455,8 +477,29 @@ BANNED WORDS: delve, pivotal, tapestry, leverage, optimize, synergy, game-change
 BANNED: "In today's...", "At its core", "Game changer", "In conclusion", "Here's the thing", "Deep dive", "Embark on a journey", any hedge-heavy prose
 
 OUTPUT FORMAT (STRICT):
-Generate exactly 5 DISTINCT variations, separated by ---VARIATION--- on its own line.
-Respond ONLY with the 5 variations. Nothing before, nothing after.`;
+Generate exactly 5 DISTINCT variations using this EXACT format:
+
+[VARIATION_1_START]
+(complete post text)
+[VARIATION_1_END]
+
+[VARIATION_2_START]
+(complete post text)
+[VARIATION_2_END]
+
+[VARIATION_3_START]
+(complete post text)
+[VARIATION_3_END]
+
+[VARIATION_4_START]
+(complete post text)
+[VARIATION_4_END]
+
+[VARIATION_5_START]
+(complete post text)
+[VARIATION_5_END]
+
+Each variation must be COMPLETE. Never cut short.`;
 
       assertOnline();
       if (!isAnthropicConfigured()) {
@@ -469,7 +512,7 @@ Respond ONLY with the 5 variations. Nothing before, nothing after.`;
       const response = await withTimeout(
         anthropic.messages.create({
           model: FAST_MODEL,
-          max_tokens: 2000,
+          max_tokens: 4000,
           system: systemPrompt,
           messages: [{ role: "user", content: userMessage }],
         }),
@@ -479,7 +522,11 @@ Respond ONLY with the 5 variations. Nothing before, nothing after.`;
 
       setError(null);
       const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
+      console.log("[Gen] Raw response:", text.length, "chars");
+      console.log("[Gen] Preview:", text.slice(0, 300));
       const parsed = parseVariations(text);
+      console.log("[Gen] Parsed:", parsed.length, "variations");
+      parsed.forEach((v, i) => console.log(`[Gen] V${i + 1} (${v.words}w):`, v.content.slice(0, 80)));
       setVariations(parsed);
 
       if (parsed.length > 0 && onContentGenerated) {
