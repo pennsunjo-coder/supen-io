@@ -341,6 +341,12 @@ export default function InfographicModal({ open, onClose, content, platform, con
 
       const geminiPrompt = buildGeminiImagePrompt(content, platform, customPrompt || undefined, forcedTemplate);
 
+      if (IS_DEV) {
+        console.log("=== GEMINI PROMPT ===");
+        console.log(geminiPrompt.slice(0, 500));
+        console.log("=== END PROMPT ===");
+      }
+
       // Attempt 1: standard prompt
       if (IS_DEV) console.log("[InfographicModal] Attempt 1 — generating with Gemini...");
       let base64: string | null = null;

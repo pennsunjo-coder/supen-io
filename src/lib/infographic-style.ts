@@ -779,9 +779,19 @@ VISUAL REQUIREMENTS:
 - Warm, academic, authoritative feel`;
   }
 
-  const englishRule = `\n\nLANGUAGE: ALL text in the infographic MUST be in ENGLISH. Never use French or any other language. Titles, body text, labels, badges — everything in English.\n\nNO FOOTER: Do NOT add any footer, signature, watermark, or "follow for more" text. No branding. The infographic ends with the last content point.`;
+  const rules = `
 
-  return stylePrompt + englishRule + (customPrompt ? `\n\nADDITIONAL: ${customPrompt}` : "");
+ABSOLUTE RULES — NO EXCEPTIONS:
+
+LANGUAGE: ALL text MUST be in ENGLISH. Never use French or any other language. Every title, label, badge, body text — English only.
+
+NO FOOTER: Do NOT add any footer, signature, watermark, "follow for more", or branding text. The infographic ends with the last content point.
+
+TEXT BOUNDARIES: All text must be fully readable — never cut off at edges. Leave 40px margin on all sides. Font size minimum 16px for body, 28px for titles. No text overflow, no text outside boundaries.
+
+READABILITY: High contrast between text and background. Clean typography with clear visual hierarchy. No overlapping text. Every element must be clearly legible.`;
+
+  return stylePrompt + rules + (customPrompt ? `\n\nADDITIONAL: ${customPrompt}` : "");
 }
 
 // Retry prompt (used on first failure) — adds corrections to the original prompt
@@ -791,12 +801,14 @@ export function buildGeminiRetryPrompt(
 ): string {
   return `${originalPrompt}
 
-CORRECTIONS for attempt ${attemptNumber}:
-- Make the title MUCH bolder (thick marker-pen strokes)
-- Fill the canvas completely (90%+, no empty space at bottom)
-- Add more hand-drawn arrows, icons, and decorative elements
-- Ensure every text is readable and not cut off
-- Use only the exact colors specified (blue #2563EB, red #C0392B, yellow highlights)
+CORRECTIONS FOR ATTEMPT ${attemptNumber}:
+1. LANGUAGE: Verify ALL text is in ENGLISH. Replace any French text with English.
+2. TEXT BOUNDARIES: Ensure NO text is cut off. All text fully visible within canvas. 40px margins.
+3. NO FOOTER: Remove any "follow for more", "created by", or signature text.
+4. READABILITY: Increase font sizes if text was too small. Minimum 16px body, 28px titles.
+5. CONTENT: Use ONLY the exact title and points provided. Do not invent new ones.
+6. DENSITY: Fill 90%+ of canvas with content. No empty space at bottom.
+7. QUALITY: Bold title with thick strokes. Readable colors. Clear hierarchy.
 
 Generate the complete image now.`;
 }
