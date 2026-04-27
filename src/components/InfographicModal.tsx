@@ -118,7 +118,7 @@ interface Props {
 
 type ResultMode = "claude" | "openai" | null;
 type Step = "ready" | "generating" | "result";
-type StyleChoice = "auto" | "AWA_CLASSIC" | "UI_CARDS" | "WHITEBOARD" | "FUNNEL" | "DATA_GRID";
+type StyleChoice = "auto" | "AWA_CLASSIC" | "UI_CARDS" | "WHITEBOARD" | "FUNNEL" | "DATA_GRID" | "PROCESS_STEPS" | "COMMAND_CENTER" | "ICON_GRID" | "EDITORIAL_LIST" | "CTA_VISUAL";
 
 // Tiny inline SVG previews — schematic mini-mockups (60×40 viewBox).
 const STYLE_PREVIEWS: Record<StyleChoice, JSX.Element> = {
@@ -127,11 +127,11 @@ const STYLE_PREVIEWS: Record<StyleChoice, JSX.Element> = {
       <rect x="2" y="2" width="56" height="36" rx="4" fill="url(#auto-grad)" />
       <defs>
         <linearGradient id="auto-grad" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#24A89B" stopOpacity="0.2" />
+          <stop offset="0%" stopColor="#FF7A59" stopOpacity="0.2" />
           <stop offset="100%" stopColor="#6366F1" stopOpacity="0.2" />
         </linearGradient>
       </defs>
-      <path d="M30 12 L32 18 L38 18 L33 22 L35 28 L30 24 L25 28 L27 22 L22 18 L28 18 Z" fill="#24A89B" />
+      <path d="M30 12 L32 18 L38 18 L33 22 L35 28 L30 24 L25 28 L27 22 L22 18 L28 18 Z" fill="#FF7A59" />
     </svg>
   ),
   AWA_CLASSIC: (
@@ -148,94 +148,148 @@ const STYLE_PREVIEWS: Record<StyleChoice, JSX.Element> = {
   UI_CARDS: (
     <svg viewBox="0 0 60 40" className="w-full h-full">
       <rect x="0" y="0" width="60" height="40" fill="#FFFFFF" />
-      {/* Header (20%) */}
       <rect x="6" y="2.5" width="34" height="3" rx="0.4" fill="#1F2937" />
       <rect x="42" y="2.7" width="12" height="2.5" rx="1" fill="#EBF5FB" />
-      {/* Body — 3 cards (70%) */}
       <rect x="4" y="9.5" width="52" height="7" rx="1.5" fill="#FFB3B3" />
       <rect x="4" y="18.5" width="52" height="7" rx="1.5" fill="#FFD4A3" />
       <rect x="4" y="27.5" width="52" height="7" rx="1.5" fill="#B3FFD1" />
-      {/* Footer (10%) */}
       <rect x="0" y="36" width="60" height="4" fill="#F8F9FA" />
-      <line x1="0" y1="36" x2="60" y2="36" stroke="#E5E7EB" strokeWidth="0.4" />
-      <rect x="22" y="37.5" width="16" height="1.2" rx="0.3" fill="#24A89B" />
+      <rect x="22" y="37.5" width="16" height="1.2" rx="0.3" fill="#FF7A59" />
     </svg>
   ),
   WHITEBOARD: (
     <svg viewBox="0 0 60 40" className="w-full h-full">
-      <rect x="0" y="0" width="60" height="40" fill="#FFFFFF" />
-      {/* Header (20%) */}
+      <rect x="0" y="0" width="60" height="40" fill="#f8f9f7" />
       <rect x="6" y="2.5" width="34" height="3" rx="0.4" fill="#1F2937" />
-      <rect x="42" y="2.7" width="12" height="2.5" rx="1" fill="#EBF5FB" />
-      {/* Dot grid pattern in body */}
-      <circle cx="8" cy="11" r="0.3" fill="#E8EAED" />
-      <circle cx="14" cy="11" r="0.3" fill="#E8EAED" />
-      <circle cx="20" cy="11" r="0.3" fill="#E8EAED" />
-      <circle cx="26" cy="11" r="0.3" fill="#E8EAED" />
-      <circle cx="32" cy="11" r="0.3" fill="#E8EAED" />
-      <circle cx="38" cy="11" r="0.3" fill="#E8EAED" />
-      <circle cx="44" cy="11" r="0.3" fill="#E8EAED" />
-      <circle cx="50" cy="11" r="0.3" fill="#E8EAED" />
-      {/* Body — 3 cards (70%) */}
       <rect x="4" y="9.5" width="52" height="7" rx="1.5" fill="#AEC6CF" />
       <rect x="4" y="18.5" width="52" height="7" rx="1.5" fill="#FFD4A3" />
       <rect x="4" y="27.5" width="52" height="7" rx="1.5" fill="#B3FFD1" />
-      {/* Footer (10%) */}
-      <rect x="0" y="36" width="60" height="4" fill="#F8F9FA" />
-      <line x1="0" y1="36" x2="60" y2="36" stroke="#E5E7EB" strokeWidth="0.4" />
-      <rect x="22" y="37.5" width="16" height="1.2" rx="0.3" fill="#24A89B" />
+      <rect x="2" y="2" width="3" height="5" rx="0.5" fill="#aaa" />
+      <rect x="55" y="2" width="3" height="5" rx="0.5" fill="#aaa" />
+      <rect x="2" y="33" width="3" height="5" rx="0.5" fill="#aaa" />
+      <rect x="55" y="33" width="3" height="5" rx="0.5" fill="#aaa" />
     </svg>
   ),
   FUNNEL: (
     <svg viewBox="0 0 60 40" className="w-full h-full">
       <rect x="0" y="0" width="60" height="40" fill="#FFFFFF" />
-      {/* Header (20%) */}
       <rect x="6" y="2.5" width="34" height="3" rx="0.4" fill="#1F2937" />
-      <rect x="42" y="2.7" width="12" height="2.5" rx="1" fill="#EBF5FB" />
-      {/* Body — 3 numbered cards (70%) */}
-      <rect x="4" y="9.5" width="52" height="7" rx="1.5" fill="#FFB3B3" />
-      <circle cx="8" cy="13" r="1.6" fill="#FFFFFF" />
-      <text x="8" y="14" fontSize="2.3" fill="#1F2937" textAnchor="middle" fontWeight="900">1</text>
-      <rect x="4" y="18.5" width="52" height="7" rx="1.5" fill="#FFD4A3" />
-      <circle cx="8" cy="22" r="1.6" fill="#FFFFFF" />
-      <text x="8" y="23" fontSize="2.3" fill="#1F2937" textAnchor="middle" fontWeight="900">2</text>
-      <rect x="4" y="27.5" width="52" height="7" rx="1.5" fill="#B3FFD1" />
-      <circle cx="8" cy="31" r="1.6" fill="#FFFFFF" />
-      <text x="8" y="32" fontSize="2.3" fill="#1F2937" textAnchor="middle" fontWeight="900">3</text>
-      {/* Footer (10%) */}
-      <rect x="0" y="36" width="60" height="4" fill="#F8F9FA" />
-      <line x1="0" y1="36" x2="60" y2="36" stroke="#E5E7EB" strokeWidth="0.4" />
-      <rect x="22" y="37.5" width="16" height="1.2" rx="0.3" fill="#24A89B" />
+      <polygon points="5,10 55,10 45,20 15,20" fill="#FFB3B3" />
+      <polygon points="15,21 45,21 40,30 20,30" fill="#FFD4A3" />
+      <polygon points="20,31 40,31 35,38 25,38" fill="#B3FFD1" />
     </svg>
   ),
   DATA_GRID: (
     <svg viewBox="0 0 60 40" className="w-full h-full">
       <rect x="0" y="0" width="60" height="40" fill="#FFFFFF" />
-      {/* Header (20%) */}
       <rect x="6" y="2.5" width="34" height="3" rx="0.4" fill="#1F2937" />
-      <rect x="42" y="2.7" width="12" height="2.5" rx="1" fill="#EBF5FB" />
-      {/* Body — 3 cards with dots (70%) */}
       <rect x="4" y="9.5" width="52" height="7" rx="1.5" fill="#AEC6CF" />
       <circle cx="8" cy="13" r="0.9" fill="#1F2937" />
       <rect x="4" y="18.5" width="52" height="7" rx="1.5" fill="#D4B3FF" />
       <circle cx="8" cy="22" r="0.9" fill="#1F2937" />
       <rect x="4" y="27.5" width="52" height="7" rx="1.5" fill="#B3FFD1" />
       <circle cx="8" cy="31" r="0.9" fill="#1F2937" />
-      {/* Footer (10%) */}
-      <rect x="0" y="36" width="60" height="4" fill="#F8F9FA" />
-      <line x1="0" y1="36" x2="60" y2="36" stroke="#E5E7EB" strokeWidth="0.4" />
-      <rect x="22" y="37.5" width="16" height="1.2" rx="0.3" fill="#24A89B" />
+    </svg>
+  ),
+  // ── New SaaS templates ──
+  PROCESS_STEPS: (
+    <svg viewBox="0 0 60 40" className="w-full h-full">
+      <rect x="0" y="0" width="60" height="40" fill="#F7F3F0" />
+      <rect x="6" y="2" width="28" height="3" rx="0.5" fill="#1A1A1B" />
+      <rect x="4" y="8" width="24" height="7" rx="2" fill="#FF7A59" />
+      <rect x="32" y="8" width="24" height="7" rx="2" fill="#FF7A59" opacity="0.7" />
+      <path d="M29 11.5 L31 11.5" stroke="#FF7A59" strokeWidth="1" />
+      <rect x="4" y="18" width="24" height="7" rx="2" fill="#FF7A59" opacity="0.5" />
+      <rect x="32" y="18" width="24" height="7" rx="2" fill="#FF7A59" opacity="0.3" />
+      <path d="M29 21.5 L31 21.5" stroke="#FF7A59" strokeWidth="1" />
+      <rect x="4" y="28" width="52" height="7" rx="2" fill="#1A1A1B" opacity="0.1" />
+      <circle cx="8" cy="11.5" r="2" fill="#fff" />
+      <text x="8" y="12.5" fontSize="2.5" fill="#FF7A59" textAnchor="middle" fontWeight="900">1</text>
+    </svg>
+  ),
+  COMMAND_CENTER: (
+    <svg viewBox="0 0 60 40" className="w-full h-full">
+      <rect x="0" y="0" width="60" height="40" fill="#FFFFFF" />
+      <rect x="6" y="2" width="30" height="3" rx="0.5" fill="#1A1A1B" />
+      <rect x="4" y="8" width="8" height="4" rx="1.5" fill="#FF7A59" />
+      <rect x="14" y="9" width="40" height="2" rx="0.5" fill="#E5E7EB" />
+      <rect x="4" y="15" width="8" height="4" rx="1.5" fill="#FF7A59" />
+      <rect x="14" y="16" width="36" height="2" rx="0.5" fill="#E5E7EB" />
+      <rect x="4" y="22" width="8" height="4" rx="1.5" fill="#FF7A59" />
+      <rect x="14" y="23" width="42" height="2" rx="0.5" fill="#E5E7EB" />
+      <rect x="4" y="29" width="8" height="4" rx="1.5" fill="#FF7A59" />
+      <rect x="14" y="30" width="32" height="2" rx="0.5" fill="#E5E7EB" />
+    </svg>
+  ),
+  ICON_GRID: (
+    <svg viewBox="0 0 60 40" className="w-full h-full">
+      <rect x="0" y="0" width="60" height="40" fill="#FFFFFF" />
+      <rect x="12" y="1" width="36" height="3" rx="0.5" fill="#1A1A1B" />
+      <rect x="3" y="7" width="17" height="14" rx="2" fill="#FFF0EB" stroke="#FF7A59" strokeWidth="0.3" />
+      <circle cx="11.5" cy="11" r="2" fill="#FF7A59" />
+      <rect x="21.5" y="7" width="17" height="14" rx="2" fill="#FFF0EB" stroke="#FF7A59" strokeWidth="0.3" />
+      <circle cx="30" cy="11" r="2" fill="#FF7A59" />
+      <rect x="40" y="7" width="17" height="14" rx="2" fill="#FFF0EB" stroke="#FF7A59" strokeWidth="0.3" />
+      <circle cx="48.5" cy="11" r="2" fill="#FF7A59" />
+      <rect x="3" y="23" width="17" height="14" rx="2" fill="#FFF0EB" stroke="#FF7A59" strokeWidth="0.3" />
+      <circle cx="11.5" cy="27" r="2" fill="#FF7A59" />
+      <rect x="21.5" y="23" width="17" height="14" rx="2" fill="#FFF0EB" stroke="#FF7A59" strokeWidth="0.3" />
+      <circle cx="30" cy="27" r="2" fill="#FF7A59" />
+      <rect x="40" y="23" width="17" height="14" rx="2" fill="#FFF0EB" stroke="#FF7A59" strokeWidth="0.3" />
+      <circle cx="48.5" cy="27" r="2" fill="#FF7A59" />
+    </svg>
+  ),
+  EDITORIAL_LIST: (
+    <svg viewBox="0 0 60 40" className="w-full h-full">
+      <rect x="0" y="0" width="60" height="40" fill="#F7F3F0" />
+      <rect x="6" y="2" width="30" height="3" rx="0.5" fill="#1A1A1B" />
+      <text x="6" y="13" fontSize="5" fill="#FF7A59" fontWeight="900">01</text>
+      <rect x="16" y="10" width="38" height="2" rx="0.4" fill="#1A1A1B" opacity="0.6" />
+      <line x1="4" y1="16" x2="56" y2="16" stroke="#E5E7EB" strokeWidth="0.3" />
+      <text x="6" y="23" fontSize="5" fill="#FF7A59" fontWeight="900">02</text>
+      <rect x="16" y="20" width="34" height="2" rx="0.4" fill="#1A1A1B" opacity="0.6" />
+      <line x1="4" y1="26" x2="56" y2="26" stroke="#E5E7EB" strokeWidth="0.3" />
+      <text x="6" y="33" fontSize="5" fill="#FF7A59" fontWeight="900">03</text>
+      <rect x="16" y="30" width="40" height="2" rx="0.4" fill="#1A1A1B" opacity="0.6" />
+    </svg>
+  ),
+  CTA_VISUAL: (
+    <svg viewBox="0 0 60 40" className="w-full h-full">
+      <rect x="0" y="0" width="60" height="40" fill="#F0F0F0" />
+      {/* Grid lines */}
+      <line x1="0" y1="10" x2="60" y2="10" stroke="#ddd" strokeWidth="0.2" />
+      <line x1="0" y1="20" x2="60" y2="20" stroke="#ddd" strokeWidth="0.2" />
+      <line x1="0" y1="30" x2="60" y2="30" stroke="#ddd" strokeWidth="0.2" />
+      <line x1="15" y1="0" x2="15" y2="40" stroke="#ddd" strokeWidth="0.2" />
+      <line x1="30" y1="0" x2="30" y2="40" stroke="#ddd" strokeWidth="0.2" />
+      <line x1="45" y1="0" x2="45" y2="40" stroke="#ddd" strokeWidth="0.2" />
+      <rect x="8" y="2" width="44" height="4" rx="0.5" fill="#1A1A1B" />
+      <circle cx="30" cy="20" r="5" fill="#FF7A59" />
+      <text x="30" y="21.5" fontSize="4" fill="#fff" textAnchor="middle" fontWeight="900">*</text>
+      <rect x="6" y="12" width="14" height="5" rx="1.5" fill="#4A90D9" opacity="0.7" />
+      <rect x="40" y="12" width="14" height="5" rx="1.5" fill="#4A90D9" opacity="0.7" />
+      <rect x="6" y="27" width="14" height="5" rx="1.5" fill="#4A90D9" opacity="0.7" />
+      <rect x="40" y="27" width="14" height="5" rx="1.5" fill="#4A90D9" opacity="0.7" />
+      <line x1="20" y1="14.5" x2="25" y2="18" stroke="#999" strokeWidth="0.3" strokeDasharray="1" />
+      <line x1="40" y1="14.5" x2="35" y2="18" stroke="#999" strokeWidth="0.3" strokeDasharray="1" />
+      <line x1="20" y1="29.5" x2="25" y2="22" stroke="#999" strokeWidth="0.3" strokeDasharray="1" />
+      <line x1="40" y1="29.5" x2="35" y2="22" stroke="#999" strokeWidth="0.3" strokeDasharray="1" />
     </svg>
   ),
 };
 
 const STYLE_OPTIONS: { id: StyleChoice; label: string; desc: string }[] = [
   { id: "auto", label: "Auto", desc: "AI picks" },
-  { id: "AWA_CLASSIC", label: "Awa Classic", desc: "Dense viral" },
-  { id: "UI_CARDS", label: "UI Cards", desc: "3 levels" },
-  { id: "WHITEBOARD", label: "Whiteboard", desc: "Whiteboard" },
-  { id: "FUNNEL", label: "Funnel", desc: "Funnel" },
-  { id: "DATA_GRID", label: "Data Grid", desc: "Framework table" },
+  { id: "PROCESS_STEPS", label: "Process", desc: "Step-by-step" },
+  { id: "COMMAND_CENTER", label: "Command", desc: "Terminal style" },
+  { id: "ICON_GRID", label: "Icon Grid", desc: "Bento grid" },
+  { id: "EDITORIAL_LIST", label: "Editorial", desc: "Magazine list" },
+  { id: "CTA_VISUAL", label: "CTA Visual", desc: "Indie hacker" },
+  { id: "WHITEBOARD", label: "Whiteboard", desc: "Hand-drawn" },
+  { id: "NOTEBOOK", label: "Notebook", desc: "Spiral notes" },
+  { id: "COMPARISON", label: "Comparison", desc: "Dark table" },
+  { id: "FUNNEL", label: "Funnel", desc: "Process flow" },
+  { id: "DATA_GRID", label: "Data Grid", desc: "Framework" },
 ];
 
 // ─── Component ───
@@ -345,7 +399,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
     try {
       assertOnline();
 
-      const dallePrompt = buildDallEPrompt(content, platform, forcedTemplate || "WHITEBOARD");
+      const dallePrompt = buildDallEPrompt(content, platform, forcedTemplate);
 
       if (IS_DEV) {
         console.log("=== DALL-E PROMPT ===");

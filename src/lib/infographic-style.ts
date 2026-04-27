@@ -577,13 +577,37 @@ RAPPEL FINAL :
 }
 
 
+// ─── DALL-E 3 auto-detect template ───
+
+function detectTemplate(content: string): string {
+  const lower = content.toLowerCase();
+
+  if (/step|steps|how to|guide|tutorial|process/i.test(lower))
+    return "PROCESS_STEPS";
+  if (/command|terminal|code|developer|api|tool/i.test(lower))
+    return "COMMAND_CENTER";
+  if (/list|tips|\d+\s+ways|\d+\s+things|tools|resources/i.test(lower))
+    return "ICON_GRID";
+  if (/vs\b|versus|compared|comparison|difference/i.test(lower))
+    return "COMPARISON";
+  if (/funnel|stage|pipeline|journey|flow/i.test(lower))
+    return "FUNNEL";
+  if (/automate|system|workflow|everything/i.test(lower))
+    return "CTA_VISUAL";
+  if (/tip|advice|rule|principle|lesson/i.test(lower))
+    return "EDITORIAL_LIST";
+
+  return "WHITEBOARD";
+}
+
 // ─── DALL-E 3 Image prompt builder ───
 
 export function buildDallEPrompt(
   content: string,
   platform: string,
-  template: string = "WHITEBOARD",
+  template?: string,
 ): string {
+  const selectedTemplate = template || detectTemplate(content);
   const extraction = extractKeyPoints(content);
 
   const lines = extraction.points
@@ -593,16 +617,129 @@ export function buildDallEPrompt(
   const title = extraction.title.slice(0, 60) || "Key Insights";
   const points = lines;
 
-  const baseRules = `
-Professional educational infographic image.
+  const baseRules = `Professional educational infographic image.
 ALL TEXT MUST BE IN ENGLISH ONLY.
 NO footer, NO signature, NO watermark, NO "follow for more".
 NO "Created by", NO branding of any kind.
 Text must be fully readable, minimum 16px, never cut off.
 Leave 40px margin on all sides.
-High contrast, clean typography, professional layout.`;
+High contrast, clean typography, professional layout.
+Portrait format 1024x1792.`;
 
-  if (template === "WHITEBOARD" || template === "UI_CARDS" || template === "AWA_CLASSIC") {
+  // ── PROCESS_STEPS ──
+  if (selectedTemplate === "PROCESS_STEPS") {
+    return `${baseRules}
+Professional educational infographic "Ultimate Guide" style.
+
+VISUAL STYLE:
+- Background: light cream #F7F3F0
+- ${points.length} numbered boxes connected by directional orange arrows
+- Elegant serif fonts for titles, clean sans-serif for body
+- Stylized screenshots of minimalist software interfaces
+- Color palette: burnt orange #FF7A59, sage green, deep black #1A1A1B, off-white
+- Professional, clean layout with generous negative space
+- Bento grid style, rounded corners 8-12px
+
+CONTENT TO DISPLAY:
+Title: "${title}"
+${points.map((p, i) => `Step ${i + 1}: "${p.slice(0, 80)}"`).join('\n')}
+
+HIGH-CONTRAST typography, bold sans-serif headers (Inter/Helvetica style).
+SaaS product aesthetic. Action-oriented layout.
+NO footer, NO signature, NO watermark.`;
+  }
+
+  // ── COMMAND_CENTER ──
+  if (selectedTemplate === "COMMAND_CENTER") {
+    return `${baseRules}
+Marketing dashboard UI design infographic.
+
+VISUAL STYLE:
+- Clean white background #FFFFFF
+- Vertical list of terminal-style commands
+- Each row: orange badge #FF7A59 on left + rounded rectangle command + description on right
+- Developer-friendly aesthetic, minimalist
+- High resolution, modern sans-serif typography (Inter/Helvetica)
+- Orange accents throughout
+- Structured layout, rounded corners 8px
+
+CONTENT TO DISPLAY:
+Title: "${title}"
+${points.map((p, i) => `Command ${i + 1}: /${p.slice(0, 50).toLowerCase().replace(/\s+/g, '_')}`).join('\n')}
+
+SaaS product aesthetic. Clean, professional, action-oriented.
+NO footer, NO signature, NO branding.`;
+  }
+
+  // ── ICON_GRID ──
+  if (selectedTemplate === "ICON_GRID") {
+    return `${baseRules}
+4x3 micro-content icon grid infographic.
+
+VISUAL STYLE:
+- Pure white background #FFFFFF
+- Grid of ${Math.min(points.length, 12)} cells
+- Each cell: circled orange number #FF7A59 + bold title + simplified flat illustration
+- Bicolor icons (orange and black)
+- Very thin card borders or borderless
+- Flat modern iconographic style
+- Bento grid layout, rounded corners 12px
+
+CONTENT TO DISPLAY:
+Title: "${title}"
+${points.map((p, i) => `Cell ${i + 1}: "${p.slice(0, 40)}"`).join('\n')}
+
+High-contrast typography. SaaS product aesthetic.
+NO footer, NO signature, NO watermark.`;
+  }
+
+  // ── EDITORIAL_LIST ──
+  if (selectedTemplate === "EDITORIAL_LIST") {
+    return `${baseRules}
+Minimalist typographic editorial layout infographic.
+
+VISUAL STYLE:
+- Very light beige background #F7F3F0
+- Large numbered titles in burnt orange #FF7A59
+- Explanatory text in deep black #1A1A1B, left-aligned
+- Thin horizontal separators between items
+- Clean editorial style, premium design magazine feel
+- High-contrast typography
+- Bold sans-serif headers (Inter style)
+
+CONTENT TO DISPLAY:
+Title: "${title}"
+${points.map((p, i) => `Item ${i + 1}: "${p.slice(0, 100)}"`).join('\n')}
+
+SaaS product aesthetic. Educational, action-oriented.
+NO footer, NO signature, NO branding.`;
+  }
+
+  // ── CTA_VISUAL ──
+  if (selectedTemplate === "CTA_VISUAL") {
+    return `${baseRules}
+Promotional visual for social media "Automate Everything" style.
+
+VISUAL STYLE:
+- Light gray notebook grid background
+- Center: minimalist logo/asterisk icon
+- ${Math.min(points.length, 4)} floating blue folders with labels connected by dotted lines to center icon
+- Large imposing text at top with yellow highlight
+- "Indie Hacker" style, clean and impactful
+- Burnt orange #FF7A59 accents
+- Deep black #1A1A1B text
+- Rounded corners 8px, structured layout
+
+CONTENT TO DISPLAY:
+Main text: "${title}"
+${points.map((p, i) => `Folder ${i + 1}: "${p.slice(0, 30)}"`).join('\n')}
+
+High-contrast typography. SaaS product aesthetic.
+NO footer, NO signature, NO watermark.`;
+  }
+
+  // ── WHITEBOARD (+ UI_CARDS, AWA_CLASSIC) ──
+  if (selectedTemplate === "WHITEBOARD" || selectedTemplate === "UI_CARDS" || selectedTemplate === "AWA_CLASSIC") {
     return `${baseRules}
 
 Style: Hand-drawn whiteboard educational infographic.
@@ -619,7 +756,8 @@ Style elements: colored marker headings (red, blue, green), yellow highlights on
 Dense layout, information-rich, similar to a creator's viral LinkedIn post visual.`;
   }
 
-  if (template === "NOTEBOOK") {
+  // ── NOTEBOOK ──
+  if (selectedTemplate === "NOTEBOOK") {
     return `${baseRules}
 
 Style: Spiral notebook page educational infographic.
@@ -632,7 +770,8 @@ ${points.map((p, i) => `Point ${i + 1}: "${p.slice(0, 80)}"`).join('\n')}
 Colorful handwritten-style titles, numbered badge items, yellow highlights.`;
   }
 
-  if (template === "COMPARISON" || template === "DATA_GRID") {
+  // ── COMPARISON / DATA_GRID ──
+  if (selectedTemplate === "COMPARISON" || selectedTemplate === "DATA_GRID") {
     return `${baseRules}
 
 Style: Professional dark comparison table infographic.
@@ -645,7 +784,8 @@ Title: "${title}"
 Content to organize into comparison columns: ${points.join(' | ')}`;
   }
 
-  if (template === "FUNNEL") {
+  // ── FUNNEL ──
+  if (selectedTemplate === "FUNNEL") {
     return `${baseRules}
 
 Style: Funnel/process flow educational infographic.
@@ -659,7 +799,7 @@ ${points.map((p, i) => `Stage ${i + 1}: "${p.slice(0, 80)}"`).join('\n')}
 Hand-drawn feel, warm and approachable, red arrows, gold sparkle stars.`;
   }
 
-  // Default
+  // Default fallback
   return `${baseRules}
 
 Style: Clean professional educational infographic.
