@@ -617,14 +617,27 @@ export function buildDallEPrompt(
   const title = extraction.title.slice(0, 60) || "Key Insights";
   const points = lines;
 
+  const p = platform?.toLowerCase() || "";
+  let platformHint = "";
+  if (p.includes("linkedin")) {
+    platformHint = "\nA4 portrait format. Optimized for LinkedIn feed. More vertical space for content. Include more detail and information than standard formats.";
+  } else if (p.includes("facebook")) {
+    platformHint = "\nSquare format (1:1). Optimized for Facebook feed. Compact, impactful design.";
+  } else if (p.includes("instagram")) {
+    platformHint = "\nPortrait 4:5 format. Optimized for Instagram feed. Visually striking.";
+  } else if (p.includes("twitter") || p.includes("x (")) {
+    platformHint = "\nLandscape format. Optimized for X/Twitter timeline. Wide layout.";
+  } else if (p.includes("tiktok")) {
+    platformHint = "\nVertical 9:16 format. Optimized for TikTok. Full-screen mobile layout.";
+  }
+
   const baseRules = `Professional educational infographic image.
 ALL TEXT MUST BE IN ENGLISH ONLY.
 NO footer, NO signature, NO watermark, NO "follow for more".
 NO "Created by", NO branding of any kind.
 Text must be fully readable, minimum 16px, never cut off.
 Leave 40px margin on all sides.
-High contrast, clean typography, professional layout.
-Portrait format 1024x1792.`;
+High contrast, clean typography, professional layout.${platformHint}`;
 
   // ── PROCESS_STEPS ──
   if (selectedTemplate === "PROCESS_STEPS") {

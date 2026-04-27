@@ -30,18 +30,49 @@ function injectFontsInHtml(html: string): string {
   return html.replace("</head>", FONT_LINK + "</head>");
 }
 
+// ─── Platform-specific image sizes ───
+
+interface ImageSizeConfig {
+  size: "1024x1024" | "1024x1792" | "1792x1024";
+  label: string;
+  description: string;
+}
+
+function getImageSize(platform: string): ImageSizeConfig {
+  const p = platform?.toLowerCase() || "";
+
+  if (p.includes("linkedin")) {
+    return { size: "1024x1792", label: "A4 Portrait", description: "Optimized for LinkedIn — more content space" };
+  }
+  if (p.includes("facebook")) {
+    return { size: "1024x1024", label: "Square", description: "Optimized for Facebook feed" };
+  }
+  if (p.includes("instagram")) {
+    return { size: "1024x1792", label: "Portrait 4:5", description: "Optimized for Instagram" };
+  }
+  if (p.includes("tiktok")) {
+    return { size: "1024x1792", label: "Vertical 9:16", description: "Optimized for TikTok" };
+  }
+  if (p.includes("twitter") || p.includes("x (")) {
+    return { size: "1792x1024", label: "Landscape", description: "Optimized for X/Twitter" };
+  }
+  return { size: "1024x1792", label: "Portrait", description: "Standard portrait format" };
+}
+
 // ─── OpenAI DALL-E 3 Image Generation ───
 
 const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
 
 async function generateWithOpenAI(
   prompt: string,
+  imageSize: ImageSizeConfig,
 ): Promise<string> {
   if (!OPENAI_API_KEY) {
     throw new Error("OpenAI API key not configured. Add VITE_OPENAI_API_KEY to your environment.");
   }
 
   console.log("[Infographic] Calling DALL-E 3...");
+  console.log("[Infographic] Size:", imageSize.size, imageSize.label);
   console.log("[Infographic] Prompt preview:", prompt.slice(0, 200));
 
   const controller = new AbortController();
@@ -60,7 +91,7 @@ async function generateWithOpenAI(
           model: "dall-e-3",
           prompt: prompt,
           n: 1,
-          size: "1024x1792",
+          size: imageSize.size,
           quality: "hd",
           response_format: "b64_json",
         }),
@@ -376,6 +407,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
   const analysis = analyzeContent(content, platform);
   const dims = getFormatDimensions(analysis.format);
   const templateSelection = selectBestTemplate(content, platform, forcedTemplate);
+  const imageConfig = getImageSize(platform);
   const aspectRatio = dims.height / dims.width;
   // Scale infographic to fit ~480px wide modal content area
   const previewWidth = 480;
@@ -411,14 +443,14 @@ export default function InfographicModal({ open, onClose, content, platform, con
       if (IS_DEV) console.log("[InfographicModal] Attempt 1 — generating with DALL-E 3...");
       let base64: string | null = null;
       try {
-        base64 = await generateWithOpenAI(dallePrompt);
+        base64 = await generateWithOpenAI(dallePrompt, imageConfig);
       } catch (firstErr) {
         if (IS_DEV) console.warn("[InfographicModal] Attempt 1 failed:", firstErr);
 
         // Attempt 2: retry with simplified prompt
         if (IS_DEV) console.log("[InfographicModal] Attempt 2 — retrying...");
         try {
-          base64 = await generateWithOpenAI(dallePrompt + "\n\nIMPORTANT: Generate a clean, readable infographic. All text in English. No footer or watermark.");
+          base64 = await generateWithOpenAI(dallePrompt + "\n\nIMPORTANT: Generate a clean, readable infographic. All text in English. No footer or watermark.", imageConfig);
         } catch (secondErr) {
           if (IS_DEV) console.error("[InfographicModal] Attempt 2 also failed:", secondErr);
           throw secondErr;
@@ -767,6 +799,13 @@ export default function InfographicModal({ open, onClose, content, platform, con
                       ))}
                     </div>
                   </div>
+                </div>
+
+                {/* Platform format indicator */}
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span>Format:</span>
+                  <span className="px-2 py-0.5 rounded-full bg-accent/30 font-medium">{imageConfig.label}</span>
+                  <span className="text-muted-foreground/60">{imageConfig.description}</span>
                 </div>
 
                 {/* Style selector with visual previews */}

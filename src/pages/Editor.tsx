@@ -219,35 +219,51 @@ export default function Editor() {
             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">Visual</p>
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {/* Infographic or generate */}
-            {infographic ? (
-              <div className="space-y-2">
-                <div className="rounded-xl overflow-hidden border border-border/20 cursor-zoom-in group relative" onClick={() => setLightbox(true)}>
-                  <img src={`data:image/png;base64,${infographic}`} alt="Infographic" className="w-full h-auto" />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                    <ZoomIn className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+            {/* Infographic or generate — hidden for script formats */}
+            {(() => {
+              const contentFormat = variations[0]?.format || "";
+              const isScript = /script|reel|video/i.test(contentFormat);
+              if (isScript) {
+                return (
+                  <div className="rounded-xl border border-border/20 p-4 text-center bg-accent/[0.02]">
+                    <p className="text-xs text-muted-foreground">
+                      Visuals are not available for scripts. Switch to Post or Thread format to generate infographics.
+                    </p>
                   </div>
+                );
+              }
+              if (infographic) {
+                return (
+                  <div className="space-y-2">
+                    <div className="rounded-xl overflow-hidden border border-border/20 cursor-zoom-in group relative" onClick={() => setLightbox(true)}>
+                      <img src={`data:image/png;base64,${infographic}`} alt="Infographic" className="w-full h-auto" />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                        <ZoomIn className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button size="sm" variant="outline" className="h-10 text-sm gap-2 font-semibold border-border/50 hover:border-border" onClick={() => downloadInfographic("png")}><Download className="w-4 h-4" /> PNG</Button>
+                      <Button size="sm" variant="outline" className="h-10 text-sm gap-2 font-semibold border-border/50 hover:border-border" onClick={() => downloadInfographic("jpeg")}><Download className="w-4 h-4" /> JPEG</Button>
+                    </div>
+                    <Button size="sm" variant="ghost" className="w-full h-8 text-xs gap-1.5 text-muted-foreground hover:text-foreground border border-dashed border-border/30 hover:border-border/60" onClick={() => setShowModal(true)}>
+                      <Sparkles className="w-3 h-3" /> Regenerate
+                    </Button>
+                  </div>
+                );
+              }
+              return (
+                <div className="rounded-xl border-2 border-dashed border-border/20 p-6 text-center">
+                  <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-3 mx-auto">
+                    <Sparkles className="w-6 h-6 text-primary/60" />
+                  </div>
+                  <p className="text-sm font-semibold mb-1">No visual yet</p>
+                  <p className="text-xs text-muted-foreground mb-4 leading-relaxed">Turn your best post into a shareable infographic</p>
+                  <Button className="gap-2 w-full font-bold text-base h-12 shadow-sm" onClick={() => setShowModal(true)}>
+                    <Sparkles className="w-5 h-5" /> Generate Visual
+                  </Button>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button size="sm" variant="outline" className="h-10 text-sm gap-2 font-semibold border-border/50 hover:border-border" onClick={() => downloadInfographic("png")}><Download className="w-4 h-4" /> PNG</Button>
-                  <Button size="sm" variant="outline" className="h-10 text-sm gap-2 font-semibold border-border/50 hover:border-border" onClick={() => downloadInfographic("jpeg")}><Download className="w-4 h-4" /> JPEG</Button>
-                </div>
-                <Button size="sm" variant="ghost" className="w-full h-8 text-xs gap-1.5 text-muted-foreground hover:text-foreground border border-dashed border-border/30 hover:border-border/60" onClick={() => setShowModal(true)}>
-                  <Sparkles className="w-3 h-3" /> Regenerate
-                </Button>
-              </div>
-            ) : (
-              <div className="rounded-xl border-2 border-dashed border-border/20 p-6 text-center">
-                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-3 mx-auto">
-                  <Sparkles className="w-6 h-6 text-primary/60" />
-                </div>
-                <p className="text-sm font-semibold mb-1">No visual yet</p>
-                <p className="text-xs text-muted-foreground mb-4 leading-relaxed">Turn your best post into a shareable infographic</p>
-                <Button className="gap-2 w-full font-bold text-base h-12 shadow-sm" onClick={() => setShowModal(true)}>
-                  <Sparkles className="w-5 h-5" /> Generate Visual
-                </Button>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Separator */}
             <div className="border-t border-border/10" />

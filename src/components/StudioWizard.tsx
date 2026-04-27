@@ -1158,13 +1158,13 @@ ANGLES TO USE (one per variation):
                               {isHumanizing ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
                               Humanize
                             </Button>
-                            {selectedFormat?.toLowerCase() !== "thread" && (
+                            {!/thread|script|reel|video/i.test(selectedFormat || "") && (
                               <Button variant="ghost" size="sm" className={cn("h-7 text-[11px] gap-1.5 px-2.5", imagePanel === idx ? "text-primary" : generatedImages[idx] ? "text-emerald-400" : "text-muted-foreground hover:text-foreground")} disabled={imageGenerating !== null && imageGenerating !== idx} onClick={(e) => { e.stopPropagation(); handleGenerateImage(idx); }}>
                                 {imageGenerating === idx ? <Loader2 className="w-3 h-3 animate-spin" /> : <ImagePlus className="w-3 h-3" />}
                                 {generatedImages[idx] ? (imagePanel === idx ? "Hide" : "View image") : imageGenerating === idx ? "Generating..." : "Image"}
                               </Button>
                             )}
-                            {selectedFormat?.toLowerCase() !== "thread" && (
+                            {!/thread|script|reel|video/i.test(selectedFormat || "") && (
                               <Button variant="ghost" size="sm" className={cn("h-7 text-[11px] gap-1.5 px-2.5", infraPanel === idx ? "text-primary" : "text-muted-foreground hover:text-foreground")} onClick={(e) => { e.stopPropagation(); handleInfraPrompt(idx); }}>
                                 <Layers className="w-3 h-3" /> Infographic
                               </Button>
