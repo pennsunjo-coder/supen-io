@@ -29,6 +29,8 @@ const Studio = lazy(() => import("./pages/Studio.tsx"));
 const Stats = lazy(() => import("./pages/Stats.tsx"));
 const ContentDetail = lazy(() => import("./pages/ContentDetail.tsx"));
 const Editor = lazy(() => import("./pages/Editor.tsx"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword.tsx"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 
 const queryClient = new QueryClient();
@@ -83,6 +85,8 @@ const App = () => {
                   <Routes>
                     <Route path="/" element={<Index />} />
                     <Route path="/login" element={<Login />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
                     <Route path="/onboarding" element={<ProtectedRoute skipOnboardingCheck><Onboarding /></ProtectedRoute>} />
                     <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                     <Route path="/dashboard/studio" element={<ProtectedRoute><Studio /></ProtectedRoute>} />

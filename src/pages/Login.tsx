@@ -135,6 +135,17 @@ const Login = () => {
             </div>
           </div>
 
+          {!isSignUp && (
+            <div className="flex justify-end">
+              <Link
+                to="/forgot-password"
+                className="text-xs text-muted-foreground hover:text-primary transition-colors"
+              >
+                Forgot password?
+              </Link>
+            </div>
+          )}
+
           <Button
             type="submit"
             className="w-full h-11 text-base font-semibold glow-sm group"
