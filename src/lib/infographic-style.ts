@@ -577,6 +577,97 @@ RAPPEL FINAL :
 }
 
 
+// ─── DALL-E 3 Image prompt builder ───
+
+export function buildDallEPrompt(
+  content: string,
+  platform: string,
+  template: string = "WHITEBOARD",
+): string {
+  const extraction = extractKeyPoints(content);
+
+  const lines = extraction.points
+    .map((p) => `${p.title}: ${p.body}`)
+    .slice(0, 6);
+
+  const title = extraction.title.slice(0, 60) || "Key Insights";
+  const points = lines;
+
+  const baseRules = `
+Professional educational infographic image.
+ALL TEXT MUST BE IN ENGLISH ONLY.
+NO footer, NO signature, NO watermark, NO "follow for more".
+NO "Created by", NO branding of any kind.
+Text must be fully readable, minimum 16px, never cut off.
+Leave 40px margin on all sides.
+High contrast, clean typography, professional layout.`;
+
+  if (template === "WHITEBOARD" || template === "UI_CARDS" || template === "AWA_CLASSIC") {
+    return `${baseRules}
+
+Style: Hand-drawn whiteboard educational infographic.
+Background: off-white #f8f9f7 like a real whiteboard.
+4 metallic corner clips holding the paper.
+
+EXACT CONTENT TO DISPLAY:
+Title (large bold text at top): "${title}"
+
+${points.map((p, i) => `Section ${i + 1}: "${p.slice(0, 80)}"`).join('\n')}
+
+Layout: Title at top 15%, then ${points.length} content sections filling 75% of space, bottom 10% empty.
+Style elements: colored marker headings (red, blue, green), yellow highlights on key terms, hand-drawn arrows, numbered circles.
+Dense layout, information-rich, similar to a creator's viral LinkedIn post visual.`;
+  }
+
+  if (template === "NOTEBOOK") {
+    return `${baseRules}
+
+Style: Spiral notebook page educational infographic.
+Metallic spiral binding at top, ruled lines, red margin line on left.
+
+EXACT CONTENT:
+Title: "${title}"
+${points.map((p, i) => `Point ${i + 1}: "${p.slice(0, 80)}"`).join('\n')}
+
+Colorful handwritten-style titles, numbered badge items, yellow highlights.`;
+  }
+
+  if (template === "COMPARISON" || template === "DATA_GRID") {
+    return `${baseRules}
+
+Style: Professional dark comparison table infographic.
+Background: deep charcoal #1a1a2e.
+3 columns with colored headers (blue, green, orange).
+White text on dark background.
+
+EXACT CONTENT:
+Title: "${title}"
+Content to organize into comparison columns: ${points.join(' | ')}`;
+  }
+
+  if (template === "FUNNEL") {
+    return `${baseRules}
+
+Style: Funnel/process flow educational infographic.
+Background: warm off-white #fffef5.
+Large trapezoid funnel shape, wide at top, narrow at bottom.
+
+EXACT CONTENT:
+Title: "${title}"
+${points.map((p, i) => `Stage ${i + 1}: "${p.slice(0, 80)}"`).join('\n')}
+
+Hand-drawn feel, warm and approachable, red arrows, gold sparkle stars.`;
+  }
+
+  // Default
+  return `${baseRules}
+
+Style: Clean professional educational infographic.
+Title: "${title}"
+Content: ${points.join(', ')}
+Vertical portrait format, information-rich, viral social media style.`;
+}
+
 // ─── Gemini Image prompt builder — distinct style per template ───
 
 export function buildGeminiImagePrompt(

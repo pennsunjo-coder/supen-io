@@ -10,8 +10,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import GenerationProgress, { INFOGRAPHIC_STEPS } from "@/components/GenerationProgress";
 import {
-  buildGeminiImagePrompt,
-  buildGeminiRetryPrompt,
+  buildDallEPrompt,
   analyzeContent,
   getFormatDimensions,
   selectBestTemplate,
@@ -31,33 +30,39 @@ function injectFontsInHtml(html: string): string {
   return html.replace("</head>", FONT_LINK + "</head>");
 }
 
-// ─── Gemini Image Generation via gemini-2.0-flash-preview-image-generation ───
+// ─── OpenAI DALL-E 3 Image Generation ───
 
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const GEMINI_MODEL = "gemini-2.5-flash-image";
+const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
 
-async function generateWithGemini(
+async function generateWithOpenAI(
   prompt: string,
-  _dims: { width: number; height: number },
-): Promise<string | null> {
-  if (!GEMINI_API_KEY) {
-    throw new Error("Gemini API key not configured. Add VITE_GEMINI_API_KEY to your .env file.");
+): Promise<string> {
+  if (!OPENAI_API_KEY) {
+    throw new Error("OpenAI API key not configured. Add VITE_OPENAI_API_KEY to your environment.");
   }
 
+  console.log("[Infographic] Calling DALL-E 3...");
+  console.log("[Infographic] Prompt preview:", prompt.slice(0, 200));
+
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 120_000); // 2 minutes
+  const timeoutId = setTimeout(() => controller.abort(), 120_000);
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+      "https://api.openai.com/v1/images/generations",
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${OPENAI_API_KEY}`,
+        },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            responseModalities: ["IMAGE", "TEXT"],
-          },
+          model: "dall-e-3",
+          prompt: prompt,
+          n: 1,
+          size: "1024x1792",
+          quality: "hd",
+          response_format: "b64_json",
         }),
         signal: controller.signal,
       },
@@ -65,22 +70,21 @@ async function generateWithGemini(
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      const errorText = await response.text().catch(() => "");
-      if (IS_DEV) console.error("[InfographicModal] Gemini HTTP", response.status, errorText);
-      throw new Error(`Gemini API error (${response.status}). Please try again.`);
+      const err = await response.json().catch(() => ({}));
+      const msg = err?.error?.message || `OpenAI API error (${response.status})`;
+      if (IS_DEV) console.error("[InfographicModal] OpenAI HTTP", response.status, msg);
+      throw new Error(msg);
     }
 
     const data = await response.json();
-    const imagePart = data.candidates?.[0]?.content?.parts
-      ?.find((p: { inlineData?: { mimeType?: string; data?: string } }) =>
-        p.inlineData?.mimeType?.startsWith("image/"));
-    const base64 = imagePart?.inlineData?.data;
+    const base64 = data.data?.[0]?.b64_json;
 
     if (!base64) {
-      if (IS_DEV) console.error("[InfographicModal] Gemini returned no image data:", JSON.stringify(data).slice(0, 500));
-      throw new Error("Gemini did not return an image. Please try again.");
+      if (IS_DEV) console.error("[InfographicModal] OpenAI returned no image data:", JSON.stringify(data).slice(0, 500));
+      throw new Error("No image returned from DALL-E 3. Please try again.");
     }
 
+    console.log("[Infographic] Generated! Size:", base64.length);
     return base64;
   } catch (err) {
     clearTimeout(timeoutId);
@@ -112,7 +116,7 @@ interface Props {
   onGenerated?: (html: string, base64?: string) => void; // Callback after successful generation
 }
 
-type ResultMode = "claude" | "gemini" | null;
+type ResultMode = "claude" | "openai" | null;
 type Step = "ready" | "generating" | "result";
 type StyleChoice = "auto" | "AWA_CLASSIC" | "UI_CARDS" | "WHITEBOARD" | "FUNNEL" | "DATA_GRID";
 
@@ -323,7 +327,9 @@ export default function InfographicModal({ open, onClose, content, platform, con
   const previewWidth = 480;
   const iframeScale = previewWidth / dims.width;
 
-  // ─── Generation (Gemini Image ONLY — auto-retry with correction prompt) ───
+  // ─── Generation (OpenAI DALL-E 3 — with retry) ───
+
+  const hasOpenAIKey = !!OPENAI_API_KEY;
 
   async function handleGenerate() {
     setStep("generating");
@@ -339,30 +345,29 @@ export default function InfographicModal({ open, onClose, content, platform, con
     try {
       assertOnline();
 
-      const geminiPrompt = buildGeminiImagePrompt(content, platform, customPrompt || undefined, forcedTemplate);
+      const dallePrompt = buildDallEPrompt(content, platform, forcedTemplate || "WHITEBOARD");
 
       if (IS_DEV) {
-        console.log("=== GEMINI PROMPT ===");
-        console.log(geminiPrompt.slice(0, 500));
+        console.log("=== DALL-E PROMPT ===");
+        console.log(dallePrompt.slice(0, 500));
         console.log("=== END PROMPT ===");
       }
 
-      // Attempt 1: standard prompt
-      if (IS_DEV) console.log("[InfographicModal] Attempt 1 — generating with Gemini...");
+      // Attempt 1
+      if (IS_DEV) console.log("[InfographicModal] Attempt 1 — generating with DALL-E 3...");
       let base64: string | null = null;
       try {
-        base64 = await generateWithGemini(geminiPrompt, dims);
+        base64 = await generateWithOpenAI(dallePrompt);
       } catch (firstErr) {
         if (IS_DEV) console.warn("[InfographicModal] Attempt 1 failed:", firstErr);
 
-        // Attempt 2: retry with correction prompt
-        if (IS_DEV) console.log("[InfographicModal] Attempt 2 — retrying with correction prompt...");
+        // Attempt 2: retry with simplified prompt
+        if (IS_DEV) console.log("[InfographicModal] Attempt 2 — retrying...");
         try {
-          const retryPrompt = buildGeminiRetryPrompt(geminiPrompt, 2);
-          base64 = await generateWithGemini(retryPrompt, dims);
+          base64 = await generateWithOpenAI(dallePrompt + "\n\nIMPORTANT: Generate a clean, readable infographic. All text in English. No footer or watermark.");
         } catch (secondErr) {
           if (IS_DEV) console.error("[InfographicModal] Attempt 2 also failed:", secondErr);
-          throw secondErr; // propagate the final error
+          throw secondErr;
         }
       }
 
@@ -376,11 +381,11 @@ export default function InfographicModal({ open, onClose, content, platform, con
       // Also wrap in HTML for iframe preview (backward-compatible display)
       const html = wrapBase64AsHtml(base64, dims);
       setHtmlCode(html);
-      setResultMode("gemini");
+      setResultMode("openai");
       setStep("result");
 
       // Save to Supabase
-      await handleSave({ html, image: base64, mode: "gemini" });
+      await handleSave({ html, image: base64, mode: "openai" });
     } catch (err) {
       if (IS_DEV) console.error("[InfographicModal] Generation failed:", err);
       const fallbackMsg = err instanceof Error ? err.message : "Generation failed";
@@ -517,13 +522,13 @@ export default function InfographicModal({ open, onClose, content, platform, con
   // Accepts fresh data via opts to avoid stale React state closures.
   // savedRef provides synchronous duplicate protection.
 
-  async function handleSave(opts?: { html?: string; image?: string; mode?: "claude" | "gemini" }) {
+  async function handleSave(opts?: { html?: string; image?: string; mode?: "claude" | "openai" }) {
     if (!user) return;
     if (savedRef.current) return;
 
     const html = opts?.html ?? htmlCode;
     const image = opts?.image ?? imageBase64;
-    const mode = opts?.mode ?? resultMode ?? "gemini";
+    const mode = opts?.mode ?? resultMode ?? "openai";
     if (!html && !image) {
       if (IS_DEV) console.warn("[InfographicModal] handleSave bailed — no html/image");
       return;
@@ -766,11 +771,23 @@ export default function InfographicModal({ open, onClose, content, platform, con
                   <p className="text-xs text-muted-foreground leading-relaxed">{contentPreview}</p>
                 </div>
 
+                {/* API key warning */}
+                {!hasOpenAIKey && (
+                  <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center">
+                    <p className="text-sm font-medium text-amber-400 mb-2">
+                      OpenAI API key required
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Add VITE_OPENAI_API_KEY to your environment to generate infographics with DALL-E 3.
+                    </p>
+                  </div>
+                )}
+
                 {/* Generate button */}
                 <Button
                   className="w-full h-14 text-base font-bold gap-3"
                   onClick={handleGenerate}
-                  disabled={retryCountdown > 0}
+                  disabled={retryCountdown > 0 || !hasOpenAIKey}
                 >
                   <Sparkles className="w-5 h-5" />
                   {retryCountdown > 0 ? `Retry in ${retryCountdown}s...` : `Generate ${styleChoice === "auto" ? templateSelection.templateId : styleChoice} infographic →`}
