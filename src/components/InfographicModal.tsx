@@ -413,7 +413,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
     }, 1000);
   }
 
-  // ─── Downloads (direct base64 for Gemini images) ───
+  // ─── Downloads (direct base64 for DALL-E images) ───
 
   function base64ToBlob(b64: string, type: string): Blob {
     const binary = atob(b64);
@@ -428,7 +428,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
 
     try {
       if (imageBase64) {
-        // ── Gemini image path: base64 → direct or canvas conversion ──
+        // ── DALL-E image path: base64 → direct or canvas conversion ──
         if (format === "png") {
           const link = document.createElement("a");
           link.style.display = "none";
