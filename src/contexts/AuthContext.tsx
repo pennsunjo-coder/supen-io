@@ -48,8 +48,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     email: string,
     password: string
   ): Promise<{ error: string | null }> => {
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) return { error: error.message };
+
+    // Send welcome email (fire and forget)
+    if (data.user) {
+      supabase.functions.invoke("send-email", {
+        body: {
+          to: data.user.email,
+          subject: "Welcome to Supen.io!",
+          type: "welcome",
+          data: { name: data.user.user_metadata?.full_name || "there" },
+        },
+      }).catch(() => {});
+    }
+
     return { error: null };
   };
 
