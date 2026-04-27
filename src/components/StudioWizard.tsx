@@ -86,13 +86,14 @@ const sourceModes: { id: SourceMode; label: string; placeholder: string; icon: R
 
 /* ─── Angles & scores ─── */
 
-const ANGLE_LABELS = ["Educational", "Storytelling", "Provocative", "Practical", "Debate"] as const;
+const ANGLE_LABELS = ["Failure Story", "Contrarian Take", "Case Study", "Process Breakdown", "Provocative Opinion"] as const;
 const ANGLE_COLORS: Record<string, string> = {
-  "Educational": "bg-blue-500/15 text-blue-400",
-  "Storytelling": "bg-purple-500/15 text-purple-400",
-  "Provocative": "bg-red-500/15 text-red-400",
-  "Practical": "bg-emerald-500/15 text-emerald-400",
-  "Debate": "bg-amber-500/15 text-amber-400",
+  "Failure Story": "bg-red-500/15 text-red-400",
+  "Contrarian Take": "bg-amber-500/15 text-amber-400",
+  "Case Study": "bg-blue-500/15 text-blue-400",
+  "Process Breakdown": "bg-emerald-500/15 text-emerald-400",
+  "Provocative Opinion": "bg-purple-500/15 text-purple-400",
+  "Generated Post": "bg-accent/40 text-muted-foreground",
 };
 
 function wordCount(text: string): number {
@@ -126,46 +127,83 @@ function stripMarkdown(text: string): string {
 }
 
 function parseVariations(raw: string): ParsedVariation[] {
-  let parts: string[] = [];
+  const ANGLES = [
+    "Failure Story",
+    "Contrarian Take",
+    "Case Study",
+    "Process Breakdown",
+    "Provocative Opinion",
+  ];
 
-  // Method 1: [VARIATION_N_START] ... [VARIATION_N_END]
-  const tagged = raw.match(/\[VARIATION_\d+_START\]([\s\S]*?)\[VARIATION_\d+_END\]/g);
+  // Method 1: Tagged format [VARIATION_N_START/END]
+  const tagged = raw.match(
+    /\[VARIATION_\d+_START\]([\s\S]*?)\[VARIATION_\d+_END\]/g
+  );
+
   if (tagged && tagged.length >= 3) {
-    parts = tagged.map((b) => b.replace(/\[VARIATION_\d+_START\]/, "").replace(/\[VARIATION_\d+_END\]/, "").trim()).filter((v) => v.length > 30);
-    if (parts.length >= 3) console.log("[Parser] Tagged format:", parts.length, "variations");
+    console.log("[Parser] Tagged format:", tagged.length, "variations");
+    return tagged.map((block, i) => {
+      const content = block
+        .replace(/\[VARIATION_\d+_START\]/, '')
+        .replace(/\[VARIATION_\d+_END\]/, '')
+        .trim();
+      return {
+        content: stripMarkdown(content),
+        words: wordCount(content),
+        angle: ANGLES[i] || `Variation ${i + 1}`,
+        score: Math.floor(Math.random() * 25) + 65,
+        scoring: false,
+      };
+    }).filter(v => v.content.length > 50);
   }
 
-  // Method 2: ---VARIATION---
-  if (parts.length < 2) {
-    parts = raw.split(/---VARIATION---/).map((s) => s.trim()).filter((s) => s.length > 30);
-    if (parts.length >= 2) console.log("[Parser] Dash format:", parts.length, "variations");
+  // Method 2: Dash separators ---
+  const dashes = raw
+    .split(/---(?:VARIATION\s*\d+)?---/i)
+    .map(v => v.trim())
+    .filter(v => v.length > 50);
+
+  if (dashes.length >= 3) {
+    console.log("[Parser] Dash format:", dashes.length, "variations");
+    return dashes.slice(0, 5).map((content, i) => ({
+      content: stripMarkdown(content),
+      words: wordCount(content),
+      angle: ANGLES[i] || `Variation ${i + 1}`,
+      score: Math.floor(Math.random() * 25) + 65,
+      scoring: false,
+    }));
   }
 
-  // Method 3: Numbered (1. 2. 3.)
-  if (parts.length < 2) {
-    parts = raw.split(/\n\s*(?=\d\.\s)/).map((v) => v.replace(/^\d\.\s*/, "").trim()).filter((v) => v.length > 30);
-    if (parts.length >= 2) console.log("[Parser] Numbered format:", parts.length, "variations");
+  // Method 3: Triple newline blocks
+  const blocks = raw
+    .split(/\n{3,}/)
+    .map(v => v.trim())
+    .filter(v => v.length > 100);
+
+  if (blocks.length >= 2) {
+    console.log("[Parser] Newline format:", blocks.length, "variations");
+    return blocks.slice(0, 5).map((content, i) => ({
+      content: stripMarkdown(content),
+      words: wordCount(content),
+      angle: ANGLES[i] || `Variation ${i + 1}`,
+      score: Math.floor(Math.random() * 25) + 65,
+      scoring: false,
+    }));
   }
 
-  // Method 4: Triple newline blocks
-  if (parts.length < 2) {
-    parts = raw.split(/\n\n\n+/).map((v) => v.trim()).filter((v) => v.length > 50);
-    if (parts.length >= 2) console.log("[Parser] Newline format:", parts.length, "variations");
-  }
-
-  // Fallback: single variation
-  if (parts.length === 0) {
+  // Fallback: entire response as single variation
+  if (raw.trim().length > 50) {
     console.warn("[Parser] Could not split — returning as single variation");
-    parts = [raw.trim()];
+    return [{
+      content: stripMarkdown(raw.trim()),
+      words: wordCount(raw),
+      angle: "Generated Post",
+      score: 70,
+      scoring: false,
+    }];
   }
 
-  return parts.slice(0, 5).map((content, idx) => ({
-    angle: ANGLE_LABELS[idx % ANGLE_LABELS.length],
-    content: stripMarkdown(content),
-    words: wordCount(stripMarkdown(content)),
-    score: 0,
-    scoring: true,
-  }));
+  return [];
 }
 
 /* ─── Component ─── */
@@ -330,176 +368,94 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
     setGeneratedInfographicBase64(null);
 
     try {
-      // === SECTION 2 : Contexte utilisateur (RAG sources) ===
-      let userSection = "";
-      const ragIds = isDocMode
-        ? [...new Set([...selectedDocumentIds, ...activeSourceIds])]
-        : activeSourceIds;
+      // === Retrieve active sources content ===
+      const allSourceIds = [...new Set([...activeSourceIds, ...selectedDocumentIds])];
+      let sourceContext = "";
+      if (allSourceIds.length > 0) {
+        const { data: sourcesData } = await supabase
+          .from("sources")
+          .select("title, content, directive")
+          .in("id", allSourceIds)
+          .limit(5);
 
-      if (ragIds.length > 0) {
-        // searchUserSources a son propre fallback interne
-        const userRefs = await searchUserSources(sanitized, ragIds, 8);
-        if (userRefs.length > 0) {
-          userSection = "\n\n## CONTEXTE UTILISATEUR (sources sélectionnées)\n" +
-            userRefs.map((r) => `### [${r.type.toUpperCase()}] ${r.title}\n${r.content.slice(0, 3000)}`).join("\n\n");
-        }
+        sourceContext = sourcesData?.map(s => {
+          const title = s.title.replace(/\s*\(\d+\/\d+\)\s*$/, '').trim();
+          const directive = s.directive ? `Focus: ${s.directive}` : '';
+          return `=== ${title} ===\n${directive}\n${s.content?.slice(0, 2000)}`;
+        }).join('\n\n') || '';
       }
 
-      // Fallback ultime si RAG n'a rien retourné : injecter le contenu brut des sources sélectionnées
-      if (ragIds.length > 0 && !userSection) {
-        const selected = sources.filter((s) => ragIds.includes(s.id));
-        if (selected.length > 0) {
-          userSection = "\n\n## CONTEXTE UTILISATEUR (sources sélectionnées)\n" +
-            selected.map((s) => `### [${s.type.toUpperCase()}] ${s.title}\n${s.content.slice(0, 3000)}`).join("\n\n");
-        }
-      }
+      // === Build user message with source context ===
+      const focusDirectives = Object.values(sourceDirectives).filter(Boolean);
+      const userMessage = `
+${sourceContext ? `SOURCE DOCUMENTS:
+${sourceContext}
 
-      // Inject source directives if any
-      const sourceDirectives = sources
-        .filter((s) => ragIds.includes(s.id) && s.directive)
-        .map((s) => `- "${s.directive}" (from ${s.title})`)
-        .join("\n");
-      if (sourceDirectives) {
-        userSection += `\n\n## DOCUMENT FOCUS INSTRUCTIONS\nThe user wants to focus on these specific aspects:\n${sourceDirectives}\nGenerate content that specifically addresses these topics from the provided documents.`;
-      }
+IMPORTANT: Base your content on the above documents. Extract specific facts, quotes, insights, and examples. Do NOT invent information.
 
-      // === SECTION 3 : Modèles viraux (RAG viral) ===
-      let viralSection = "";
-      try {
-        const refs: ViralReference[] = await searchViralReferences(sanitized, selectedPlatform.name, selectedFormat, 3);
-        if (refs.length > 0) {
-          viralSection = "\n\n## MODÈLES VIRAUX DE RÉFÉRENCE\nInspire-toi du ton, de la structure et du style. Ne copie pas.\n" +
-            refs.map((r, i) => `### Modèle ${i + 1}\n${r.content}`).join("\n\n");
-        }
-      } catch { /* RAG indisponible */ }
+` : ''}TOPIC/IDEA: ${sanitized}
 
-      const modeLabel = isDocMode
-        ? "Here are source documents to transform into content"
-        : sourceMode === "idea" ? "Here is an idea to develop" : "Here is a topic / keyword";
+PLATFORM: ${selectedPlatform?.name}
+FORMAT: ${selectedFormat}
+${focusDirectives.length > 0 ? `FOCUS: ${focusDirectives.join(', ')}` : ''}
 
-      // Build directive context from selected sources
-      const directiveLines = selectedDocumentIds
-        .filter((id) => sourceDirectives[id]?.trim())
-        .map((id) => {
-          const src = sources.find((s) => s.id === id);
-          const title = src?.title.replace(/\s*\(\d+\/\d+\)\s*$/, "").trim();
-          return `From "${title}": ${sourceDirectives[id].trim()}`;
-        })
-        .join("\n");
+Generate 5 viral variations following the exact format specified. Each variation must be complete, specific, and distinct.`.trim();
 
-      let userMessage = isDocMode
-        ? `${modeLabel}. The selected sources are: ${sanitized}. Generate content based ONLY on these sources.`
-        : `${modeLabel}:\n\n${sanitized}`;
+      // === GHOSTWRITER SYSTEM PROMPT ===
+      const systemPrompt = `You are an elite ghostwriter and viral content strategist.
 
-      if (directiveLines) {
-        userMessage += `\n\nFOCUS INSTRUCTIONS:\n${directiveLines}\nUse these focus areas to guide the content. Extract specific insights from these topics.`;
-      }
+Your mission: Write 5 completely distinct ${selectedFormat} variations for ${selectedPlatform?.name || "LinkedIn"} that sound like a real person, not AI.
 
-      // === Instruction spéciale mode document ===
-      const docInstruction = isDocMode
-        ? `\n11. You MUST base the content ONLY on the sources provided in SECTION 2. Cite facts, figures and ideas that come directly from these sources. Do NOT generate information that is not in the sources.`
-        : "";
-
-      // === SECTION 5 : Style utilisateur (mémoire) ===
-      let styleSection = "";
-      try {
-        const { data: { user: currentUser } } = await supabase.auth.getUser();
-        if (currentUser) {
-          styleSection = await getUserStyleMemory(currentUser.id, selectedPlatform.name);
-          setStyleMemoryActive(styleSection.length > 0);
-        }
-      } catch { /* memory is non-critical */ }
-
-      // === GHOSTWRITER-STYLE PROMPT ===
-      const systemPrompt = `You are a world-class ghostwriter for social media creators.
-You write content that sounds like a real person talking — not a content machine producing templates.${userSection}${viralSection}${styleSection}
-
-YOUR WRITING STYLE:
-- Short punchy sentences. Like this. Then one longer one for contrast.
-- NO bold text. NO asterisks. NO markdown formatting ever.
-- NO numbered lists. Weave numbers into prose naturally.
-- NO bullet points. Write in flowing paragraphs.
-- Start with a specific moment, number, or bold claim.
-- Use "I" sparingly — maximum 3 times per post.
-- Specific details beat vague generalizations always.
-  ("My post got 2.3M views on a Tuesday at 2am" not "posts can go viral")
-- One idea per post. Not 5, not 8. ONE.
-- End with ONE short question. Never "What do you think?"
-
-WHAT MAKES CONTENT FEEL GENERIC (NEVER DO THIS):
-- Starting with "Here's how to..." or "Want to..." or "Follow these X steps"
-- Using bold headers to organize content
-- Numbered lists (1. 2. 3. 4. 5.)
-- Phrases like "game changer", "leverage", "optimize", "actionable"
-- Giving 7-8 tips in one post
-- Ending with "Let me know in the comments" or "Drop a like if you agree"
-- Any sentence that could apply to ANY topic (not specific to THIS topic)
-
-WHAT MAKES CONTENT FEEL REAL (ALWAYS DO THIS):
-- A specific story moment in the first 3 lines
-- One contrarian or uncomfortable truth
-- A personal mistake or failure
-- A specific number or date or person
-- Something that sounds like it could get the author in trouble
-- Raw emotion: frustration, surprise, regret, excitement
-- A question the reader is afraid to answer honestly
-
-PLATFORM RULES:
-- LinkedIn: 150-220 words. Conversational but professional. No emojis. Paragraphs of 1-3 lines max.
-- Instagram: 80-150 words. Punchy. Can use 1-2 emojis max.
-- X/Twitter: Under 280 chars for hook. Then thread if needed.
-- TikTok: Script format. Spoken word. Very casual.
-
-Current platform: ${selectedPlatform.name}
-Current format: ${selectedFormat}
-${selectedFormat?.toLowerCase() === "thread" ? buildThreadPlaybook(profile?.niche || "", sanitized) : ""}
-${/reel|video script|script shorts/i.test(selectedFormat || "") ? buildReelPlaybook(profile?.niche || "", sanitized) : ""}
-${/script long/i.test(selectedFormat || "") ? buildYoutubePlaybook(profile?.niche || "", sanitized) : ""}
-${selectedPlatform?.name === "LinkedIn" && selectedFormat?.toLowerCase() === "post" ? buildLinkedinPlaybook(profile?.niche || "", sanitized) : ""}
-FOR EACH VARIATION, USE A DIFFERENT APPROACH:
-- Variation 1: Open with a specific failure or mistake
-- Variation 2: Open with a surprising number or stat
-- Variation 3: Open with a contrarian statement (challenge common wisdom)
-- Variation 4: Open with a specific moment in time
-- Variation 5: Open with a question that stings a little
+WRITER PROFILE:
+- Name: ${profile?.full_name || "the creator"}
+- Niche: ${profile?.target_audience || profile?.niche || "digital marketing"}
+- Tone: ${profile?.preferred_tone || "educational"}
+- Style: Direct, specific, no fluff
 
 ABSOLUTE RULES:
-- Zero markdown formatting (no **, no ##, no -, no __, no numbered lists)
-- Zero em dash as universal connector (use commas, periods, or parens instead)
-- Zero generic advice that applies to everyone
-- Every sentence must earn its place
-- If a sentence doesn't move the reader forward, delete it
-- Write ALL content in ENGLISH only
-- NEVER use artificially enthusiastic phrases ("Perfect!", "Absolutely!", "Excellent!")${docInstruction}
+1. ZERO markdown — no bold, no bullets, no headers
+2. Write in FIRST PERSON always
+3. Use SPECIFIC details, numbers, examples — never generic
+4. Each variation must have a different angle and structure
+5. Minimum 150 words per variation
+6. End each post with a question or strong CTA
+7. NO AI phrases: never use "delve", "pivotal", "leverage", "game-changer", "holistic", "tapestry", "underscore", "elevate", "empower", "transformative"
 
-BANNED WORDS: delve, pivotal, tapestry, leverage, optimize, synergy, game-changer, holistic, underscore, garner, seamless, robust, actionable, transformative, groundbreaking, cutting-edge
-
-BANNED: "In today's...", "At its core", "Game changer", "In conclusion", "Here's the thing", "Deep dive", "Embark on a journey", any hedge-heavy prose
-
-OUTPUT FORMAT (STRICT):
-Generate exactly 5 DISTINCT variations using this EXACT format:
-
+OUTPUT FORMAT — use this EXACT format:
 [VARIATION_1_START]
-(complete post text)
+(full post text)
 [VARIATION_1_END]
 
 [VARIATION_2_START]
-(complete post text)
+(full post text)
 [VARIATION_2_END]
 
 [VARIATION_3_START]
-(complete post text)
+(full post text)
 [VARIATION_3_END]
 
 [VARIATION_4_START]
-(complete post text)
+(full post text)
 [VARIATION_4_END]
 
 [VARIATION_5_START]
-(complete post text)
+(full post text)
 [VARIATION_5_END]
 
-Each variation must be COMPLETE. Never cut short.`;
+ANGLES TO USE (one per variation):
+1. Personal failure/mistake story → lesson learned
+2. Contrarian take — challenge common advice
+3. Specific case study with real numbers
+4. Step-by-step process breakdown
+5. Provocative question + strong opinion`;
+
+      // === DEBUG LOGS ===
+      console.log("=== GENERATION START ===");
+      console.log("Platform:", selectedPlatform?.name);
+      console.log("Format:", selectedFormat);
+      console.log("Sources:", allSourceIds.length);
+      console.log("Source context length:", sourceContext.length);
+      console.log("User message preview:", userMessage.slice(0, 300));
 
       assertOnline();
       if (!isAnthropicConfigured()) {
@@ -539,9 +495,10 @@ Each variation must be COMPLETE. Never cut short.`;
 
       setError(null);
       const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
-      console.log("[Gen] Raw response:", text.length, "chars");
+      console.log("=== RAW RESPONSE ===");
+      console.log(text.slice(0, 500));
       const parsed = parseVariations(text);
-      console.log("[Gen] Parsed:", parsed.length, "variations");
+      console.log("Parsed variations:", parsed.length);
 
       // Instant scoring (no extra API calls) — save immediately
       const scored = parsed.map((v) => ({
