@@ -237,7 +237,7 @@ const Onboarding = () => {
                 transition={{ delay: 0.2, duration: 0.4 }}
                 className="text-3xl font-bold text-white mb-3"
               >
-                Welcome to Supen.io
+                Welcome to Supenli.io
               </motion.h1>
 
               <motion.p
@@ -468,7 +468,7 @@ const Onboarding = () => {
               transition={{ duration: 0.3, ease: "easeOut" }}
             >
               <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-8 backdrop-blur-sm">
-                <h1 className="text-2xl font-bold text-white mb-2">How did you discover Supen.io?</h1>
+                <h1 className="text-2xl font-bold text-white mb-2">How did you discover Supenli.io?</h1>
                 <p className="text-sm text-white/40 mb-6">Optional — helps us grow.</p>
 
                 <div className="flex flex-wrap gap-2.5">
@@ -558,7 +558,7 @@ const Onboarding = () => {
                   transition={{ delay: 0.6, duration: 0.4 }}
                   className="text-white/40 text-sm leading-relaxed mb-10 max-w-sm mx-auto"
                 >
-                  Your workspace is ready. Supen.io will help you create viral content for {selectedPlatforms.slice(0, 3).join(", ")}{selectedPlatforms.length > 3 ? ` and ${selectedPlatforms.length - 3} more` : ""}.
+                  Your workspace is ready. Supenli.io will help you create viral content for {selectedPlatforms.slice(0, 3).join(", ")}{selectedPlatforms.length > 3 ? ` and ${selectedPlatforms.length - 3} more` : ""}.
                 </motion.p>
 
                 <AnimatePresence>

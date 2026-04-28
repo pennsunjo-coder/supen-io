@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       supabase.functions.invoke("send-email", {
         body: {
           to: data.user.email,
-          subject: "Welcome to Supen.io!",
+          subject: "Welcome to Supenli.io!",
           type: "welcome",
           data: { name: data.user.user_metadata?.full_name || "there" },
         },

@@ -41,7 +41,7 @@ const steps = [
 ];
 
 const testimonials = [
-  { name: "Nadia Okonkwo", role: "Consultant · London, UK", image: "https://randomuser.me/api/portraits/women/23.jpg", text: "Supen.io transformed the way I create. I focus on ideas, the AI handles the rest. My LinkedIn engagement tripled." },
+  { name: "Nadia Okonkwo", role: "Consultant · London, UK", image: "https://randomuser.me/api/portraits/women/23.jpg", text: "Supenli.io transformed the way I create. I focus on ideas, the AI handles the rest. My LinkedIn engagement tripled." },
   { name: "Marcus Johnson", role: "Content Strategist · New York, USA", image: "https://randomuser.me/api/portraits/men/32.jpg", text: "I generate 5 variations in 30 seconds. Before, I used to spend 2 hours on a single LinkedIn post. Game over for writer's block." },
   { name: "Elena Torres", role: "Digital Marketer · Washington, USA", image: "https://randomuser.me/api/portraits/women/68.jpg", text: "The Anti-AI mode is mind-blowing. Even my most demanding clients detect nothing. My content finally sounds human." },
 ];
@@ -70,7 +70,7 @@ const plans = [
     icon: Gift,
     price: "$0",
     period: "/month",
-    desc: "Try Supen.io risk-free",
+    desc: "Try Supenli.io risk-free",
     features: ["YouTube Transcriber (1 video/day)", "Platform preview", "No credit card required"],
     cta: "Get started free",
     highlighted: false,
@@ -110,9 +110,9 @@ const plans = [
 ];
 
 const faqs = [
-  { q: "Does it really sound human?", a: "Yes. Supen.io uses advanced anti-AI protocols. No 'delve', no 'tapestry', no corporate jargon. Just clean, direct writing that sounds like you." },
+  { q: "Does it really sound human?", a: "Yes. Supenli.io uses advanced anti-AI protocols. No 'delve', no 'tapestry', no corporate jargon. Just clean, direct writing that sounds like you." },
   { q: "Which platforms are supported?", a: "LinkedIn, Instagram, X (Twitter), TikTok, Facebook, and YouTube. Each platform gets its own optimized format and tone." },
-  { q: "How is this different from ChatGPT?", a: "ChatGPT gives you one generic answer. Supen.io gives you 5 variations with different angles, scores them for virality, and remembers your style over time." },
+  { q: "How is this different from ChatGPT?", a: "ChatGPT gives you one generic answer. Supenli.io gives you 5 variations with different angles, scores them for virality, and remembers your style over time." },
   { q: "Can I generate infographics too?", a: "Yes. Every post can be turned into a shareable infographic in one click. Style inspired by viral educational content creators." },
   { q: "Is my content private?", a: "Your content belongs to you. We never train our models on your data. Everything is encrypted and stored securely." },
   { q: "What's the free plan?", a: "The free plan gives you access to content generation, the AI coach, and basic infographics. No credit card required to start." },
@@ -296,7 +296,7 @@ const Index = () => {
             <span className="flex items-center gap-1.5"><Clock className="w-3 h-3 text-emerald-500" /> Results in 60 seconds</span>
           </motion.div>
           <motion.p variants={fadeUp} custom={5} className="mt-4 text-xs text-muted-foreground/60 font-medium">
-            Join 2,400+ creators already using Supen.io
+            Join 2,400+ creators already using Supenli.io
           </motion.p>
 
           {/* Marquee */}
@@ -379,7 +379,7 @@ const Index = () => {
           >
             <span className="text-xs text-primary font-semibold uppercase tracking-widest">Features</span>
             <h2 className="text-3xl md:text-4xl font-bold mt-3 mb-4">Everything you need to <span className="text-gradient">go viral</span></h2>
-            <p className="text-muted-foreground max-w-lg mx-auto">From research to publishing, Supen.io handles the entire content creation workflow.</p>
+            <p className="text-muted-foreground max-w-lg mx-auto">From research to publishing, Supenli.io handles the entire content creation workflow.</p>
           </motion.div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -409,7 +409,7 @@ const Index = () => {
             viewport={{ once: true }} transition={{ duration: 0.5 }}
           >
             <span className="text-xs text-primary font-semibold uppercase tracking-widest">Comparison</span>
-            <h2 className="text-3xl md:text-4xl font-bold mt-3 mb-4">Why <span className="text-gradient">Supen.io</span>?</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mt-3 mb-4">Why <span className="text-gradient">Supenli.io</span>?</h2>
             <p className="text-muted-foreground">Compare with other AI content creation tools.</p>
           </motion.div>
 
@@ -421,7 +421,7 @@ const Index = () => {
             <div className="grid grid-cols-4 border-b border-border/30 bg-accent/20">
               <div className="px-3 md:px-5 py-4 text-xs font-semibold text-muted-foreground">Feature</div>
               <div className="px-3 md:px-5 py-4 text-center">
-                <span className="text-xs md:text-sm font-bold text-primary">Supen.io</span>
+                <span className="text-xs md:text-sm font-bold text-primary">Supenli.io</span>
               </div>
               <div className="px-3 md:px-5 py-4 text-center">
                 <span className="text-xs md:text-sm font-medium text-muted-foreground">ChatGPT</span>
@@ -509,7 +509,7 @@ const Index = () => {
           >
             <span className="text-xs text-primary font-semibold uppercase tracking-widest">Testimonials</span>
             <h2 className="text-3xl md:text-4xl font-bold mt-3 mb-4">What our <span className="text-gradient">creators</span> say</h2>
-            <p className="text-muted-foreground">Thousands of content creators trust Supen.io to create viral content every day.</p>
+            <p className="text-muted-foreground">Thousands of content creators trust Supenli.io to create viral content every day.</p>
           </motion.div>
 
           {/* 3 testimonials side by side */}
@@ -740,7 +740,7 @@ const Index = () => {
             Create your first <span className="text-gradient">viral content</span><br />in under 60 seconds
           </h2>
           <p className="text-base text-muted-foreground mb-8 max-w-md mx-auto leading-relaxed">
-            Join 2,500+ creators using Supen.io to create content that converts.
+            Join 2,500+ creators using Supenli.io to create content that converts.
           </p>
           <Button size="lg" onClick={() => navigate("/login")} className="bg-foreground text-background hover:bg-foreground/90 font-bold group h-13 px-10 text-base rounded-xl">
             Get started free
@@ -788,7 +788,7 @@ const Index = () => {
               <h4 className="text-sm font-semibold mb-3">Resources</h4>
               <ul className="space-y-2 text-xs text-muted-foreground">
                 <li><a href="/contact" onClick={(e) => { e.preventDefault(); navigate("/contact"); }} className="hover:text-foreground transition-colors">Contact</a></li>
-                <li><a href="mailto:support@supen.io" className="hover:text-foreground transition-colors">Support</a></li>
+                <li><a href="mailto:support@supenli.io" className="hover:text-foreground transition-colors">Support</a></li>
               </ul>
             </div>
 
@@ -803,7 +803,7 @@ const Index = () => {
           </div>
 
           <div className="flex flex-col md:flex-row items-center justify-between pt-8 border-t border-border/30 gap-4">
-            <p className="text-xs text-muted-foreground">© 2026 Supen.io. All rights reserved.</p>
+            <p className="text-xs text-muted-foreground">© 2026 Supenli.io. All rights reserved.</p>
           </div>
         </div>
       </footer>

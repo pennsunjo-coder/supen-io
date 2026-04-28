@@ -32,7 +32,7 @@ const iconSizes: Record<Size, string> = {
 };
 
 /**
- * Full Supen.io logo (text + icon).
+ * Full Supenli.io logo (text + icon).
  * Auto-switches between dark/light variant based on theme.
  * Note: file naming is inverse — "Black" SVG has WHITE text (for dark bg),
  * "White" SVG has BLACK text (for light bg).
@@ -50,7 +50,7 @@ export function LogoFull({ size = "md", className, vertical = false }: LogoProps
   return (
     <img
       src={src}
-      alt="Supen.io"
+      alt="Supenli.io"
       className={cn(sizeClass, "w-auto object-contain", className)}
       draggable={false}
     />
@@ -69,7 +69,7 @@ export function LogoIcon({ size = "md", className }: { size?: Size; className?: 
   return (
     <img
       src={src}
-      alt="Supen"
+      alt="Supenli"
       className={cn(iconSizes[size], "object-contain", className)}
       draggable={false}
     />

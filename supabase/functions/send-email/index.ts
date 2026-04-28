@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Supen.io <hello@supen.io>",
+        from: "Supenli.io <hello@supenli.io>",
         to: [to],
         subject,
         html,
@@ -92,7 +92,7 @@ function buildWelcomeEmail(name: string): string {
 <body>
   <div class="container">
     <div class="header">
-      <div class="logo">Supen.io</div>
+      <div class="logo">Supenli.io</div>
       <div class="tagline">AI-powered content creation</div>
     </div>
     <div class="body">
@@ -107,10 +107,10 @@ function buildWelcomeEmail(name: string): string {
         &#128196; Upload PDFs and URLs as content sources<br>
         &#128200; Track your content performance
       </p>
-      <a href="https://supen.io/dashboard" class="cta">Start Creating &rarr;</a>
+      <a href="https://supenli.io/dashboard" class="cta">Start Creating &rarr;</a>
     </div>
     <div class="footer">
-      <p class="footer-text">&copy; 2026 Supen.io &middot; You're receiving this because you created an account.</p>
+      <p class="footer-text">&copy; 2026 Supenli.io &middot; You're receiving this because you created an account.</p>
     </div>
   </div>
 </body>
@@ -140,7 +140,7 @@ function buildResetEmail(resetLink: string): string {
 <body>
   <div class="container">
     <div class="header">
-      <div class="logo">Supen.io</div>
+      <div class="logo">Supenli.io</div>
     </div>
     <div class="body">
       <div class="title">Reset your password</div>
@@ -153,7 +153,7 @@ function buildResetEmail(resetLink: string): string {
       </div>
     </div>
     <div class="footer">
-      <p class="footer-text">&copy; 2026 Supen.io &middot; This email was sent for security purposes.</p>
+      <p class="footer-text">&copy; 2026 Supenli.io &middot; This email was sent for security purposes.</p>
     </div>
   </div>
 </body>
@@ -183,7 +183,7 @@ function buildContentReadyEmail(name: string, platform: string, topic: string): 
 <body>
   <div class="container">
     <div class="header">
-      <div class="logo">Supen.io</div>
+      <div class="logo">Supenli.io</div>
     </div>
     <div class="body">
       <div class="badge">${platform}</div>
@@ -191,10 +191,10 @@ function buildContentReadyEmail(name: string, platform: string, topic: string): 
       <p class="text">
         Hey ${name}, your ${platform} content about "<strong>${topic}</strong>" has been generated with 5 viral variations.
       </p>
-      <a href="https://supen.io/dashboard" class="cta">View Content &rarr;</a>
+      <a href="https://supenli.io/dashboard" class="cta">View Content &rarr;</a>
     </div>
     <div class="footer">
-      <p class="footer-text">&copy; 2026 Supen.io</p>
+      <p class="footer-text">&copy; 2026 Supenli.io</p>
     </div>
   </div>
 </body>

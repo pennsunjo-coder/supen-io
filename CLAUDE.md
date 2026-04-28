@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Supen.io** — plateforme de création de contenu propulsée par l'IA pour les créateurs de réseaux sociaux. Centralise les sources de recherche (PDFs, URLs, YouTube, notes), permet de chatter avec un assistant IA, et génère des posts prêts à publier pour X, LinkedIn, Instagram, YouTube, Facebook et TikTok.
+**Supenli.io** — plateforme de création de contenu propulsée par l'IA pour les créateurs de réseaux sociaux. Centralise les sources de recherche (PDFs, URLs, YouTube, notes), permet de chatter avec un assistant IA, et génère des posts prêts à publier pour X, LinkedIn, Instagram, YouTube, Facebook et TikTok.
 
 **Langue de l'interface : Français.** Tout texte visible par l'utilisateur (labels, placeholders, messages, toasts) doit être en français.
 

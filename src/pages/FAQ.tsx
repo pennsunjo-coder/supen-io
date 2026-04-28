@@ -12,7 +12,7 @@ const FAQS = [
   },
   {
     q: "What platforms do you support?",
-    a: "Supen.io generates optimized content for Instagram (posts, carousels, Reels scripts), TikTok (scripts, hooks), Facebook (posts, Reels), LinkedIn (articles, thought leadership posts), YouTube (scripts, descriptions, titles), and X/Twitter (threads, single posts). Each platform has dedicated formats with the right tone, length, and structure.",
+    a: "Supenli.io generates optimized content for Instagram (posts, carousels, Reels scripts), TikTok (scripts, hooks), Facebook (posts, Reels), LinkedIn (articles, thought leadership posts), YouTube (scripts, descriptions, titles), and X/Twitter (threads, single posts). Each platform has dedicated formats with the right tone, length, and structure.",
   },
   {
     q: "Can I use my own documents as research sources?",
@@ -36,7 +36,7 @@ const FAQS = [
   },
   {
     q: "What languages are supported?",
-    a: "Supen.io supports content generation in English and French. The dashboard interface is in French, while the landing page is in English. We're planning to add more languages (Spanish, Portuguese, German) based on user demand.",
+    a: "Supenli.io supports content generation in English and French. The dashboard interface is in French, while the landing page is in English. We're planning to add more languages (Spanish, Portuguese, German) based on user demand.",
   },
   {
     q: "How is my data protected?",
@@ -44,7 +44,7 @@ const FAQS = [
   },
   {
     q: "Can I generate infographics and images?",
-    a: "Yes! After generating your content, Supen.io offers an infographic creator powered by Google Gemini. Choose a visual style (Sketchnote, Modern, or Colorful), and we generate a 1080x1080 PNG image ready for Instagram, LinkedIn, or any platform. You can also get image prompt suggestions for tools like Midjourney or DALL-E.",
+    a: "Yes! After generating your content, Supenli.io offers an infographic creator powered by Google Gemini. Choose a visual style (Sketchnote, Modern, or Colorful), and we generate a 1080x1080 PNG image ready for Instagram, LinkedIn, or any platform. You can also get image prompt suggestions for tools like Midjourney or DALL-E.",
   },
 ];
 
@@ -62,7 +62,7 @@ export default function FAQ() {
 
       <main className="max-w-3xl mx-auto px-6 py-20">
         <h1 className="text-3xl font-bold mb-2">Frequently Asked Questions</h1>
-        <p className="text-sm text-muted-foreground mb-12">Everything you need to know about Supen.io</p>
+        <p className="text-sm text-muted-foreground mb-12">Everything you need to know about Supenli.io</p>
 
         <div className="space-y-3">
           {FAQS.map((faq, i) => (

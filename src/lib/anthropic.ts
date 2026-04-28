@@ -18,7 +18,7 @@ export function isAnthropicConfigured(): boolean {
   return !!import.meta.env.VITE_ANTHROPIC_API_KEY;
 }
 
-export const SYSTEM_PROMPT = `You are a social media content creation assistant, integrated into Supen.io.
+export const SYSTEM_PROMPT = `You are a social media content creation assistant, integrated into Supenli.io.
 
 Strict rules:
 - Always respond in English.

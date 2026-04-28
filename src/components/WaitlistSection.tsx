@@ -71,9 +71,9 @@ export default function WaitlistSection() {
 
   function handleShare() {
     const shareData = {
-      title: "Join Supen.io waitlist",
-      text: "I just joined the Supen.io waitlist — viral content creation powered by AI. Join me!",
-      url: "https://supen.io/#waitlist",
+      title: "Join Supenli.io waitlist",
+      text: "I just joined the Supenli.io waitlist — viral content creation powered by AI. Join me!",
+      url: "https://supenli.io/#waitlist",
     };
 
     if (navigator.share) {

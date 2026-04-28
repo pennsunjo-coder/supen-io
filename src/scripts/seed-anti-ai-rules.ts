@@ -14,7 +14,7 @@ const supabase = createClient(supabaseUrl, serviceRoleKey);
 /**
  * Règles Anti-IA compilées à partir de recherches sur la détection
  * de texte généré par IA. Ces règles sont injectées dans le system
- * prompt pour que le contenu généré par Supen.io soit indétectable.
+ * prompt pour que le contenu généré par Supenli.io soit indétectable.
  */
 const antiAiRules = [
   // Règles injectées dans CHAQUE génération via le format de la plateforme
