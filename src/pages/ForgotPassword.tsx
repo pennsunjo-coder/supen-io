@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Mail, ArrowLeft, CheckCircle } from "lucide-react";
+import { LogoFull } from "@/components/Logo";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -38,8 +39,8 @@ export default function ForgotPassword() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold">Supenli.io</h1>
-          <p className="text-muted-foreground text-sm mt-1">Reset your password</p>
+          <Link to="/"><LogoFull size="lg" /></Link>
+          <p className="text-muted-foreground text-sm mt-3">Reset your password</p>
         </div>
 
         <div className="bg-card border border-border/30 rounded-2xl p-8 shadow-xl">

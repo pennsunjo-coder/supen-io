@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Lock, Eye, EyeOff, CheckCircle } from "lucide-react";
+import { LogoFull } from "@/components/Logo";
 
 export default function ResetPassword() {
   const navigate = useNavigate();
@@ -62,8 +63,8 @@ export default function ResetPassword() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold">Supenli.io</h1>
-          <p className="text-muted-foreground text-sm mt-1">Create a new password</p>
+          <Link to="/"><LogoFull size="lg" /></Link>
+          <p className="text-muted-foreground text-sm mt-3">Create a new password</p>
         </div>
 
         <div className="bg-card border border-border/30 rounded-2xl p-8 shadow-xl">
