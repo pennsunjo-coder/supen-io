@@ -70,7 +70,7 @@ async function generateWithOpenAI(
   console.log("[Infographic] Prompt length:", prompt.length);
 
   const { data, error } = await supabase.functions.invoke("generate-image", {
-    body: { prompt, size: imageSize.size, quality: "hd" },
+    body: { prompt, size: imageSize.size, quality: "high" },
   });
 
   if (error) {

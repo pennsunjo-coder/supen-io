@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
       throw new Error("OPENAI_API_KEY not configured");
     }
 
-    console.log("[generate-image] Calling DALL-E 3, size:", size || "1024x1792");
+    console.log("[generate-image] Calling gpt-image-1, size:", size || "1024x1792");
 
     const response = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
@@ -37,12 +37,12 @@ Deno.serve(async (req) => {
         Authorization: `Bearer ${OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "dall-e-3",
+        model: "gpt-image-1",
         prompt,
         n: 1,
         size: size || "1024x1792",
-        quality: quality || "hd",
-        response_format: "b64_json",
+        quality: quality || "high",
+        output_format: "b64_json",
       }),
     });
 
@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
     const base64 = data.data?.[0]?.b64_json;
 
     if (!base64) {
-      throw new Error("No image returned from DALL-E 3");
+      throw new Error("No image returned from gpt-image-1");
     }
 
     console.log("[generate-image] Success, base64 length:", base64.length);
