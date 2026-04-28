@@ -59,71 +59,37 @@ function getImageSize(platform: string): ImageSizeConfig {
   return { size: "1024x1792", label: "Portrait", description: "Standard portrait format" };
 }
 
-// ─── OpenAI DALL-E 3 Image Generation ───
-
-const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
+// ─── DALL-E 3 Image Generation via Edge Function (avoids CORS) ───
 
 async function generateWithOpenAI(
   prompt: string,
   imageSize: ImageSizeConfig,
 ): Promise<string> {
-  if (!OPENAI_API_KEY) {
-    throw new Error("OpenAI API key not configured. Add VITE_OPENAI_API_KEY to your environment.");
-  }
-
-  console.log("[Infographic] Calling DALL-E 3...");
+  console.log("[Infographic] Calling DALL-E 3 via Edge Function...");
   console.log("[Infographic] Size:", imageSize.size, imageSize.label);
-  console.log("[Infographic] Prompt preview:", prompt.slice(0, 200));
+  console.log("[Infographic] Prompt length:", prompt.length);
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 120_000);
+  const { data, error } = await supabase.functions.invoke("generate-image", {
+    body: { prompt, size: imageSize.size, quality: "hd" },
+  });
 
-  try {
-    const response = await fetch(
-      "https://api.openai.com/v1/images/generations",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${OPENAI_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: "dall-e-3",
-          prompt: prompt,
-          n: 1,
-          size: imageSize.size,
-          quality: "hd",
-          response_format: "b64_json",
-        }),
-        signal: controller.signal,
-      },
-    );
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      const msg = err?.error?.message || `OpenAI API error (${response.status})`;
-      if (IS_DEV) console.error("[InfographicModal] OpenAI HTTP", response.status, msg);
-      throw new Error(msg);
-    }
-
-    const data = await response.json();
-    const base64 = data.data?.[0]?.b64_json;
-
-    if (!base64) {
-      if (IS_DEV) console.error("[InfographicModal] OpenAI returned no image data:", JSON.stringify(data).slice(0, 500));
-      throw new Error("No image returned from DALL-E 3. Please try again.");
-    }
-
-    console.log("[Infographic] Generated! Size:", base64.length);
-    return base64;
-  } catch (err) {
-    clearTimeout(timeoutId);
-    if (err instanceof DOMException && err.name === "AbortError") {
-      throw new Error("Image generation timed out (2 min). Please try again with simpler content.");
-    }
-    throw err;
+  if (error) {
+    console.error("[Infographic] Edge Function error:", error);
+    throw new Error(error.message || "Image generation failed. Please try again.");
   }
+
+  if (data?.error) {
+    console.error("[Infographic] API error:", data.error);
+    throw new Error(data.error);
+  }
+
+  const base64 = data?.image;
+  if (!base64) {
+    throw new Error("No image returned from DALL-E 3. Please try again.");
+  }
+
+  console.log("[Infographic] Generated! Size:", base64.length);
+  return base64;
 }
 
 function wrapBase64AsHtml(base64: string, dims: { width: number; height: number }): string {
@@ -413,9 +379,10 @@ export default function InfographicModal({ open, onClose, content, platform, con
   const previewWidth = 480;
   const iframeScale = previewWidth / dims.width;
 
-  // ─── Generation (OpenAI DALL-E 3 — with retry) ───
+  // ─── Generation (DALL-E 3 via Edge Function — with retry) ───
 
-  const hasOpenAIKey = !!OPENAI_API_KEY;
+  // Key is server-side (Edge Function secret), no client-side check needed
+  const hasOpenAIKey = true;
 
   async function handleGenerate() {
     setStep("generating");
@@ -864,23 +831,13 @@ export default function InfographicModal({ open, onClose, content, platform, con
                   <p className="text-xs text-muted-foreground leading-relaxed">{contentPreview}</p>
                 </div>
 
-                {/* API key warning */}
-                {!hasOpenAIKey && (
-                  <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center">
-                    <p className="text-sm font-medium text-amber-400 mb-2">
-                      OpenAI API key required
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Add VITE_OPENAI_API_KEY to your environment to generate infographics with DALL-E 3.
-                    </p>
-                  </div>
-                )}
+                {/* API key warning — only shown if server-side key missing (will show after failed generation) */}
 
                 {/* Generate button */}
                 <Button
                   className="w-full h-14 text-base font-bold gap-3"
                   onClick={handleGenerate}
-                  disabled={retryCountdown > 0 || !hasOpenAIKey}
+                  disabled={retryCountdown > 0}
                 >
                   <Sparkles className="w-5 h-5" />
                   {retryCountdown > 0 ? `Retry in ${retryCountdown}s...` : `Generate ${styleChoice === "auto" ? templateSelection.templateId : styleChoice} infographic →`}

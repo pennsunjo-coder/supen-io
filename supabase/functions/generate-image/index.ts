@@ -1,61 +1,68 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-serve(async (req) => {
+function json(data: unknown, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    const { prompt } = await req.json();
+    const { prompt, size, quality } = await req.json();
 
-    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-    if (!GEMINI_API_KEY) {
-      throw new Error("GEMINI_API_KEY non configurée");
+    if (!prompt) {
+      return json({ error: "Missing required field: prompt" }, 400);
     }
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            responseModalities: ["IMAGE", "TEXT"],
-            responseMimeType: "image/jpeg",
-          },
-        }),
+    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+    if (!OPENAI_API_KEY) {
+      throw new Error("OPENAI_API_KEY not configured");
+    }
+
+    console.log("[generate-image] Calling DALL-E 3, size:", size || "1024x1792");
+
+    const response = await fetch("https://api.openai.com/v1/images/generations", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
       },
-    );
+      body: JSON.stringify({
+        model: "dall-e-3",
+        prompt,
+        n: 1,
+        size: size || "1024x1792",
+        quality: quality || "hd",
+        response_format: "b64_json",
+      }),
+    });
 
     if (!response.ok) {
-      const err = await response.text();
-      throw new Error(`Gemini error: ${response.status} — ${err.slice(0, 200)}`);
+      const errText = await response.text();
+      console.error("[generate-image] OpenAI error:", response.status, errText.slice(0, 300));
+      return json({ error: `OpenAI error (${response.status}): ${errText.slice(0, 200)}` }, response.status);
     }
 
     const data = await response.json();
+    const base64 = data.data?.[0]?.b64_json;
 
-    const imagePart = data.candidates?.[0]?.content?.parts?.find(
-      (p: any) => p.inlineData?.mimeType?.startsWith("image/"),
-    );
-
-    if (!imagePart?.inlineData?.data) {
-      throw new Error("Aucune image générée par Gemini");
+    if (!base64) {
+      throw new Error("No image returned from DALL-E 3");
     }
 
-    return new Response(
-      JSON.stringify({ image: imagePart.inlineData.data }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    console.log("[generate-image] Success, base64 length:", base64.length);
+    return json({ image: base64 });
   } catch (err) {
-    return new Response(
-      JSON.stringify({ error: err instanceof Error ? err.message : "Erreur serveur" }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    console.error("[generate-image]", err);
+    return json({ error: err instanceof Error ? err.message : "Server error" }, 500);
   }
 });
