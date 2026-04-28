@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
       throw new Error("OPENAI_API_KEY not configured");
     }
 
-    console.log("[generate-image] Calling gpt-image-1, size:", size || "1024x1792");
+    console.log("[generate-image] Calling gpt-image-1, size:", size || "1024x1536");
 
     const response = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
         model: "gpt-image-1",
         prompt,
         n: 1,
-        size: size || "1024x1792",
+        size: size || "1024x1536",
         quality: quality || "high",
         output_format: "b64_json",
       }),

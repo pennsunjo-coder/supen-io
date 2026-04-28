@@ -33,7 +33,7 @@ function injectFontsInHtml(html: string): string {
 // ─── Platform-specific image sizes ───
 
 interface ImageSizeConfig {
-  size: "1024x1024" | "1024x1792" | "1792x1024";
+  size: "1024x1024" | "1536x1024" | "1024x1536";
   label: string;
   description: string;
 }
@@ -41,22 +41,14 @@ interface ImageSizeConfig {
 function getImageSize(platform: string): ImageSizeConfig {
   const p = platform?.toLowerCase() || "";
 
-  if (p.includes("linkedin")) {
-    return { size: "1024x1792", label: "A4 Portrait", description: "Optimized for LinkedIn — more content space" };
+  if (p.includes("twitter") || p.includes("x (")) {
+    return { size: "1536x1024", label: "Landscape", description: "Optimized for X/Twitter" };
   }
   if (p.includes("facebook")) {
-    return { size: "1024x1024", label: "Square", description: "Optimized for Facebook feed" };
+    return { size: "1024x1024", label: "Square", description: "Optimized for Facebook" };
   }
-  if (p.includes("instagram")) {
-    return { size: "1024x1792", label: "Portrait 4:5", description: "Optimized for Instagram" };
-  }
-  if (p.includes("tiktok")) {
-    return { size: "1024x1792", label: "Vertical 9:16", description: "Optimized for TikTok" };
-  }
-  if (p.includes("twitter") || p.includes("x (")) {
-    return { size: "1792x1024", label: "Landscape", description: "Optimized for X/Twitter" };
-  }
-  return { size: "1024x1792", label: "Portrait", description: "Standard portrait format" };
+  // LinkedIn, Instagram, TikTok, default → portrait
+  return { size: "1024x1536", label: "Portrait", description: `Optimized for ${platform || "social media"}` };
 }
 
 // ─── DALL-E 3 Image Generation via Edge Function (avoids CORS) ───
