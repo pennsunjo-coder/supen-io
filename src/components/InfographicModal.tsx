@@ -391,7 +391,8 @@ export default function InfographicModal({ open, onClose, content, platform, con
       assertOnline();
 
       console.log("[Infographic] Content length:", content.length);
-      const dallePrompt = buildDallEPrompt(content, platform, forcedTemplate);
+      console.log("[Infographic] Template:", templateSelection.templateId, "—", templateSelection.reason);
+      const dallePrompt = buildDallEPrompt(content, platform, templateSelection.templateId);
 
       if (IS_DEV) {
         console.log("=== DALL-E PROMPT ===");
@@ -763,11 +764,19 @@ export default function InfographicModal({ open, onClose, content, platform, con
                   </div>
                 </div>
 
-                {/* Platform format indicator */}
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span>Format:</span>
-                  <span className="px-2 py-0.5 rounded-full bg-accent/30 font-medium">{imageConfig.label}</span>
-                  <span className="text-muted-foreground/60">{imageConfig.description}</span>
+                {/* Platform format + auto-detected template */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span>Format:</span>
+                    <span className="px-2 py-0.5 rounded-full bg-accent/30 font-medium">{imageConfig.label}</span>
+                    <span className="text-muted-foreground/60">{imageConfig.description}</span>
+                  </div>
+                  {styleChoice === "auto" && (
+                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/50">
+                      <Sparkles className="w-3 h-3" />
+                      <span>Auto: <span className="text-foreground/70 font-medium">{templateSelection.templateId}</span> — {templateSelection.reason}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Style selector with visual previews */}

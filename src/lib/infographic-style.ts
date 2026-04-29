@@ -90,85 +90,70 @@ export function analyzeContent(content: string, _platform: string): ContentAnaly
 // ─── Template selection ───
 
 export function selectBestTemplate(content: string, platform: string, forcedTemplate?: string): TemplateSelection {
-  // User override takes precedence — no detection logic.
   if (forcedTemplate && TEMPLATE_REGISTRY[forcedTemplate]) {
-    return { templateId: forcedTemplate, reason: "Style choisi manuellement" };
+    return { templateId: forcedTemplate, reason: "Manually selected" };
   }
 
   const lower = content.toLowerCase();
-  const words = lower.split(/\s+/);
-  const wordCount = words.length;
+  const lines = content.split('\n').filter(l => l.trim().length > 0);
+  const wordCount = lower.split(/\s+/).length;
 
-  // ── Detect 3-entity comparison (A vs B vs C) → COMPARISON ──
-  const vsMatches = content.match(/\bvs\.?\b/gi);
-  const hasMultiVs = vsMatches && vsMatches.length >= 2; // "A vs B vs C" has 2 "vs"
-  const has3Entities = /(.+)\s+vs\.?\s+(.+)\s+vs\.?\s+(.+)/i.test(content);
+  // Numbered steps (Step 1, 1., 2., 3.)
+  const hasNumberedSteps =
+    /step\s+\d/i.test(content) ||
+    lines.filter(l => /^\d+[\.\)]\s/.test(l.trim())).length >= 3;
 
-  // ── Detect resource/course lists → NOTEBOOK ──
-  const hasResourceList = /\d+\s+(free|best|top)\s+(course|resource|tool|book|site|app|platform)/i.test(content)
-    || /free\s+(course|resource|tool)/i.test(content)
-    || /cours gratuit|ressources? gratuit|outils? gratuit/i.test(content)
-    || /course|udemy|coursera|edx|skillshare|masterclass/i.test(lower);
+  // Comparison (vs, versus, better than)
+  const hasComparison =
+    /\bvs\b|\bversus\b|compared to|better than|worse than/i.test(content) ||
+    (content.match(/\bvs\.?\b/gi)?.length || 0) >= 2;
 
-  const p = {
-    hasNumberedList: /(\d+\.|①|②|③|étape|step|premier|first)/i.test(content),
-    hasStats: /\d+[%km€$]|\d{4,}/i.test(content),
-    hasComparison: /\bvs\b|versus|contre|avant.*après|before.*after|plutôt|better than|bad.*good|good.*great|niveau|level|compare|compared to/i.test(content),
-    hasHowTo: /comment|how to|étape|step|guide|tutorial|ways to|steps to/i.test(content),
-    hasTips: /conseil|tip|astuce|hack|trick|secret|mistakes?|ways |things /i.test(content),
-    isTech: /\bai\b|tech|digital|code|app|software|chatgpt|claude|ia/i.test(content),
-    isBusiness: /business|argent|money|revenue|vente|sale|entrepreneur/i.test(content),
-    isMarketing: /marketing|contenu|content|viral|audience|engagement/i.test(content),
-  };
+  // Tech / command style
+  const isTech =
+    /\$\s|terminal|command|code|api|function|install|npm|git|dev/i.test(content);
 
-  const hasFunnel = /funnel|entonnoir|processus|parcours|roadmap|pipeline|conversion|tunnel|étapes? du|journey|workflow/i.test(content);
-  const hasDataGrid = /framework|modèle|méthode|tableau|matrix|matrice|grille|glossaire|comparison detailed|data|statistics|survey|research/i.test(content);
+  // Editorial list (N ways, tips, reasons)
+  const isEditorial =
+    /\d+\s+(ways|tips|reasons|things|secrets|mistakes|hacks|tools|lessons|rules)/i.test(content);
 
-  let templateId: string;
-  let reason: string;
+  // Funnel / pipeline
+  const hasFunnel =
+    /funnel|pipeline|roadmap|journey|workflow|conversion|parcours/i.test(content);
 
-  // Priority 1: 3-entity comparison → COMPARISON (3-column layout)
-  if (has3Entities || hasMultiVs) {
-    templateId = "COMPARISON";
-    reason = "Comparaison à 3 entités — colonnes côte à côte";
+  // Resource list
+  const hasResources =
+    /\d+\s+(free|best|top)\s+(course|resource|tool|book|app)/i.test(content);
+
+  // Selection with clear priority
+  if (hasNumberedSteps && !hasComparison) {
+    return { templateId: "PROCESS_STEPS", reason: "Numbered steps detected" };
   }
-  // Priority 2: Resource/course lists → NOTEBOOK (spiral binding)
-  else if (hasResourceList) {
-    templateId = "NOTEBOOK";
-    reason = "Liste de ressources/cours — style cahier spirale";
+  if (hasComparison) {
+    return { templateId: "COMPARISON", reason: "Comparison content" };
   }
-  // Priority 3: Funnel/process
-  else if (hasFunnel) {
-    templateId = "FUNNEL";
-    reason = "Processus/parcours — entonnoir progressif";
+  if (isTech) {
+    return { templateId: "COMMAND_CENTER", reason: "Technical content" };
   }
-  // Priority 4: 2-entity comparison or tiers → COMPARISON
-  else if (p.hasComparison) {
-    templateId = "COMPARISON";
-    reason = "Comparaison détectée — colonnes côte à côte";
+  if (hasFunnel) {
+    return { templateId: "FUNNEL", reason: "Process/funnel flow" };
   }
-  // Priority 5: Framework/data grid
-  else if (hasDataGrid) {
-    templateId = "DATA_GRID";
-    reason = "Framework/ressources — tableau structuré";
+  if (isEditorial) {
+    return { templateId: "EDITORIAL_LIST", reason: "Numbered list content" };
   }
-  // Priority 6: How-to, tips, numbered lists → WHITEBOARD
-  else if (p.hasHowTo || p.hasTips || p.hasNumberedList) {
-    templateId = "WHITEBOARD";
-    reason = "Conseils/étapes — style tableau dessiné";
-  }
-  // Priority 7: Long content → WHITEBOARD (dense)
-  else if (wordCount > 300) {
-    templateId = "WHITEBOARD";
-    reason = "Contenu long — whiteboard dense";
-  }
-  // Default: AWA_CLASSIC
-  else {
-    templateId = "AWA_CLASSIC";
-    reason = "Contenu général — style viral Awa Penn";
+  if (hasResources) {
+    return { templateId: "NOTEBOOK", reason: "Resource/course list" };
   }
 
-  return { templateId, reason };
+  // Platform-aware defaults
+  const p = platform.toLowerCase();
+  if (p.includes("linkedin")) {
+    return { templateId: "EDITORIAL_LIST", reason: "LinkedIn professional style" };
+  }
+  if (wordCount > 300) {
+    return { templateId: "WHITEBOARD", reason: "Long content — dense layout" };
+  }
+
+  return { templateId: "PROCESS_STEPS", reason: "Default: clean step layout" };
 }
 
 // ─── Key point extraction ───
@@ -615,27 +600,22 @@ RAPPEL FINAL :
 }
 
 
-// ─── DALL-E 3 auto-detect template ───
+// ─── Unified template detection (delegates to selectBestTemplate) ───
 
 function detectTemplate(content: string): string {
-  const lower = content.toLowerCase();
+  return selectBestTemplate(content, "").templateId;
+}
 
-  if (/step|steps|how to|guide|tutorial|process/i.test(lower))
-    return "PROCESS_STEPS";
-  if (/command|terminal|code|developer|api|tool/i.test(lower))
-    return "COMMAND_CENTER";
-  if (/list|tips|\d+\s+ways|\d+\s+things|tools|resources/i.test(lower))
-    return "ICON_GRID";
-  if (/vs\b|versus|compared|comparison|difference/i.test(lower))
-    return "COMPARISON";
-  if (/funnel|stage|pipeline|journey|flow/i.test(lower))
-    return "FUNNEL";
-  if (/automate|system|workflow|everything/i.test(lower))
-    return "CTA_VISUAL";
-  if (/tip|advice|rule|principle|lesson/i.test(lower))
-    return "EDITORIAL_LIST";
+// ─── Content type analysis for prompt enrichment ───
 
-  return "WHITEBOARD";
+function analyzeContentType(content: string): string {
+  if (/step\s+\d|étape/i.test(content)) return "step-by-step tutorial";
+  if (/\bvs\b|versus|compared/i.test(content)) return "comparison guide";
+  if (/\d+\s+(ways|tips|reasons|things)/i.test(content)) return "numbered list";
+  if (/story|histoire|j'ai|i was|i lost|i made/i.test(content)) return "personal story";
+  if (/cheatcode|framework|formula|blueprint/i.test(content)) return "framework/system";
+  if (/command|terminal|code|api/i.test(content)) return "technical guide";
+  return "educational content";
 }
 
 // ─── DALL-E prompt builder — pixel-precise layout instructions ───
@@ -660,7 +640,13 @@ export function buildDallEPrompt(
 - Use EXACTLY the text provided — do not paraphrase or invent
 - NO footer, NO signature, NO watermark, NO branding`;
 
-  const CONTENT = `EXACT TEXT TO DISPLAY (use word for word):
+  const contentType = analyzeContentType(content);
+
+  const CONTENT = `CONTENT TYPE: ${contentType}
+Topic: "${ext.title}"
+The visual must DIRECTLY represent this ${contentType}. No generic business visuals.
+
+EXACT TEXT TO DISPLAY (use word for word):
 
 MAIN TITLE: "${ext.title}"
 
