@@ -390,11 +390,14 @@ export default function InfographicModal({ open, onClose, content, platform, con
     try {
       assertOnline();
 
+      console.log("[Infographic] Content length:", content.length);
       const dallePrompt = buildDallEPrompt(content, platform, forcedTemplate);
 
       if (IS_DEV) {
         console.log("=== DALL-E PROMPT ===");
-        console.log(dallePrompt.slice(0, 500));
+        console.log("Template:", forcedTemplate || "auto");
+        console.log("Prompt length:", dallePrompt.length);
+        console.log(dallePrompt.slice(0, 600));
         console.log("=== END PROMPT ===");
       }
 

@@ -186,19 +186,19 @@ function detectBadge(content: string): string {
 }
 
 export function extractKeyPoints(content: string): ExtractionResult {
-  const lines = content.split("\n").filter(l => l.trim().length > 5);
+  const lines = content.split("\n").map(l => l.trim()).filter(l => l.length > 5);
 
-  const title = (lines[0]?.trim().slice(0, 70) || "Key Insights").toUpperCase();
+  const title = (lines[0]?.slice(0, 70) || "Key Insights").toUpperCase();
   const badge = detectBadge(content);
-  const subtitle = lines[1]?.trim().slice(0, 100) || "";
+  const subtitle = lines[1]?.slice(0, 100) || "";
 
   const points: Point[] = [];
 
-  // Pass 1: look for numbered/bulleted lines
+  // Pass 1: numbered/bulleted lines
   for (const line of lines) {
     const trimmed = line.trim();
-    if (/^[\d\.\-•→\*]\s*/.test(trimmed)) {
-      const text = trimmed.replace(/^[\d\.\-•→\*\s]+/, "").trim();
+    if (/^[\d\.\-•→\*▸]\s*/.test(trimmed)) {
+      const text = trimmed.replace(/^[\d\.\-•→\*▸\s]+/, "").trim();
       if (text.length > 10 && points.length < 9) {
         const colonSplit = text.split(/[:—–]/);
         if (colonSplit.length >= 2) {
@@ -210,32 +210,70 @@ export function extractKeyPoints(content: string): ExtractionResult {
     }
   }
 
-  // Pass 2: if not enough, split by sentences
+  // Pass 2: sentences
   if (points.length < 5) {
     const sentences = content.match(/[^.!?\n]+[.!?]+/g) || [];
     for (const s of sentences) {
       const trimmed = s.trim();
-      if (trimmed.length > 20 && points.length < 7) {
+      if (trimmed.length > 20 && points.length < 8) {
         points.push({ title: trimmed.slice(0, 45), body: trimmed.slice(45, 200).trim() });
       }
     }
   }
 
-  // Pass 3: last resort — chunk paragraphs
+  // Pass 3: paragraphs
   if (points.length < 5) {
     const chunks = content.split(/\n\n+/).filter(c => c.trim().length > 20);
     for (const chunk of chunks) {
-      if (points.length < 7) {
+      if (points.length < 8) {
         const t = chunk.trim();
         points.push({ title: t.slice(0, 45), body: t.slice(45, 200).trim() });
       }
     }
   }
 
-  // Generate a pro tip from the content
   const proTip = generateProTip(content);
 
-  return { title, badge, subtitle, points: points.slice(0, 7), proTip };
+  return { title, badge, subtitle, points: points.slice(0, 8), proTip };
+}
+
+// ─── Enhanced extraction for DALL-E prompts ───
+
+export interface EnhancedExtraction {
+  title: string;
+  points: string[];
+  stats: string[];
+  keywords: string[];
+}
+
+export function extractForDallE(content: string): EnhancedExtraction {
+  const lines = content
+    .split(/\n+/)
+    .map(l => l.trim())
+    .filter(l => l.length > 5);
+
+  const title = lines[0]?.slice(0, 70) || "Key Insights";
+
+  const points = lines
+    .slice(1)
+    .filter(l => l.length > 15)
+    .filter(l => !/^https?:\/\//.test(l))
+    .map(l => l
+      .replace(/^[\d]+[\.\/]\s*/, '')
+      .replace(/^[▸→•\-\*]\s*/, '')
+      .trim()
+    )
+    .filter(l => l.length > 10)
+    .slice(0, 8);
+
+  const stats = content.match(/\d+[\.,]?\d*\s*(%|€|\$|K|M|x|fois|days?|months?|years?|hours?|minutes?)/gi) || [];
+
+  const keywords = content
+    .match(/["«»]([^"«»]{3,50})["«»]/g)
+    ?.map(k => k.replace(/["«»]/g, '').trim())
+    .slice(0, 3) || [];
+
+  return { title, points, stats: stats.slice(0, 5), keywords };
 }
 
 function generateProTip(content: string): string {
@@ -600,7 +638,7 @@ function detectTemplate(content: string): string {
   return "WHITEBOARD";
 }
 
-// ─── DALL-E 3 Image prompt builder ───
+// ─── DALL-E prompt builder ───
 
 export function buildDallEPrompt(
   content: string,
@@ -608,217 +646,146 @@ export function buildDallEPrompt(
   template?: string,
 ): string {
   const selectedTemplate = template || detectTemplate(content);
-  const extraction = extractKeyPoints(content);
+  const ext = extractForDallE(content);
+  const pl = platform?.toLowerCase() || "";
 
-  const lines = extraction.points
-    .map((p) => `${p.title}: ${p.body}`)
-    .slice(0, 6);
+  // Base rules
+  const baseRules = `CRITICAL RULES — NO EXCEPTIONS:
+1. ALL TEXT MUST BE IN ENGLISH ONLY
+2. NO footer, NO signature, NO watermark, NO "follow for more"
+3. NO "Created by", NO branding whatsoever
+4. Every word must be FULLY READABLE — never cut off, never truncated
+5. Leave 50px safe margin on ALL sides — text NEVER touches edges
+6. Minimum font size: 18px for body text, 32px for titles
+7. HIGH CONTRAST between text and background
+8. NO text overlapping other elements
+9. Content must be DENSE — fill 85% of canvas with information
+10. Use ONLY the exact content provided below — do not invent`;
 
-  const title = extraction.title.slice(0, 60) || "Key Insights";
-  const points = lines;
+  // Content block
+  const contentBlock = `EXACT CONTENT TO DISPLAY ON THE INFOGRAPHIC:
 
-  const p = platform?.toLowerCase() || "";
-  let platformHint = "";
-  if (p.includes("linkedin")) {
-    platformHint = "\nA4 portrait format. Optimized for LinkedIn feed. More vertical space for content. Include more detail and information than standard formats.";
-  } else if (p.includes("facebook")) {
-    platformHint = "\nSquare format (1:1). Optimized for Facebook feed. Compact, impactful design.";
-  } else if (p.includes("instagram")) {
-    platformHint = "\nPortrait 4:5 format. Optimized for Instagram feed. Visually striking.";
-  } else if (p.includes("twitter") || p.includes("x (")) {
-    platformHint = "\nLandscape format. Optimized for X/Twitter timeline. Wide layout.";
-  } else if (p.includes("tiktok")) {
-    platformHint = "\nVertical 9:16 format. Optimized for TikTok. Full-screen mobile layout.";
+MAIN TITLE: "${ext.title}"
+${ext.points.length > 0 ? `
+KEY POINTS (display ALL of these):
+${ext.points.map((p, i) => `${i + 1}. "${p}"`).join('\n')}` : ''}
+${ext.stats.length > 0 ? `
+KEY STATISTICS (highlight prominently):
+${ext.stats.map(s => `• ${s}`).join('\n')}` : ''}
+${ext.keywords.length > 0 ? `
+KEY CONCEPTS (emphasize visually):
+${ext.keywords.map(k => `"${k}"`).join(', ')}` : ''}
+
+IMPORTANT: Use EVERY piece of information above. Do not skip any point.`;
+
+  // Format hint
+  let formatHint = "Portrait format. Clean professional layout.";
+  if (pl.includes("linkedin")) {
+    formatHint = "Portrait format (1024x1536). Professional, information-rich layout optimized for LinkedIn.";
+  } else if (pl.includes("facebook")) {
+    formatHint = "Square format (1024x1024). Compact but dense layout for Facebook.";
+  } else if (pl.includes("instagram")) {
+    formatHint = "Portrait format (1024x1536). Visual and informative for Instagram.";
+  } else if (pl.includes("twitter") || pl.includes("x (")) {
+    formatHint = "Landscape format (1536x1024). Wide layout for X/Twitter.";
   }
 
-  const baseRules = `Professional educational infographic image.
-ALL TEXT MUST BE IN ENGLISH ONLY.
-NO footer, NO signature, NO watermark, NO "follow for more".
-NO "Created by", NO branding of any kind.
-Text must be fully readable, minimum 16px, never cut off.
-Leave 40px margin on all sides.
-High contrast, clean typography, professional layout.${platformHint}`;
-
-  // ── PROCESS_STEPS ──
-  if (selectedTemplate === "PROCESS_STEPS") {
-    return `${baseRules}
-Professional educational infographic "Ultimate Guide" style.
-
-VISUAL STYLE:
-- Background: light cream #F7F3F0
-- ${points.length} numbered boxes connected by directional orange arrows
-- Elegant serif fonts for titles, clean sans-serif for body
-- Stylized screenshots of minimalist software interfaces
-- Color palette: burnt orange #FF7A59, sage green, deep black #1A1A1B, off-white
-- Professional, clean layout with generous negative space
-- Bento grid style, rounded corners 8-12px
-
-CONTENT TO DISPLAY:
-Title: "${title}"
-${points.map((p, i) => `Step ${i + 1}: "${p.slice(0, 80)}"`).join('\n')}
-
-HIGH-CONTRAST typography, bold sans-serif headers (Inter/Helvetica style).
-SaaS product aesthetic. Action-oriented layout.
-NO footer, NO signature, NO watermark.`;
-  }
-
-  // ── COMMAND_CENTER ──
-  if (selectedTemplate === "COMMAND_CENTER") {
-    return `${baseRules}
-Marketing dashboard UI design infographic.
-
-VISUAL STYLE:
-- Clean white background #FFFFFF
-- Vertical list of terminal-style commands
-- Each row: orange badge #FF7A59 on left + rounded rectangle command + description on right
-- Developer-friendly aesthetic, minimalist
-- High resolution, modern sans-serif typography (Inter/Helvetica)
-- Orange accents throughout
-- Structured layout, rounded corners 8px
-
-CONTENT TO DISPLAY:
-Title: "${title}"
-${points.map((p, i) => `Command ${i + 1}: /${p.slice(0, 50).toLowerCase().replace(/\s+/g, '_')}`).join('\n')}
-
-SaaS product aesthetic. Clean, professional, action-oriented.
-NO footer, NO signature, NO branding.`;
-  }
-
-  // ── ICON_GRID ──
-  if (selectedTemplate === "ICON_GRID") {
-    return `${baseRules}
-4x3 micro-content icon grid infographic.
-
-VISUAL STYLE:
-- Pure white background #FFFFFF
-- Grid of ${Math.min(points.length, 12)} cells
-- Each cell: circled orange number #FF7A59 + bold title + simplified flat illustration
-- Bicolor icons (orange and black)
-- Very thin card borders or borderless
-- Flat modern iconographic style
-- Bento grid layout, rounded corners 12px
-
-CONTENT TO DISPLAY:
-Title: "${title}"
-${points.map((p, i) => `Cell ${i + 1}: "${p.slice(0, 40)}"`).join('\n')}
-
-High-contrast typography. SaaS product aesthetic.
-NO footer, NO signature, NO watermark.`;
-  }
-
-  // ── EDITORIAL_LIST ──
-  if (selectedTemplate === "EDITORIAL_LIST") {
-    return `${baseRules}
-Minimalist typographic editorial layout infographic.
-
-VISUAL STYLE:
-- Very light beige background #F7F3F0
-- Large numbered titles in burnt orange #FF7A59
-- Explanatory text in deep black #1A1A1B, left-aligned
-- Thin horizontal separators between items
-- Clean editorial style, premium design magazine feel
-- High-contrast typography
-- Bold sans-serif headers (Inter style)
-
-CONTENT TO DISPLAY:
-Title: "${title}"
-${points.map((p, i) => `Item ${i + 1}: "${p.slice(0, 100)}"`).join('\n')}
-
-SaaS product aesthetic. Educational, action-oriented.
-NO footer, NO signature, NO branding.`;
-  }
-
-  // ── CTA_VISUAL ──
-  if (selectedTemplate === "CTA_VISUAL") {
-    return `${baseRules}
-Promotional visual for social media "Automate Everything" style.
-
-VISUAL STYLE:
-- Light gray notebook grid background
-- Center: minimalist logo/asterisk icon
-- ${Math.min(points.length, 4)} floating blue folders with labels connected by dotted lines to center icon
-- Large imposing text at top with yellow highlight
-- "Indie Hacker" style, clean and impactful
-- Burnt orange #FF7A59 accents
-- Deep black #1A1A1B text
-- Rounded corners 8px, structured layout
-
-CONTENT TO DISPLAY:
-Main text: "${title}"
-${points.map((p, i) => `Folder ${i + 1}: "${p.slice(0, 30)}"`).join('\n')}
-
-High-contrast typography. SaaS product aesthetic.
-NO footer, NO signature, NO watermark.`;
-  }
-
-  // ── WHITEBOARD (+ UI_CARDS, AWA_CLASSIC) ──
+  // Template styles
   if (selectedTemplate === "WHITEBOARD" || selectedTemplate === "UI_CARDS" || selectedTemplate === "AWA_CLASSIC") {
-    return `${baseRules}
-
-Style: Hand-drawn whiteboard educational infographic.
-Background: off-white #f8f9f7 like a real whiteboard.
-4 metallic corner clips holding the paper.
-
-EXACT CONTENT TO DISPLAY:
-Title (large bold text at top): "${title}"
-
-${points.map((p, i) => `Section ${i + 1}: "${p.slice(0, 80)}"`).join('\n')}
-
-Layout: Title at top 15%, then ${points.length} content sections filling 75% of space, bottom 10% empty.
-Style elements: colored marker headings (red, blue, green), yellow highlights on key terms, hand-drawn arrows, numbered circles.
-Dense layout, information-rich, similar to a creator's viral LinkedIn post visual.`;
+    return `${baseRules}\n\n${contentBlock}\n\nVISUAL STYLE: Hand-drawn educational whiteboard infographic.
+${formatHint}
+Background: off-white #f8f9f7 (real whiteboard texture).
+4 metallic corner clips.
+Title in large bold marker font with colored underline.
+Each numbered point in its own clearly separated section.
+Colored section headers alternating: red #C0392B, blue #2563EB, green #2E7D32.
+Yellow highlighter #FFEF5A on 2-3 key terms per section.
+Hand-drawn arrows connecting related elements.
+Number badges for each point (hand-drawn circles).
+Dense layout — no empty space at bottom.`;
   }
 
-  // ── NOTEBOOK ──
-  if (selectedTemplate === "NOTEBOOK") {
-    return `${baseRules}
-
-Style: Spiral notebook page educational infographic.
-Metallic spiral binding at top, ruled lines, red margin line on left.
-
-EXACT CONTENT:
-Title: "${title}"
-${points.map((p, i) => `Point ${i + 1}: "${p.slice(0, 80)}"`).join('\n')}
-
-Colorful handwritten-style titles, numbered badge items, yellow highlights.`;
+  if (selectedTemplate === "PROCESS_STEPS") {
+    return `${baseRules}\n\n${contentBlock}\n\nVISUAL STYLE: Step-by-step process infographic.
+${formatHint}
+Background: light cream #F7F3F0.
+Orange accent color: #FF7A59.
+Each step in a numbered box connected by arrows.
+Bold sans-serif fonts (Inter/Helvetica style).
+Bento grid layout, rounded corners 8-12px.
+High contrast between steps.`;
   }
 
-  // ── COMPARISON / DATA_GRID ──
+  if (selectedTemplate === "EDITORIAL_LIST") {
+    return `${baseRules}\n\n${contentBlock}\n\nVISUAL STYLE: Editorial list layout.
+${formatHint}
+Background: very light beige #F7F3F0.
+Large orange numbers #FF7A59 for each item.
+Clean thin horizontal separators.
+Left-aligned text, magazine style.
+Bold sans-serif headers.`;
+  }
+
+  if (selectedTemplate === "COMMAND_CENTER") {
+    return `${baseRules}\n\n${contentBlock}\n\nVISUAL STYLE: Terminal/command center UI.
+${formatHint}
+White background.
+Orange badges #FF7A59 on left of each row.
+Rounded rectangle commands.
+Developer-friendly aesthetic.`;
+  }
+
+  if (selectedTemplate === "ICON_GRID") {
+    return `${baseRules}\n\n${contentBlock}\n\nVISUAL STYLE: Icon grid layout.
+${formatHint}
+Pure white background.
+Grid of cells with orange circled numbers.
+Flat bicolor icons (orange and black).
+Bento grid style, rounded corners 12px.`;
+  }
+
   if (selectedTemplate === "COMPARISON" || selectedTemplate === "DATA_GRID") {
-    return `${baseRules}
-
-Style: Professional dark comparison table infographic.
+    return `${baseRules}\n\n${contentBlock}\n\nVISUAL STYLE: Professional dark comparison table.
+${formatHint}
 Background: deep charcoal #1a1a2e.
-3 columns with colored headers (blue, green, orange).
 White text on dark background.
-
-EXACT CONTENT:
-Title: "${title}"
-Content to organize into comparison columns: ${points.join(' | ')}`;
+3 columns with colored headers (blue, green, orange).
+Clean grid lines, high contrast.`;
   }
 
-  // ── FUNNEL ──
+  if (selectedTemplate === "NOTEBOOK") {
+    return `${baseRules}\n\n${contentBlock}\n\nVISUAL STYLE: Spiral notebook page.
+${formatHint}
+Background: warm white #fffef8.
+Metallic spiral binding at top.
+Ruled lines, red margin line on left.
+Colorful handwritten-style titles.
+Numbered badge items.`;
+  }
+
   if (selectedTemplate === "FUNNEL") {
-    return `${baseRules}
-
-Style: Funnel/process flow educational infographic.
+    return `${baseRules}\n\n${contentBlock}\n\nVISUAL STYLE: Funnel/process flow diagram.
+${formatHint}
 Background: warm off-white #fffef5.
-Large trapezoid funnel shape, wide at top, narrow at bottom.
-
-EXACT CONTENT:
-Title: "${title}"
-${points.map((p, i) => `Stage ${i + 1}: "${p.slice(0, 80)}"`).join('\n')}
-
-Hand-drawn feel, warm and approachable, red arrows, gold sparkle stars.`;
+Large trapezoid funnel shape.
+Each stage labeled with white box.
+Red curved arrows on sides.`;
   }
 
-  // Default fallback
-  return `${baseRules}
+  if (selectedTemplate === "CTA_VISUAL") {
+    return `${baseRules}\n\n${contentBlock}\n\nVISUAL STYLE: Promotional "Automate Everything" visual.
+${formatHint}
+Light gray grid background.
+Center: minimalist icon.
+Floating folders with labels connected by dotted lines.
+Burnt orange #FF7A59 accents.
+"Indie Hacker" style, clean and impactful.`;
+  }
 
-Style: Clean professional educational infographic.
-Title: "${title}"
-Content: ${points.join(', ')}
-Vertical portrait format, information-rich, viral social media style.`;
+  // Default
+  return `${baseRules}\n\n${contentBlock}\n\nVISUAL STYLE: Clean professional educational infographic.
+${formatHint}
+High contrast, information-rich layout.`;
 }
 
 // ─── Post-process generated HTML ───
