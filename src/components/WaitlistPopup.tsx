@@ -24,11 +24,14 @@ export function WaitlistPopup({ isOpen, onClose }: WaitlistPopupProps) {
 
     setLoading(true);
     setError("");
+    console.log("[Waitlist] Submitting:", { name: name.trim(), email: email.trim() });
 
     try {
       const { error: dbError } = await supabase
         .from("waitlist")
         .insert({ name: name.trim(), email: email.trim().toLowerCase() });
+
+      console.log("[Waitlist] Insert result:", dbError ? dbError.message : "OK");
 
       if (dbError) {
         if (dbError.code === "23505") {
@@ -46,11 +49,13 @@ export function WaitlistPopup({ isOpen, onClose }: WaitlistPopupProps) {
           type: "waitlist",
           data: { name: name.trim() },
         },
-      }).catch(() => {});
+      }).catch((e) => console.warn("[Waitlist] Email failed:", e));
 
       setDone(true);
-    } catch {
-      setError("Something went wrong. Please try again!");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : JSON.stringify(err);
+      console.error("[Waitlist] Error:", msg);
+      setError(`Error: ${msg}`);
     } finally {
       setLoading(false);
     }
