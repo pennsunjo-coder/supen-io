@@ -711,68 +711,86 @@ CRITICAL: Use ONLY the text above. Do NOT invent, paraphrase, or add unrelated g
   const n = ext.points.length;
   const AVOID = "\n\nAVOID: blurry, cluttered, messy layout, too many colors, realistic photo, 3D render, low resolution, bad typography, misaligned text, dark background (unless dark template), generic stock photo style.";
 
-  // ── WHITEBOARD (Reference template) ──
+  // ── WHITEBOARD (Reference template — ultra dense) ──
   if (selectedTemplate === "WHITEBOARD" || selectedTemplate === "UI_CARDS" || selectedTemplate === "AWA_CLASSIC" || selectedTemplate === "auto") {
-    return `Create a HIGH-QUALITY educational infographic poster on a clean white whiteboard background.
+    // Build structured content blocks
+    const fills = ["light blue #D6E8FA", "light green #D4EDDA", "light red/pink #FAD7D6", "light orange #FDE8C8", "light purple #E8D5F5"];
+    const icons = ["gear", "open book", "stack of books", "graduation cap", "star"];
 
-TITLE at the top in large bold handwritten BLACK font (capital letters):
-"${ext.title}"
-Underline 2-3 key words with soft ORANGE marker highlight effect.
-
-━━━ STYLE REQUIREMENTS ━━━
-- Hand-drawn marker aesthetic, clean and professional
-- Pure WHITE background #FFFFFF with subtle shadow border (like a real whiteboard)
-- Consistent BLACK outlines on ALL elements
-- Pastel color palette: Blue #4A90D9, Green #5BA85B, Red #E05555, Orange #F5A623
-- Simple flat icons: gears, open book, arrows, checkmarks, graduation cap
-- Even spacing, perfectly aligned, high readability
-- ${formatHint}
-- NO photographic elements, NO 3D render, NO realistic photos
-- ALL text must be FULLY READABLE, minimum 18px equivalent
-
-━━━ LAYOUT STRUCTURE ━━━
-
-SECTION 1 — HEADER (top 12%):
-Large bold handwritten title: "${ext.title}"
-Thick orange marker underline below title.
-
-SECTION 2 — MAIN CONTENT (12% to 78%):
-${n >= 3 ? `TWO-COLUMN LAYOUT:
-
-LEFT COLUMN (35% width) — Colored action boxes stacked vertically:
-${ext.points.slice(0, Math.min(n, 5)).map((point, i) => {
-  const fills = ["light blue #D6E8FA", "light green #D4EDDA", "light red/pink #FAD7D6", "light orange #FDE8C8", "light purple #E8D5F5"];
-  const icons = ["gear", "open book", "stack of books", "graduation cap", "star"];
-  const label = point.split(' ').slice(0, 4).join(' ').toUpperCase();
-  return `Box ${i + 1} (${fills[i % fills.length]} fill, black outline, rounded corners 8px):
+    const leftBoxes = ext.points.slice(0, Math.min(n, 5)).map((point, i) => {
+      const label = point.split(' ').slice(0, 4).join(' ').toUpperCase();
+      return `Box ${i + 1} (${fills[i % fills.length]} fill, black outline, rounded corners 8px):
   Label text: "${label}"
   Small ${icons[i % icons.length]} icon inside box
   Arrow → pointing RIGHT to explanation`;
-}).join('\n')}
+    }).join('\n');
 
-RIGHT COLUMN (65% width) — Bullet point explanations:
-${ext.points.slice(0, Math.min(n, 5)).map((point, i) => `Explanation ${i + 1} (aligned with Box ${i + 1}):
-- ${point}${ext.stats[i] ? `\n• Key number: ${ext.stats[i]}` : ''}`).join('\n')}` : `SINGLE COLUMN with numbered sections:
-${ext.points.map((point, i) => `Section ${i + 1}:
-- Colored rounded box: "${point.split(' ').slice(0, 4).join(' ').toUpperCase()}"
-- Body text: "${point}"`).join('\n')}`}
+    const rightExplanations = ext.points.slice(0, Math.min(n, 5)).map((point, i) =>
+      `Explanation ${i + 1} (aligned with Box ${i + 1}):\n- ${point}${ext.stats[i] ? `\n• Key number: ${ext.stats[i]}` : ''}`,
+    ).join('\n');
 
-SECTION 3 — DIVIDER + BOTTOM (78% to 100%):
-Thin horizontal black divider line.
-${n > 3 ? `Centered bold: "KEY TAKEAWAYS"
-6 rectangular boxes in 2-column grid:
+    const bottomBoxes = n > 3 ? `
+━━━ BOTTOM SECTION — KEY ACTIONS ━━━
+Horizontal divider line.
+Section title: "KEY TAKEAWAYS" — centered bold.
+
+6 rectangular boxes in 2-column grid (3 rows × 2 cols):
+Each box: colored highlight background + bold UPPERCASE label + body text.
+
 ${ext.points.slice(0, 6).map((point, i) => {
-  const hl = ['soft blue', 'soft green', 'white', 'white', 'white', 'soft orange'];
-  return `Box ${i + 1} (${hl[i % hl.length]}): "${point.split(' ').slice(0, 3).join(' ').toUpperCase()}:" — "${point.length > 80 ? point.slice(0, 80) + '...' : point}"`;
-}).join('\n')}` : ''}
-Footer: "Save this. Share this. Apply this."
+  const hl = ['soft blue #D6E8FA', 'soft green #D4EDDA', 'white', 'white', 'white', 'soft orange #FDE8C8'];
+  const label = point.split(' ').slice(0, 3).join(' ').toUpperCase();
+  return `Box ${i + 1} (${hl[i % hl.length]} highlight):
+  LABEL: "${label}:"
+  Text: "${point.length > 100 ? point.slice(0, 97) + '...' : point}"`;
+}).join('\n\n')}` : '';
+
+    return `Create a HIGH-QUALITY educational whiteboard infographic poster.
+
+━━━ TITLE ━━━
+"${ext.title}"
+Style: Large bold handwritten BLACK capital letters at top.
+Highlight 2-3 key words with soft ORANGE marker effect.
+
+━━━ VISUAL STYLE ━━━
+Background: Pure WHITE #FFFFFF (real whiteboard feel).
+Subtle shadow border around entire poster.
+Hand-drawn marker aesthetic — clean, professional, slightly playful.
+Black outlines on ALL elements.
+Pastel colors: Blue #4A90D9, Green #5BA85B, Red #E05555, Orange #F5A623.
+Simple flat icons: gears, books, arrows, checkmarks.
+${formatHint}
+High resolution. Crisp lines. Easy to read in under 10 seconds.
+
+━━━ LAYOUT STRUCTURE ━━━
+
+TOP SECTION — title area (12%):
+Big bold title: "${ext.title}"
+Orange underline stroke below title.
+
+MAIN SECTION — TWO COLUMNS (12% to 75%):
+
+LEFT COLUMN (35% width) — Colored action boxes stacked vertically with arrows:
+${leftBoxes}
+
+RIGHT COLUMN (65% width) — Bullet point explanations aligned with each box:
+${rightExplanations}
+${bottomBoxes}
+
+━━━ FOOTER (bottom 5%) ━━━
+Thin divider line.
+Small centered text: "Save this. Apply this. Share this."
 
 ━━━ MANDATORY RULES ━━━
-1. Every word FULLY VISIBLE — no text cut off
-2. 60px margin on ALL sides
-3. Title: 36-48px. Body: 16-20px
-4. Use EXACTLY the content above — do NOT invent
-5. Icons: SIMPLE flat style. Arrows: VISIBLE and CLEAR${AVOID}`;
+- Every single word FULLY VISIBLE — never cut off at edges
+- 60px safe margin on ALL sides
+- Title: dominant 40px+ equivalent. Body: minimum 16px, line-height 1.5
+- ALL ${n} content points must appear on the infographic
+- Use EXACTLY the text provided — do NOT invent or paraphrase
+- Icons: simple flat 2D style only
+- Arrows: visible, directional, colored
+
+AVOID: blurry, messy layout, cluttered, too many colors, realistic photo, 3D render, low resolution, bad typography, misaligned text, watermark, cut-off text, unreadable text, overlapping elements, dark background.`;
   }
 
   // ── PROCESS_STEPS ──
