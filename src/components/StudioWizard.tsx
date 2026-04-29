@@ -455,133 +455,157 @@ Use white space and line breaks generously.
 Make each post visually clean and easy to read.
 `.trim();
 
-      // === GHOSTWRITER SYSTEM PROMPT ===
-      const systemPrompt = `You are an elite ghostwriter specializing in viral social media content. You write like a top 1% creator — specific, human, direct.
+      // === PLAYBOOK-POWERED SYSTEM PROMPT ===
+      const isThread = selectedFormat === "Thread";
+      const isScript = /script|reel|video/i.test(selectedFormat || "");
+      const isLinkedIn = selectedPlatform?.name === "LinkedIn";
+
+      // Get playbook-specific structure
+      const playbookSection = isThread
+        ? buildThreadPlaybook(profile?.niche || "", sanitizedInput)
+        : isScript
+          ? buildReelPlaybook(profile?.niche || "", sanitizedInput)
+          : isLinkedIn
+            ? buildLinkedinPlaybook(profile?.niche || "", sanitizedInput)
+            : "";
+
+      const BANNED = "delve, pivotal, leverage, game-changer, holistic, tapestry, underscore, elevate, empower, transformative, utilize, furthermore, nevertheless, consequently";
+
+      const OUTPUT_FORMAT = `
+OUTPUT FORMAT — EXACT:
+
+[VARIATION_1_START]
+(complete ${selectedFormat})
+[VARIATION_1_END]
+
+[VARIATION_2_START]
+(complete ${selectedFormat})
+[VARIATION_2_END]
+
+[VARIATION_3_START]
+(complete ${selectedFormat})
+[VARIATION_3_END]
+
+[VARIATION_4_START]
+(complete ${selectedFormat})
+[VARIATION_4_END]
+
+[VARIATION_5_START]
+(complete ${selectedFormat})
+[VARIATION_5_END]`;
+
+      let systemPrompt: string;
+
+      if (isLinkedIn || (!isThread && !isScript)) {
+        // ── LinkedIn / Post prompt ──
+        systemPrompt = `You are a top LinkedIn ghostwriter. Your posts consistently get 50,000+ impressions. You write like a real person — specific, human, direct.
 
 PLATFORM: ${selectedPlatform?.name}
 FORMAT: ${selectedFormat}
 
-═══════════════════════════════
-WRITING RULES — NON-NEGOTIABLE
-═══════════════════════════════
+${playbookSection ? `═══ PLAYBOOK (follow this structure) ═══\n${playbookSection}\n═══ END PLAYBOOK ═══\n` : ''}
+LINKEDIN-SPECIFIC RULES:
+1. Hook: MAX 60 characters — must create curiosity or shock
+2. Length: 1,200-1,800 characters total
+3. One idea per line, blank line between sections
+4. Symbols: Use ☑ ✦ ↳ → naturally (not bullets)
+5. Numbers: Always specific ("47%" not "many")
+6. End: Question OR "♻️ Repost if this helped"
+7. ZERO markdown — no bold, no italic, no headers
+8. ZERO corporate speak — write like a human texting a smart friend
+9. SHORT sentences — max 15 words per sentence
+10. White space: use line breaks generously for mobile readability
 
-1. ZERO MARKDOWN in posts — no **bold**, no *italic*, no bullet points
-2. Write in FIRST PERSON — "I", "my", "me"
-3. SPECIFIC over generic — real numbers, real situations, real names
-4. SHORT sentences — max 15 words per sentence
-5. ONE idea per paragraph
-6. WHITE SPACE is your friend — use line breaks generously
-7. NO AI phrases — never: "delve", "pivotal", "leverage", "game-changer", "holistic", "tapestry", "underscore", "elevate", "empower", "transformative", "utilize", "furthermore", "nevertheless", "consequently"
-8. End with a QUESTION or strong CTA
+BANNED PHRASES: ${BANNED}
 
-═══════════════════════════════
-FORMAT RULES BY TYPE
-═══════════════════════════════
-${selectedFormat === "Thread" ? `
-THREAD FORMAT:
-- Tweet 1: The hook (max 280 chars) — provocative, specific
-- Tweet 2-8: Each tweet = one idea, numbered (2/, 3/, etc.)
-- Last tweet: Strong CTA or question
+5 ANGLES — one per variation:
+1. Story/failure angle: "I wasted 6 months doing X before I realized..."
+2. Contrarian angle: "Everyone says X. They're wrong. Here's why:"
+3. Data/proof angle: "From 0 to 47K in 90 days. Here's exactly how:"
+4. Framework angle: "The 5-step system I use every week:"
+5. Question angle: "Why do 97% of creators give up in month 3?"
 
-Separate each tweet with:
+${OUTPUT_FORMAT}
+
+Each = COMPLETE, READY TO POST. Min 150 words. Generous line breaks.`;
+
+      } else if (isThread) {
+        // ── Thread prompt ──
+        systemPrompt = `You are a viral X/Twitter thread writer. Your threads consistently get 500K+ impressions.
+
+PLATFORM: ${selectedPlatform?.name}
+FORMAT: Thread
+
+${playbookSection ? `═══ PLAYBOOK (follow this structure) ═══\n${playbookSection}\n═══ END PLAYBOOK ═══\n` : ''}
+THREAD RULES:
+1. Tweet 1 (HOOK): Max 280 chars. Stops the scroll. Creates MASSIVE curiosity.
+2. Tweets 2-8: Each = ONE idea. Numbered (2/, 3/ etc.). Max 280 chars each.
+3. Last tweet: Strong CTA + "Follow @[creator] for more"
+4. Each tweet must stand alone AND connect to the next
+
+SEPARATOR between tweets:
 ▸ ─────────────────────────────
 
-Example structure:
-[HOOK — 1 punchy sentence]
+HOOK FORMULAS (use the most powerful):
+- "I [achieved X] without [common method]. Here's how:"
+- "[Number] things most people don't know about [topic]:"
+- "Unpopular opinion: [contrarian statement]"
+- "I spent [time/money] on [thing]. Here's what I learned:"
 
-▸ ─────────────────────────────
+BANNED PHRASES: ${BANNED}
 
-2/ [Single idea developed]
+5 ANGLES for 5 thread variations:
+1. Cheatcode: "BREAKING: [Tool] is a cheatcode for [outcome]. Here are N ways:"
+2. Disruption: "In 2007, iPhone killed Nokia. In 2026, [X] will kill [Y]."
+3. Prompt library: "I grew 15K followers. Here are the N prompts I used:"
+4. Story arc: Personal story unfolding across 5-7 tweets
+5. Educational: Step-by-step teaching series
 
-▸ ─────────────────────────────
+${OUTPUT_FORMAT}
 
-3/ [Next idea]
+Each variation = DIFFERENT hook + DIFFERENT structure.`;
 
-[... continue]
+      } else {
+        // ── Reel / Script prompt ──
+        systemPrompt = `You are a viral Reel/TikTok scriptwriter. Your scripts consistently get 1M+ views.
 
-▸ ─────────────────────────────
+PLATFORM: ${selectedPlatform?.name}
+FORMAT: ${selectedFormat}
 
-[CTA tweet]
-` : /script|reel|video/i.test(selectedFormat || "") ? `
-SCRIPT FORMAT:
-HOOK (0-3s): [Grabbing opening line]
+${playbookSection ? `═══ PLAYBOOK (follow this structure) ═══\n${playbookSection}\n═══ END PLAYBOOK ═══\n` : ''}
+SCRIPT FORMAT (60 seconds max):
 
-PROBLEM (3-10s): [Pain point described]
+[HOOK - 0 to 3 seconds]
+One sentence. Stops the scroll. Makes viewer say "wait, what?"
 
-SOLUTION (10-25s): [Your answer/tool/method]
+[PROBLEM - 3 to 8 seconds]
+Agitate the pain point. Make viewer feel understood.
 
-PROOF (25-40s): [Specific result or example]
+[SOLUTION - 8 to 30 seconds]
+Main value. Specific steps. "Here's exactly how..."
+Name exact tools, buttons, URLs — not vague descriptions.
 
-CTA (40-60s): [Clear action to take]
-` : `
-POST FORMAT:
-Line 1: THE HOOK — most important line, make them stop scrolling
-[blank line]
-Line 2-3: Context or contradiction
-[blank line]
-Line 4-5: The meat — specific insight, story, or data
-[blank line]
-Line 6-7: The lesson or framework
-[blank line]
-Final line: Question or CTA
-`}
-═══════════════════════════════
-5 ANGLES — ONE PER VARIATION
-═══════════════════════════════
+[PROOF - 30 to 45 seconds]
+Real result or example. Specific numbers always.
 
-Variation 1 — FAILURE STORY
-Open with a specific mistake or failure.
-"I wasted 6 months doing X before I realized..."
-Structure: Failure → lesson → result
+[CTA - 45 to 60 seconds]
+One clear action. "Comment [keyword] if you want more"
 
-Variation 2 — CONTRARIAN TAKE
-Challenge the conventional wisdom.
-"Everyone tells you to do X. They're wrong."
-Structure: Common belief → why it's wrong → truth
+ON-SCREEN TEXT: List 3-5 text overlays for the video.
 
-Variation 3 — CASE STUDY WITH NUMBERS
-Specific result with real metrics.
-"From 0 to 47K followers in 90 days. Here's exactly what I did:"
-Structure: Result → method → proof → replicable
+BANNED PHRASES: ${BANNED}
 
-Variation 4 — STEP BY STEP PROCESS
-Numbered framework, very clear.
-"The 5-step system I use every week:"
-Structure: Intro → numbered steps → outcome
+5 ANGLES for 5 script variations:
+1. AI showcase: "[Tool] can now [impressive claim]. Here's how to use it free."
+2. Secret feature: "This secret [platform] feature will [specific outcome]"
+3. 3 mistakes: "You're stuck because you don't do these 3 things"
+4. Before/after: "Look at this transformation. Here's how I did it"
+5. Myth busting: "You think X but actually Y. Let me prove it."
 
-Variation 5 — PROVOCATIVE QUESTION + OPINION
-Start with a question that stops the scroll.
-"Why do 97% of creators give up in month 3?"
-Structure: Question → answer → strong opinion → CTA
+${OUTPUT_FORMAT}
 
-═══════════════════════════════
-OUTPUT FORMAT — EXACT
-═══════════════════════════════
-
-[VARIATION_1_START]
-(complete post — variation 1)
-[VARIATION_1_END]
-
-[VARIATION_2_START]
-(complete post — variation 2)
-[VARIATION_2_END]
-
-[VARIATION_3_START]
-(complete post — variation 3)
-[VARIATION_3_END]
-
-[VARIATION_4_START]
-(complete post — variation 4)
-[VARIATION_4_END]
-
-[VARIATION_5_START]
-(complete post — variation 5)
-[VARIATION_5_END]
-
-CRITICAL: Each variation must be COMPLETE and READY TO POST.
-Minimum 150 words per variation (except threads where each tweet is short).
-Use generous line breaks and white space.
-Make it impossible NOT to read.`;
+Each variation includes: HOOK, PROBLEM, SOLUTION, PROOF, CTA, ON-SCREEN TEXT.`;
+      }
 
       // === DEBUG LOGS ===
       console.log("=== GENERATION START ===");
