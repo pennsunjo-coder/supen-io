@@ -673,7 +673,7 @@ Each variation includes: HOOK, PROBLEM, SOLUTION, PROOF, CTA, ON-SCREEN TEXT.`;
       // Send content-ready email (fire and forget)
       supabase.auth.getUser().then(({ data: { user: u } }) => {
         if (u?.email) {
-          supabase.functions.invoke("send-email", {
+          supabase.functions.invoke("bright-processor", {
             body: {
               to: u.email,
               subject: "Ton contenu Supenli.io est pr\u00eat ! \u2728",

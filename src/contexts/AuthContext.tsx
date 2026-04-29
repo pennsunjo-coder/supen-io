@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Send welcome email via Resend (fire and forget)
     if (data.user) {
-      supabase.functions.invoke("send-email", {
+      supabase.functions.invoke("bright-processor", {
         body: {
           to: data.user.email,
           subject: "Bienvenue sur Supenli.io ! 🎉",
