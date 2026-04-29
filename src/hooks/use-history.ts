@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -64,18 +64,54 @@ function groupByDate(items: GeneratedItem[]): HistoryGroup[] {
     .map((label) => ({ label, items: groups.get(label)! }));
 }
 
+// Lightweight columns — NO content field (too heavy for list view)
+const LIST_COLS = "id, session_id, platform, format, content, viral_score, infographic_base64, created_at";
+const LIST_COLS_FALLBACK = "id, platform, format, content, viral_score, created_at";
+
+function processItems(data: any[]): GeneratedItem[] {
+  const allItems = data as GeneratedItem[];
+
+  const sessionInfographics = new Map<string, string>();
+  for (const item of allItems) {
+    if (!item.session_id) continue;
+    if (item.format === "Infographic" && item.infographic_base64) {
+      sessionInfographics.set(item.session_id, item.infographic_base64);
+    }
+    if (item.infographic_base64 && item.format !== "Infographic") {
+      sessionInfographics.set(item.session_id, item.infographic_base64);
+    }
+  }
+
+  return allItems
+    .filter((i) => i.format !== "Infographic")
+    .filter((i) => i.content && i.content.trim().length >= 20)
+    .map((item) => {
+      const infraBase64 = item.session_id ? sessionInfographics.get(item.session_id) : null;
+      return {
+        ...item,
+        hasInfographic: !!infraBase64 || !!item.infographic_base64,
+        sessionInfographicBase64: infraBase64 || item.infographic_base64 || null,
+      };
+    });
+}
+
 export function useHistory() {
   const { user } = useAuth();
   const [items, setItems] = useState<GeneratedItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const fetchingRef = useRef(false);
 
-  const fetchHistory = useCallback(async () => {
-    if (!user) { setLoading(false); return; }
+  const cacheKey = user ? `supenli_history_${user.id}` : "";
+
+  // Fetch from Supabase and update state + cache
+  const fetchFromSupabase = useCallback(async () => {
+    if (!user || fetchingRef.current) return;
+    fetchingRef.current = true;
 
     try {
       let { data, error } = await supabase
         .from("generated_content")
-        .select("id, platform, format, content, source_ids, created_at, viral_score, session_id, infographic_base64")
+        .select(LIST_COLS)
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(50);
@@ -83,7 +119,7 @@ export function useHistory() {
       if (error) {
         const fallback = await supabase
           .from("generated_content")
-          .select("id, platform, format, content, created_at, viral_score")
+          .select(LIST_COLS_FALLBACK)
           .eq("user_id", user.id)
           .order("created_at", { ascending: false })
           .limit(50);
@@ -91,40 +127,38 @@ export function useHistory() {
       }
 
       if (data) {
-        const allItems = data as GeneratedItem[];
-
-        const sessionInfographics = new Map<string, string>();
-        for (const item of allItems) {
-          if (!item.session_id) continue;
-          if (item.format === "Infographic" && item.infographic_base64) {
-            sessionInfographics.set(item.session_id, item.infographic_base64);
-          }
-          if (item.infographic_base64 && item.format !== "Infographic") {
-            sessionInfographics.set(item.session_id, item.infographic_base64);
-          }
-        }
-
-        const posts = allItems
-          .filter((i) => i.format !== "Infographic")
-          .filter((i) => i.content && i.content.trim().length >= 20)
-          .map((item) => {
-            const infraBase64 = item.session_id ? sessionInfographics.get(item.session_id) : null;
-            return {
-              ...item,
-              hasInfographic: !!infraBase64 || !!item.infographic_base64,
-              sessionInfographicBase64: infraBase64 || item.infographic_base64 || null,
-            };
-          });
-
+        const posts = processItems(data);
         setItems(posts);
+        // Save to localStorage
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify({ data: posts, ts: Date.now() }));
+        } catch { /* quota */ }
       }
     } catch { /* network */ }
-    setLoading(false);
-  }, [user]);
 
+    setLoading(false);
+    fetchingRef.current = false;
+  }, [user, cacheKey]);
+
+  // On mount: load cache first, then fetch in background
   useEffect(() => {
-    fetchHistory();
-  }, [fetchHistory]);
+    if (!user) { setLoading(false); return; }
+
+    // Step 1: instant load from localStorage
+    try {
+      const raw = localStorage.getItem(cacheKey);
+      if (raw) {
+        const { data } = JSON.parse(raw);
+        if (data?.length > 0) {
+          setItems(data);
+          setLoading(false);
+        }
+      }
+    } catch { /* corrupt cache */ }
+
+    // Step 2: fetch from Supabase (updates state + refreshes cache)
+    fetchFromSupabase();
+  }, [user, cacheKey, fetchFromSupabase]);
 
   const grouped = groupByDate(items);
 
@@ -160,5 +194,5 @@ export function useHistory() {
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   })();
 
-  return { items, grouped, sessions, loading, refetch: fetchHistory };
+  return { items, grouped, sessions, loading, refetch: fetchFromSupabase };
 }
