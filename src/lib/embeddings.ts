@@ -76,9 +76,11 @@ export interface UserSourceMatch {
 export async function searchUserSources(
   query: string,
   activeSourceIds: string[],
-  limit: number = 5,
+  limit: number = 8,
 ): Promise<UserSourceMatch[]> {
   if (activeSourceIds.length === 0) return [];
+
+  console.log("[RAG] Searching", activeSourceIds.length, "sources, limit:", limit);
 
   // ── Strategy 1: Semantic search via pgvector ──
   try {
@@ -90,9 +92,10 @@ export async function searchUserSources(
           query_embedding: JSON.stringify(queryEmbedding),
           user_id_param: user.id,
           match_count: limit,
-          match_threshold: 0.4,
+          match_threshold: 0.35,
         });
         if (!error && data && data.length > 0) {
+          console.log("[RAG] Vector search hit:", data.length, "results");
           return data as UserSourceMatch[];
         }
       }
@@ -109,6 +112,7 @@ export async function searchUserSources(
       match_count: limit,
     });
     if (!error && data && data.length > 0) {
+      console.log("[RAG] Trigram search hit:", data.length, "results");
       return data as UserSourceMatch[];
     }
   } catch {
@@ -124,6 +128,7 @@ export async function searchUserSources(
       .limit(limit);
 
     if (sources) {
+      console.log("[RAG] Direct load:", sources.length, "sources");
       return sources.map((s) => ({
         id: s.id,
         title: s.title,
@@ -136,6 +141,7 @@ export async function searchUserSources(
     // Nothing works
   }
 
+  console.warn("[RAG] All strategies failed");
   return [];
 }
 

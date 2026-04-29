@@ -367,39 +367,81 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
     setGeneratedInfographicBase64(null);
 
     try {
-      // === Retrieve active sources content ===
+      // === RAG: Retrieve relevant source content ===
       const allSourceIds = [...new Set([...activeSourceIds, ...selectedDocumentIds])];
+      const focusDirectives = Object.values(sourceDirectives).filter(Boolean);
+      const directive = focusDirectives.join(", ");
       let sourceContext = "";
-      if (allSourceIds.length > 0) {
-        const { data: sourcesData } = await supabase
-          .from("sources")
-          .select("title, content, directive")
-          .in("id", allSourceIds)
-          .limit(5);
 
-        sourceContext = sourcesData?.map(s => {
-          const title = s.title.replace(/\s*\(\d+\/\d+\)\s*$/, '').trim();
-          const directive = s.directive ? `Focus: ${s.directive}` : '';
-          return `=== ${title} ===\n${directive}\n${s.content?.slice(0, 2000)}`;
-        }).join('\n\n') || '';
+      if (allSourceIds.length > 0) {
+        // Strategy 1: RAG search (semantic + trigram + direct fallback)
+        try {
+          const ragQuery = directive ? `${directive}\n\n${sanitized}` : sanitized;
+          const ragResults = await searchUserSources(ragQuery, allSourceIds, 8);
+
+          if (ragResults.length > 0) {
+            console.log("[RAG] Found", ragResults.length, "relevant chunks");
+            const seen = new Set<string>();
+            sourceContext = ragResults
+              .filter(r => {
+                const key = r.content?.slice(0, 80);
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+              })
+              .map(r => {
+                const title = r.title.replace(/\s*\(\d+\/\d+\)\s*$/, '').trim();
+                return `━━━ ${title} ━━━\n${r.content?.slice(0, 2500)}`;
+              })
+              .join('\n\n');
+          }
+        } catch (e) {
+          console.warn("[RAG] Search failed, falling back to direct load:", e);
+        }
+
+        // Fallback: direct source loading if RAG returned nothing
+        if (!sourceContext) {
+          try {
+            const { data: sourcesData } = await supabase
+              .from("sources")
+              .select("title, content")
+              .in("id", allSourceIds)
+              .limit(5);
+
+            if (sourcesData && sourcesData.length > 0) {
+              console.log("[RAG] Direct load:", sourcesData.length, "sources");
+              sourceContext = sourcesData.map(s => {
+                const title = s.title.replace(/\s*\(\d+\/\d+\)\s*$/, '').trim();
+                return `━━━ ${title} ━━━\n${s.content?.slice(0, 2500)}`;
+              }).join('\n\n');
+            }
+          } catch { /* network */ }
+        }
       }
 
-      // === Build user message with source context ===
-      const focusDirectives = Object.values(sourceDirectives).filter(Boolean);
+      console.log("[RAG] Context length:", sourceContext.length);
+
+      // === Build user message ===
       const sanitizedInput = sanitized;
       const userMessage = `
 ${sourceContext ? `
-════════════════════════════
-SOURCE DOCUMENT(S)
-════════════════════════════
+╔══════════════════════════════════════╗
+║         DOCUMENT CONTEXT (RAG)       ║
+╚══════════════════════════════════════╝
+
 ${sourceContext}
 
-INSTRUCTION: Extract specific facts, quotes, insights, and examples from the above documents.
-Do NOT invent information not present in the sources.
-${focusDirectives.length > 0 ? `Focus specifically on: ${focusDirectives.join(', ')}` : ''}
-════════════════════════════
-` : ''}
-CONTENT TO CREATE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CRITICAL INSTRUCTION:
+- Extract SPECIFIC facts, quotes, examples from above
+- Use REAL data and insights from the documents
+- Reference specific details (numbers, names, methods)
+- DO NOT invent anything not present in the sources
+- The content must feel written by someone who deeply read these documents
+${directive ? `- Focus specifically on: ${directive}` : ''}
+
+` : ''}CONTENT TO CREATE:
 Topic: ${sanitizedInput}
 Platform: ${selectedPlatform?.name}
 Format: ${selectedFormat}
@@ -408,6 +450,7 @@ ${profile?.preferred_tone ? `Tone: ${profile.preferred_tone}` : ''}
 
 Generate 5 complete ${selectedFormat} variations.
 Each must be radically different in angle and structure.
+${sourceContext ? 'Use insights from the documents to make content SPECIFIC and evidence-based.' : ''}
 Use white space and line breaks generously.
 Make each post visually clean and easy to read.
 `.trim();
