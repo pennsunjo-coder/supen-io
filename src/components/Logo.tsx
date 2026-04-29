@@ -1,28 +1,17 @@
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/contexts/ThemeContext";
-import logoHorizontalDark from "@/assets/logo-horizontal-dark.svg";
-import logoHorizontalLight from "@/assets/logo-horizontal-light.svg";
-import logoVerticalDark from "@/assets/logo-vertical-dark.svg";
-import logoVerticalLight from "@/assets/logo-vertical-light.svg";
 
 type Size = "sm" | "md" | "lg";
 
 interface LogoProps {
   size?: Size;
   className?: string;
-  vertical?: boolean;
 }
 
-const horizontalSizes: Record<Size, string> = {
+const sizes: Record<Size, string> = {
   sm: "h-7",
   md: "h-9",
   lg: "h-12",
-};
-
-const verticalSizes: Record<Size, string> = {
-  sm: "h-12",
-  md: "h-16",
-  lg: "h-24",
 };
 
 const iconSizes: Record<Size, string> = {
@@ -34,37 +23,32 @@ const iconSizes: Record<Size, string> = {
 /**
  * Full Supenli.io logo (text + icon).
  * Auto-switches between dark/light variant based on theme.
- * Note: file naming is inverse — "Black" SVG has WHITE text (for dark bg),
- * "White" SVG has BLACK text (for light bg).
+ * - Dark theme → /logo-white.svg (white text on dark bg)
+ * - Light theme → /logo.svg (black text on light bg)
  */
-export function LogoFull({ size = "md", className, vertical = false }: LogoProps) {
+export function LogoFull({ size = "md", className }: LogoProps) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
-
-  const src = vertical
-    ? (isDark ? logoVerticalDark : logoVerticalLight)
-    : (isDark ? logoHorizontalDark : logoHorizontalLight);
-
-  const sizeClass = vertical ? verticalSizes[size] : horizontalSizes[size];
+  const src = isDark ? "/logo-white.svg" : "/logo.svg";
 
   return (
     <img
       src={src}
       alt="Supenli.io"
-      className={cn(sizeClass, "w-auto object-contain", className)}
+      className={cn(sizes[size], "w-auto object-contain", className)}
       draggable={false}
     />
   );
 }
 
 /**
- * Compact Supen icon (vertical logo).
+ * Compact Supenli icon.
  * Use for favicons, app icons, square contexts.
  */
 export function LogoIcon({ size = "md", className }: { size?: Size; className?: string }) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
-  const src = isDark ? logoVerticalDark : logoVerticalLight;
+  const src = isDark ? "/logo-white.svg" : "/logo.svg";
 
   return (
     <img
