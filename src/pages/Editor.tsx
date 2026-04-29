@@ -99,6 +99,9 @@ export default function Editor() {
     ? Math.round(variations.reduce((s, v) => s + (v.viral_score || 0), 0) / variations.length)
     : 0;
 
+  const contentFormat = variations[0]?.format || "";
+  const isScript = /script|reel|video/i.test(contentFormat);
+
   if (loading) return (
     <div className="h-screen flex items-center justify-center bg-background">
       <Loader2 className="w-5 h-5 animate-spin text-muted-foreground/40" />
@@ -163,95 +166,130 @@ export default function Editor() {
         ))}
       </div>
 
-      {/* ── 2 COLUMNS ── */}
+      {/* ── 2 COLUMNS (max-width container) ── */}
       <div className="flex-1 flex overflow-hidden min-h-0">
+        <div className="max-w-[1440px] mx-auto w-full h-full flex">
 
-        {/* LEFT — ALL VARIATIONS (visible, no accordion) */}
-        <div className={cn("flex-1 flex flex-col overflow-hidden min-w-0", mobileView !== "posts" ? "hidden md:flex" : "flex")}>
-          <div className="px-5 py-3 border-b border-border/10 flex items-center justify-between shrink-0">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">
-              {variations.length} Variations
-            </p>
-            <Button size="sm" variant="ghost" className="h-6 text-[10px] gap-1 text-muted-foreground px-2" onClick={copyAll}>
-              <Copy className="w-3 h-3" /> Copy all
-            </Button>
-          </div>
-          <div className="flex-1 overflow-hidden p-4">
-            <div className="flex gap-3 h-full">
-              {variations.map((v, i) => (
-                <motion.div
-                  key={v.id}
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.06 }}
-                  className={cn(
-                    "flex flex-col rounded-xl border border-border/20 border-t-2 overflow-hidden bg-card hover:border-border/40 transition-all flex-1 min-w-[220px]",
-                    v.viral_score >= 80 ? "border-t-emerald-400" : v.viral_score >= 60 ? "border-t-amber-400" : "border-t-border/30",
-                  )}
-                >
-                  <div className="flex items-center gap-2 px-3 pt-3 pb-2 shrink-0">
-                    {i === 0 && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 font-semibold shrink-0">🔥</span>}
-                    <span className="text-[10px] font-medium text-muted-foreground truncate flex-1">{v.angle || `Variation ${i + 1}`}</span>
-                    {v.viral_score > 0 && (
-                      <span className={cn("text-[10px] font-bold shrink-0", v.viral_score >= 80 ? "text-emerald-400" : v.viral_score >= 60 ? "text-amber-400" : "text-muted-foreground/50")}>
-                        {v.viral_score}%
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex-1 overflow-y-auto px-3 pb-2 min-h-0">
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">{v.content}</p>
-                  </div>
-                  <div className="px-3 pb-3 pt-2 shrink-0 border-t border-border/10">
-                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1.5 w-full font-medium border-border/30 hover:border-border/60 hover:bg-accent/50" onClick={() => copyText(v.content, v.id)}>
-                      {copied === v.id ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                      {copied === v.id ? "Copied!" : "Copy"}
-                    </Button>
-                  </div>
-                </motion.div>
-              ))}
+          {/* LEFT — VARIATIONS GRID */}
+          <div className={cn("flex-1 flex flex-col overflow-hidden min-w-0", mobileView !== "posts" ? "hidden md:flex" : "flex")}>
+            <div className="px-5 py-3 border-b border-border/10 flex items-center justify-between shrink-0">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">
+                {variations.length} Variations
+              </p>
+              <Button size="sm" variant="ghost" className="h-6 text-[10px] gap-1 text-muted-foreground px-2" onClick={copyAll}>
+                <Copy className="w-3 h-3" /> Copy all
+              </Button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto">
+              <div className="p-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {variations.map((v, i) => (
+                    <motion.div
+                      key={v.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.06 }}
+                      className="flex flex-col rounded-2xl border border-border/20 bg-card hover:border-border/40 hover:shadow-lg transition-all border-l-2 overflow-hidden"
+                      style={{
+                        borderLeftColor: v.viral_score >= 80
+                          ? '#10b981'
+                          : v.viral_score >= 60
+                            ? '#f59e0b'
+                            : '#6b7280',
+                      }}
+                    >
+                      {/* Card header */}
+                      <div className="flex items-center gap-2 px-4 pt-4 pb-2">
+                        {i === 0 && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 font-semibold">
+                            🔥 Top
+                          </span>
+                        )}
+                        <span className="text-xs font-medium text-muted-foreground flex-1 truncate">
+                          {v.angle || `Variation ${i + 1}`}
+                        </span>
+                        {v.viral_score > 0 && (
+                          <div className={cn(
+                            "flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold",
+                            v.viral_score >= 80
+                              ? "bg-emerald-500/15 text-emerald-400"
+                              : v.viral_score >= 60
+                                ? "bg-amber-500/15 text-amber-400"
+                                : "bg-accent/30 text-muted-foreground",
+                          )}>
+                            {v.viral_score}%
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Content with generous line-height */}
+                      <div className="flex-1 px-4 pb-3 overflow-y-auto max-h-64">
+                        <p className="text-sm leading-[1.7] whitespace-pre-wrap text-foreground/90">
+                          {v.content}
+                        </p>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="px-4 py-3 border-t border-border/10 flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs gap-1.5 flex-1 border-border/30"
+                          onClick={() => copyText(v.content, v.id)}
+                        >
+                          {copied === v.id
+                            ? <Check className="w-3 h-3 text-emerald-400" />
+                            : <Copy className="w-3 h-3" />
+                          }
+                          {copied === v.id ? "Copied!" : "Copy"}
+                        </Button>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* RIGHT — VISUAL + DETAILS */}
-        <div className={cn("w-80 border-l border-border/20 flex flex-col shrink-0", mobileView !== "visual" ? "hidden md:flex" : "flex w-full")}>
-          <div className="px-4 py-3 border-b border-border/10 shrink-0">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">Visual</p>
-          </div>
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {/* Infographic or generate — hidden for script formats */}
-            {(() => {
-              const contentFormat = variations[0]?.format || "";
-              const isScript = /script|reel|video/i.test(contentFormat);
-              if (isScript) {
-                return (
-                  <div className="rounded-xl border border-border/20 p-4 text-center bg-accent/[0.02]">
-                    <p className="text-xs text-muted-foreground">
-                      Visuals are not available for scripts. Switch to Post or Thread format to generate infographics.
-                    </p>
+          {/* RIGHT — VISUAL + DETAILS (380px) */}
+          <div className={cn(
+            "w-[380px] border-l border-border/20 flex flex-col shrink-0 bg-accent/[0.02]",
+            mobileView !== "visual" ? "hidden md:flex" : "flex w-full",
+          )}>
+            <div className="px-4 py-3 border-b border-border/10 shrink-0">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">Visual</p>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+
+              {/* Infographic or generate — hidden for script formats */}
+              {isScript ? (
+                <div className="rounded-xl border border-border/20 p-4 text-center bg-accent/[0.02]">
+                  <p className="text-xs text-muted-foreground">
+                    Visuals are not available for scripts. Switch to Post or Thread format to generate infographics.
+                  </p>
+                </div>
+              ) : infographic ? (
+                <div className="space-y-3">
+                  <div className="rounded-xl overflow-hidden border border-border/20 cursor-zoom-in group relative" onClick={() => setLightbox(true)}>
+                    <img src={`data:image/png;base64,${infographic}`} alt="Infographic" className="w-full h-auto" />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                      <ZoomIn className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
                   </div>
-                );
-              }
-              if (infographic) {
-                return (
-                  <div className="space-y-2">
-                    <div className="rounded-xl overflow-hidden border border-border/20 cursor-zoom-in group relative" onClick={() => setLightbox(true)}>
-                      <img src={`data:image/png;base64,${infographic}`} alt="Infographic" className="w-full h-auto" />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                        <ZoomIn className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button size="sm" variant="outline" className="h-10 text-sm gap-2 font-semibold border-border/50 hover:border-border" onClick={() => downloadInfographic("png")}><Download className="w-4 h-4" /> PNG</Button>
-                      <Button size="sm" variant="outline" className="h-10 text-sm gap-2 font-semibold border-border/50 hover:border-border" onClick={() => downloadInfographic("jpeg")}><Download className="w-4 h-4" /> JPEG</Button>
-                    </div>
-                    <Button size="sm" variant="ghost" className="w-full h-8 text-xs gap-1.5 text-muted-foreground hover:text-foreground border border-dashed border-border/30 hover:border-border/60" onClick={() => setShowModal(true)}>
-                      <Sparkles className="w-3 h-3" /> Regenerate
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" className="flex-1 h-8 text-xs gap-1.5 border-border/30" onClick={() => downloadInfographic("png")}>
+                      <Download className="w-3 h-3" /> PNG
+                    </Button>
+                    <Button size="sm" variant="outline" className="flex-1 h-8 text-xs gap-1.5 border-border/30" onClick={() => downloadInfographic("jpeg")}>
+                      <Download className="w-3 h-3" /> JPEG
                     </Button>
                   </div>
-                );
-              }
-              return (
+                  <Button className="w-full gap-2 font-bold h-11 bg-violet-600 hover:bg-violet-700 text-white border-0" onClick={() => setShowModal(true)}>
+                    <Sparkles className="w-4 h-4" /> Regenerate Visual
+                  </Button>
+                </div>
+              ) : (
                 <div className="rounded-xl border-2 border-dashed border-border/20 p-6 text-center">
                   <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-3 mx-auto">
                     <Sparkles className="w-6 h-6 text-primary/60" />
@@ -262,36 +300,39 @@ export default function Editor() {
                     <Sparkles className="w-5 h-5" /> Generate Visual
                   </Button>
                 </div>
-              );
-            })()}
+              )}
 
-            {/* Separator */}
-            <div className="border-t border-border/10" />
+              {/* Separator */}
+              <div className="border-t border-border/10" />
 
-            {/* Details */}
-            <div className="space-y-2">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50 mb-3">Details</p>
-              {[
-                { label: "Platform", value: platform },
-                { label: "Variations", value: `${variations.length}` },
-                { label: "Avg score", value: avgScore > 0 ? `${avgScore}%` : "—" },
-                { label: "Visual", value: infographic ? "✓ Saved" : "Not generated", cls: infographic ? "text-emerald-400" : "text-muted-foreground/50" },
-                { label: "Created", value: createdAt ? new Date(createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—" },
-              ].map((item) => (
-                <div key={item.label} className="flex items-center justify-between py-1.5 border-b border-border/10 last:border-0">
-                  <span className="text-xs text-muted-foreground">{item.label}</span>
-                  <span className={cn("text-xs font-medium", (item as any).cls || "text-foreground")}>{item.value}</span>
+              {/* Details with badges */}
+              <div className="space-y-3">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">Details</p>
+                <div className="flex flex-wrap gap-2">
+                  <span className="px-2.5 py-1 rounded-full bg-accent/40 text-xs font-medium">{platform}</span>
+                  <span className="px-2.5 py-1 rounded-full bg-accent/40 text-xs font-medium">{variations.length} variations</span>
+                  {avgScore > 0 && (
+                    <span className="px-2.5 py-1 rounded-full bg-accent/40 text-xs font-medium">Avg {avgScore}%</span>
+                  )}
+                  {infographic && (
+                    <span className="px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-400 text-xs font-medium">✓ Visual ready</span>
+                  )}
+                  {createdAt && (
+                    <span className="px-2.5 py-1 rounded-full bg-accent/40 text-xs font-medium">
+                      {new Date(createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    </span>
+                  )}
                 </div>
-              ))}
-            </div>
+              </div>
 
-            {/* Actions */}
-            <Button variant="outline" size="sm" className="w-full h-9 text-xs gap-2" onClick={copyAll}>
-              <Copy className="w-3.5 h-3.5" /> Copy All Variations
-            </Button>
-            <Button variant="ghost" size="sm" className="w-full h-9 text-xs gap-2 text-muted-foreground" onClick={() => navigate("/dashboard/studio")}>
-              <Plus className="w-3.5 h-3.5" /> Create New Content
-            </Button>
+              {/* Actions */}
+              <Button variant="outline" size="sm" className="w-full h-9 text-xs gap-2" onClick={copyAll}>
+                <Copy className="w-3.5 h-3.5" /> Copy All Variations
+              </Button>
+              <Button variant="ghost" size="sm" className="w-full h-9 text-xs gap-2 text-muted-foreground" onClick={() => navigate("/dashboard/studio")}>
+                <Plus className="w-3.5 h-3.5" /> Create New Content
+              </Button>
+            </div>
           </div>
         </div>
       </div>
