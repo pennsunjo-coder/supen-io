@@ -32,7 +32,7 @@ export default function ForgotPassword() {
       supabase.functions.invoke("bright-processor", {
         body: {
           to: email.trim(),
-          subject: "Réinitialisez votre mot de passe Supenli.io",
+          subject: "Reset your Supenli.io password",
           type: "reset-password",
           data: {
             resetLink: `${window.location.origin}/reset-password`,

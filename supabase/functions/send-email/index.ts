@@ -67,61 +67,61 @@ const APP = "https://supenli.io/dashboard";
 // ── Welcome ──
 
 function buildWelcomeEmail(name: string): string {
-  return `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${STYLES}</style></head>
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${STYLES}</style></head>
 <body><div class="wr"><div class="cd">
 <div class="hd">${LOGO}<p class="sub">AI-Powered Content Creation</p></div>
 <div class="bd">
-<div class="bg">${I.str} Nouveau membre</div>
-<div class="gr">Bienvenue, ${name} !</div>
-<p class="tx">Tu viens de rejoindre la plateforme de cr&eacute;ation de contenu viral aliment&eacute;e par l'IA. Tu es au bon endroit pour <span class="hl">cr&eacute;er, structurer et publier</span> du contenu qui performe vraiment.</p>
+<div class="bg">${I.str} New Member</div>
+<div class="gr">Welcome, ${name}!</div>
+<p class="tx">You just joined the AI-powered viral content creation platform. You're in the right place to <span class="hl">create, structure and publish</span> content that actually performs.</p>
 <div class="ft">
-<div class="fi">${I.zap}<div class="fi-t"><strong>G&eacute;n&eacute;ration en secondes</strong><br>5 variations virales par sujet, adapt&eacute;es &agrave; chaque plateforme.</div></div>
-<div class="fi">${I.img}<div class="fi-t"><strong>Infographies automatiques</strong><br>Transforme ton contenu en visuels pr&ecirc;ts &agrave; publier.</div></div>
-<div class="fi">${I.file}<div class="fi-t"><strong>Sources intelligentes</strong><br>Importe tes PDFs et URLs pour enrichir ta cr&eacute;ation.</div></div>
-<div class="fi">${I.bot}<div class="fi-t"><strong>AI Coach personnel</strong><br>Un expert toujours disponible pour booster ta strat&eacute;gie.</div></div>
+<div class="fi">${I.zap}<div class="fi-t"><strong>Generate in seconds</strong><br>5 viral variations per topic, adapted to each platform.</div></div>
+<div class="fi">${I.img}<div class="fi-t"><strong>Auto infographics</strong><br>Turn your content into ready-to-post visuals.</div></div>
+<div class="fi">${I.file}<div class="fi-t"><strong>Smart sources</strong><br>Import PDFs and URLs to enrich your content.</div></div>
+<div class="fi">${I.bot}<div class="fi-t"><strong>Personal AI Coach</strong><br>An expert always available to boost your strategy.</div></div>
 </div>
-<div class="ct"><a href="${APP}" class="cta">Commencer &agrave; cr&eacute;er &rarr;</a></div>
+<div class="ct"><a href="${APP}" class="cta">Start Creating &rarr;</a></div>
 <div class="dv"></div>
-<p class="tx" style="font-size:13px;margin-bottom:0;text-align:center">Des questions ? R&eacute;ponds directement &agrave; cet email.</p>
+<p class="tx" style="font-size:13px;margin-bottom:0;text-align:center">Questions? Reply directly to this email.</p>
 </div>
-<div class="fo"><p>&copy; 2026 Supenli.io &middot; Tu re&ccedil;ois cet email car tu viens de cr&eacute;er un compte.</p></div>
+<div class="fo"><p>&copy; 2026 Supenli.io &middot; You're receiving this because you created an account.</p></div>
 </div></div></body></html>`;
 }
 
 // ── Reset password ──
 
 function buildResetEmail(resetLink: string, name?: string): string {
-  return `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${STYLES}</style></head>
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${STYLES}</style></head>
 <body><div class="wr"><div class="cd">
 <div class="hd">${LOGO}</div>
 <div class="bd">
-<div class="bg">${I.lck} S&eacute;curit&eacute; du compte</div>
-<div class="gr">R&eacute;initialise ton mot de passe</div>
-<p class="tx">${name ? `Bonjour <span class="hl">${name}</span>,<br><br>` : ''}Nous avons re&ccedil;u une demande de r&eacute;initialisation de mot de passe pour ton compte <strong>Supenli.io</strong>. Clique sur le bouton ci-dessous pour cr&eacute;er un nouveau mot de passe.</p>
-<div class="ct"><a href="${resetLink}" class="cta">R&eacute;initialiser mon mot de passe &rarr;</a></div>
-<div class="wn">${I.lck} Ce lien expire dans <strong>1 heure</strong>. Si tu n'as pas demand&eacute; cette r&eacute;initialisation, tu peux ignorer cet email.</div>
+<div class="bg">${I.lck} Account Security</div>
+<div class="gr">Reset your password</div>
+<p class="tx">${name ? `Hey <span class="hl">${name}</span>,<br><br>` : ''}We received a request to reset your <strong>Supenli.io</strong> password. Click the button below to create a new one.</p>
+<div class="ct"><a href="${resetLink}" class="cta">Reset my password &rarr;</a></div>
+<div class="wn">${I.lck} This link expires in <strong>1 hour</strong>. If you didn't request this, you can safely ignore this email.</div>
 <div class="dv"></div>
-<p class="tx" style="font-size:12px;margin-bottom:0;color:rgba(255,255,255,.4)">Si le bouton ne fonctionne pas, copie ce lien :<br><span style="color:#24A89B;word-break:break-all;font-size:11px">${resetLink}</span></p>
+<p class="tx" style="font-size:12px;margin-bottom:0;color:rgba(255,255,255,.4)">If the button doesn't work, copy this link:<br><span style="color:#24A89B;word-break:break-all;font-size:11px">${resetLink}</span></p>
 </div>
-<div class="fo"><p>&copy; 2026 Supenli.io &middot; Email envoy&eacute; pour des raisons de s&eacute;curit&eacute;.</p></div>
+<div class="fo"><p>&copy; 2026 Supenli.io &middot; This email was sent for security purposes.</p></div>
 </div></div></body></html>`;
 }
 
 // ── Content ready ──
 
 function buildContentReadyEmail(name: string, platform: string, topic: string): string {
-  return `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${STYLES}</style></head>
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${STYLES}</style></head>
 <body><div class="wr"><div class="cd">
 <div class="hd">${LOGO}</div>
 <div class="bd">
 <div class="bg">${I.trn} ${platform}</div>
-<div class="gr">Ton contenu est pr&ecirc;t !</div>
-<p class="tx">Hey <span class="hl">${name}</span>,<br><br>Ton contenu <strong>${platform}</strong> sur &laquo;<span class="hl">${topic}</span>&raquo; a &eacute;t&eacute; g&eacute;n&eacute;r&eacute; avec <strong>5 variations virales</strong> pr&ecirc;tes &agrave; publier.</p>
+<div class="gr">Your content is ready!</div>
+<p class="tx">Hey <span class="hl">${name}</span>,<br><br>Your <strong>${platform}</strong> content about "<span class="hl">${topic}</span>" has been generated with <strong>5 viral variations</strong> ready to publish.</p>
 <div class="ft">
-<div class="fi">${I.chk}<div class="fi-t"><strong>5 variations g&eacute;n&eacute;r&eacute;es</strong><br>Chaque variation a un angle et un hook diff&eacute;rent.</div></div>
-<div class="fi">${I.trn}<div class="fi-t"><strong>Score de viralit&eacute;</strong><br>Identifie la meilleure variation pour maximiser ta port&eacute;e.</div></div>
+<div class="fi">${I.chk}<div class="fi-t"><strong>5 variations generated</strong><br>Each variation has a different angle and hook.</div></div>
+<div class="fi">${I.trn}<div class="fi-t"><strong>Virality score</strong><br>Identify the best variation to maximize your reach.</div></div>
 </div>
-<div class="ct"><a href="${APP}" class="cta">Voir mon contenu &rarr;</a></div>
+<div class="ct"><a href="${APP}" class="cta">View my content &rarr;</a></div>
 </div>
 <div class="fo"><p>&copy; 2026 Supenli.io</p></div>
 </div></div></body></html>`;
@@ -130,43 +130,43 @@ function buildContentReadyEmail(name: string, platform: string, topic: string): 
 // ── Feedback ──
 
 function buildFeedbackEmail(name: string): string {
-  return `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${STYLES}</style></head>
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${STYLES}</style></head>
 <body><div class="wr"><div class="cd">
-<div class="hd">${LOGO}<p class="sub">Ton avis compte pour nous</p></div>
+<div class="hd">${LOGO}<p class="sub">Your feedback matters</p></div>
 <div class="bd">
 <div class="bg">${I.heart} Feedback</div>
-<div class="gr">Comment tu trouves Supenli.io ?</div>
-<p class="tx">Hey <span class="hl">${name}</span>,<br><br>Tu utilises Supenli.io depuis quelques jours et ton avis nous tient vraiment &agrave; c&oelig;ur. En 2 minutes, tu peux nous aider &agrave; construire l'outil dont tu as vraiment besoin.</p>
+<div class="gr">How are you finding Supenli.io?</div>
+<p class="tx">Hey <span class="hl">${name}</span>,<br><br>You've been using Supenli.io for a few days and your feedback means a lot to us. In 2 minutes, you can help us build the tool you actually need.</p>
 <div class="ft">
-<div class="fi">${I.msg}<div class="fi-t"><strong>Ce qu'on veut savoir :</strong><br>&rarr; Qu'est-ce qui fonctionne bien pour toi ?<br>&rarr; Qu'est-ce qui pourrait &ecirc;tre am&eacute;lior&eacute; ?<br>&rarr; Quelle fonctionnalit&eacute; te manque le plus ?</div></div>
+<div class="fi">${I.msg}<div class="fi-t"><strong>What we want to know:</strong><br>&rarr; What's working well for you?<br>&rarr; What could be improved?<br>&rarr; What feature do you miss most?</div></div>
 </div>
-<div class="ct"><a href="mailto:feedback@supenli.io?subject=Mon avis sur Supenli.io" class="cta">Donner mon avis &rarr;</a></div>
+<div class="ct"><a href="mailto:feedback@supenli.io?subject=My feedback on Supenli.io" class="cta">Share my feedback &rarr;</a></div>
 <div class="dv"></div>
-<p class="tx" style="font-size:13px;margin-bottom:0;text-align:center">Tu peux aussi r&eacute;pondre directement &agrave; cet email.<br>Chaque message est lu personnellement.</p>
+<p class="tx" style="font-size:13px;margin-bottom:0;text-align:center">You can also reply directly to this email.<br>Every message is read personally.</p>
 </div>
-<div class="fo"><p>&copy; 2026 Supenli.io &middot; On construit cet outil pour toi.</p></div>
+<div class="fo"><p>&copy; 2026 Supenli.io &middot; We're building this tool for you.</p></div>
 </div></div></body></html>`;
 }
 
 // ── Waitlist ──
 
 function buildWaitlistEmail(name: string): string {
-  return `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${STYLES}</style></head>
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${STYLES}</style></head>
 <body><div class="wr"><div class="cd">
-<div class="hd">${LOGO}<p class="sub">Liste d'acc&egrave;s prioritaire</p></div>
+<div class="hd">${LOGO}<p class="sub">Priority Access List</p></div>
 <div class="bd">
-<div class="bg">${I.str} Acc&egrave;s Privil&eacute;gi&eacute;</div>
-<div class="gr">Tu es sur la liste, ${name} !</div>
-<p class="tx">Tu viens de rejoindre la liste d'acc&egrave;s prioritaire de <span class="hl">Supenli.io</span> &mdash; la plateforme de cr&eacute;ation de contenu viral aliment&eacute;e par l'IA.<br><br>Tu seras parmi les <strong>premiers</strong> &agrave; &ecirc;tre notifi&eacute; lors du lancement officiel.</p>
+<div class="bg">${I.str} Early Access</div>
+<div class="gr">You're on the list, ${name}!</div>
+<p class="tx">You just joined the priority access list for <span class="hl">Supenli.io</span> &mdash; the AI-powered viral content creation platform.<br><br>You'll be among the <strong>first</strong> to be notified on launch day.</p>
 <div class="ft">
-<div class="fi">${I.zap}<div class="fi-t"><strong>Acc&egrave;s anticip&eacute; garanti</strong><br>Tu recevras un email d&egrave;s que la plateforme sera disponible.</div></div>
-<div class="fi">${I.str}<div class="fi-t"><strong>Offres exclusives</strong><br>Les membres de la liste b&eacute;n&eacute;ficient de conditions sp&eacute;ciales au lancement.</div></div>
-<div class="fi">${I.heart}<div class="fi-t"><strong>On a h&acirc;te de te montrer &ccedil;a</strong><br>Supenli.io va transformer ta fa&ccedil;on de cr&eacute;er du contenu.</div></div>
+<div class="fi">${I.zap}<div class="fi-t"><strong>Early access guaranteed</strong><br>You'll receive an email the moment the platform goes live.</div></div>
+<div class="fi">${I.str}<div class="fi-t"><strong>Exclusive deals</strong><br>Waitlist members get special conditions at launch.</div></div>
+<div class="fi">${I.heart}<div class="fi-t"><strong>We can't wait to show you</strong><br>Supenli.io will transform the way you create content.</div></div>
 </div>
 <div class="dv"></div>
-<p class="tx" style="font-size:13px;margin-bottom:0;text-align:center">Des questions ? R&eacute;ponds directement &agrave; cet email.</p>
+<p class="tx" style="font-size:13px;margin-bottom:0;text-align:center">Questions? Reply directly to this email.</p>
 </div>
-<div class="fo"><p>&copy; 2026 Supenli.io &middot; Tu re&ccedil;ois cet email car tu t'es inscrit sur notre liste d'attente.</p></div>
+<div class="fo"><p>&copy; 2026 Supenli.io &middot; You're receiving this because you joined our waitlist.</p></div>
 </div></div></body></html>`;
 }
 

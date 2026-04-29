@@ -2,7 +2,7 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { X, Sparkles, Users, Mail, CheckCircle } from "lucide-react";
+import { X, Sparkles, Users, Mail, CheckCircle, Flame, Zap, Gift } from "lucide-react";
 
 interface WaitlistPopupProps {
   isOpen: boolean;
@@ -32,7 +32,7 @@ export function WaitlistPopup({ isOpen, onClose }: WaitlistPopupProps) {
 
       if (dbError) {
         if (dbError.code === "23505") {
-          setError("Cet email est d\u00e9j\u00e0 inscrit sur la liste !");
+          setError("This email is already registered!");
           setLoading(false);
           return;
         }
@@ -42,7 +42,7 @@ export function WaitlistPopup({ isOpen, onClose }: WaitlistPopupProps) {
       supabase.functions.invoke("bright-processor", {
         body: {
           to: email.trim(),
-          subject: "Tu es sur la liste ! Supenli.io arrive bient\u00f4t \ud83d\ude80",
+          subject: "You're on the list! Supenli.io is coming soon",
           type: "waitlist",
           data: { name: name.trim() },
         },
@@ -50,7 +50,7 @@ export function WaitlistPopup({ isOpen, onClose }: WaitlistPopupProps) {
 
       setDone(true);
     } catch {
-      setError("Une erreur est survenue. R\u00e9essaie !");
+      setError("Something went wrong. Please try again!");
     } finally {
       setLoading(false);
     }
@@ -76,12 +76,12 @@ export function WaitlistPopup({ isOpen, onClose }: WaitlistPopupProps) {
               <div className="w-16 h-16 rounded-2xl bg-[#24A89B]/20 flex items-center justify-center mx-auto mb-4">
                 <CheckCircle className="w-8 h-8 text-[#24A89B]" />
               </div>
-              <h2 className="text-2xl font-bold text-white mb-3">Tu es sur la liste !</h2>
+              <h2 className="text-2xl font-bold text-white mb-3">You're on the list!</h2>
               <p className="text-white/60 text-sm leading-relaxed mb-6">
-                On te contactera d&egrave;s que <span className="text-[#24A89B] font-semibold">Supenli.io</span> sera officiellement disponible. Tu seras parmi les premiers !
+                We'll notify you the moment <span className="text-[#24A89B] font-semibold">Supenli.io</span> goes live. You'll be among the first!
               </p>
               <Button onClick={onClose} className="bg-[#24A89B] hover:bg-[#1a8a7f] text-white font-semibold px-8">
-                Fermer
+                Close
               </Button>
             </div>
           ) : (
@@ -89,30 +89,30 @@ export function WaitlistPopup({ isOpen, onClose }: WaitlistPopupProps) {
               <div className="text-center mb-6">
                 <div className="inline-flex items-center gap-2 bg-[#24A89B]/10 border border-[#24A89B]/20 rounded-full px-4 py-1.5 mb-4">
                   <Sparkles className="w-3.5 h-3.5 text-[#24A89B]" />
-                  <span className="text-[#24A89B] text-xs font-semibold">Acc&egrave;s Privil&eacute;gi&eacute;</span>
+                  <span className="text-[#24A89B] text-xs font-semibold">Early Access</span>
                 </div>
                 <h2 className="text-2xl font-bold text-white mb-2 leading-tight">
-                  Supenli.io arrive<br /><span className="text-[#24A89B]">tr&egrave;s bient&ocirc;t</span>
+                  Supenli.io is coming<br /><span className="text-[#24A89B]">very soon</span>
                 </h2>
                 <p className="text-white/60 text-sm leading-relaxed">
-                  Inscris-toi pour &ecirc;tre notifi&eacute; en avant-premi&egrave;re et b&eacute;n&eacute;ficier d'un <strong className="text-white">acc&egrave;s privil&eacute;gi&eacute;</strong> d&egrave;s le lancement.
+                  Join now to be notified first and get <strong className="text-white">priority access</strong> on launch day.
                 </p>
               </div>
 
               <div className="flex items-center justify-center gap-6 mb-6 py-3 px-4 bg-white/[0.03] rounded-xl border border-white/5">
                 <div className="text-center">
-                  <p className="text-lg">🔥</p>
-                  <p className="text-white/40 text-xs">Lancement imminent</p>
+                  <Flame className="w-5 h-5 text-[#24A89B] mx-auto mb-1" />
+                  <p className="text-white/40 text-xs">Launching soon</p>
                 </div>
                 <div className="w-px h-8 bg-white/10" />
                 <div className="text-center">
-                  <p className="text-lg">⚡</p>
-                  <p className="text-white/40 text-xs">Acc&egrave;s prioritaire</p>
+                  <Zap className="w-5 h-5 text-[#24A89B] mx-auto mb-1" />
+                  <p className="text-white/40 text-xs">Priority access</p>
                 </div>
                 <div className="w-px h-8 bg-white/10" />
                 <div className="text-center">
-                  <p className="text-lg">🎁</p>
-                  <p className="text-white/40 text-xs">Offres exclusives</p>
+                  <Gift className="w-5 h-5 text-[#24A89B] mx-auto mb-1" />
+                  <p className="text-white/40 text-xs">Exclusive deals</p>
                 </div>
               </div>
 
@@ -123,7 +123,7 @@ export function WaitlistPopup({ isOpen, onClose }: WaitlistPopupProps) {
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Ton pr&eacute;nom"
+                    placeholder="Your first name"
                     className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[#24A89B]/50 h-11"
                     required
                     autoFocus
@@ -135,7 +135,7 @@ export function WaitlistPopup({ isOpen, onClose }: WaitlistPopupProps) {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="ton@email.com"
+                    placeholder="you@email.com"
                     className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[#24A89B]/50 h-11"
                     required
                   />
@@ -150,10 +150,10 @@ export function WaitlistPopup({ isOpen, onClose }: WaitlistPopupProps) {
                   disabled={loading}
                   className="w-full h-12 font-bold text-base gap-2 bg-gradient-to-r from-[#24A89B] to-[#1a8a7f] hover:from-[#1a8a7f] hover:to-[#147a6f] text-white border-0 shadow-lg shadow-[#24A89B]/20"
                 >
-                  {loading ? "Inscription en cours..." : <><Sparkles className="w-4 h-4" /> Rejoindre la liste prioritaire</>}
+                  {loading ? "Joining..." : <><Sparkles className="w-4 h-4" /> Join the priority list</>}
                 </Button>
 
-                <p className="text-center text-xs text-white/30">Pas de spam. Juste une notification au lancement.</p>
+                <p className="text-center text-xs text-white/30">No spam. One email on launch day.</p>
               </form>
             </>
           )}

@@ -676,7 +676,7 @@ Each variation includes: HOOK, PROBLEM, SOLUTION, PROOF, CTA, ON-SCREEN TEXT.`;
           supabase.functions.invoke("bright-processor", {
             body: {
               to: u.email,
-              subject: "Ton contenu Supenli.io est pr\u00eat ! \u2728",
+              subject: "Your Supenli.io content is ready!",
               type: "content-ready",
               data: {
                 name: u.email.split("@")[0],

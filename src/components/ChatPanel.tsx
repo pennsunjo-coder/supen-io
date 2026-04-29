@@ -323,7 +323,7 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
                 supabase.from("coach_conversations").delete().eq("user_id", user.id).then(() => {});
               }
             }} className="text-[10px] text-muted-foreground/50 hover:text-destructive transition-colors flex items-center gap-1">
-              <Trash2 className="w-2.5 h-2.5" /> Effacer
+              <Trash2 className="w-2.5 h-2.5" /> Clear
             </button>
           )}
           <div className="flex items-center gap-1">
