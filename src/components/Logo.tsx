@@ -1,61 +1,49 @@
-import { cn } from "@/lib/utils";
 import { useTheme } from "@/contexts/ThemeContext";
-
-type Size = "sm" | "md" | "lg";
+import { cn } from "@/lib/utils";
 
 interface LogoProps {
-  size?: Size;
+  size?: "sm" | "md" | "lg";
   className?: string;
+  forceLight?: boolean;
+  forceDark?: boolean;
 }
 
-const sizes: Record<Size, string> = {
-  sm: "h-7",
-  md: "h-9",
-  lg: "h-12",
-};
-
-const iconSizes: Record<Size, string> = {
-  sm: "h-8 w-8",
-  md: "h-10 w-10",
-  lg: "h-14 w-14",
+const heights = {
+  sm: "h-6",
+  md: "h-8",
+  lg: "h-10",
 };
 
 /**
  * Full Supenli.io logo (text + icon).
- * Auto-switches between dark/light variant based on theme.
- * - Dark theme → /logo-white.svg (white text on dark bg)
- * - Light theme → /logo.svg (black text on light bg)
+ * - Dark theme → /logo-light.svg (white text for dark backgrounds)
+ * - Light theme → /logo-dark.svg (black text for light backgrounds)
  */
-export function LogoFull({ size = "md", className }: LogoProps) {
+export function LogoFull({
+  size = "md",
+  className,
+  forceLight,
+  forceDark,
+}: LogoProps) {
   const { theme } = useTheme();
-  const isDark = theme === "dark";
-  const src = isDark ? "/logo-white.svg" : "/logo.svg";
+
+  const isDark = forceDark || (!forceLight && theme === "dark");
 
   return (
     <img
-      src={src}
+      src={isDark ? "/logo-light.svg" : "/logo-dark.svg"}
       alt="Supenli.io"
-      className={cn(sizes[size], "w-auto object-contain", className)}
-      draggable={false}
+      className={cn(heights[size], "w-auto", className)}
     />
   );
 }
 
-/**
- * Compact Supenli icon.
- * Use for favicons, app icons, square contexts.
- */
-export function LogoIcon({ size = "md", className }: { size?: Size; className?: string }) {
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
-  const src = isDark ? "/logo-white.svg" : "/logo.svg";
-
+export function LogoIcon({ className }: { className?: string }) {
   return (
     <img
-      src={src}
-      alt="Supenli"
-      className={cn(iconSizes[size], "object-contain", className)}
-      draggable={false}
+      src="/logo-dark.svg"
+      alt="Supenli.io"
+      className={cn("h-8 w-8 object-contain", className)}
     />
   );
 }
