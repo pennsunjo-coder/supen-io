@@ -210,7 +210,7 @@ const Index = () => {
       {/* ═══════════ NAVBAR (sticky) ═══════════ */}
       <nav className="sticky top-0 z-50 backdrop-blur-xl bg-background/85 border-b border-border/10">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-4 md:px-6 py-3">
-          <Link to="/" className="hover:opacity-80 transition-opacity shrink-0"><LogoFull size="sm" /></Link>
+          <Link to="/" className="hover:opacity-80 transition-opacity shrink-0" onDoubleClick={() => navigate("/login")}><LogoFull size="sm" /></Link>
           <div className="hidden md:flex items-center bg-primary/[0.06] border border-primary/15 rounded-full px-1 py-1">
             {[
               { label: "Features", href: "#features" },

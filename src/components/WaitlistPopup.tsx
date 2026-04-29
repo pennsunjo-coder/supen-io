@@ -169,6 +169,11 @@ export function WaitlistPopup({ isOpen, onClose }: WaitlistPopupProps) {
 
                 <p className="text-center text-xs text-white/30">No spam. One email on launch day.</p>
               </form>
+              <div className="text-center mt-2">
+                <button onClick={() => { window.location.href = "/login"; }} className="text-[10px] text-white/10 hover:text-white/30 transition-colors">
+                  Admin access
+                </button>
+              </div>
             </>
           )}
         </div>
