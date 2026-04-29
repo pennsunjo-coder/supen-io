@@ -58,6 +58,7 @@ const Dashboard = () => {
   const [localDeleted, setLocalDeleted] = useState<Set<string>>(new Set());
   const sessions = useMemo(() => hookSessions.filter((s) => !localDeleted.has(s.sessionId)), [hookSessions, localDeleted]);
   const [search, setSearch] = useState("");
+  const [platformFilter, setPlatformFilter] = useState<string | null>(null);
   const [mobileTab, setMobileTab] = useState<MobileTab>("content");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -66,11 +67,9 @@ const Dashboard = () => {
     if (!user) return;
     setDeleting(true);
     try {
-      // Get item IDs from our local session data
       const session = sessions.find((s) => s.sessionId === sessionId);
       let ids = session?.itemIds || [];
 
-      // Fallback: if no itemIds, query Supabase
       if (ids.length === 0) {
         const { data } = await supabase
           .from("generated_content")
@@ -92,21 +91,16 @@ const Dashboard = () => {
         .eq("user_id", user.id);
 
       if (error) {
-        console.error("Delete error:", error.message, error.details, error.hint);
         toast.error(`Delete failed: ${error.message}`);
         return;
       }
 
-      // Immediate local update (counter + grid)
       setLocalDeleted((prev) => new Set(prev).add(sessionId));
       setDeletingId(null);
       toast.success("Content deleted!");
-
-      // Refresh from Supabase in background
       invalidateCache("history:");
       refetchHistory();
-    } catch (err) {
-      console.error("Delete exception:", err);
+    } catch {
       toast.error("Delete failed. Try again.");
     } finally {
       setDeleting(false);
@@ -135,13 +129,25 @@ const Dashboard = () => {
     });
   }, []);
 
+  // Platform filter chips
+  const availablePlatforms = useMemo(() => {
+    const set = new Set(sessions.map((s) => s.platform));
+    return Array.from(set).sort();
+  }, [sessions]);
+
   const filtered = useMemo(() => {
-    if (!search.trim()) return sessions;
-    return sessions.filter((s) =>
-      s.topic.toLowerCase().includes(search.toLowerCase()) ||
-      s.platform.toLowerCase().includes(search.toLowerCase()),
-    );
-  }, [sessions, search]);
+    let result = sessions;
+    if (platformFilter) {
+      result = result.filter((s) => s.platform === platformFilter);
+    }
+    if (search.trim()) {
+      result = result.filter((s) =>
+        s.topic.toLowerCase().includes(search.toLowerCase()) ||
+        s.platform.toLowerCase().includes(search.toLowerCase()),
+      );
+    }
+    return result;
+  }, [sessions, search, platformFilter]);
 
   const hasContent = sessions.length > 0;
   const greeting = profile?.first_name ? `Hey ${profile.first_name}!` : "Welcome";
@@ -171,9 +177,9 @@ const Dashboard = () => {
         {/* 3 COLUMNS */}
         <div className="flex-1 flex overflow-hidden min-h-0">
 
-          {/* LEFT — SOURCES */}
+          {/* LEFT — SOURCES (200px) */}
           <div data-tour="sources" className={cn(
-            "shrink-0 border-r border-border/20 bg-accent/[0.02] md:w-auto md:flex md:flex-col",
+            "shrink-0 border-r border-border/20 bg-accent/[0.02] md:w-[200px] md:flex md:flex-col",
             mobileTab === "sources" ? "flex flex-col w-full" : "hidden md:flex",
           )}>
             <SourcePanel
@@ -206,31 +212,64 @@ const Dashboard = () => {
           )}>
             {/* Header */}
             <div className="px-5 py-4 border-b border-border/10 shrink-0">
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-xl font-bold">{hasContent ? "My Content" : greeting}</h1>
+                  <h1 className="text-base font-bold">{hasContent ? "My Content" : greeting}</h1>
                   {hasContent && (
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {sessions.length} session{sessions.length !== 1 ? "s" : ""} generated
+                    <p className="text-xs text-muted-foreground/60 mt-0.5">
+                      {sessions.length} session{sessions.length !== 1 ? "s" : ""}
                     </p>
                   )}
                 </div>
-                <Button data-tour="create-btn" onClick={() => navigate("/dashboard/studio")} className="gap-2 h-11 text-sm font-bold px-6 shadow-sm shrink-0">
-                  <Plus className="w-5 h-5" /> Create Content
+                <Button data-tour="create-btn" onClick={() => navigate("/dashboard/studio")} className="gap-2 h-9 text-sm font-bold px-4 shrink-0">
+                  <Plus className="w-4 h-4" /> Create Content
                 </Button>
               </div>
-              {hasContent && (
+            </div>
+
+            {/* Search + filters */}
+            {hasContent && (
+              <div className="px-5 py-3 border-b border-border/10 space-y-2.5 shrink-0">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/40" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/30" />
                   <Input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Search content..."
-                    className="pl-9 h-8 bg-accent/20 border-border/20 text-xs"
+                    className="pl-9 h-8 bg-accent/10 border-border/10 text-xs"
                   />
                 </div>
-              )}
-            </div>
+                {availablePlatforms.length > 1 && (
+                  <div className="flex gap-1.5 overflow-x-auto pb-0.5">
+                    <button
+                      onClick={() => setPlatformFilter(null)}
+                      className={cn(
+                        "text-[10px] px-2.5 py-1 rounded-full whitespace-nowrap transition-all shrink-0 border font-medium",
+                        !platformFilter
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "border-border/20 text-muted-foreground hover:border-border/40",
+                      )}
+                    >
+                      All
+                    </button>
+                    {availablePlatforms.map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => setPlatformFilter(platformFilter === p ? null : p)}
+                        className={cn(
+                          "text-[10px] px-2.5 py-1 rounded-full whitespace-nowrap transition-all shrink-0 border font-medium",
+                          platformFilter === p
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "border-border/20 text-muted-foreground hover:border-border/40",
+                        )}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Content area */}
             <div className="flex-1 overflow-y-auto">
@@ -256,20 +295,20 @@ const Dashboard = () => {
                   </motion.div>
                 </div>
               ) : (
-                /* Content grid */
+                /* Content grid — premium cards */
                 <div className="p-5">
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
                     {/* + New card */}
                     <motion.div
-                      whileHover={{ scale: 1.03, y: -2 }}
+                      whileHover={{ scale: 1.02, y: -2 }}
                       whileTap={{ scale: 0.97 }}
-                      className="rounded-xl border-2 border-dashed border-border/25 hover:border-primary/40 hover:bg-primary/5 transition-colors cursor-pointer flex flex-col items-center justify-center aspect-square p-2 group"
+                      className="rounded-xl border-2 border-dashed border-border/20 hover:border-primary/30 hover:bg-primary/5 transition-colors cursor-pointer flex flex-col items-center justify-center aspect-[4/3] group"
                       onClick={() => navigate("/dashboard/studio")}
                     >
-                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-2 group-hover:bg-primary/20 transition-colors">
-                        <Plus className="w-7 h-7 text-primary" />
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-2 group-hover:bg-primary/20 transition-colors">
+                        <Plus className="w-5 h-5 text-primary" />
                       </div>
-                      <p className="text-xs font-bold">New Content</p>
+                      <p className="text-xs font-semibold text-center">New Content</p>
                     </motion.div>
 
                     {/* Session cards */}
@@ -279,48 +318,61 @@ const Dashboard = () => {
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: Math.min(i * 0.04, 0.4) }}
-                        whileHover={{ y: -3 }}
-                        className="rounded-xl border border-border/20 overflow-hidden hover:border-border/40 hover:shadow-lg hover:shadow-black/10 transition-all cursor-pointer group flex flex-col aspect-square relative"
+                        whileHover={{ y: -2 }}
+                        className="rounded-xl border border-border/10 overflow-hidden cursor-pointer group bg-card hover:border-border/30 hover:shadow-lg hover:shadow-black/20 transition-all duration-200"
                         onClick={() => navigate(`/editor/${s.sessionId}`)}
                       >
-                        {/* Delete button — hover only */}
-                        <button
-                          className="absolute top-1.5 left-1.5 z-10 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/80"
-                          onClick={(e) => { e.stopPropagation(); setDeletingId(s.sessionId); }}
-                        >
-                          <Trash2 className="w-3 h-3 text-white" />
-                        </button>
-
-                        <div className="relative flex-1 overflow-hidden bg-accent/10 min-h-0">
+                        {/* Thumbnail */}
+                        <div className="relative overflow-hidden aspect-[4/3] bg-accent/10">
                           {s.infographic ? (
                             <>
-                              <img src={`data:image/png;base64,${s.infographic}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="" />
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-                              <span className="absolute top-1.5 right-1.5 text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/90 text-white font-semibold flex items-center gap-0.5">
-                                <Check className="w-2 h-2" /> Visual
-                              </span>
+                              <img
+                                src={`data:image/png;base64,${s.infographic}`}
+                                className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+                                alt=""
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                              <div className="absolute bottom-2 left-2">
+                                <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-black/40 backdrop-blur-sm text-emerald-400 border border-emerald-400/30 flex items-center gap-1">
+                                  <Check className="w-2.5 h-2.5" />
+                                  Visual
+                                </span>
+                              </div>
                             </>
                           ) : (
                             <div className="w-full h-full flex flex-col items-center justify-center relative">
-                              <FileText className="w-5 h-5 text-muted-foreground/15 mb-1" />
-                              <p className="text-[9px] text-muted-foreground/25">No visual</p>
-                              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div className="w-10 h-10 rounded-xl bg-accent/20 flex items-center justify-center mb-1.5">
+                                <FileText className="w-5 h-5 text-muted-foreground/20" />
+                              </div>
+                              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-accent/10">
                                 <span className="text-[10px] px-3 py-1.5 rounded-full bg-primary text-primary-foreground font-medium flex items-center gap-1.5">
-                                  <Sparkles className="w-3 h-3" /> Add visual
+                                  <Sparkles className="w-3 h-3" />
+                                  Add visual
                                 </span>
                               </div>
                             </div>
                           )}
+
+                          {/* Delete button — hover only */}
+                          <button
+                            className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/80 z-10"
+                            onClick={(e) => { e.stopPropagation(); setDeletingId(s.sessionId); }}
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-white" />
+                          </button>
                         </div>
-                        <div className="p-2 bg-card shrink-0">
-                          <p className="text-[10px] font-medium line-clamp-1 leading-snug mb-1">
+
+                        {/* Card body */}
+                        <div className="p-3.5">
+                          <p className="text-sm font-semibold leading-snug line-clamp-2 mb-2.5 text-foreground/90">
                             {s.topic || "Untitled"}
                           </p>
                           <div className="flex items-center justify-between">
-                            <span className="text-[9px] text-muted-foreground/60 truncate max-w-[65%]">
-                              {s.platform || "—"}
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/30 text-muted-foreground/70 font-medium">
+                              {s.platform}
                             </span>
-                            <span className="text-[9px] text-muted-foreground/30">
+                            <span className="text-[11px] text-muted-foreground/50 flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
                               {timeAgo(s.createdAt)}
                             </span>
                           </div>
@@ -341,9 +393,9 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* RIGHT — COACH */}
+          {/* RIGHT — COACH (320px) */}
           <div data-tour="coach" className={cn(
-            "shrink-0 border-l border-border/20 bg-accent/[0.02] lg:w-[300px] lg:flex lg:flex-col",
+            "shrink-0 border-l border-border/20 bg-accent/[0.02] lg:w-[320px] lg:flex lg:flex-col",
             mobileTab === "coach" ? "flex flex-col w-full" : "hidden lg:flex",
           )}>
             <ErrorBoundary fallback={<div className="flex-1 flex items-center justify-center p-4"><p className="text-xs text-muted-foreground text-center">The Coach encountered an error. Reload the page.</p></div>}>
