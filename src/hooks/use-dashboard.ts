@@ -157,57 +157,75 @@ export function useDashboard() {
     if (!user) { setLoading(false); return; }
 
     try {
+      // Stats de la semaine
       const weekStart = startOfWeek();
+      const { data: weekData } = await supabase
+        .from("generated_content")
+        .select("platform, created_at")
+        .eq("user_id", user.id)
+        .gte("created_at", weekStart);
 
-      // Parallelize all 3 queries
-      const [weekResult, streakResult, topResult] = await Promise.all([
-        supabase
-          .from("generated_content")
-          .select("platform, created_at")
-          .eq("user_id", user.id)
-          .gte("created_at", weekStart),
-        supabase
-          .from("generated_content")
-          .select("created_at")
-          .eq("user_id", user.id)
-          .gte("created_at", new Date(Date.now() - 30 * 86400000).toISOString())
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("generated_content")
-          .select("id, platform, format, content, viral_score, image_prompt, infographic_html, infographic_base64, session_id, created_at")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false })
-          .limit(50),
-      ]);
-
-      // Weekly stats
-      const weekData = weekResult.data;
       const contentCount = weekData?.length ?? 0;
       const platforms = [...new Set((weekData ?? []).map((r) => r.platform))];
 
-      // Streak
-      const streak = calculateStreak((streakResult.data ?? []).map((r) => r.created_at));
+      // Streak (30 derniers jours)
+      const { data: streakData } = await supabase
+        .from("generated_content")
+        .select("created_at")
+        .eq("user_id", user.id)
+        .gte("created_at", new Date(Date.now() - 30 * 86400000).toISOString())
+        .order("created_at", { ascending: false });
+
+      const streak = calculateStreak((streakData ?? []).map((r) => r.created_at));
+
       const creatorScore = Math.min(
         Math.round((contentCount * 10) + (platforms.length * 20) + (streak * 5)),
-        100,
+        100
       );
+
       setWeeklyStats({ contentCount, platforms, streak, creatorScore });
 
-      // Top content + sessions
-      let topData = (topResult.data as DashboardContent[]) || null;
+      // Top 5 contenus les plus récents
+      // Essayer avec toutes les colonnes, fallback si viral_score/image_prompt n'existent pas
+      let topData: DashboardContent[] | null = null;
+      const { data: td1, error: topErr1 } = await supabase
+        .from("generated_content")
+        .select("id, platform, format, content, viral_score, image_prompt, infographic_html, infographic_base64, infographic_generated_at, session_id, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(100);
 
-      // Fallback if newer columns missing
-      if (topResult.error) {
-        const { data: fallback } = await supabase
+      if (topErr1) {
+        // Fallback: try without newer columns
+        const { data: td2, error: topErr2 } = await supabase
           .from("generated_content")
-          .select("id, platform, format, content, viral_score, created_at")
+          .select("id, platform, format, content, viral_score, image_prompt, infographic_html, infographic_generated_at, created_at")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false })
-          .limit(50);
-        topData = fallback ? fallback.map((r) => ({ ...r, viral_score: r.viral_score || 0, image_prompt: "" })) as DashboardContent[] : null;
+          .limit(100);
+
+        if (topErr2) {
+          // Ultimate fallback
+          const { data: td3, error: topErr3 } = await supabase
+            .from("generated_content")
+            .select("id, platform, format, content, created_at")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false })
+            .limit(100);
+          if (topErr3) {
+            if (IS_DEV) console.warn("useDashboard fallback select also failed:", topErr3.message);
+          } else if (td3) {
+            topData = td3.map((r) => ({ ...r, viral_score: 0, image_prompt: "" })) as DashboardContent[];
+          }
+        } else if (td2) {
+          topData = td2 as DashboardContent[];
+        }
+      } else {
+        topData = td1 as DashboardContent[];
       }
 
       if (topData && topData.length > 0) {
+        // Filter out empty/too-short for topContent display
         const cleaned = topData.filter((item) => {
           if (!item.content || item.content.trim().length < 20) return false;
           if (isInfographicHtml(item.content)) return false;
@@ -215,6 +233,7 @@ export function useDashboard() {
           return true;
         });
         setTopContent(cleaned);
+        // Group ALL items (including infographics) into sessions
         setSessions(groupIntoSessions(topData).slice(0, 10));
       } else {
         setTopContent([]);
