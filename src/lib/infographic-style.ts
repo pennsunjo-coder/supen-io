@@ -246,34 +246,64 @@ export interface EnhancedExtraction {
   keywords: string[];
 }
 
-export function extractForDallE(content: string): EnhancedExtraction {
+function detectContentType(content: string): string {
+  if (/step\s+\d|étape\s+\d/i.test(content)) return "tutorial";
+  if (/\bvs\b|\bversus\b|compared/i.test(content)) return "comparison";
+  if (/\d+\s+(ways|tips|reasons|things|secrets|mistakes|hacks|tools|lessons)/i.test(content)) return "list";
+  if (/story|histoire|j'ai|i was|i spent|i lost|i made/i.test(content)) return "story";
+  if (/cheatcode|framework|formula|blueprint/i.test(content)) return "framework";
+  if (/thread|tweet/i.test(content)) return "thread";
+  return "educational";
+}
+
+export function extractForDallE(content: string): EnhancedExtraction & { quotes: string[]; contentType: string } {
   const lines = content
     .split(/\n+/)
     .map(l => l.trim())
-    .filter(l => l.length > 5);
+    .filter(l => l.length > 10);
 
-  const title = lines[0]?.slice(0, 70) || "Key Insights";
+  // Title: clean markdown, trim to readable length
+  const title = (lines[0] || "Key Insights")
+    .replace(/^#+\s*/, '')
+    .replace(/^\*+\s*/, '')
+    .replace(/\*\*/g, '')
+    .slice(0, 65);
 
+  // Points: all substantial lines, cleaned and truncated
   const points = lines
     .slice(1)
-    .filter(l => l.length > 15)
+    .filter(l => l.length > 20)
     .filter(l => !/^https?:\/\//.test(l))
+    .filter(l => !/^-{3,}/.test(l))
     .map(l => l
-      .replace(/^[\d]+[\.\/]\s*/, '')
-      .replace(/^[▸→•\-\*]\s*/, '')
+      .replace(/^\d+[\.\)\/]\s*/, '')
+      .replace(/^[▸→•\-\*☑✦↳]\s*/, '')
+      .replace(/\*\*/g, '')
+      .replace(/\*/g, '')
       .trim()
     )
-    .filter(l => l.length > 10)
-    .slice(0, 8);
+    .filter(l => l.length > 15)
+    .map(l => l.length > 65 ? l.slice(0, 62) + "..." : l)
+    .slice(0, 7);
 
-  const stats = content.match(/\d+[\.,]?\d*\s*(%|€|\$|K|M|x|fois|days?|months?|years?|hours?|minutes?)/gi) || [];
+  // Stats/numbers
+  const stats = (content.match(
+    /\d+[\.,]?\d*\s*(%|€|\$|K|M|x|×|fois|days?|jours?|months?|mois|years?|ans?|hours?|heures?|minutes?|followers?|impressions?|views?)/gi,
+  ) || []).slice(0, 3);
 
-  const keywords = content
-    .match(/["«»]([^"«»]{3,50})["«»]/g)
-    ?.map(k => k.replace(/["«»]/g, '').trim())
-    .slice(0, 3) || [];
+  // Quoted text
+  const quotes = (content.match(/["«»"]([^"«»"]{10,80})["«»"]/g) || [])
+    .map(q => q.replace(/["«»"]/g, '').trim())
+    .slice(0, 2);
 
-  return { title, points, stats: stats.slice(0, 5), keywords };
+  // Keywords
+  const keywords = (content.match(/["«»]([^"«»]{3,50})["«»]/g) || [])
+    .map(k => k.replace(/["«»]/g, '').trim())
+    .slice(0, 3);
+
+  const contentType = detectContentType(content);
+
+  return { title, points, stats, keywords, quotes, contentType };
 }
 
 function generateProTip(content: string): string {
@@ -659,14 +689,17 @@ export function buildDallEPrompt(
 7. Fill 88% of canvas with information — DENSE but organized
 8. Use ONLY the exact content below — do NOT invent or add anything`;
 
-  const contentBlock = `EXACT CONTENT TO DISPLAY:
+  const contentBlock = `CONTENT TYPE: ${ext.contentType}
+This is a ${ext.contentType} infographic — the visual must match this type.
 
-TITLE: "${ext.title}"
-${ext.points.length > 0 ? `\nPOINTS (display ALL):\n${ext.points.map((p, i) => `${i + 1}. "${p}"`).join('\n')}` : ''}
-${ext.stats.length > 0 ? `\nSTATS (highlight):\n${ext.stats.map(s => `• ${s}`).join('\n')}` : ''}
-${ext.keywords.length > 0 ? `\nKEY TERMS: ${ext.keywords.map(k => `"${k}"`).join(', ')}` : ''}
+MANDATORY CONTENT — USE WORD FOR WORD:
 
-Use EVERY piece of information. Do not skip any point.`;
+TITLE (display prominently): "${ext.title}"
+${ext.points.length > 0 ? `\nKEY POINTS (display ALL ${ext.points.length} points):\n${ext.points.map((p, i) => `${i + 1}. "${p}"`).join('\n')}` : ''}
+${ext.stats.length > 0 ? `\nKEY NUMBERS (highlight visually):\n${ext.stats.map(s => `• ${s}`).join('\n')}` : ''}
+${ext.quotes.length > 0 ? `\nPULL QUOTE (display in quote box):\n"${ext.quotes[0]}"` : ''}
+
+CRITICAL: Use ONLY the text above. Do NOT invent, paraphrase, or add unrelated graphics. Every point must be FULLY READABLE with no text cut off.`;
 
   let formatHint = "Portrait format.";
   if (pl.includes("linkedin")) formatHint = "Portrait (1024x1536). LinkedIn-optimized.";

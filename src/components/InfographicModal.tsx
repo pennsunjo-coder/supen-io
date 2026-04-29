@@ -391,11 +391,13 @@ export default function InfographicModal({ open, onClose, content, platform, con
       assertOnline();
 
       console.log("[Infographic] Content length:", content.length);
-      const dallePrompt = buildDallEPrompt(content, platform, forcedTemplate);
+      console.log("[Infographic] Content preview:", content.slice(0, 200));
+      console.log("[Infographic] Template:", templateSelection.templateId, "—", templateSelection.reason);
+      const dallePrompt = buildDallEPrompt(content, platform, templateSelection.templateId);
 
       if (IS_DEV) {
         console.log("=== DALL-E PROMPT ===");
-        console.log("Template:", forcedTemplate || "auto");
+        console.log("Template:", templateSelection.templateId);
         console.log("Prompt length:", dallePrompt.length);
         console.log(dallePrompt.slice(0, 600));
         console.log("=== END PROMPT ===");
