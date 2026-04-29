@@ -30,7 +30,8 @@ export default function WaitlistSection() {
       .select("id", { count: "exact", head: true })
       .then(({ count: c }) => {
         if (c !== null) setCount(c + SEED_COUNT);
-      });
+      })
+      .catch(() => { /* table may not exist */ });
   }, []);
 
   async function handleJoin(e: React.FormEvent) {

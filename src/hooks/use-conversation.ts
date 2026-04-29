@@ -22,7 +22,7 @@ export function useConversation() {
           .eq("user_id", user.id)
           .order("updated_at", { ascending: false })
           .limit(1)
-          .single();
+          .maybeSingle();
 
         if (data) {
           const conv = data as Conversation;
@@ -46,30 +46,30 @@ export function useConversation() {
       }
 
       saveTimeoutRef.current = setTimeout(async () => {
-        if (conversation) {
-          // Mettre à jour la conversation existante
-          await supabase
-            .from("conversations")
-            .update({
-              messages: updatedMessages,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", conversation.id);
-        } else {
-          // Créer une nouvelle conversation
-          const { data } = await supabase
-            .from("conversations")
-            .insert({
-              user_id: user.id,
-              messages: updatedMessages,
-            })
-            .select()
-            .single();
+        try {
+          if (conversation) {
+            await supabase
+              .from("conversations")
+              .update({
+                messages: updatedMessages,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", conversation.id);
+          } else {
+            const { data } = await supabase
+              .from("conversations")
+              .insert({
+                user_id: user.id,
+                messages: updatedMessages,
+              })
+              .select()
+              .maybeSingle();
 
-          if (data) {
-            setConversation(data as Conversation);
+            if (data) {
+              setConversation(data as Conversation);
+            }
           }
-        }
+        } catch { /* table may not exist */ }
       }, 500);
     },
     [user, conversation]
@@ -87,12 +87,14 @@ export function useConversation() {
   );
 
   const clearConversation = useCallback(async () => {
-    if (conversation) {
-      await supabase
-        .from("conversations")
-        .delete()
-        .eq("id", conversation.id);
-    }
+    try {
+      if (conversation) {
+        await supabase
+          .from("conversations")
+          .delete()
+          .eq("id", conversation.id);
+      }
+    } catch { /* table may not exist */ }
     setConversation(null);
     setMessages([]);
   }, [conversation]);
