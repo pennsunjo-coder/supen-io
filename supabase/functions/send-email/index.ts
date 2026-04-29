@@ -50,6 +50,8 @@ const I = {
   trn: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#24A89B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>`,
   lck: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#24A89B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
   str: `<svg width="20" height="20" viewBox="0 0 24 24" fill="#24A89B" stroke="#24A89B" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
+  msg: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#24A89B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
+  heart: `<svg width="20" height="20" viewBox="0 0 24 24" fill="#24A89B" stroke="#24A89B" stroke-width="1"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`,
 };
 
 // ── Logo SVG ──
@@ -125,6 +127,27 @@ function buildContentReadyEmail(name: string, platform: string, topic: string): 
 </div></div></body></html>`;
 }
 
+// ── Feedback ──
+
+function buildFeedbackEmail(name: string): string {
+  return `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${STYLES}</style></head>
+<body><div class="wr"><div class="cd">
+<div class="hd">${LOGO}<p class="sub">Ton avis compte pour nous</p></div>
+<div class="bd">
+<div class="bg">${I.heart} Feedback</div>
+<div class="gr">Comment tu trouves Supenli.io ?</div>
+<p class="tx">Hey <span class="hl">${name}</span>,<br><br>Tu utilises Supenli.io depuis quelques jours et ton avis nous tient vraiment &agrave; c&oelig;ur. En 2 minutes, tu peux nous aider &agrave; construire l'outil dont tu as vraiment besoin.</p>
+<div class="ft">
+<div class="fi">${I.msg}<div class="fi-t"><strong>Ce qu'on veut savoir :</strong><br>&rarr; Qu'est-ce qui fonctionne bien pour toi ?<br>&rarr; Qu'est-ce qui pourrait &ecirc;tre am&eacute;lior&eacute; ?<br>&rarr; Quelle fonctionnalit&eacute; te manque le plus ?</div></div>
+</div>
+<div class="ct"><a href="mailto:feedback@supenli.io?subject=Mon avis sur Supenli.io" class="cta">Donner mon avis &rarr;</a></div>
+<div class="dv"></div>
+<p class="tx" style="font-size:13px;margin-bottom:0;text-align:center">Tu peux aussi r&eacute;pondre directement &agrave; cet email.<br>Chaque message est lu personnellement.</p>
+</div>
+<div class="fo"><p>&copy; 2026 Supenli.io &middot; On construit cet outil pour toi.</p></div>
+</div></div></body></html>`;
+}
+
 // ── Main handler ──
 
 Deno.serve(async (req) => {
@@ -142,6 +165,7 @@ Deno.serve(async (req) => {
     if (type === "welcome") html = buildWelcomeEmail(data?.name || "there");
     else if (type === "reset-password") html = buildResetEmail(data?.resetLink || "#", data?.name);
     else if (type === "content-ready") html = buildContentReadyEmail(data?.name || "there", data?.platform || "Social Media", data?.topic || "ton sujet");
+    else if (type === "feedback") html = buildFeedbackEmail(data?.name || "there");
     else html = data?.html || "<p>No content</p>";
 
     const res = await fetch("https://api.resend.com/emails", {
