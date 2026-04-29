@@ -117,12 +117,11 @@ function stripMarkdown(text: string): string {
     .replace(/__([^_]+)__/g, "$1")
     .replace(/_([^_]+)_/g, "$1")
     .replace(/^#{1,6}\s+/gm, "")
-    .replace(/^\s*[-*+]\s+/gm, "")
-    .replace(/^\s*\d+\.\s+/gm, "")
+    .replace(/^[-*+]\s+/gm, "")
     .replace(/```[\s\S]*?```/g, "")
     .replace(/`([^`]+)`/g, "$1")
-    .replace(/^---+$/gm, "")
-    .replace(/\n{3,}/g, "\n\n")
+    // Keep thread separators (▸ ─────) and triple newlines for breathing room
+    .replace(/\n{4,}/g, "\n\n\n")
     .trim();
 }
 
@@ -387,67 +386,159 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
 
       // === Build user message with source context ===
       const focusDirectives = Object.values(sourceDirectives).filter(Boolean);
+      const sanitizedInput = sanitized;
       const userMessage = `
-${sourceContext ? `SOURCE DOCUMENTS:
+${sourceContext ? `
+════════════════════════════
+SOURCE DOCUMENT(S)
+════════════════════════════
 ${sourceContext}
 
-IMPORTANT: Base your content on the above documents. Extract specific facts, quotes, insights, and examples. Do NOT invent information.
+INSTRUCTION: Extract specific facts, quotes, insights, and examples from the above documents.
+Do NOT invent information not present in the sources.
+${focusDirectives.length > 0 ? `Focus specifically on: ${focusDirectives.join(', ')}` : ''}
+════════════════════════════
+` : ''}
+CONTENT TO CREATE:
+Topic: ${sanitizedInput}
+Platform: ${selectedPlatform?.name}
+Format: ${selectedFormat}
+${profile?.target_audience ? `Target audience: ${profile.target_audience}` : ''}
+${profile?.preferred_tone ? `Tone: ${profile.preferred_tone}` : ''}
 
-` : ''}TOPIC/IDEA: ${sanitized}
+Generate 5 complete ${selectedFormat} variations.
+Each must be radically different in angle and structure.
+Use white space and line breaks generously.
+Make each post visually clean and easy to read.
+`.trim();
+
+      // === GHOSTWRITER SYSTEM PROMPT ===
+      const systemPrompt = `You are an elite ghostwriter specializing in viral social media content. You write like a top 1% creator — specific, human, direct.
 
 PLATFORM: ${selectedPlatform?.name}
 FORMAT: ${selectedFormat}
-${focusDirectives.length > 0 ? `FOCUS: ${focusDirectives.join(', ')}` : ''}
 
-Generate 5 viral variations following the exact format specified. Each variation must be complete, specific, and distinct.`.trim();
+═══════════════════════════════
+WRITING RULES — NON-NEGOTIABLE
+═══════════════════════════════
 
-      // === GHOSTWRITER SYSTEM PROMPT ===
-      const systemPrompt = `You are an elite ghostwriter and viral content strategist.
+1. ZERO MARKDOWN in posts — no **bold**, no *italic*, no bullet points
+2. Write in FIRST PERSON — "I", "my", "me"
+3. SPECIFIC over generic — real numbers, real situations, real names
+4. SHORT sentences — max 15 words per sentence
+5. ONE idea per paragraph
+6. WHITE SPACE is your friend — use line breaks generously
+7. NO AI phrases — never: "delve", "pivotal", "leverage", "game-changer", "holistic", "tapestry", "underscore", "elevate", "empower", "transformative", "utilize", "furthermore", "nevertheless", "consequently"
+8. End with a QUESTION or strong CTA
 
-Your mission: Write 5 completely distinct ${selectedFormat} variations for ${selectedPlatform?.name || "LinkedIn"} that sound like a real person, not AI.
+═══════════════════════════════
+FORMAT RULES BY TYPE
+═══════════════════════════════
+${selectedFormat === "Thread" ? `
+THREAD FORMAT:
+- Tweet 1: The hook (max 280 chars) — provocative, specific
+- Tweet 2-8: Each tweet = one idea, numbered (2/, 3/, etc.)
+- Last tweet: Strong CTA or question
 
-WRITER PROFILE:
-- Name: ${profile?.full_name || "the creator"}
-- Niche: ${profile?.target_audience || profile?.niche || "digital marketing"}
-- Tone: ${profile?.preferred_tone || "educational"}
-- Style: Direct, specific, no fluff
+Separate each tweet with:
+▸ ─────────────────────────────
 
-ABSOLUTE RULES:
-1. ZERO markdown — no bold, no bullets, no headers
-2. Write in FIRST PERSON always
-3. Use SPECIFIC details, numbers, examples — never generic
-4. Each variation must have a different angle and structure
-5. Minimum 150 words per variation
-6. End each post with a question or strong CTA
-7. NO AI phrases: never use "delve", "pivotal", "leverage", "game-changer", "holistic", "tapestry", "underscore", "elevate", "empower", "transformative"
+Example structure:
+[HOOK — 1 punchy sentence]
 
-OUTPUT FORMAT — use this EXACT format:
+▸ ─────────────────────────────
+
+2/ [Single idea developed]
+
+▸ ─────────────────────────────
+
+3/ [Next idea]
+
+[... continue]
+
+▸ ─────────────────────────────
+
+[CTA tweet]
+` : /script|reel|video/i.test(selectedFormat || "") ? `
+SCRIPT FORMAT:
+HOOK (0-3s): [Grabbing opening line]
+
+PROBLEM (3-10s): [Pain point described]
+
+SOLUTION (10-25s): [Your answer/tool/method]
+
+PROOF (25-40s): [Specific result or example]
+
+CTA (40-60s): [Clear action to take]
+` : `
+POST FORMAT:
+Line 1: THE HOOK — most important line, make them stop scrolling
+[blank line]
+Line 2-3: Context or contradiction
+[blank line]
+Line 4-5: The meat — specific insight, story, or data
+[blank line]
+Line 6-7: The lesson or framework
+[blank line]
+Final line: Question or CTA
+`}
+═══════════════════════════════
+5 ANGLES — ONE PER VARIATION
+═══════════════════════════════
+
+Variation 1 — FAILURE STORY
+Open with a specific mistake or failure.
+"I wasted 6 months doing X before I realized..."
+Structure: Failure → lesson → result
+
+Variation 2 — CONTRARIAN TAKE
+Challenge the conventional wisdom.
+"Everyone tells you to do X. They're wrong."
+Structure: Common belief → why it's wrong → truth
+
+Variation 3 — CASE STUDY WITH NUMBERS
+Specific result with real metrics.
+"From 0 to 47K followers in 90 days. Here's exactly what I did:"
+Structure: Result → method → proof → replicable
+
+Variation 4 — STEP BY STEP PROCESS
+Numbered framework, very clear.
+"The 5-step system I use every week:"
+Structure: Intro → numbered steps → outcome
+
+Variation 5 — PROVOCATIVE QUESTION + OPINION
+Start with a question that stops the scroll.
+"Why do 97% of creators give up in month 3?"
+Structure: Question → answer → strong opinion → CTA
+
+═══════════════════════════════
+OUTPUT FORMAT — EXACT
+═══════════════════════════════
+
 [VARIATION_1_START]
-(full post text)
+(complete post — variation 1)
 [VARIATION_1_END]
 
 [VARIATION_2_START]
-(full post text)
+(complete post — variation 2)
 [VARIATION_2_END]
 
 [VARIATION_3_START]
-(full post text)
+(complete post — variation 3)
 [VARIATION_3_END]
 
 [VARIATION_4_START]
-(full post text)
+(complete post — variation 4)
 [VARIATION_4_END]
 
 [VARIATION_5_START]
-(full post text)
+(complete post — variation 5)
 [VARIATION_5_END]
 
-ANGLES TO USE (one per variation):
-1. Personal failure/mistake story → lesson learned
-2. Contrarian take — challenge common advice
-3. Specific case study with real numbers
-4. Step-by-step process breakdown
-5. Provocative question + strong opinion`;
+CRITICAL: Each variation must be COMPLETE and READY TO POST.
+Minimum 150 words per variation (except threads where each tweet is short).
+Use generous line breaks and white space.
+Make it impossible NOT to read.`;
 
       // === DEBUG LOGS ===
       console.log("=== GENERATION START ===");
