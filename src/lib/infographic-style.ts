@@ -712,105 +712,135 @@ CRITICAL: Use ONLY the text above. Do NOT invent, paraphrase, or add unrelated g
 
   // ── WHITEBOARD ──
   if (selectedTemplate === "WHITEBOARD" || selectedTemplate === "UI_CARDS" || selectedTemplate === "AWA_CLASSIC") {
-    return `Create a clean, high-resolution infographic poster designed like a hand-drawn whiteboard.
+    return `Generate a single image of a physical, hand-drawn infographic on a large whiteboard or notebook page.
 
 ${baseRules}
 
 ${contentBlock}
 
-STYLE REQUIREMENTS:
-- Hand-drawn marker style, clean and minimal
-- White background #F9F7F2 with light shadow border like a whiteboard
-- Consistent black outlines on all elements
-- Soft pastel highlight colors (blue #4A90D9, green #5BA85B, red #E05555, orange #F5A623)
-- Simple icons: gears, books, arrows, checkmarks
-- Even spacing, well aligned, high readability
+CRUCIAL STYLE INSTRUCTIONS:
+- MEDIUM: The image must look like a photograph of a REAL whiteboard or large paper notepad
+- TEXTURE: All elements must look created by hand using colored marker pens (black, blue, red, green) and highlighters (yellow/orange). Lines should be slightly imperfect, wobbly, and have the texture of ink on a surface
+- NO DIGITAL FONTS: All text, headings, and bullet points must appear handwritten or hand-printed in marker pen
+- Use multi-colored markers for emphasis
+- Keep text large and legible
+- Make everything look hand-drawn with slight imperfections
+- Make it look like a photograph of an actual notebook page
+- Use simple language. Avoid technical terms unless necessary
+- Make it easy to scan in less than 10 seconds
+- Use a consistent structure throughout
+- Use realistic hand-drawn icons, logos and elements like the ultimate best design expert
 - ${formatHint}
-- No photographic elements, only illustration/vector style
 
-LAYOUT (top to bottom):
+LAYOUT (1080x1350 structured, top to bottom):
 
 ━━━ HEADER (top 15%) ━━━
-Large bold title: "${ext.title}"
-Underlined with thick orange marker stroke.
-Highlight 2-3 key words with soft orange marker effect.
+Large bold handwritten title in black marker: "${ext.title}"
+Underlined with thick orange highlighter stroke.
+2-3 key words highlighted with yellow/orange marker effect.
 
 ━━━ MAIN CONTENT (70%) ━━━
 ${ext.points.map((point, i) => {
-  const colors = ['light blue', 'light green', 'light red/pink', 'light orange', 'light purple'];
-  return `Box ${i + 1} (${colors[i % colors.length]} fill, rounded rectangle, black outline):
-Label: "${point.split(' ').slice(0, 4).join(' ').toUpperCase()}"
-Right side text: "${point}"
-Arrow → connecting to next box`;
+  const colors = ['blue marker', 'green marker', 'red marker', 'orange marker', 'purple marker'];
+  return `Section ${i + 1} (${colors[i % colors.length]} heading):
+- Hand-drawn numbered circle badge in ${colors[i % colors.length]}
+- Bold marker header: "${point.split(' ').slice(0, 4).join(' ').toUpperCase()}"
+- Handwritten body text: "${point}"
+- Yellow highlighter on 1-2 key words
+- Hand-drawn arrow → connecting to next section
+- Small hand-drawn icon (gear, lightbulb, star, checkmark) on the right`;
 }).join('\n\n')}
 
-${ext.stats.length > 0 ? `━━━ STATS ━━━\nHighlight prominently: ${ext.stats.join(', ')}` : ''}
+${ext.stats.length > 0 ? `━━━ STATS ━━━\nHighlight these numbers prominently with colored marker circles:\n${ext.stats.join(', ')}` : ''}
 
 ━━━ FOOTER (15%) ━━━
-Thin divider line.
-Bottom: Key takeaway in centered bold text.${AVOID}`;
+Wobbly hand-drawn divider line.
+Bottom: Key takeaway in bold centered marker text.
+Handwritten text: "Follow @supenli.io for more | Repost ♻️" in smaller marker style.
+
+QUALITY: Must look like a real photograph of handwritten marker notes on a whiteboard. Imperfect, human, warm, information-dense.${AVOID}`;
   }
 
   // ── PROCESS_STEPS ──
   if (selectedTemplate === "PROCESS_STEPS") {
-    return `Create a clean step-by-step process infographic poster.
+    return `Generate a single image of a clean, professional step-by-step process infographic.
 
 ${baseRules}
 
 ${contentBlock}
 
-STYLE:
-- Clean minimal design, white/cream background #FAF8F5
-- Bold sans-serif typography
-- Numbered steps with colored circle badges
-- Connecting dashed arrows between steps
-- Soft drop shadows on cards
+CRUCIAL STYLE INSTRUCTIONS:
+- MEDIUM: Clean printed poster aesthetic — looks like a high-quality design agency output
+- Clean minimal design, cream background #FAF8F5 with subtle dot grid pattern
+- Bold sans-serif typography (Inter/Helvetica style)
+- Numbered steps with gradient colored circle badges
+- Connecting dashed arrows between steps with gradient color progression
+- Soft drop shadows on step cards
+- Simple flat icons next to each step (gear, rocket, chart, target)
 - ${formatHint}
 - No photos, no 3D, no realistic elements
+- Make it easy to scan in less than 10 seconds
 
-LAYOUT:
-Header: Large bold title "${ext.title}"
-Small orange category badge above title.
+LAYOUT (top to bottom):
 
-STEPS (numbered, top to bottom):
+━━━ HEADER (top 15%) ━━━
+Small orange category pill badge above title.
+Large bold title: "${ext.title}" (48px, charcoal #1A1A1B)
+
+━━━ STEPS (70%) ━━━
 ${ext.points.map((point, i) => `STEP ${i + 1}:
-- Large numbered circle badge (gradient blue #1A73E8 → purple #7B2FBE, white number)
+- Large numbered circle badge (gradient blue #1A73E8 → purple #7B2FBE, white number inside)
 - Bold step title: "${point.split(' ').slice(0, 5).join(' ')}"
-- Description: "${point}"
-- Dashed connecting line to next step`).join('\n\n')}
+- Description in gray: "${point}"
+- Simple flat icon on the right side
+- Dashed gradient connecting line to next step`).join('\n\n')}
 
-Footer: Green result box with key outcome.${AVOID}`;
+━━━ FOOTER (15%) ━━━
+Green result box with key outcome text.
+"Follow @supenli.io for more | Repost ♻️" in small text.
+
+QUALITY: Magazine editorial meets Apple product page. Premium SaaS aesthetic. Information-dense but scannable.${AVOID}`;
   }
 
   // ── EDITORIAL_LIST ──
   if (selectedTemplate === "EDITORIAL_LIST") {
-    return `Create a bold editorial magazine-style list infographic.
+    return `Generate a single image of a bold editorial magazine-style list infographic.
 
 ${baseRules}
 
 ${contentBlock}
 
-STYLE:
-- Magazine editorial aesthetic
-- Warm cream background #FDFAF6
-- Thin black border frame (3px, inset 8px)
-- Large bold orange numbers #FF6B35 as list markers
-- Clean sans-serif typography
-- Horizontal divider lines between items
+CRUCIAL STYLE INSTRUCTIONS:
+- MEDIUM: Premium design magazine page aesthetic — like a spread from The Economist or Monocle
+- Warm cream background #FDFAF6 with thin black border frame (3px, inset 8px)
+- Corner registration marks like a print proof
+- Large bold orange numbers #FF6B35 as list markers (80px size)
+- Clean sans-serif typography — tight letter-spacing on titles
+- Horizontal thin divider lines between items
 - ${formatHint}
 - No photos, no 3D
+- Make it easy to scan in less than 10 seconds
+- Use consistent structure across all items
 
-LAYOUT:
-Top: "INSIGHTS" small caps label in orange.
+LAYOUT (top to bottom):
+
+━━━ HEADER (12%) ━━━
+"INSIGHTS" small caps label in orange #FF6B35.
 Title: "${ext.title}" ultra-bold black 44px.
-Full-width black divider line.
+Full-width black divider line (2px).
 
-LIST ITEMS:
+━━━ LIST ITEMS (76%) ━━━
 ${ext.points.map((point, i) => `ITEM ${i + 1}:
-- Giant number "${i + 1}" in orange (80px, left side)
-- Bold title: "${point.split(' ').slice(0, 5).join(' ')}"
-- Body: "${point}"
-- Thin separator line below`).join('\n\n')}${AVOID}`;
+- Giant number "${i + 1}" in orange #FF6B35 (80px, left-aligned)
+- Bold title: "${point.split(' ').slice(0, 5).join(' ')}" (22px, black #0F0F0F)
+- Body: "${point}" (15px, dark gray #333)
+- Full-width thin separator line below`).join('\n\n')}
+
+━━━ FOOTER (12%) ━━━
+Pull quote box with most impactful insight (large quotation marks).
+"Follow @supenli.io for more | Repost ♻️" in small text.
+
+QUALITY: Sophisticated, scroll-stopping, The Economist meets Instagram carousel.${AVOID}`;
   }
 
   // ── COMMAND_CENTER ──
@@ -900,31 +930,47 @@ AVOID: light background, photos, blur, cluttered.`;
 
   // ── NOTEBOOK ──
   if (selectedTemplate === "NOTEBOOK") {
-    return `Create a warm spiral notebook page infographic.
+    return `Generate a single image of a physical spiral notebook page with hand-drawn colorful notes.
 
 ${baseRules}
 
 ${contentBlock}
 
-STYLE:
-- Warm white paper #FFFEF8 with fine grain texture
-- Faint ruled lines #E8E4DA every 28px
-- Red vertical margin line on left
-- 18 metallic spiral coils at top
-- Handwritten-style fonts
+CRUCIAL STYLE INSTRUCTIONS:
+- MEDIUM: Must look like a photograph of a REAL spiral notebook page lying on a desk
+- TEXTURE: All text written by hand with colored marker pens and highlighters
+- Lines slightly imperfect and wobbly — real handwriting feel
+- NO digital fonts — everything handwritten or hand-printed
+- Metallic spiral binding at top (18 silver coils, 3D realistic)
+- Faint blue ruled lines on warm white paper #FFFEF8
+- Red vertical margin line on the left
 - ${formatHint}
-- No photos, no 3D
 
-LAYOUT:
-Top: Title "${ext.title}" in colorful text (each word different color: green, blue, orange).
+LAYOUT (top to bottom):
 
-ITEMS:
+━━━ SPIRAL BINDING (top edge) ━━━
+18 realistic metallic spiral coils across full width.
+
+━━━ TITLE (top 15%) ━━━
+Title "${ext.title}" in large colorful handwriting.
+Each word in a different marker color (green, blue, orange, red).
+Bouncy, energetic lettering.
+
+━━━ CONTENT (70%) ━━━
 ${ext.points.map((point, i) => {
-  const colors = ['blue', 'orange', 'green', 'purple'];
-  return `Item ${i + 1}: ${colors[i % colors.length]} oval badge with number ${i + 1}. Text: "${point}". Small doodle icon.`;
-}).join('\n')}
+  const colors = ['blue marker', 'orange marker', 'green marker', 'purple marker'];
+  return `Item ${i + 1}:
+- Hand-drawn ${colors[i % colors.length]} oval number badge: "${i + 1}"
+- Handwritten text: "${point}"
+- Yellow highlighter on key words
+- Small hand-drawn doodle icon (star, arrow, heart) in margin`;
+}).join('\n\n')}
 
-Bottom: Yellow sticky note (tilted) with key insight.${AVOID}`;
+━━━ BOTTOM (15%) ━━━
+Yellow sticky note (tilted -3 degrees, drop shadow) with key insight.
+Handwritten: "Follow @supenli.io for more | Repost ♻️"
+
+QUALITY: Must look like a real photograph of handwritten study notes. Warm, personal, creative, dense with information.${AVOID}`;
   }
 
   // ── FUNNEL ──
