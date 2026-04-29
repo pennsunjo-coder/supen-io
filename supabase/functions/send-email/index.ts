@@ -56,8 +56,7 @@ const I = {
 
 const LOGO = `<div style="text-align:center">
 <svg xmlns="http://www.w3.org/2000/svg" width="160" height="42" viewBox="0 0 420 110" style="max-width:160px">
-<g><path fill="#24A89B" d="M55 5l-20 12l-1.5.9c9.6 16.7 14.3 34.1 14 48.4c-.5 5.8-1.8 11-4.1 15.4c-1.2 2.3-2.7 4.4-4.4 6.2c-17.7 10.2-46.4-6-64.9-36.4l-22.5 13c26.1 45.2 72 67.5 102.6 49.9c3.8-2.2 7.3-5 10.3-8.2c3.2-3.5 5.9-7.4 8.2-11.8c2.5-5 4.3-10.5 5.5-16.4c1.4-22.9-5.9-46.6-17.3-66.2z" transform="scale(.55) translate(-5,0)"/></g>
-<text x="75" y="78" font-family="-apple-system,BlinkMacSystemFont,Helvetica,sans-serif" font-size="62" font-weight="800" fill="#fff" letter-spacing="-1.5">Supenli<tspan fill="#24A89B">.io</tspan></text>
+<text x="0" y="82" font-family="-apple-system,BlinkMacSystemFont,Helvetica,sans-serif" font-size="72" font-weight="800" fill="#ffffff" letter-spacing="-2">Supenli<tspan fill="#24A89B">.io</tspan></text>
 </svg>
 </div>`;
 
