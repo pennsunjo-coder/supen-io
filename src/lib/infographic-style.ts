@@ -668,7 +668,7 @@ function detectTemplate(content: string): string {
   return "WHITEBOARD";
 }
 
-// ─── DALL-E prompt builder — "WOW" level prompts ───
+// ─── DALL-E prompt builder — reference template system ───
 
 export function buildDallEPrompt(
   content: string,
@@ -677,6 +677,7 @@ export function buildDallEPrompt(
 ): string {
   const selectedTemplate = template || detectTemplate(content);
   const ext = extractForDallE(content);
+  const kp = extractKeyPoints(content);
   const pl = platform?.toLowerCase() || "";
 
   const baseRules = `CRITICAL RULES — NO EXCEPTIONS:
@@ -710,55 +711,68 @@ CRITICAL: Use ONLY the text above. Do NOT invent, paraphrase, or add unrelated g
   const n = ext.points.length;
   const AVOID = "\n\nAVOID: blurry, cluttered, messy layout, too many colors, realistic photo, 3D render, low resolution, bad typography, misaligned text, dark background (unless dark template), generic stock photo style.";
 
-  // ── WHITEBOARD ──
-  if (selectedTemplate === "WHITEBOARD" || selectedTemplate === "UI_CARDS" || selectedTemplate === "AWA_CLASSIC") {
-    return `Generate a single image of a physical, hand-drawn infographic on a large whiteboard or notebook page.
+  // ── WHITEBOARD (Reference template) ──
+  if (selectedTemplate === "WHITEBOARD" || selectedTemplate === "UI_CARDS" || selectedTemplate === "AWA_CLASSIC" || selectedTemplate === "auto") {
+    return `Create a HIGH-QUALITY educational infographic poster on a clean white whiteboard background.
 
-${baseRules}
+TITLE at the top in large bold handwritten BLACK font (capital letters):
+"${ext.title}"
+Underline 2-3 key words with soft ORANGE marker highlight effect.
 
-${contentBlock}
-
-CRUCIAL STYLE INSTRUCTIONS:
-- MEDIUM: The image must look like a photograph of a REAL whiteboard or large paper notepad
-- TEXTURE: All elements must look created by hand using colored marker pens (black, blue, red, green) and highlighters (yellow/orange). Lines should be slightly imperfect, wobbly, and have the texture of ink on a surface
-- NO DIGITAL FONTS: All text, headings, and bullet points must appear handwritten or hand-printed in marker pen
-- Use multi-colored markers for emphasis
-- Keep text large and legible
-- Make everything look hand-drawn with slight imperfections
-- Make it look like a photograph of an actual notebook page
-- Use simple language. Avoid technical terms unless necessary
-- Make it easy to scan in less than 10 seconds
-- Use a consistent structure throughout
-- Use realistic hand-drawn icons, logos and elements like the ultimate best design expert
+━━━ STYLE REQUIREMENTS ━━━
+- Hand-drawn marker aesthetic, clean and professional
+- Pure WHITE background #FFFFFF with subtle shadow border (like a real whiteboard)
+- Consistent BLACK outlines on ALL elements
+- Pastel color palette: Blue #4A90D9, Green #5BA85B, Red #E05555, Orange #F5A623
+- Simple flat icons: gears, open book, arrows, checkmarks, graduation cap
+- Even spacing, perfectly aligned, high readability
 - ${formatHint}
+- NO photographic elements, NO 3D render, NO realistic photos
+- ALL text must be FULLY READABLE, minimum 18px equivalent
 
-LAYOUT (1080x1350 structured, top to bottom):
+━━━ LAYOUT STRUCTURE ━━━
 
-━━━ HEADER (top 15%) ━━━
-Large bold handwritten title in black marker: "${ext.title}"
-Underlined with thick orange highlighter stroke.
-2-3 key words highlighted with yellow/orange marker effect.
+SECTION 1 — HEADER (top 12%):
+Large bold handwritten title: "${ext.title}"
+Thick orange marker underline below title.
 
-━━━ MAIN CONTENT (70%) ━━━
-${ext.points.map((point, i) => {
-  const colors = ['blue marker', 'green marker', 'red marker', 'orange marker', 'purple marker'];
-  return `Section ${i + 1} (${colors[i % colors.length]} heading):
-- Hand-drawn numbered circle badge in ${colors[i % colors.length]}
-- Bold marker header: "${point.split(' ').slice(0, 4).join(' ').toUpperCase()}"
-- Handwritten body text: "${point}"
-- Yellow highlighter on 1-2 key words
-- Hand-drawn arrow → connecting to next section
-- Small hand-drawn icon (gear, lightbulb, star, checkmark) on the right`;
-}).join('\n\n')}
+SECTION 2 — MAIN CONTENT (12% to 78%):
+${n >= 3 ? `TWO-COLUMN LAYOUT:
 
-${ext.stats.length > 0 ? `━━━ STATS ━━━\nHighlight these numbers prominently with colored marker circles:\n${ext.stats.join(', ')}` : ''}
+LEFT COLUMN (35% width) — Colored action boxes stacked vertically:
+${ext.points.slice(0, Math.min(n, 5)).map((point, i) => {
+  const fills = ["light blue #D6E8FA", "light green #D4EDDA", "light red/pink #FAD7D6", "light orange #FDE8C8", "light purple #E8D5F5"];
+  const icons = ["gear", "open book", "stack of books", "graduation cap", "star"];
+  const label = point.split(' ').slice(0, 4).join(' ').toUpperCase();
+  return `Box ${i + 1} (${fills[i % fills.length]} fill, black outline, rounded corners 8px):
+  Label text: "${label}"
+  Small ${icons[i % icons.length]} icon inside box
+  Arrow → pointing RIGHT to explanation`;
+}).join('\n')}
 
-━━━ FOOTER (15%) ━━━
-Wobbly hand-drawn divider line.
-Bottom: Key takeaway in bold centered marker text.
-Handwritten text: "Follow @supenli.io for more | Repost ♻️" in smaller marker style.
+RIGHT COLUMN (65% width) — Bullet point explanations:
+${ext.points.slice(0, Math.min(n, 5)).map((point, i) => `Explanation ${i + 1} (aligned with Box ${i + 1}):
+- ${point}${ext.stats[i] ? `\n• Key number: ${ext.stats[i]}` : ''}`).join('\n')}` : `SINGLE COLUMN with numbered sections:
+${ext.points.map((point, i) => `Section ${i + 1}:
+- Colored rounded box: "${point.split(' ').slice(0, 4).join(' ').toUpperCase()}"
+- Body text: "${point}"`).join('\n')}`}
 
-QUALITY: Must look like a real photograph of handwritten marker notes on a whiteboard. Imperfect, human, warm, information-dense.${AVOID}`;
+SECTION 3 — DIVIDER + BOTTOM (78% to 100%):
+Thin horizontal black divider line.
+${n > 3 ? `Centered bold: "KEY TAKEAWAYS"
+6 rectangular boxes in 2-column grid:
+${ext.points.slice(0, 6).map((point, i) => {
+  const hl = ['soft blue', 'soft green', 'white', 'white', 'white', 'soft orange'];
+  return `Box ${i + 1} (${hl[i % hl.length]}): "${point.split(' ').slice(0, 3).join(' ').toUpperCase()}:" — "${point.length > 80 ? point.slice(0, 80) + '...' : point}"`;
+}).join('\n')}` : ''}
+Footer: "Save this. Share this. Apply this."
+
+━━━ MANDATORY RULES ━━━
+1. Every word FULLY VISIBLE — no text cut off
+2. 60px margin on ALL sides
+3. Title: 36-48px. Body: 16-20px
+4. Use EXACTLY the content above — do NOT invent
+5. Icons: SIMPLE flat style. Arrows: VISIBLE and CLEAR${AVOID}`;
   }
 
   // ── PROCESS_STEPS ──
@@ -1023,9 +1037,18 @@ ${ext.points.slice(0, 4).map((point, i) => `Folder ${i + 1}: "${point.slice(0, 3
   }
 
   // Default
-  return `${baseRules}\n\n${contentBlock}\n\nVISUAL STYLE: Professional educational infographic.
-${formatHint}
-Dense information layout. High contrast. Scroll-stopping design. Viral social media quality.`;
+  return `Create a HIGH-QUALITY professional educational infographic.
+
+TITLE: "${ext.title}"
+${ext.points.map((p, i) => `Point ${i + 1}: "${p}"`).join('\n')}
+
+STYLE:
+- Clean white background. Bold readable typography.
+- Organized sections with clear hierarchy.
+- ${formatHint}
+- Professional, high contrast. ALL text fully visible.
+
+AVOID: blurry, cluttered, 3D, photos, misaligned text.`;
 }
 
 // ─── Post-process generated HTML ───
