@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Mail, ArrowLeft, CheckCircle } from "lucide-react";
 import { LogoFull } from "@/components/Logo";
 
+
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -26,6 +27,20 @@ export default function ForgotPassword() {
       );
 
       if (error) throw error;
+
+      // Send branded reset email via Resend (in addition to Supabase default)
+      supabase.functions.invoke("send-email", {
+        body: {
+          to: email.trim(),
+          subject: "Réinitialisez votre mot de passe Supenli.io",
+          type: "reset-password",
+          data: {
+            resetLink: `${window.location.origin}/reset-password`,
+            name: email.split("@")[0],
+          },
+        },
+      }).catch(() => {});
+
       setSent(true);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to send reset email.";

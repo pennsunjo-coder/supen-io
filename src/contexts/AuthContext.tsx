@@ -51,14 +51,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) return { error: error.message };
 
-    // Send welcome email (fire and forget)
+    // Send welcome email via Resend (fire and forget)
     if (data.user) {
       supabase.functions.invoke("send-email", {
         body: {
           to: data.user.email,
-          subject: "Welcome to Supenli.io!",
+          subject: "Bienvenue sur Supenli.io ! 🎉",
           type: "welcome",
-          data: { name: data.user.user_metadata?.full_name || "there" },
+          data: {
+            name: data.user.user_metadata?.full_name
+              || data.user.email?.split("@")[0]
+              || "there",
+          },
         },
       }).catch(() => {});
     }
