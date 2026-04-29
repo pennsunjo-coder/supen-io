@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { X, Sparkles, Users, Mail, CheckCircle, Flame, Zap, Gift } from "lucide-react";
+import confetti from "canvas-confetti";
 
 interface WaitlistPopupProps {
   isOpen: boolean;
@@ -51,6 +52,11 @@ export function WaitlistPopup({ isOpen, onClose }: WaitlistPopupProps) {
         },
       }).catch((e) => console.warn("[Waitlist] Email failed:", e));
 
+      // Confetti explosion
+      confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ["#24A89B", "#1a8a7f", "#ffffff", "#a7f3d0", "#34d399"] });
+      setTimeout(() => confetti({ particleCount: 80, angle: 60, spread: 55, origin: { x: 0, y: 0.6 }, colors: ["#24A89B", "#ffffff", "#6ee7b7"] }), 300);
+      setTimeout(() => confetti({ particleCount: 80, angle: 120, spread: 55, origin: { x: 1, y: 0.6 }, colors: ["#24A89B", "#ffffff", "#6ee7b7"] }), 600);
+
       setDone(true);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : JSON.stringify(err);
@@ -81,9 +87,12 @@ export function WaitlistPopup({ isOpen, onClose }: WaitlistPopupProps) {
               <div className="w-16 h-16 rounded-2xl bg-[#24A89B]/20 flex items-center justify-center mx-auto mb-4">
                 <CheckCircle className="w-8 h-8 text-[#24A89B]" />
               </div>
-              <h2 className="text-2xl font-bold text-white mb-3">You're on the list!</h2>
+              <h2 className="text-2xl font-bold text-white mb-3">Congratulations!</h2>
+              <p className="text-white/60 text-sm leading-relaxed mb-2">
+                You're officially on the <span className="text-[#24A89B] font-semibold">Supenli.io</span> priority list!
+              </p>
               <p className="text-white/60 text-sm leading-relaxed mb-6">
-                We'll notify you the moment <span className="text-[#24A89B] font-semibold">Supenli.io</span> goes live. You'll be among the first!
+                We'll notify you the moment we go live. You'll be among the first to get access.
               </p>
               <Button onClick={onClose} className="bg-[#24A89B] hover:bg-[#1a8a7f] text-white font-semibold px-8">
                 Close
