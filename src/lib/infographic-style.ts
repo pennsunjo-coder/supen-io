@@ -20,11 +20,20 @@ interface Point {
   body: string;
 }
 
+interface Section {
+  header: string;
+  bullets: string[];
+}
+
 interface ExtractionResult {
   title: string;
   badge: string;
   subtitle: string;
   points: Point[];
+  sections: Section[];
+  stats: string[];
+  quotes: string[];
+  contentType: string;
   proTip: string;
 }
 
@@ -186,55 +195,79 @@ function detectBadge(content: string): string {
 }
 
 export function extractKeyPoints(content: string): ExtractionResult {
-  const lines = content.split("\n").map(l => l.trim()).filter(l => l.length > 5);
+  const lines = content.split(/\n+/).map(l => l.trim()).filter(l => l.length > 5);
 
-  const title = (lines[0]?.slice(0, 70) || "Key Insights").toUpperCase();
+  const title = (lines[0] || "Key Insights")
+    .replace(/^#+\s*/, '')
+    .replace(/^\*+\s*/, '')
+    .replace(/^Post \d+:\s*/i, '')
+    .slice(0, 65);
   const badge = detectBadge(content);
   const subtitle = lines[1]?.slice(0, 100) || "";
 
+  // Extract sections with headers and bullets
+  const sections: Section[] = [];
+  let currentSection: Section = { header: '', bullets: [] };
+
+  for (const line of lines.slice(1)) {
+    const isHeader = (
+      /^(STEP|PROMPT|SECTION|PART|PHASE|RULE|TIP|WAY|METHOD)\s*\d*/i.test(line) ||
+      /^[A-Z\s]{10,}$/.test(line) ||
+      /^\d+[\.\)]\s+[A-Z]/.test(line) ||
+      line.startsWith('##')
+    ) && line.length < 60;
+
+    if (isHeader && currentSection.header) {
+      sections.push({ ...currentSection });
+      currentSection = { header: line.replace(/^#+\s*/, ''), bullets: [] };
+    } else if (isHeader) {
+      currentSection.header = line.replace(/^#+\s*/, '');
+    } else if (line.length > 15 && !/^https?:\/\//.test(line)) {
+      const cleaned = line
+        .replace(/^[\d]+[\.\)\/]\s*/, '')
+        .replace(/^[▸→•\-\*☑✦↳]\s*/, '')
+        .replace(/\*\*/g, '')
+        .trim();
+      if (cleaned.length > 10) {
+        currentSection.bullets.push(cleaned);
+      }
+    }
+  }
+  if (currentSection.bullets.length > 0 || currentSection.header) {
+    sections.push(currentSection);
+  }
+
+  // Points (flat list fallback)
   const points: Point[] = [];
+  const flatLines = lines.slice(1)
+    .filter(l => l.length > 20 && !/^https?:\/\//.test(l))
+    .map(l => l.replace(/^[\d]+[\.\)\/]\s*/, '').replace(/^[▸→•\-\*☑✦↳]\s*/, '').replace(/\*\*/g, '').trim())
+    .filter(l => l.length > 15)
+    .slice(0, 8);
 
-  // Pass 1: numbered/bulleted lines
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (/^[\d\.\-•→\*▸]\s*/.test(trimmed)) {
-      const text = trimmed.replace(/^[\d\.\-•→\*▸\s]+/, "").trim();
-      if (text.length > 10 && points.length < 9) {
-        const colonSplit = text.split(/[:—–]/);
-        if (colonSplit.length >= 2) {
-          points.push({ title: colonSplit[0].trim().slice(0, 50), body: colonSplit.slice(1).join(":").trim().slice(0, 200) });
-        } else {
-          points.push({ title: text.slice(0, 45), body: text.slice(45, 200).trim() });
-        }
-      }
+  for (const text of flatLines) {
+    const colonSplit = text.split(/[:—–]/);
+    if (colonSplit.length >= 2) {
+      points.push({ title: colonSplit[0].trim().slice(0, 50), body: colonSplit.slice(1).join(":").trim().slice(0, 200) });
+    } else {
+      points.push({ title: text.slice(0, 45), body: text.slice(45, 200).trim() });
     }
   }
 
-  // Pass 2: sentences
-  if (points.length < 5) {
-    const sentences = content.match(/[^.!?\n]+[.!?]+/g) || [];
-    for (const s of sentences) {
-      const trimmed = s.trim();
-      if (trimmed.length > 20 && points.length < 8) {
-        points.push({ title: trimmed.slice(0, 45), body: trimmed.slice(45, 200).trim() });
-      }
-    }
-  }
+  // Stats
+  const stats = (content.match(
+    /\d+[\.,]?\d*\s*(%|€|\$|K|M|x|×|days?|months?|years?|hours?|followers?|impressions?|views?|steps?|ways?)/gi,
+  ) || []).slice(0, 4);
 
-  // Pass 3: paragraphs
-  if (points.length < 5) {
-    const chunks = content.split(/\n\n+/).filter(c => c.trim().length > 20);
-    for (const chunk of chunks) {
-      if (points.length < 8) {
-        const t = chunk.trim();
-        points.push({ title: t.slice(0, 45), body: t.slice(45, 200).trim() });
-      }
-    }
-  }
+  // Quotes
+  const quotes = (content.match(/["«»"]([^"«»"]{10,80})["«»"]/g) || [])
+    .map(q => q.replace(/["«»"]/g, '').trim())
+    .slice(0, 2);
 
+  const contentType = detectContentType(content);
   const proTip = generateProTip(content);
 
-  return { title, badge, subtitle, points: points.slice(0, 8), proTip };
+  return { title, badge, subtitle, points: points.slice(0, 8), sections, stats, quotes, contentType, proTip };
 }
 
 // ─── Enhanced extraction for DALL-E prompts ───
@@ -713,84 +746,70 @@ CRITICAL: Use ONLY the text above. Do NOT invent, paraphrase, or add unrelated g
 
   // ── WHITEBOARD (Reference template — ultra dense) ──
   if (selectedTemplate === "WHITEBOARD" || selectedTemplate === "UI_CARDS" || selectedTemplate === "AWA_CLASSIC" || selectedTemplate === "auto") {
-    // Build structured content blocks
+    const kp = extractKeyPoints(content);
     const fills = ["light blue #D6E8FA", "light green #D4EDDA", "light red/pink #FAD7D6", "light orange #FDE8C8", "light purple #E8D5F5"];
     const icons = ["gear", "open book", "stack of books", "graduation cap", "star"];
 
-    const leftBoxes = ext.points.slice(0, Math.min(n, 5)).map((point, i) => {
-      const label = point.split(' ').slice(0, 4).join(' ').toUpperCase();
-      return `Box ${i + 1} (${fills[i % fills.length]} fill, black outline, rounded corners 8px):
-  Label text: "${label}"
-  Small ${icons[i % icons.length]} icon inside box
-  Arrow → pointing RIGHT to explanation`;
-    }).join('\n');
+    // Use sections if content has clear headers, otherwise use flat points
+    const hasSections = kp.sections.length >= 2 && kp.sections.some(s => s.bullets.length > 0);
 
-    const rightExplanations = ext.points.slice(0, Math.min(n, 5)).map((point, i) =>
-      `Explanation ${i + 1} (aligned with Box ${i + 1}):\n- ${point}${ext.stats[i] ? `\n• Key number: ${ext.stats[i]}` : ''}`,
-    ).join('\n');
+    const contentStructure = hasSections
+      ? kp.sections.slice(0, 4).map((section, i) => `
+SECTION ${i + 1} — ${['BLUE', 'GREEN', 'RED', 'ORANGE'][i % 4]} BOX:
+Box label (${fills[i % fills.length]} fill, black outline): "${section.header || kp.points[i]?.title || ''}"
+Small ${icons[i % icons.length]} icon. Arrow → pointing right to bullets:
+${section.bullets.slice(0, 4).map(b => `• ${b}`).join('\n')}`).join('\n')
+      : ext.points.slice(0, Math.min(n, 5)).map((point, i) => `
+SECTION ${i + 1} — ${['BLUE', 'GREEN', 'RED', 'ORANGE', 'PURPLE'][i % 5]} BOX:
+Box (${fills[i % fills.length]} fill, black outline): "${point.split(' ').slice(0, 4).join(' ').toUpperCase()}"
+Small ${icons[i % icons.length]} icon. Arrow → to explanation:
+- ${point}${kp.stats[i] ? `\n• Key number: ${kp.stats[i]}` : ''}`).join('\n');
 
     const bottomBoxes = n > 3 ? `
-━━━ BOTTOM SECTION — KEY ACTIONS ━━━
-Horizontal divider line.
-Section title: "KEY TAKEAWAYS" — centered bold.
-
+━━━ BOTTOM — KEY TAKEAWAYS ━━━
+Horizontal divider line. Centered bold title: "KEY TAKEAWAYS"
 6 rectangular boxes in 2-column grid (3 rows × 2 cols):
-Each box: colored highlight background + bold UPPERCASE label + body text.
 
 ${ext.points.slice(0, 6).map((point, i) => {
   const hl = ['soft blue #D6E8FA', 'soft green #D4EDDA', 'white', 'white', 'white', 'soft orange #FDE8C8'];
-  const label = point.split(' ').slice(0, 3).join(' ').toUpperCase();
-  return `Box ${i + 1} (${hl[i % hl.length]} highlight):
-  LABEL: "${label}:"
-  Text: "${point.length > 100 ? point.slice(0, 97) + '...' : point}"`;
-}).join('\n\n')}` : '';
+  return `Box ${i + 1} (${hl[i % hl.length]}): "${point.split(' ').slice(0, 3).join(' ').toUpperCase()}:" — "${point.length > 100 ? point.slice(0, 97) + '...' : point}"`;
+}).join('\n')}` : '';
 
     return `Create a HIGH-QUALITY educational whiteboard infographic poster.
 
 ━━━ TITLE ━━━
-"${ext.title}"
-Style: Large bold handwritten BLACK capital letters at top.
-Highlight 2-3 key words with soft ORANGE marker effect.
+"${kp.title}"
+Large bold handwritten BLACK capitals. Orange marker highlight on 2-3 key words.
 
 ━━━ VISUAL STYLE ━━━
-Background: Pure WHITE #FFFFFF (real whiteboard feel).
-Subtle shadow border around entire poster.
+Background: Pure WHITE #FFFFFF. Subtle shadow border.
 Hand-drawn marker aesthetic — clean, professional, slightly playful.
 Black outlines on ALL elements.
-Pastel colors: Blue #4A90D9, Green #5BA85B, Red #E05555, Orange #F5A623.
-Simple flat icons: gears, books, arrows, checkmarks.
+Pastel: Blue #4A90D9, Green #5BA85B, Red #E05555, Orange #F5A623.
+Flat icons: gears, books, arrows, checkmarks.
 ${formatHint}
-High resolution. Crisp lines. Easy to read in under 10 seconds.
+High resolution. Easy to scan in under 10 seconds.
 
-━━━ LAYOUT STRUCTURE ━━━
+━━━ LAYOUT ━━━
 
-TOP SECTION — title area (12%):
-Big bold title: "${ext.title}"
-Orange underline stroke below title.
+TOP (12%): Bold title "${kp.title}" with orange underline.
 
-MAIN SECTION — TWO COLUMNS (12% to 75%):
+MAIN — TWO COLUMNS (12% to 75%):
 
-LEFT COLUMN (35% width) — Colored action boxes stacked vertically with arrows:
-${leftBoxes}
+LEFT (35%) — Colored boxes stacked with arrows:
+${contentStructure}
 
-RIGHT COLUMN (65% width) — Bullet point explanations aligned with each box:
-${rightExplanations}
+RIGHT (65%) — Explanations aligned with each box (listed above per section).
 ${bottomBoxes}
 
-━━━ FOOTER (bottom 5%) ━━━
-Thin divider line.
-Small centered text: "Save this. Apply this. Share this."
+FOOTER (5%): Divider line. "Save this. Apply this. Share this."
 
-━━━ MANDATORY RULES ━━━
-- Every single word FULLY VISIBLE — never cut off at edges
-- 60px safe margin on ALL sides
-- Title: dominant 40px+ equivalent. Body: minimum 16px, line-height 1.5
-- ALL ${n} content points must appear on the infographic
-- Use EXACTLY the text provided — do NOT invent or paraphrase
-- Icons: simple flat 2D style only
-- Arrows: visible, directional, colored
+━━━ RULES ━━━
+- Every word FULLY VISIBLE. 60px margins. Title 40px+. Body 16px+.
+- ALL ${n} points must appear. Use EXACTLY the text above.
+- Icons: flat 2D. Arrows: visible, colored.
 
-AVOID: blurry, messy layout, cluttered, too many colors, realistic photo, 3D render, low resolution, bad typography, misaligned text, watermark, cut-off text, unreadable text, overlapping elements, dark background.`;
+AVOID: blurry, cluttered, photo, 3D, misaligned, dark bg, watermark, cut-off text.`;
   }
 
   // ── PROCESS_STEPS ──
