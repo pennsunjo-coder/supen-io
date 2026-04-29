@@ -107,20 +107,168 @@ interface Props {
 
 type ResultMode = "claude" | "openai" | null;
 type Step = "ready" | "generating" | "result";
-type StyleChoice = "auto" | "AWA_CLASSIC" | "UI_CARDS" | "WHITEBOARD" | "FUNNEL" | "DATA_GRID" | "PROCESS_STEPS" | "COMMAND_CENTER" | "ICON_GRID" | "EDITORIAL_LIST" | "CTA_VISUAL";
+type StyleChoice = "auto" | "WHITEBOARD" | "PROCESS_STEPS" | "EDITORIAL_LIST" | "COMPARISON" | "COMMAND_CENTER" | "NOTEBOOK" | "ICON_GRID" | "FUNNEL" | "CTA_VISUAL";
 
-// Template options with metadata for the selector
-const STYLE_OPTIONS: { id: StyleChoice; label: string; desc: string; bg: string }[] = [
-  { id: "auto", label: "Auto", desc: "AI picks best", bg: "bg-gradient-to-br from-primary/10 to-violet-500/10" },
-  { id: "WHITEBOARD", label: "Whiteboard", desc: "Hand-drawn, warm", bg: "bg-amber-50 dark:bg-amber-950/20" },
-  { id: "PROCESS_STEPS", label: "Steps", desc: "Step-by-step", bg: "bg-orange-50 dark:bg-orange-950/20" },
-  { id: "EDITORIAL_LIST", label: "Editorial", desc: "Magazine style", bg: "bg-orange-50 dark:bg-orange-950/20" },
-  { id: "COMPARISON", label: "Compare", desc: "Dark luxury", bg: "bg-gray-900" },
-  { id: "COMMAND_CENTER", label: "Terminal", desc: "Dev style", bg: "bg-gray-900" },
-  { id: "NOTEBOOK", label: "Notebook", desc: "Spiral notes", bg: "bg-yellow-50 dark:bg-yellow-950/20" },
-  { id: "ICON_GRID", label: "Grid", desc: "Bento layout", bg: "bg-white dark:bg-gray-950/20" },
-  { id: "FUNNEL", label: "Funnel", desc: "Flow stages", bg: "bg-white dark:bg-gray-950/20" },
-  { id: "CTA_VISUAL", label: "CTA", desc: "Promo style", bg: "bg-gray-100 dark:bg-gray-950/20" },
+// SVG miniature previews for each template
+const STYLE_PREVIEWS: Record<string, JSX.Element> = {
+  auto: (
+    <svg viewBox="0 0 60 40" className="w-full h-full">
+      <rect x="2" y="2" width="56" height="36" rx="4" fill="url(#auto-grad)" />
+      <defs><linearGradient id="auto-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#FF7A59" stopOpacity="0.2" /><stop offset="100%" stopColor="#6366F1" stopOpacity="0.2" /></linearGradient></defs>
+      <path d="M30 12 L32 18 L38 18 L33 22 L35 28 L30 24 L25 28 L27 22 L22 18 L28 18 Z" fill="#FF7A59" />
+    </svg>
+  ),
+  WHITEBOARD: (
+    <svg viewBox="0 0 60 40" className="w-full h-full">
+      <rect x="0" y="0" width="60" height="40" fill="#f8f9f7" />
+      <rect x="6" y="2.5" width="34" height="3" rx="0.4" fill="#1F2937" />
+      <rect x="4" y="9.5" width="52" height="7" rx="1.5" fill="#AEC6CF" />
+      <rect x="4" y="18.5" width="52" height="7" rx="1.5" fill="#FFD4A3" />
+      <rect x="4" y="27.5" width="52" height="7" rx="1.5" fill="#B3FFD1" />
+      <rect x="2" y="2" width="3" height="5" rx="0.5" fill="#aaa" />
+      <rect x="55" y="2" width="3" height="5" rx="0.5" fill="#aaa" />
+      <rect x="2" y="33" width="3" height="5" rx="0.5" fill="#aaa" />
+      <rect x="55" y="33" width="3" height="5" rx="0.5" fill="#aaa" />
+    </svg>
+  ),
+  PROCESS_STEPS: (
+    <svg viewBox="0 0 60 40" className="w-full h-full">
+      <rect x="0" y="0" width="60" height="40" fill="#F7F3F0" />
+      <rect x="6" y="2" width="28" height="3" rx="0.5" fill="#1A1A1B" />
+      <rect x="4" y="8" width="24" height="7" rx="2" fill="#FF7A59" />
+      <rect x="32" y="8" width="24" height="7" rx="2" fill="#FF7A59" opacity="0.7" />
+      <rect x="4" y="18" width="24" height="7" rx="2" fill="#FF7A59" opacity="0.5" />
+      <rect x="32" y="18" width="24" height="7" rx="2" fill="#FF7A59" opacity="0.3" />
+      <rect x="4" y="28" width="52" height="7" rx="2" fill="#1A1A1B" opacity="0.1" />
+      <circle cx="8" cy="11.5" r="2" fill="#fff" />
+      <text x="8" y="12.5" fontSize="2.5" fill="#FF7A59" textAnchor="middle" fontWeight="900">1</text>
+    </svg>
+  ),
+  EDITORIAL_LIST: (
+    <svg viewBox="0 0 60 40" className="w-full h-full">
+      <rect x="0" y="0" width="60" height="40" fill="#F7F3F0" />
+      <rect x="6" y="2" width="30" height="3" rx="0.5" fill="#1A1A1B" />
+      <text x="6" y="13" fontSize="5" fill="#FF7A59" fontWeight="900">01</text>
+      <rect x="16" y="10" width="38" height="2" rx="0.4" fill="#1A1A1B" opacity="0.6" />
+      <line x1="4" y1="16" x2="56" y2="16" stroke="#E5E7EB" strokeWidth="0.3" />
+      <text x="6" y="23" fontSize="5" fill="#FF7A59" fontWeight="900">02</text>
+      <rect x="16" y="20" width="34" height="2" rx="0.4" fill="#1A1A1B" opacity="0.6" />
+      <line x1="4" y1="26" x2="56" y2="26" stroke="#E5E7EB" strokeWidth="0.3" />
+      <text x="6" y="33" fontSize="5" fill="#FF7A59" fontWeight="900">03</text>
+      <rect x="16" y="30" width="40" height="2" rx="0.4" fill="#1A1A1B" opacity="0.6" />
+    </svg>
+  ),
+  COMPARISON: (
+    <svg viewBox="0 0 60 40" className="w-full h-full">
+      <rect x="0" y="0" width="60" height="40" fill="#0D1117" />
+      <rect x="10" y="3" width="40" height="4" rx="1" fill="#FFFFFF" opacity="0.9" />
+      <rect x="3" y="10" width="17" height="26" rx="2" fill="#161B22" />
+      <rect x="22" y="10" width="17" height="26" rx="2" fill="#161B22" />
+      <rect x="41" y="10" width="16" height="26" rx="2" fill="#161B22" />
+      <rect x="5" y="12" width="13" height="3" rx="1" fill="#00B4FF" opacity="0.8" />
+      <rect x="24" y="12" width="13" height="3" rx="1" fill="#00D4AA" opacity="0.8" />
+      <rect x="43" y="12" width="12" height="3" rx="1" fill="#FF8B00" opacity="0.8" />
+      <rect x="5" y="18" width="13" height="1.5" rx="0.5" fill="#fff" opacity="0.4" />
+      <rect x="5" y="22" width="13" height="1.5" rx="0.5" fill="#fff" opacity="0.4" />
+      <rect x="24" y="18" width="13" height="1.5" rx="0.5" fill="#fff" opacity="0.4" />
+      <rect x="24" y="22" width="13" height="1.5" rx="0.5" fill="#fff" opacity="0.4" />
+      <rect x="43" y="18" width="12" height="1.5" rx="0.5" fill="#fff" opacity="0.4" />
+      <rect x="43" y="22" width="12" height="1.5" rx="0.5" fill="#fff" opacity="0.4" />
+    </svg>
+  ),
+  COMMAND_CENTER: (
+    <svg viewBox="0 0 60 40" className="w-full h-full">
+      <rect x="0" y="0" width="60" height="40" fill="#0A0E1A" />
+      <rect x="3" y="3" width="54" height="34" rx="2" fill="#1A1A2E" />
+      <circle cx="8" cy="6" r="1.5" fill="#FF3B30" />
+      <circle cx="13" cy="6" r="1.5" fill="#FF9500" />
+      <circle cx="18" cy="6" r="1.5" fill="#34C759" />
+      <text x="7" y="15" fontSize="3" fill="#00FF41" fontFamily="monospace">$</text>
+      <rect x="12" y="12" width="35" height="2" rx="0.5" fill="#fff" opacity="0.6" />
+      <rect x="7" y="17" width="40" height="1.5" rx="0.5" fill="#00D4FF" opacity="0.4" />
+      <text x="7" y="25" fontSize="3" fill="#00FF41" fontFamily="monospace">$</text>
+      <rect x="12" y="22" width="30" height="2" rx="0.5" fill="#fff" opacity="0.6" />
+      <rect x="7" y="27" width="38" height="1.5" rx="0.5" fill="#00D4FF" opacity="0.4" />
+      <text x="7" y="35" fontSize="3" fill="#00FF41" fontFamily="monospace">$</text>
+      <rect x="12" y="32" width="25" height="2" rx="0.5" fill="#fff" opacity="0.6" />
+    </svg>
+  ),
+  NOTEBOOK: (
+    <svg viewBox="0 0 60 40" className="w-full h-full">
+      <rect x="0" y="0" width="60" height="40" fill="#FFFEF8" />
+      {[12, 18, 24, 30, 36].map(y => <line key={y} x1="12" y1={y} x2="57" y2={y} stroke="#E8E4DA" strokeWidth="0.4" />)}
+      <line x1="10" y1="0" x2="10" y2="40" stroke="#FF3B30" strokeWidth="0.6" />
+      {[8, 16, 24, 32, 40, 48].map(x => <ellipse key={x} cx={x} cy="3" rx="2.5" ry="2" fill="none" stroke="#9CA3AF" strokeWidth="0.6" />)}
+      <rect x="13" y="6" width="15" height="3" rx="0.5" fill="#188038" />
+      <rect x="30" y="6" width="12" height="3" rx="0.5" fill="#1A73E8" />
+      <rect x="44" y="6" width="10" height="3" rx="0.5" fill="#FF6B35" />
+      <circle cx="15" cy="17" r="2.5" fill="#FF6B35" />
+      <text x="15" y="18.5" textAnchor="middle" fontSize="2.5" fill="white">1</text>
+      <rect x="20" y="15.5" width="34" height="2" rx="0.5" fill="#374151" />
+      <circle cx="15" cy="27" r="2.5" fill="#1A73E8" />
+      <text x="15" y="28.5" textAnchor="middle" fontSize="2.5" fill="white">2</text>
+      <rect x="20" y="25.5" width="30" height="2" rx="0.5" fill="#374151" />
+      <rect x="38" y="32" width="18" height="6" rx="1" fill="#FFE066" transform="rotate(-2 47 35)" />
+      <rect x="40" y="34" width="12" height="1.5" rx="0.3" fill="#92400E" opacity="0.4" />
+    </svg>
+  ),
+  ICON_GRID: (
+    <svg viewBox="0 0 60 40" className="w-full h-full">
+      <rect x="0" y="0" width="60" height="40" fill="#FFFFFF" />
+      <rect x="12" y="1" width="36" height="3" rx="0.5" fill="#1A1A1B" />
+      <rect x="3" y="7" width="17" height="14" rx="2" fill="#FFF0EB" stroke="#FF7A59" strokeWidth="0.3" />
+      <circle cx="11.5" cy="11" r="2" fill="#FF7A59" />
+      <rect x="21.5" y="7" width="17" height="14" rx="2" fill="#FFF0EB" stroke="#FF7A59" strokeWidth="0.3" />
+      <circle cx="30" cy="11" r="2" fill="#FF7A59" />
+      <rect x="40" y="7" width="17" height="14" rx="2" fill="#FFF0EB" stroke="#FF7A59" strokeWidth="0.3" />
+      <circle cx="48.5" cy="11" r="2" fill="#FF7A59" />
+      <rect x="3" y="23" width="17" height="14" rx="2" fill="#FFF0EB" stroke="#FF7A59" strokeWidth="0.3" />
+      <circle cx="11.5" cy="27" r="2" fill="#FF7A59" />
+      <rect x="21.5" y="23" width="17" height="14" rx="2" fill="#FFF0EB" stroke="#FF7A59" strokeWidth="0.3" />
+      <circle cx="30" cy="27" r="2" fill="#FF7A59" />
+      <rect x="40" y="23" width="17" height="14" rx="2" fill="#FFF0EB" stroke="#FF7A59" strokeWidth="0.3" />
+      <circle cx="48.5" cy="27" r="2" fill="#FF7A59" />
+    </svg>
+  ),
+  FUNNEL: (
+    <svg viewBox="0 0 60 40" className="w-full h-full">
+      <rect x="0" y="0" width="60" height="40" fill="#FFFFFF" />
+      <rect x="6" y="2.5" width="34" height="3" rx="0.4" fill="#1F2937" />
+      <polygon points="5,10 55,10 45,20 15,20" fill="#1A73E8" opacity="0.8" />
+      <polygon points="15,21 45,21 40,30 20,30" fill="#7B2FBE" opacity="0.8" />
+      <polygon points="20,31 40,31 35,38 25,38" fill="#FF6B35" opacity="0.8" />
+    </svg>
+  ),
+  CTA_VISUAL: (
+    <svg viewBox="0 0 60 40" className="w-full h-full">
+      <rect x="0" y="0" width="60" height="40" fill="#F0F0F0" />
+      <line x1="0" y1="10" x2="60" y2="10" stroke="#ddd" strokeWidth="0.2" />
+      <line x1="0" y1="20" x2="60" y2="20" stroke="#ddd" strokeWidth="0.2" />
+      <line x1="0" y1="30" x2="60" y2="30" stroke="#ddd" strokeWidth="0.2" />
+      <line x1="15" y1="0" x2="15" y2="40" stroke="#ddd" strokeWidth="0.2" />
+      <line x1="30" y1="0" x2="30" y2="40" stroke="#ddd" strokeWidth="0.2" />
+      <line x1="45" y1="0" x2="45" y2="40" stroke="#ddd" strokeWidth="0.2" />
+      <rect x="8" y="2" width="44" height="4" rx="0.5" fill="#1A1A1B" />
+      <circle cx="30" cy="20" r="5" fill="#FF7A59" />
+      <rect x="6" y="12" width="14" height="5" rx="1.5" fill="#4A90D9" opacity="0.7" />
+      <rect x="40" y="12" width="14" height="5" rx="1.5" fill="#4A90D9" opacity="0.7" />
+      <rect x="6" y="27" width="14" height="5" rx="1.5" fill="#4A90D9" opacity="0.7" />
+      <rect x="40" y="27" width="14" height="5" rx="1.5" fill="#4A90D9" opacity="0.7" />
+    </svg>
+  ),
+};
+
+const STYLE_OPTIONS: { id: StyleChoice; label: string; desc: string }[] = [
+  { id: "auto", label: "Auto", desc: "AI picks" },
+  { id: "PROCESS_STEPS", label: "Process", desc: "Step-by-step" },
+  { id: "COMMAND_CENTER", label: "Terminal", desc: "Dev style" },
+  { id: "ICON_GRID", label: "Icon Grid", desc: "Bento grid" },
+  { id: "EDITORIAL_LIST", label: "Editorial", desc: "Magazine list" },
+  { id: "CTA_VISUAL", label: "CTA Visual", desc: "Indie hacker" },
+  { id: "WHITEBOARD", label: "Whiteboard", desc: "Hand-drawn" },
+  { id: "NOTEBOOK", label: "Notebook", desc: "Spiral notes" },
+  { id: "COMPARISON", label: "Comparison", desc: "Dark table" },
+  { id: "FUNNEL", label: "Funnel", desc: "Process flow" },
 ];
 
 // ─── Component ───
@@ -621,10 +769,10 @@ export default function InfographicModal({ open, onClose, content, platform, con
                   )}
                 </div>
 
-                {/* Style selector */}
+                {/* Style selector with SVG previews */}
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Style</p>
-                  <div className="grid grid-cols-2 gap-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Choose a style</p>
+                  <div className="grid grid-cols-3 gap-2">
                     {STYLE_OPTIONS.map((opt) => {
                       const active = styleChoice === opt.id;
                       return (
@@ -633,33 +781,20 @@ export default function InfographicModal({ open, onClose, content, platform, con
                           type="button"
                           onClick={() => setStyleChoice(opt.id)}
                           className={cn(
-                            "relative rounded-xl overflow-hidden border-2 transition-all duration-150 text-left",
+                            "group rounded-xl border p-2 transition-all flex flex-col gap-1.5",
                             active
-                              ? "border-primary shadow-md"
-                              : "border-border/15 hover:border-border/40",
+                              ? "border-primary bg-primary/10 ring-1 ring-primary/40"
+                              : "border-border/40 bg-accent/20 hover:border-border/70 hover:bg-accent/40",
                           )}
                         >
-                          <div className={cn("w-full h-10 flex items-center justify-center", opt.bg)}>
-                            {opt.id === "auto" && <Sparkles className="w-4 h-4 text-primary/60" />}
-                            {opt.id === "COMPARISON" && <span className="text-[9px] text-white/60 font-mono">col1 | col2 | col3</span>}
-                            {opt.id === "COMMAND_CENTER" && <span className="text-[9px] text-green-400/70 font-mono">$ command</span>}
-                            {opt.id === "WHITEBOARD" && <span className="text-[9px] text-amber-700/50">✏️ 1. 2. 3.</span>}
-                            {opt.id === "NOTEBOOK" && <span className="text-[9px] text-amber-700/50">📓 notes</span>}
-                            {opt.id === "PROCESS_STEPS" && <span className="text-[9px] text-orange-600/50">① → ② → ③</span>}
-                            {opt.id === "EDITORIAL_LIST" && <span className="text-[10px] text-orange-500/60 font-bold">01 02 03</span>}
-                            {opt.id === "ICON_GRID" && <span className="text-[9px] text-muted-foreground/40">▦ grid</span>}
-                            {opt.id === "FUNNEL" && <span className="text-[9px] text-blue-500/50">▽ funnel</span>}
-                            {opt.id === "CTA_VISUAL" && <span className="text-[9px] text-muted-foreground/40">✦ promo</span>}
+                          <div className="aspect-[3/2] w-full rounded-md overflow-hidden bg-white/80 border border-border/30 flex items-center justify-center">
+                            {STYLE_PREVIEWS[opt.id]}
                           </div>
-                          <div className="px-2.5 py-1.5 bg-card">
-                            <p className={cn("text-[11px] font-semibold leading-tight", active && "text-primary")}>{opt.label}</p>
-                            <p className="text-[9px] text-muted-foreground/50">{opt.desc}</p>
+                          <div className="flex items-center gap-1 px-0.5">
+                            <span className={cn("text-[11px] font-bold leading-tight", active && "text-primary")}>{opt.label}</span>
+                            {active && <Check className="w-3 h-3 text-primary flex-shrink-0" />}
                           </div>
-                          {active && (
-                            <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
-                              <Check className="w-2.5 h-2.5 text-white" />
-                            </div>
-                          )}
+                          <p className="text-[9px] text-muted-foreground leading-tight px-0.5">{opt.desc}</p>
                         </button>
                       );
                     })}
