@@ -179,25 +179,9 @@ export function useSources() {
   const fetchSources = useCallback(async () => {
     if (!user) { setLoading(false); return; }
 
-    // In-memory cache first
-    const memCacheKey = `sources:${user.id}`;
-    const memCached = getCache<Source[]>(memCacheKey);
-    if (memCached) { setSources(memCached); setLoading(false); return; }
-
-    // localStorage cache second
-    const lsCacheKey = `sources_v2_${user.id}`;
-    try {
-      const raw = localStorage.getItem(lsCacheKey);
-      if (raw) {
-        const { data, timestamp } = JSON.parse(raw);
-        if (Date.now() - timestamp < 10 * 60 * 1000) {
-          setSources(data);
-          setCache(memCacheKey, data);
-          setLoading(false);
-          return;
-        }
-      }
-    } catch { /* corrupt */ }
+    const cacheKey = `sources:${user.id}`;
+    const cached = getCache<Source[]>(cacheKey);
+    if (cached) { setSources(cached); setLoading(false); return; }
 
     try {
       const { data, error } = await supabase
@@ -210,10 +194,7 @@ export function useSources() {
       if (!error && data) {
         const typed = data as Source[];
         setSources(typed);
-        setCache(memCacheKey, typed);
-        try {
-          localStorage.setItem(lsCacheKey, JSON.stringify({ data: typed, timestamp: Date.now() }));
-        } catch { /* quota */ }
+        setCache(cacheKey, typed);
       }
     } catch { /* network */ }
     setLoading(false);

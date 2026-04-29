@@ -64,113 +64,63 @@ function groupByDate(items: GeneratedItem[]): HistoryGroup[] {
     .map((label) => ({ label, items: groups.get(label)! }));
 }
 
-const CACHE_KEY_PREFIX = "history_v2_";
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
-// Lightweight select for list view — NO content field (too heavy)
-const LIST_COLUMNS = "id, platform, format, viral_score, session_id, infographic_base64, created_at";
-
 export function useHistory() {
   const { user } = useAuth();
   const [items, setItems] = useState<GeneratedItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const processItems = useCallback((data: any[]): GeneratedItem[] => {
-    const allItems = data as GeneratedItem[];
-
-    // Build session → infographic map
-    const sessionInfographics = new Map<string, string>();
-    for (const item of allItems) {
-      if (!item.session_id) continue;
-      if (item.format === "Infographic" && item.infographic_base64) {
-        sessionInfographics.set(item.session_id, item.infographic_base64);
-      }
-      if (item.infographic_base64 && item.format !== "Infographic") {
-        sessionInfographics.set(item.session_id, item.infographic_base64);
-      }
-    }
-
-    return allItems
-      .filter((i) => i.format !== "Infographic")
-      .map((item) => {
-        const infraBase64 = item.session_id ? sessionInfographics.get(item.session_id) : null;
-        return {
-          ...item,
-          content: item.content || "",
-          hasInfographic: !!infraBase64 || !!item.infographic_base64,
-          sessionInfographicBase64: infraBase64 || item.infographic_base64 || null,
-        };
-      });
-  }, []);
-
   const fetchHistory = useCallback(async () => {
     if (!user) { setLoading(false); return; }
-
-    // Check localStorage cache first
-    const cacheKey = CACHE_KEY_PREFIX + user.id;
-    try {
-      const raw = localStorage.getItem(cacheKey);
-      if (raw) {
-        const { data, timestamp } = JSON.parse(raw);
-        if (Date.now() - timestamp < CACHE_TTL) {
-          setItems(data);
-          setLoading(false);
-          // Refresh in background
-          refreshInBackground(cacheKey);
-          return;
-        }
-      }
-    } catch { /* corrupt cache */ }
 
     try {
       let { data, error } = await supabase
         .from("generated_content")
-        .select(LIST_COLUMNS)
+        .select("id, platform, format, content, source_ids, created_at, viral_score, session_id, infographic_base64")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
-        .limit(100);
+        .limit(50);
 
       if (error) {
-        // Fallback: minimal columns
         const fallback = await supabase
           .from("generated_content")
-          .select("id, platform, format, viral_score, created_at")
+          .select("id, platform, format, content, created_at, viral_score")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false })
-          .limit(100);
+          .limit(50);
         data = fallback.data;
       }
 
       if (data) {
-        const posts = processItems(data);
+        const allItems = data as GeneratedItem[];
+
+        const sessionInfographics = new Map<string, string>();
+        for (const item of allItems) {
+          if (!item.session_id) continue;
+          if (item.format === "Infographic" && item.infographic_base64) {
+            sessionInfographics.set(item.session_id, item.infographic_base64);
+          }
+          if (item.infographic_base64 && item.format !== "Infographic") {
+            sessionInfographics.set(item.session_id, item.infographic_base64);
+          }
+        }
+
+        const posts = allItems
+          .filter((i) => i.format !== "Infographic")
+          .filter((i) => i.content && i.content.trim().length >= 20)
+          .map((item) => {
+            const infraBase64 = item.session_id ? sessionInfographics.get(item.session_id) : null;
+            return {
+              ...item,
+              hasInfographic: !!infraBase64 || !!item.infographic_base64,
+              sessionInfographicBase64: infraBase64 || item.infographic_base64 || null,
+            };
+          });
+
         setItems(posts);
-        try {
-          localStorage.setItem(cacheKey, JSON.stringify({ data: posts, timestamp: Date.now() }));
-        } catch { /* quota */ }
       }
     } catch { /* network */ }
     setLoading(false);
-  }, [user, processItems]);
-
-  async function refreshInBackground(cacheKey: string) {
-    if (!user) return;
-    try {
-      const { data } = await supabase
-        .from("generated_content")
-        .select(LIST_COLUMNS)
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(100);
-
-      if (data) {
-        const posts = processItems(data);
-        setItems(posts);
-        try {
-          localStorage.setItem(cacheKey, JSON.stringify({ data: posts, timestamp: Date.now() }));
-        } catch { /* quota */ }
-      }
-    } catch { /* silent */ }
-  }
+  }, [user]);
 
   useEffect(() => {
     fetchHistory();
