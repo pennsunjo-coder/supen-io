@@ -179,14 +179,27 @@ export function useSources() {
   const fetchSources = useCallback(async () => {
     if (!user) { setLoading(false); return; }
 
-    const cacheKey = `sources:${user.id}`;
-    const cached = getCache<Source[]>(cacheKey);
-    if (cached) { setSources(cached); setLoading(false); return; }
+    // In-memory cache first
+    const memCacheKey = `sources:${user.id}`;
+    const memCached = getCache<Source[]>(memCacheKey);
+    if (memCached) { setSources(memCached); setLoading(false); return; }
+
+    // localStorage cache second
+    const lsCacheKey = `sources_v2_${user.id}`;
+    try {
+      const raw = localStorage.getItem(lsCacheKey);
+      if (raw) {
+        const { data, timestamp } = JSON.parse(raw);
+        if (Date.now() - timestamp < 10 * 60 * 1000) {
+          setSources(data);
+          setCache(memCacheKey, data);
+          setLoading(false);
+          return;
+        }
+      }
+    } catch { /* corrupt */ }
 
     try {
-      // Only select columns needed for the list view.
-      // Exclude `embedding` (huge pgvector blob — loaded server-side only
-      // when searching) and any other heavy columns.
       const { data, error } = await supabase
         .from("sources")
         .select("id, user_id, type, title, content, file_path, created_at")
@@ -197,7 +210,10 @@ export function useSources() {
       if (!error && data) {
         const typed = data as Source[];
         setSources(typed);
-        setCache(cacheKey, typed);
+        setCache(memCacheKey, typed);
+        try {
+          localStorage.setItem(lsCacheKey, JSON.stringify({ data: typed, timestamp: Date.now() }));
+        } catch { /* quota */ }
       }
     } catch { /* network */ }
     setLoading(false);
