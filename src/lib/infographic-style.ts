@@ -638,7 +638,7 @@ function detectTemplate(content: string): string {
   return "WHITEBOARD";
 }
 
-// ─── DALL-E prompt builder ───
+// ─── DALL-E prompt builder — "WOW" level prompts ───
 
 export function buildDallEPrompt(
   content: string,
@@ -649,143 +649,194 @@ export function buildDallEPrompt(
   const ext = extractForDallE(content);
   const pl = platform?.toLowerCase() || "";
 
-  // Base rules
   const baseRules = `CRITICAL RULES — NO EXCEPTIONS:
-1. ALL TEXT MUST BE IN ENGLISH ONLY
-2. NO footer, NO signature, NO watermark, NO "follow for more"
-3. NO "Created by", NO branding whatsoever
-4. Every word must be FULLY READABLE — never cut off, never truncated
-5. Leave 50px safe margin on ALL sides — text NEVER touches edges
-6. Minimum font size: 18px for body text, 32px for titles
-7. HIGH CONTRAST between text and background
-8. NO text overlapping other elements
-9. Content must be DENSE — fill 85% of canvas with information
-10. Use ONLY the exact content provided below — do not invent`;
+1. ALL TEXT IN ENGLISH ONLY — no other language
+2. NO footer, NO signature, NO watermark, NO "follow for more", NO branding
+3. Every word FULLY READABLE — never cut off, never truncated, never blurry
+4. 50px safe margin on ALL sides — text NEVER touches edges
+5. Minimum 18px body text, 32px titles — HIGH CONTRAST always
+6. NO text overlapping other elements — clean visual hierarchy
+7. Fill 88% of canvas with information — DENSE but organized
+8. Use ONLY the exact content below — do NOT invent or add anything`;
 
-  // Content block
-  const contentBlock = `EXACT CONTENT TO DISPLAY ON THE INFOGRAPHIC:
+  const contentBlock = `EXACT CONTENT TO DISPLAY:
 
-MAIN TITLE: "${ext.title}"
-${ext.points.length > 0 ? `
-KEY POINTS (display ALL of these):
-${ext.points.map((p, i) => `${i + 1}. "${p}"`).join('\n')}` : ''}
-${ext.stats.length > 0 ? `
-KEY STATISTICS (highlight prominently):
-${ext.stats.map(s => `• ${s}`).join('\n')}` : ''}
-${ext.keywords.length > 0 ? `
-KEY CONCEPTS (emphasize visually):
-${ext.keywords.map(k => `"${k}"`).join(', ')}` : ''}
+TITLE: "${ext.title}"
+${ext.points.length > 0 ? `\nPOINTS (display ALL):\n${ext.points.map((p, i) => `${i + 1}. "${p}"`).join('\n')}` : ''}
+${ext.stats.length > 0 ? `\nSTATS (highlight):\n${ext.stats.map(s => `• ${s}`).join('\n')}` : ''}
+${ext.keywords.length > 0 ? `\nKEY TERMS: ${ext.keywords.map(k => `"${k}"`).join(', ')}` : ''}
 
-IMPORTANT: Use EVERY piece of information above. Do not skip any point.`;
+Use EVERY piece of information. Do not skip any point.`;
 
-  // Format hint
-  let formatHint = "Portrait format. Clean professional layout.";
-  if (pl.includes("linkedin")) {
-    formatHint = "Portrait format (1024x1536). Professional, information-rich layout optimized for LinkedIn.";
-  } else if (pl.includes("facebook")) {
-    formatHint = "Square format (1024x1024). Compact but dense layout for Facebook.";
-  } else if (pl.includes("instagram")) {
-    formatHint = "Portrait format (1024x1536). Visual and informative for Instagram.";
-  } else if (pl.includes("twitter") || pl.includes("x (")) {
-    formatHint = "Landscape format (1536x1024). Wide layout for X/Twitter.";
-  }
+  let formatHint = "Portrait format.";
+  if (pl.includes("linkedin")) formatHint = "Portrait (1024x1536). LinkedIn-optimized.";
+  else if (pl.includes("facebook")) formatHint = "Square (1024x1024). Facebook-optimized.";
+  else if (pl.includes("instagram")) formatHint = "Portrait (1024x1536). Instagram-optimized.";
+  else if (pl.includes("twitter") || pl.includes("x (")) formatHint = "Landscape (1536x1024). X/Twitter-optimized.";
 
-  // Template styles
+  const n = ext.points.length;
+
+  // ── WHITEBOARD ──
   if (selectedTemplate === "WHITEBOARD" || selectedTemplate === "UI_CARDS" || selectedTemplate === "AWA_CLASSIC") {
-    return `${baseRules}\n\n${contentBlock}\n\nVISUAL STYLE: Hand-drawn educational whiteboard infographic.
+    return `${baseRules}\n\n${contentBlock}\n\nVISUAL STYLE — "Viral Creator Whiteboard":
 ${formatHint}
-Background: off-white #f8f9f7 (real whiteboard texture).
-4 metallic corner clips.
-Title in large bold marker font with colored underline.
-Each numbered point in its own clearly separated section.
-Colored section headers alternating: red #C0392B, blue #2563EB, green #2E7D32.
-Yellow highlighter #FFEF5A on 2-3 key terms per section.
-Hand-drawn arrows connecting related elements.
-Number badges for each point (hand-drawn circles).
-Dense layout — no empty space at bottom.`;
+
+CANVAS: Warm off-white paper #F9F7F2 with subtle grain. 4 realistic metallic binder clips at corners. Faint ruled lines in background.
+
+TYPOGRAPHY:
+- TITLE: Massive ultra-bold hand-lettered, 90% width, thick marker underline. Color: #1A1A1B
+- SECTION HEADERS: Bold, alternating colors: Red #D93025, Blue #1A73E8, Green #188038, Purple #7B2FBE
+- BODY: Clean handwritten style 18px, dark gray #2D2D2D, line-height 1.6
+
+LAYOUT: Top 12% = category badge + HUGE title. Middle 75% = ${n} sections, each with: colored numbered circle, bold header with underline, 2-3 lines body, yellow highlighter #FFE066 on key terms, small doodle icon. Bottom 13% = key stat in yellow box.
+
+DETAILS: Hand-drawn arrows connecting ideas. Stars and checkmarks in margins. Curly brackets for grouping. Wavy hand-drawn separators. Slightly imperfect marker strokes (human feel). Every corner has visual interest. 88% canvas fill.
+
+BENCHMARK: Looks like a 50K+ impression LinkedIn creator post.`;
   }
 
+  // ── PROCESS_STEPS ──
   if (selectedTemplate === "PROCESS_STEPS") {
-    return `${baseRules}\n\n${contentBlock}\n\nVISUAL STYLE: Step-by-step process infographic.
+    return `${baseRules}\n\n${contentBlock}\n\nVISUAL STYLE — "Premium SaaS Step-by-Step":
 ${formatHint}
-Background: light cream #F7F3F0.
-Orange accent color: #FF7A59.
-Each step in a numbered box connected by arrows.
-Bold sans-serif fonts (Inter/Helvetica style).
-Bento grid layout, rounded corners 8-12px.
-High contrast between steps.`;
+
+CANVAS: Ultra-clean cream #FAF8F5. Subtle dot grid (#E5E0D8, 20px, 40% opacity). 48px margin.
+
+STEP CARDS (${n} steps): Each card has: Left = large numbered circle (gradient Blue #1A73E8 → Purple #7B2FBE, white number), Right = bold title 20px #1A1A1B + body 15px #555555 + small icon. Between cards: curved gradient arrow (Blue → Purple → Orange progression).
+
+HEADER (top 18%): Small category pill (light blue #EBF3FF), huge title 36px ultra-bold #0F0F0F, one-line subtitle.
+
+FOOTER (bottom 10%): Key result in gradient rounded box (Blue → Purple), white bold text.
+
+COLORS: Blue #1A73E8, Purple #7B2FBE, Orange #FF6B35, BG #FAF8F5, Text #1A1A1B.
+
+QUALITY: Magazine editorial meets Apple product page. Premium SaaS aesthetic.`;
   }
 
+  // ── EDITORIAL_LIST ──
   if (selectedTemplate === "EDITORIAL_LIST") {
-    return `${baseRules}\n\n${contentBlock}\n\nVISUAL STYLE: Editorial list layout.
+    return `${baseRules}\n\n${contentBlock}\n\nVISUAL STYLE — "Bold Editorial Magazine":
 ${formatHint}
-Background: very light beige #F7F3F0.
-Large orange numbers #FF7A59 for each item.
-Clean thin horizontal separators.
-Left-aligned text, magazine style.
-Bold sans-serif headers.`;
+
+CANVAS: Warm cream #FDFAF6. Thin 3px border frame #1A1A1B (8px inset). Corner registration marks.
+
+TYPOGRAPHY (the star): Giant background number 120px burnt orange #FF6B35 at 15% opacity. Solid item number 48px #FF6B35 on top. Title 22px black #0F0F0F weight 800, tight letter-spacing. Body 15px #333333 weight 400, line-height 1.7. Full-width 2px separator between items.
+
+LAYOUT PER ITEM: Giant BG number + solid number + bold title + body text + separator line. Pull quote box for strongest insight (large quotation marks, italic).
+
+DECORATIVE: Small geometric shapes (triangles, circles, squares) in accent color. Magazine header with "INSIGHTS" in all-caps.
+
+COLORS: Orange #FF6B35 (numbers), Black #0F0F0F (titles), Cream #FDFAF6 (bg), Gray #888888 (body).
+
+FEEL: The Economist meets Instagram carousel. Sophisticated, scroll-stopping.`;
   }
 
+  // ── COMMAND_CENTER ──
   if (selectedTemplate === "COMMAND_CENTER") {
-    return `${baseRules}\n\n${contentBlock}\n\nVISUAL STYLE: Terminal/command center UI.
+    return `${baseRules}\n\n${contentBlock}\n\nVISUAL STYLE — "Developer Command Center":
 ${formatHint}
-White background.
-Orange badges #FF7A59 on left of each row.
-Rounded rectangle commands.
-Developer-friendly aesthetic.`;
+
+CANVAS: Near-black #0A0E1A. Faint circuit board pattern #111827. Green phosphor glow at top #00FF41 at 3%.
+
+TERMINAL WINDOW: Dark chrome #1A1A2E. Traffic lights (red/yellow/green dots top-left). Title "~/content-strategy" monospace. Large blurred shadow.
+
+COMMAND LINES: Prompt "$" bright green #00FF41. Commands white monospace. Flags orange #FF8B00. Output cyan #00D4FF. Comments gray #666666. Percentage bars [████████░░] style.
+
+DECORATIVE: ASCII dividers. Loading dots animation feel. Small status indicators.
+
+COLORS: Green #00FF41, Cyan #00D4FF, Orange #FF8B00, Red #FF3B30, BG #0A0E1A.
+
+FEEL: Linear.app meets Vercel dashboard. Viral in dev communities.`;
   }
 
+  // ── ICON_GRID ──
   if (selectedTemplate === "ICON_GRID") {
-    return `${baseRules}\n\n${contentBlock}\n\nVISUAL STYLE: Icon grid layout.
+    return `${baseRules}\n\n${contentBlock}\n\nVISUAL STYLE — "Bento Grid Icons":
 ${formatHint}
-Pure white background.
-Grid of cells with orange circled numbers.
-Flat bicolor icons (orange and black).
-Bento grid style, rounded corners 12px.`;
+
+CANVAS: Pure white #FFFFFF. Clean and airy.
+
+GRID: ${Math.min(n, 12)} cells in a bento grid (3 columns). Each cell: rounded card (12px radius, thin #F0F0F0 border), circled orange number #FF6B35, bold title, simplified flat illustration in orange+black bicolor. Cards have subtle shadow on hover feel.
+
+HEADER: Centered title 32px bold #1A1A1B. Small category badge above.
+
+COLORS: Orange #FF6B35, Black #1A1A1B, White #FFFFFF, Light gray #F8F8F8.
+
+FEEL: Notion-style bento grid. Modern, clean, information-dense. Each cell tells a micro-story.`;
   }
 
+  // ── COMPARISON / DATA_GRID ──
   if (selectedTemplate === "COMPARISON" || selectedTemplate === "DATA_GRID") {
-    return `${baseRules}\n\n${contentBlock}\n\nVISUAL STYLE: Professional dark comparison table.
+    return `${baseRules}\n\n${contentBlock}\n\nVISUAL STYLE — "Dark Luxury Dashboard":
 ${formatHint}
-Background: deep charcoal #1a1a2e.
-White text on dark background.
-3 columns with colored headers (blue, green, orange).
-Clean grid lines, high contrast.`;
+
+CANVAS: Rich dark #0D1117. Subtle grid #161B22. Top gradient glow: Blue #1A73E8 at 5%.
+
+HEADER: Small "COMPARISON" badge in neon green #00D4AA (border + bg). Title 32px white bold. Subtitle 14px #8B949E.
+
+COLUMNS (${Math.min(n, 3)}): Each column card: bg #161B22, 1px border #30363D, 12px radius, 24px padding. Colored header pill (Blue #00B4FF, Green #00D4AA, Orange #FF8B00). White items with colored checkmarks.
+
+GLOW EFFECTS: Column headers have subtle color glow. Bottom CTA with gradient border (Blue → Green → Orange).
+
+COLORS: Blue #00B4FF, Green #00D4AA, Orange #FF8B00, Purple #BD93F9, BG #0D1117.
+
+FEEL: Premium SaaS pricing page. Modern dark mode, trustworthy.`;
   }
 
+  // ── NOTEBOOK ──
   if (selectedTemplate === "NOTEBOOK") {
-    return `${baseRules}\n\n${contentBlock}\n\nVISUAL STYLE: Spiral notebook page.
+    return `${baseRules}\n\n${contentBlock}\n\nVISUAL STYLE — "Cozy Creator Notebook":
 ${formatHint}
-Background: warm white #fffef8.
-Metallic spiral binding at top.
-Ruled lines, red margin line on left.
-Colorful handwritten-style titles.
-Numbered badge items.`;
+
+CANVAS: Warm white #FFFEF8 with fine paper grain. Faint ruled lines #E8E4DA every 28px. Left margin: vertical red line #FF3B30. Top: 18 realistic metallic spiral coils (3D).
+
+TYPOGRAPHY: Title HUGE colorful — each word different color (Green #2D6A4F, Blue #1A73E8, Orange #FF6B35). Bouncy hand-lettered feel. Items bold black 16px. Body casual 14px #2D2D2D.
+
+ELEMENTS: Oval numbered badges alternating colors (blue, orange, green, purple). Yellow #FFE066 highlights on key terms. Doodle icons in margins (stars, arrows, hearts). Sticky note callout (yellow, tilted) for best insight. Washi tape decoration at top.
+
+DENSITY: Fills the page completely. Energetic student study notes aesthetic.
+
+FEEL: Warm, personal, creative. Like peeking into a brilliant creator's notebook.`;
   }
 
+  // ── FUNNEL ──
   if (selectedTemplate === "FUNNEL") {
-    return `${baseRules}\n\n${contentBlock}\n\nVISUAL STYLE: Funnel/process flow diagram.
+    return `${baseRules}\n\n${contentBlock}\n\nVISUAL STYLE — "Conversion Funnel Flow":
 ${formatHint}
-Background: warm off-white #fffef5.
-Large trapezoid funnel shape.
-Each stage labeled with white box.
-Red curved arrows on sides.`;
+
+CANVAS: Warm off-white #FFFEF5 with subtle paper grain.
+
+TITLE: Very large, bold centered. Thick underline.
+
+FUNNEL: Large trapezoid shape, wide top → narrow bottom. ${Math.min(n, 5)} stages. Each stage: colored band (Red #D93025 → Orange #FF6B35 → Gold #F59E0B → Green #188038 → Blue #1A73E8), white label box inside with title + checkmarks. Hand-drawn irregular outlines 2.5px.
+
+SIDE ELEMENTS: Two large red curved arrows flanking funnel. 6-8 gold sparkle stars scattered. Percentage labels on sides showing conversion.
+
+COLORS: Stage colors gradient from warm to cool. Background #FFFEF5.
+
+FEEL: Warm, approachable, educational. The kind of funnel diagram that gets saved and shared.`;
   }
 
+  // ── CTA_VISUAL ──
   if (selectedTemplate === "CTA_VISUAL") {
-    return `${baseRules}\n\n${contentBlock}\n\nVISUAL STYLE: Promotional "Automate Everything" visual.
+    return `${baseRules}\n\n${contentBlock}\n\nVISUAL STYLE — "Indie Hacker Hero":
 ${formatHint}
-Light gray grid background.
-Center: minimalist icon.
-Floating folders with labels connected by dotted lines.
-Burnt orange #FF7A59 accents.
-"Indie Hacker" style, clean and impactful.`;
+
+CANVAS: Light gray #F5F5F5 with subtle dot grid.
+
+CENTER: Large minimalist asterisk/logo icon, orange #FF6B35. ${Math.min(n, 4)} floating rounded folder cards (blue #4A90D9) orbiting center, connected by dotted lines.
+
+TOP: Imposing large text with one word highlighted yellow #FFE066. Deep black #1A1A1B.
+
+ACCENTS: Orange #FF6B35 for badges and highlights. Rounded corners 8px. Clean structured layout.
+
+FEEL: ProductHunt launch page energy. Clean, impactful, makes you want to click.`;
   }
 
   // Default
-  return `${baseRules}\n\n${contentBlock}\n\nVISUAL STYLE: Clean professional educational infographic.
+  return `${baseRules}\n\n${contentBlock}\n\nVISUAL STYLE: Professional educational infographic.
 ${formatHint}
-High contrast, information-rich layout.`;
+Dense information layout. High contrast. Scroll-stopping design. Viral social media quality.`;
 }
 
 // ─── Post-process generated HTML ───
