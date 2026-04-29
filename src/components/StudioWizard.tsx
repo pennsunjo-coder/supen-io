@@ -981,34 +981,39 @@ Each variation includes: HOOK, PROBLEM, SOLUTION, PROOF, CTA, ON-SCREEN TEXT.`;
         {/* ═══════ WIZARD ═══════ */}
         {started && variations.length === 0 && (
           <motion.div key="wizard" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3, ease: "easeOut" }} className="flex-1 flex flex-col overflow-hidden">
-            <div className="px-5 pt-4 pb-3 shrink-0 border-b border-border/10">
-              <div className="flex items-center gap-2">
-                <button onClick={goBack} className="w-7 h-7 rounded-lg border border-border/30 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-colors">
+            {/* Compact header */}
+            <div className="flex items-center justify-between px-5 py-3 shrink-0 border-b border-border/10">
+              <div className="flex items-center gap-2.5">
+                <button onClick={goBack} className="w-7 h-7 rounded-lg hover:bg-accent/50 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
                   <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-semibold text-foreground">New content</span>
-                    {breadcrumb && (<><span className="text-muted-foreground/30 text-[10px]">/</span><span className="text-[11px] text-muted-foreground truncate">{breadcrumb}</span></>)}
-                  </div>
+                <div>
+                  <p className="text-xs font-bold text-foreground">Create Content</p>
+                  <p className="text-[10px] text-muted-foreground/50">
+                    {breadcrumb || "Start by choosing a platform"}
+                  </p>
                 </div>
-                <div className="flex items-center gap-1">
-                  {[0, 1, 2].map((i) => (<div key={i} className={cn("h-1 rounded-full transition-all duration-300", i <= step ? "bg-primary w-4" : "bg-accent/40 w-2")} />))}
-                </div>
+              </div>
+              <div className="flex items-center gap-1.5">
+                {[0, 1, 2].map((i) => (<div key={i} className={cn("h-1.5 rounded-full transition-all duration-300", i <= step ? "bg-primary w-6" : "bg-border/30 w-3")} />))}
               </div>
             </div>
             <div className="flex-1 overflow-y-auto">
-              <div className="max-w-lg mx-auto px-5 py-6">
+              <div className="max-w-lg mx-auto px-5 py-5">
                 <AnimatePresence mode="wait">
                   {step === 0 && (
                     <motion.div key="s0" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
-                      <p className="text-xs text-muted-foreground mb-3">Choose the network</p>
-                      <div className="flex flex-wrap gap-2">
+                      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/50 mb-3">Platform</p>
+                      <div className="grid grid-cols-3 gap-2.5">
                         {sortedPlatforms.map((p) => {
                           const isFav = favPlatformNames.includes(p.name);
+                          const isSelected = selectedPlatform?.id === p.id;
                           return (
-                            <button key={p.id} onClick={() => { setSelectedPlatform(p); setStep(1); supabase.auth.getUser().then(({ data: { user: u } }) => { if (u) hasStyleMemory(u.id, p.name).then(setStyleMemoryActive); }); }} className={cn("flex items-center gap-2 px-3.5 py-2.5 rounded-xl border text-muted-foreground hover:text-foreground hover:bg-accent/40 hover:border-border/50 active:scale-[0.97] transition-all", isFav ? "border-primary/20 bg-primary/[0.03]" : "border-border/30")}>
-                              <p.icon className="w-4 h-4" /><span className="text-xs font-medium">{p.name}</span>
+                            <button key={p.id} onClick={() => { setSelectedPlatform(p); setStep(1); supabase.auth.getUser().then(({ data: { user: u } }) => { if (u) hasStyleMemory(u.id, p.name).then(setStyleMemoryActive); }); }} className={cn("flex flex-col items-center gap-2 py-4 px-3 rounded-xl border-2 transition-all duration-150 active:scale-[0.97]", isSelected ? "border-primary bg-primary/[0.08] shadow-sm" : isFav ? "border-primary/20 bg-primary/[0.02] hover:border-primary/40" : "border-border/15 hover:border-border/40")}>
+                              <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", isSelected ? "bg-primary/15" : "bg-accent/30")}>
+                                <p.icon className="w-5 h-5" />
+                              </div>
+                              <span className="text-[11px] font-semibold text-foreground/80">{p.name}</span>
                             </button>
                           );
                         })}
@@ -1017,17 +1022,22 @@ Each variation includes: HOOK, PROBLEM, SOLUTION, PROOF, CTA, ON-SCREEN TEXT.`;
                   )}
                   {step === 1 && selectedPlatform && (
                     <motion.div key="s1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
-                      <p className="text-xs text-muted-foreground mb-3">Content type</p>
-                      <div className="flex flex-wrap gap-2">
+                      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/50 mb-3">Format</p>
+                      <div className="grid grid-cols-2 gap-2.5">
                         {selectedPlatform.formats.map((f) => (
-                          <button key={f} onClick={() => { setSelectedFormat(f); setStep(2); }} className="px-4 py-2 rounded-lg text-xs font-medium border border-border/30 text-muted-foreground hover:text-foreground hover:bg-accent/40 hover:border-border/50 active:scale-[0.97] transition-all">{f}</button>
+                          <button key={f} onClick={() => { setSelectedFormat(f); setStep(2); }} className={cn("flex items-center gap-3 p-3.5 rounded-xl border-2 text-left transition-all duration-150 active:scale-[0.97]", selectedFormat === f ? "border-primary bg-primary/[0.08]" : "border-border/15 hover:border-border/30")}>
+                            <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0", selectedFormat === f ? "bg-primary/20" : "bg-accent/30")}>
+                              <FileText className="w-4 h-4 text-muted-foreground/60" />
+                            </div>
+                            <span className="text-[13px] font-semibold text-foreground/90">{f}</span>
+                          </button>
                         ))}
                       </div>
                     </motion.div>
                   )}
                   {step === 2 && selectedPlatform && selectedFormat && (
                     <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
-                      <p className="text-xs text-muted-foreground mb-3">Your source material</p>
+                      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/50 mb-3">Source material</p>
                       <div className="flex gap-1 mb-4 p-0.5 rounded-lg bg-accent/20 border border-border/20">
                         {sourceModes.map((m) => (
                           <button key={m.id} onClick={() => { setSourceMode(m.id); setSourceText(""); setSelectedDocumentIds([]); }} className={cn("flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-[11px] font-medium transition-all", sourceMode === m.id ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
@@ -1155,9 +1165,9 @@ Each variation includes: HOOK, PROBLEM, SOLUTION, PROOF, CTA, ON-SCREEN TEXT.`;
                         disabled={
                           (sourceMode === "document" ? selectedDocumentIds.length === 0 : !sourceText.trim()) || isGenerating
                         }
-                        className="w-full h-11 mt-4 glow-sm gap-2 font-semibold text-sm"
+                        className="w-full h-12 mt-5 glow-sm gap-2.5 font-bold text-base shadow-lg"
                       >
-                        {isGenerating ? (<><RefreshCw className="w-4 h-4 animate-spin" /> Generating...</>) : (<><Sparkles className="w-4 h-4" /> Generate 5 variations</>)}
+                        {isGenerating ? (<><RefreshCw className="w-5 h-5 animate-spin" /> Generating...</>) : (<><Sparkles className="w-5 h-5" /> Generate 5 Variations</>)}
                       </Button>
 
                       {styleMemoryActive && !isGenerating && (
