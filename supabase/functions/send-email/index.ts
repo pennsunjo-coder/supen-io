@@ -148,6 +148,28 @@ function buildFeedbackEmail(name: string): string {
 </div></div></body></html>`;
 }
 
+// ── Waitlist ──
+
+function buildWaitlistEmail(name: string): string {
+  return `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${STYLES}</style></head>
+<body><div class="wr"><div class="cd">
+<div class="hd">${LOGO}<p class="sub">Liste d'acc&egrave;s prioritaire</p></div>
+<div class="bd">
+<div class="bg">${I.str} Acc&egrave;s Privil&eacute;gi&eacute;</div>
+<div class="gr">Tu es sur la liste, ${name} !</div>
+<p class="tx">Tu viens de rejoindre la liste d'acc&egrave;s prioritaire de <span class="hl">Supenli.io</span> &mdash; la plateforme de cr&eacute;ation de contenu viral aliment&eacute;e par l'IA.<br><br>Tu seras parmi les <strong>premiers</strong> &agrave; &ecirc;tre notifi&eacute; lors du lancement officiel.</p>
+<div class="ft">
+<div class="fi">${I.zap}<div class="fi-t"><strong>Acc&egrave;s anticip&eacute; garanti</strong><br>Tu recevras un email d&egrave;s que la plateforme sera disponible.</div></div>
+<div class="fi">${I.str}<div class="fi-t"><strong>Offres exclusives</strong><br>Les membres de la liste b&eacute;n&eacute;ficient de conditions sp&eacute;ciales au lancement.</div></div>
+<div class="fi">${I.heart}<div class="fi-t"><strong>On a h&acirc;te de te montrer &ccedil;a</strong><br>Supenli.io va transformer ta fa&ccedil;on de cr&eacute;er du contenu.</div></div>
+</div>
+<div class="dv"></div>
+<p class="tx" style="font-size:13px;margin-bottom:0;text-align:center">Des questions ? R&eacute;ponds directement &agrave; cet email.</p>
+</div>
+<div class="fo"><p>&copy; 2026 Supenli.io &middot; Tu re&ccedil;ois cet email car tu t'es inscrit sur notre liste d'attente.</p></div>
+</div></div></body></html>`;
+}
+
 // ── Main handler ──
 
 Deno.serve(async (req) => {
@@ -166,6 +188,7 @@ Deno.serve(async (req) => {
     else if (type === "reset-password") html = buildResetEmail(data?.resetLink || "#", data?.name);
     else if (type === "content-ready") html = buildContentReadyEmail(data?.name || "there", data?.platform || "Social Media", data?.topic || "ton sujet");
     else if (type === "feedback") html = buildFeedbackEmail(data?.name || "there");
+    else if (type === "waitlist") html = buildWaitlistEmail(data?.name || "there");
     else html = data?.html || "<p>No content</p>";
 
     const res = await fetch("https://api.resend.com/emails", {

@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { useTheme } from "@/contexts/ThemeContext";
 import { LogoFull } from "@/components/Logo";
 import WaitlistSection from "@/components/WaitlistSection";
+import { WaitlistPopup } from "@/components/WaitlistPopup";
 
 const ROTATING_WORDS = ["Viral", "Compelling", "Human", "Irresistible"];
 
@@ -195,6 +196,7 @@ const Index = () => {
   const { theme, toggleTheme } = useTheme();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [wordIdx, setWordIdx] = useState(0);
+  const [showWaitlist, setShowWaitlist] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -224,7 +226,7 @@ const Index = () => {
             <button onClick={toggleTheme} className="hidden sm:flex w-8 h-8 rounded-lg items-center justify-center text-muted-foreground hover:text-foreground transition-all" title={theme === "dark" ? "Light mode" : "Dark mode"}>
               {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
-            <Button size="sm" onClick={() => navigate("/login")} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-3 md:px-5 h-9 text-xs md:text-sm font-semibold shadow-sm">
+            <Button size="sm" onClick={() => setShowWaitlist(true)} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-3 md:px-5 h-9 text-xs md:text-sm font-semibold shadow-sm">
               Get started free
             </Button>
           </div>
@@ -280,11 +282,11 @@ const Index = () => {
           </motion.p>
 
           <motion.div variants={fadeUp} custom={3} className="flex gap-3 justify-center flex-wrap">
-            <Button size="lg" onClick={() => navigate("/login")} className="bg-foreground text-background hover:bg-foreground/90 h-11 px-7 text-sm font-medium rounded-lg group">
+            <Button size="lg" onClick={() => setShowWaitlist(true)} className="bg-foreground text-background hover:bg-foreground/90 h-11 px-7 text-sm font-medium rounded-lg group">
               Start Creating Free
               <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-0.5 transition-transform" />
             </Button>
-            <Button size="lg" variant="outline" onClick={() => navigate("/login")} className="bg-foreground/[0.06] border-foreground/10 hover:bg-foreground/10 text-foreground h-11 px-7 text-sm rounded-lg">
+            <Button size="lg" variant="outline" onClick={() => setShowWaitlist(true)} className="bg-foreground/[0.06] border-foreground/10 hover:bg-foreground/10 text-foreground h-11 px-7 text-sm rounded-lg">
               See how it works
             </Button>
           </motion.div>
@@ -672,7 +674,7 @@ const Index = () => {
                         ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90 glow-sm shadow-[3px_3px_0px_0px] shadow-primary/30 hover:shadow-[5px_5px_0px_0px] hover:translate-x-[-2px] hover:translate-y-[-2px]"
                         : "bg-background text-foreground border-border hover:bg-accent shadow-[3px_3px_0px_0px] shadow-border/50 hover:shadow-[5px_5px_0px_0px] hover:translate-x-[-2px] hover:translate-y-[-2px]"
                     }`}
-                    onClick={() => navigate("/login")}
+                    onClick={() => setShowWaitlist(true)}
                   >
                     {plan.cta} <ArrowRight className="w-4 h-4 ml-1" />
                   </Button>
@@ -742,7 +744,7 @@ const Index = () => {
           <p className="text-base text-muted-foreground mb-8 max-w-md mx-auto leading-relaxed">
             Join 2,500+ creators using Supenli.io to create content that converts.
           </p>
-          <Button size="lg" onClick={() => navigate("/login")} className="bg-foreground text-background hover:bg-foreground/90 font-bold group h-13 px-10 text-base rounded-xl">
+          <Button size="lg" onClick={() => setShowWaitlist(true)} className="bg-foreground text-background hover:bg-foreground/90 font-bold group h-13 px-10 text-base rounded-xl">
             Get started free
             <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
           </Button>
@@ -807,6 +809,8 @@ const Index = () => {
           </div>
         </div>
       </footer>
+
+      <WaitlistPopup isOpen={showWaitlist} onClose={() => setShowWaitlist(false)} />
     </div>
   );
 };
