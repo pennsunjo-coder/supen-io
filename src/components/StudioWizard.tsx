@@ -670,6 +670,24 @@ Each variation includes: HOOK, PROBLEM, SOLUTION, PROOF, CTA, ON-SCREEN TEXT.`;
         onContentGenerated(scored[0].content);
       }
 
+      // Send content-ready email (fire and forget)
+      supabase.auth.getUser().then(({ data: { user: u } }) => {
+        if (u?.email) {
+          supabase.functions.invoke("send-email", {
+            body: {
+              to: u.email,
+              subject: "Ton contenu Supenli.io est pr\u00eat ! \u2728",
+              type: "content-ready",
+              data: {
+                name: u.email.split("@")[0],
+                platform: selectedPlatform?.name || "Social Media",
+                topic: sanitizedInput.slice(0, 60),
+              },
+            },
+          }).catch(() => {});
+        }
+      });
+
       // Save without waiting for real scoring
       saveVariations(scored);
     } catch (err: unknown) {
