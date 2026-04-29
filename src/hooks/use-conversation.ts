@@ -15,20 +15,21 @@ export function useConversation() {
     if (!user) return;
 
     const load = async () => {
-      // Chercher la conversation la plus récente
-      const { data } = await supabase
-        .from("conversations")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("updated_at", { ascending: false })
-        .limit(1)
-        .single();
+      try {
+        const { data } = await supabase
+          .from("conversations")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .single();
 
-      if (data) {
-        const conv = data as Conversation;
-        setConversation(conv);
-        setMessages(conv.messages ?? []);
-      }
+        if (data) {
+          const conv = data as Conversation;
+          setConversation(conv);
+          setMessages(conv.messages ?? []);
+        }
+      } catch { /* table may not exist yet */ }
       setLoading(false);
     };
 

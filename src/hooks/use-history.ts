@@ -85,7 +85,7 @@ export function useHistory() {
         .select("id, platform, format, content, source_ids, created_at, viral_score, session_id, infographic_base64, infographic_html")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
-        .limit(300);
+        .limit(50);
 
       if (error) {
         // Fallback: columns may not exist yet
@@ -94,7 +94,7 @@ export function useHistory() {
           .select("id, platform, format, content, source_ids, created_at, viral_score")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false })
-          .limit(300);
+          .limit(50);
         data = fallback.data;
         error = fallback.error;
       }

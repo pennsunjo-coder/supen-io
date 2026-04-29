@@ -192,7 +192,7 @@ export function useSources() {
         .select("id, user_id, type, title, content, file_path, created_at")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
-        .limit(200);
+        .limit(50);
 
       if (!error && data) {
         const typed = data as Source[];
