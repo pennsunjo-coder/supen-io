@@ -674,101 +674,91 @@ export function buildDallEPrompt(
   content: string,
   platform: string,
   template?: string,
-  userName?: string,
 ): string {
   const selectedTemplate = template || detectTemplate(content);
   const ext = extractForDallE(content);
   const pl = platform?.toLowerCase() || "";
 
-  const isFacebook = pl.includes("facebook");
-  const isTwitter = pl.includes("twitter") || pl.includes("x (");
+  const baseRules = `CRITICAL RULES — NO EXCEPTIONS:
+1. ALL TEXT IN ENGLISH ONLY — no other language
+2. NO footer, NO signature, NO watermark, NO "follow for more", NO branding
+3. Every word FULLY READABLE — never cut off, never truncated, never blurry
+4. 50px safe margin on ALL sides — text NEVER touches edges
+5. Minimum 18px body text, 32px titles — HIGH CONTRAST always
+6. NO text overlapping other elements — clean visual hierarchy
+7. Fill 88% of canvas with information — DENSE but organized
+8. Use ONLY the exact content below — do NOT invent or add anything`;
 
-  // Master Full-Bleed constraints
-  const NEGATIVE = `STRICT NEGATIVE CONSTRAINTS (NEVER DO THIS):
-- NO spiral notebook rings or bindings
-- NO table surface or wooden desk background
-- NO perspective shadows or 3D mockup style
-- NO physical objects around the design
-- NO margins or white space outside the document edges
-- NO photographic "mockup" style — this is NOT a photo of a poster
-- NO camera angle or perspective distortion
-- NEVER show the infographic as an object IN a photo`;
+  const contentBlock = `CONTENT TYPE: ${ext.contentType}
+This is a ${ext.contentType} infographic — the visual must match this type.
 
-  const POSITIVE = `MANDATORY POSITIVE CONSTRAINTS:
-- Generate a FULL-BLEED Digital Infographic
-- The design MUST occupy 100% of the image frame, edge to edge
-- Like a high-quality PDF export — the design IS the file
-- Structured 2D FLAT DESIGN only
-- Background: clean digital off-white #FDFDFD (inside design only)
-- Typography: high-definition handwritten-style font, perfectly aligned on digital grid
-- Color coding: vivid Blue #4A90D9, Orange #F5A623, Green #5BA85B, Purple #7B2FBE per section
-- All icons: flat 2D, contextually relevant to content
-- Footer: clean horizontal digital banner at very bottom, perfectly centered
-- ALL text in ENGLISH only
-- Every word FULLY READABLE — minimum 18px body, 32px titles
-- Use ONLY the exact content below — do NOT invent or add anything`;
+MANDATORY CONTENT — USE WORD FOR WORD:
 
-  const formatSpec = isFacebook
-    ? `CANVAS: Perfect square 1080x1080px.\n${NEGATIVE}\n${POSITIVE}\nLAYOUT: Compact 3-section design. Large bold text. The square canvas IS the infographic.`
-    : isTwitter
-      ? `CANVAS: Wide landscape 1200x675px.\n${NEGATIVE}\n${POSITIVE}\nLAYOUT: Horizontal flow, 3 sections side by side.`
-      : `CANVAS: LinkedIn vertical 1236x1536px (4:5 ratio).\n${NEGATIVE}\n${POSITIVE}\nLAYOUT: Rich vertical design, 5-6 colored sections minimum. Use ALL the vertical space. Aspect Ratio: Vertical 4:5. Fill edge to edge like a PDF export.`;
+TITLE (display prominently): "${ext.title}"
+${ext.points.length > 0 ? `\nKEY POINTS (display ALL ${ext.points.length} points):\n${ext.points.map((p, i) => `${i + 1}. "${p}"`).join('\n')}` : ''}
+${ext.stats.length > 0 ? `\nKEY NUMBERS (highlight visually):\n${ext.stats.map(s => `• ${s}`).join('\n')}` : ''}
+${ext.quotes.length > 0 ? `\nPULL QUOTE (display in quote box):\n"${ext.quotes[0]}"` : ''}
 
-  const contentBlock = `CONTENT:
+CRITICAL: Use ONLY the text above. Do NOT invent, paraphrase, or add unrelated graphics. Every point must be FULLY READABLE with no text cut off.`;
 
-TITLE: "${ext.title}"
-${ext.points.length > 0 ? `\nKEY POINTS (display ALL ${ext.points.length}):\n${ext.points.map((p, i) => `${i + 1}. "${p}"`).join('\n')}` : ''}
-${ext.stats.length > 0 ? `\nSTATS: ${ext.stats.join(', ')}` : ''}
-${ext.quotes.length > 0 ? `\nPULL QUOTE: "${ext.quotes[0]}"` : ''}`;
+  let formatHint = "Portrait format.";
+  if (pl.includes("linkedin")) formatHint = "Portrait (1024x1536). LinkedIn-optimized.";
+  else if (pl.includes("facebook")) formatHint = "Square (1024x1024). Facebook-optimized.";
+  else if (pl.includes("instagram")) formatHint = "Portrait (1024x1536). Instagram-optimized.";
+  else if (pl.includes("twitter") || pl.includes("x (")) formatHint = "Landscape (1536x1024). X/Twitter-optimized.";
 
   const n = ext.points.length;
+  const AVOID = "\n\nAVOID: blurry, cluttered, messy layout, too many colors, realistic photo, 3D render, low resolution, bad typography, misaligned text, dark background (unless dark template), generic stock photo style.";
 
-  // ── ALL TEMPLATES → Unified Full-Bleed Digital Infographic ──
-  {
-    const COLORS = ['Blue #4A90D9', 'Green #5BA85B', 'Red #E05555', 'Orange #F5A623', 'Purple #7B2FBE'];
-    const ICONS = ['⚙️', '🎓', '🚀', '💡', '📊'];
+  // ── WHITEBOARD ──
+  if (selectedTemplate === "WHITEBOARD" || selectedTemplate === "UI_CARDS" || selectedTemplate === "AWA_CLASSIC") {
+    return `Generate a single image of a physical, hand-drawn infographic on a large whiteboard or notebook page.
 
-    const sectionsBlock = ext.points.slice(0, isFacebook ? 3 : 5).map((point, i) => {
-      const label = point.split(' ').slice(0, 5).join(' ').toUpperCase();
-      return `Section ${i + 1} (${COLORS[i % COLORS.length]}):
-Icon: ${ICONS[i % ICONS.length]}
-Title: "${label}"
-Content: "${point}"`;
-    }).join('\n\n');
-
-    const flashCards = ext.points.slice(0, 6).map((p, i) => {
-      const icons = ['💬', '📅', '📊', '🎯', '⚡', '✅'];
-      return `Card ${i + 1}: ${icons[i % icons.length]} "${p.split(' ').slice(0, 3).join(' ').toUpperCase()}" — "${p.split(' ').slice(0, 8).join(' ')}"`;
-    }).join('\n');
-
-    const footerCredit = userName ? `@${userName.replace(/\s+/g, '')}` : '@supenli.io';
-
-    return `${formatSpec}
+${baseRules}
 
 ${contentBlock}
 
-VISUAL DESIGN:
+CRUCIAL STYLE INSTRUCTIONS:
+- MEDIUM: The image must look like a photograph of a REAL whiteboard or large paper notepad
+- TEXTURE: All elements must look created by hand using colored marker pens (black, blue, red, green) and highlighters (yellow/orange). Lines should be slightly imperfect, wobbly, and have the texture of ink on a surface
+- NO DIGITAL FONTS: All text, headings, and bullet points must appear handwritten or hand-printed in marker pen
+- Use multi-colored markers for emphasis
+- Keep text large and legible
+- Make everything look hand-drawn with slight imperfections
+- Make it look like a photograph of an actual notebook page
+- Use simple language. Avoid technical terms unless necessary
+- Make it easy to scan in less than 10 seconds
+- Use a consistent structure throughout
+- Use realistic hand-drawn icons, logos and elements like the ultimate best design expert
+- ${formatHint}
 
-HEADER (top 12%):
-Title: "${ext.title.toUpperCase()}" in bold handwritten-style font.
-Orange highlight on 2-3 key words. Clean digital underline.
+LAYOUT (1080x1350 structured, top to bottom):
 
-SECTIONS (${isFacebook ? '3' : '5-6'} colored cards, middle 60%):
-${sectionsBlock}
+━━━ HEADER (top 15%) ━━━
+Large bold handwritten title in black marker: "${ext.title}"
+Underlined with thick orange highlighter stroke.
+2-3 key words highlighted with yellow/orange marker effect.
 
-Each section: colored left border, flat icon, bold title, bullet points.
-Small colored arrows between sections.
+━━━ MAIN CONTENT (70%) ━━━
+${ext.points.map((point, i) => {
+  const colors = ['blue marker', 'green marker', 'red marker', 'orange marker', 'purple marker'];
+  return `Section ${i + 1} (${colors[i % colors.length]} heading):
+- Hand-drawn numbered circle badge in ${colors[i % colors.length]}
+- Bold marker header: "${point.split(' ').slice(0, 4).join(' ').toUpperCase()}"
+- Handwritten body text: "${point}"
+- Yellow highlighter on 1-2 key words
+- Hand-drawn arrow → connecting to next section
+- Small hand-drawn icon (gear, lightbulb, star, checkmark) on the right`;
+}).join('\n\n')}
 
-KEY INSIGHTS (bottom 20%):
-Title: "KEY INSIGHTS" centered, underlined.
-${isFacebook ? '3' : '6'} mini flash cards in grid:
-${flashCards}
+${ext.stats.length > 0 ? `━━━ STATS ━━━\nHighlight these numbers prominently with colored marker circles:\n${ext.stats.join(', ')}` : ''}
 
-FOOTER (bottom 5%):
-Dark banner #1E293B with white text:
-"Follow ${footerCredit} for more | Save & Repost ♻️"
+━━━ FOOTER (15%) ━━━
+Wobbly hand-drawn divider line.
+Bottom: Key takeaway in bold centered marker text.
+Handwritten text: "Follow @supenli.io for more | Repost ♻️" in smaller marker style.
 
-AVOID: spiral bindings, table surface, wooden background, 3D mockup, camera angle, perspective distortion, notebook props, brown texture, margins outside design.`;
+QUALITY: Must look like a real photograph of handwritten marker notes on a whiteboard. Imperfect, human, warm, information-dense.${AVOID}`;
   }
 
   // ── PROCESS_STEPS ──
@@ -807,7 +797,7 @@ ${ext.points.map((point, i) => `STEP ${i + 1}:
 
 ━━━ FOOTER (15%) ━━━
 Green result box with key outcome text.
-"Follow ${userName ? '@' + userName : '@supenli.io'} for more | Repost ♻️" in small text.
+"Follow @supenli.io for more | Repost ♻️" in small text.
 
 QUALITY: Magazine editorial meets Apple product page. Premium SaaS aesthetic. Information-dense but scannable.${AVOID}`;
   }
@@ -848,7 +838,7 @@ ${ext.points.map((point, i) => `ITEM ${i + 1}:
 
 ━━━ FOOTER (12%) ━━━
 Pull quote box with most impactful insight (large quotation marks).
-"Follow ${userName ? '@' + userName : '@supenli.io'} for more | Repost ♻️" in small text.
+"Follow @supenli.io for more | Repost ♻️" in small text.
 
 QUALITY: Sophisticated, scroll-stopping, The Economist meets Instagram carousel.${AVOID}`;
   }
@@ -978,7 +968,7 @@ ${ext.points.map((point, i) => {
 
 ━━━ BOTTOM (15%) ━━━
 Yellow sticky note (tilted -3 degrees, drop shadow) with key insight.
-Handwritten: "Follow ${userName ? '@' + userName : '@supenli.io'} for more | Repost ♻️"
+Handwritten: "Follow @supenli.io for more | Repost ♻️"
 
 QUALITY: Must look like a real photograph of handwritten study notes. Warm, personal, creative, dense with information.${AVOID}`;
   }

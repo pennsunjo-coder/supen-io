@@ -30,32 +30,39 @@ function injectFontsInHtml(html: string): string {
   return html.replace("</head>", FONT_LINK + "</head>");
 }
 
-// ─── Platform-specific dimensions ───
+// ─── Platform-specific image sizes ───
 
-interface PlatformDims {
-  width: number;
-  height: number;
-  aspectRatio: string;
+interface ImageSizeConfig {
+  size: "1024x1024" | "1536x1024" | "1024x1536";
   label: string;
+  description: string;
 }
 
-function getDimensions(platform: string): PlatformDims {
+function getImageSize(platform: string): ImageSizeConfig {
   const p = platform?.toLowerCase() || "";
-  if (p.includes("facebook")) return { width: 1080, height: 1080, aspectRatio: "1:1", label: "Facebook Square" };
-  if (p.includes("twitter") || p.includes("x (")) return { width: 1200, height: 675, aspectRatio: "16:9", label: "X/Twitter Landscape" };
-  return { width: 1236, height: 1536, aspectRatio: "4:5", label: "LinkedIn Portrait" };
+
+  if (p.includes("twitter") || p.includes("x (")) {
+    return { size: "1536x1024", label: "Landscape", description: "Optimized for X/Twitter" };
+  }
+  if (p.includes("facebook")) {
+    return { size: "1024x1024", label: "Square", description: "Optimized for Facebook" };
+  }
+  // LinkedIn, Instagram, TikTok, default → portrait
+  return { size: "1024x1536", label: "Portrait", description: `Optimized for ${platform || "social media"}` };
 }
 
-// ─── Image Generation via Edge Function ───
+// ─── DALL-E 3 Image Generation via Edge Function (avoids CORS) ───
 
 async function generateWithOpenAI(
   prompt: string,
-  dims: PlatformDims,
+  imageSize: ImageSizeConfig,
 ): Promise<string> {
-  console.log("[Infographic] Calling Edge Function...", dims.label, dims.aspectRatio);
+  console.log("[Infographic] Calling DALL-E 3 via Edge Function...");
+  console.log("[Infographic] Size:", imageSize.size, imageSize.label);
+  console.log("[Infographic] Prompt length:", prompt.length);
 
   const { data, error } = await supabase.functions.invoke("generate-image", {
-    body: { prompt, aspectRatio: dims.aspectRatio, width: dims.width, height: dims.height },
+    body: { prompt, size: imageSize.size, quality: "high" },
   });
 
   if (error) {
@@ -358,7 +365,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
   const analysis = analyzeContent(content, platform);
   const dims = getFormatDimensions(analysis.format);
   const templateSelection = selectBestTemplate(content, platform, forcedTemplate);
-  const platformDims = getDimensions(platform);
+  const imageConfig = getImageSize(platform);
   const aspectRatio = dims.height / dims.width;
   // Scale infographic to fit ~480px wide modal content area
   const previewWidth = 480;
@@ -383,16 +390,10 @@ export default function InfographicModal({ open, onClose, content, platform, con
     try {
       assertOnline();
 
-      // Get user name for footer
-      let userName = "supenli.io";
-      try {
-        const { data: { user: authUser } } = await supabase.auth.getUser();
-        userName = authUser?.user_metadata?.full_name || authUser?.email?.split("@")[0] || "supenli.io";
-      } catch { /* use default */ }
-
       console.log("[Infographic] Content length:", content.length);
-      console.log("[Infographic] Template:", templateSelection.templateId, "| User:", userName);
-      const dallePrompt = buildDallEPrompt(content, platform, templateSelection.templateId, userName);
+      console.log("[Infographic] Content preview:", content.slice(0, 200));
+      console.log("[Infographic] Template:", templateSelection.templateId, "—", templateSelection.reason);
+      const dallePrompt = buildDallEPrompt(content, platform, templateSelection.templateId);
 
       if (IS_DEV) {
         console.log("=== DALL-E PROMPT ===");
@@ -406,14 +407,14 @@ export default function InfographicModal({ open, onClose, content, platform, con
       if (IS_DEV) console.log("[InfographicModal] Attempt 1 — generating with DALL-E 3...");
       let base64: string | null = null;
       try {
-        base64 = await generateWithOpenAI(dallePrompt, platformDims);
+        base64 = await generateWithOpenAI(dallePrompt, imageConfig);
       } catch (firstErr) {
         if (IS_DEV) console.warn("[InfographicModal] Attempt 1 failed:", firstErr);
 
         // Attempt 2: retry with simplified prompt
         if (IS_DEV) console.log("[InfographicModal] Attempt 2 — retrying...");
         try {
-          base64 = await generateWithOpenAI(dallePrompt + "\n\nIMPORTANT: Clean infographic. Pure white background. No table props.", platformDims);
+          base64 = await generateWithOpenAI(dallePrompt + "\n\nIMPORTANT: Generate a clean, readable infographic. All text in English. No footer or watermark.", imageConfig);
         } catch (secondErr) {
           if (IS_DEV) console.error("[InfographicModal] Attempt 2 also failed:", secondErr);
           throw secondErr;
@@ -482,7 +483,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
           const link = document.createElement("a");
           link.style.display = "none";
           link.href = `data:image/png;base64,${imageBase64}`;
-          link.download = `supenli-${platform.toLowerCase().replace(/[^a-z]/g, '')}-${Date.now()}.png`;
+          link.download = `supen-infographic-${Date.now()}.png`;
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
@@ -506,7 +507,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
           const link = document.createElement("a");
           link.style.display = "none";
           link.href = canvas.toDataURL("image/jpeg", 0.95);
-          link.download = `supenli-${platform.toLowerCase().replace(/[^a-z]/g, '')}-${Date.now()}.jpg`;
+          link.download = `supen-infographic-${Date.now()}.jpg`;
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
@@ -533,10 +534,10 @@ export default function InfographicModal({ open, onClose, content, platform, con
         link.style.display = "none";
         if (format === "jpeg") {
           link.href = canvas.toDataURL("image/jpeg", 0.95);
-          link.download = `supenli-${platform.toLowerCase().replace(/[^a-z]/g, '')}-${Date.now()}.jpg`;
+          link.download = `supen-infographic-${Date.now()}.jpg`;
         } else {
           link.href = canvas.toDataURL("image/png");
-          link.download = `supenli-${platform.toLowerCase().replace(/[^a-z]/g, '')}-${Date.now()}.png`;
+          link.download = `supen-infographic-${Date.now()}.png`;
         }
         document.body.appendChild(link);
         link.click();
@@ -767,8 +768,8 @@ export default function InfographicModal({ open, onClose, content, platform, con
                 {/* Platform format indicator */}
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <span>Format:</span>
-                  <span className="px-2 py-0.5 rounded-full bg-accent/30 font-medium">{platformDims.label}</span>
-                  <span className="text-muted-foreground/60">{platformDims.width}×{platformDims.height}px</span>
+                  <span className="px-2 py-0.5 rounded-full bg-accent/30 font-medium">{imageConfig.label}</span>
+                  <span className="text-muted-foreground/60">{imageConfig.description}</span>
                 </div>
 
                 {/* Style selector with visual previews */}
