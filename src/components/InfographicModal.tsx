@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import GenerationProgress, { INFOGRAPHIC_STEPS } from "@/components/GenerationProgress";
 import {
-  buildDallEPrompt,
+  buildInfographicPrompt,
   analyzeContent,
   getFormatDimensions,
   selectBestTemplate,
@@ -390,14 +390,12 @@ export default function InfographicModal({ open, onClose, content, platform, con
 
       console.log("[Infographic] Content length:", content.length);
       console.log("[Infographic] Content preview:", content.slice(0, 200));
-      console.log("[Infographic] Template:", templateSelection.templateId, "—", templateSelection.reason);
-      const dallePrompt = buildDallEPrompt(content, platform, templateSelection.templateId);
+      const infographicPrompt = buildInfographicPrompt(content, platform);
 
       if (IS_DEV) {
-        console.log("=== DALL-E PROMPT ===");
-        console.log("Template:", templateSelection.templateId);
-        console.log("Prompt length:", dallePrompt.length);
-        console.log(dallePrompt.slice(0, 600));
+        console.log("=== INFOGRAPHIC PROMPT ===");
+        console.log("Prompt length:", infographicPrompt.length);
+        console.log(infographicPrompt.slice(0, 600));
         console.log("=== END PROMPT ===");
       }
 
@@ -405,14 +403,14 @@ export default function InfographicModal({ open, onClose, content, platform, con
       if (IS_DEV) console.log("[InfographicModal] Attempt 1 — generating with DALL-E 3...");
       let base64: string | null = null;
       try {
-        base64 = await generateImage(dallePrompt);
+        base64 = await generateImage(infographicPrompt);
       } catch (firstErr) {
         if (IS_DEV) console.warn("[InfographicModal] Attempt 1 failed:", firstErr);
 
         // Attempt 2: retry with simplified prompt
         if (IS_DEV) console.log("[InfographicModal] Attempt 2 — retrying...");
         try {
-          base64 = await generateImage(dallePrompt + "\n\nIMPORTANT: Generate a clean, readable infographic. All text in English. No footer or watermark.");
+          base64 = await generateImage(infographicPrompt);
         } catch (secondErr) {
           if (IS_DEV) console.error("[InfographicModal] Attempt 2 also failed:", secondErr);
           throw secondErr;
@@ -770,36 +768,11 @@ export default function InfographicModal({ open, onClose, content, platform, con
                   <span className="text-muted-foreground/60">{imageConfig.description}</span>
                 </div>
 
-                {/* Style selector with visual previews */}
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Choose a style</p>
-                  <div className="grid grid-cols-3 gap-2">
-                    {STYLE_OPTIONS.map((opt) => {
-                      const active = styleChoice === opt.id;
-                      return (
-                        <button
-                          key={opt.id}
-                          type="button"
-                          onClick={() => setStyleChoice(opt.id)}
-                          className={cn(
-                            "group rounded-xl border p-2 transition-all flex flex-col gap-1.5",
-                            active
-                              ? "border-primary bg-primary/10 ring-1 ring-primary/40"
-                              : "border-border/40 bg-accent/20 hover:border-border/70 hover:bg-accent/40",
-                          )}
-                        >
-                          <div className="aspect-[3/2] w-full rounded-md overflow-hidden bg-white/80 border border-border/30 flex items-center justify-center">
-                            {STYLE_PREVIEWS[opt.id]}
-                          </div>
-                          <div className="flex items-center gap-1 px-0.5">
-                            <span className={cn("text-[11px] font-bold leading-tight", active && "text-primary")}>{opt.label}</span>
-                            {active && <Check className="w-3 h-3 text-primary flex-shrink-0" />}
-                          </div>
-                          <p className="text-[9px] text-muted-foreground leading-tight px-0.5">{opt.desc}</p>
-                        </button>
-                      );
-                    })}
-                  </div>
+                {/* AI-powered visual message */}
+                <div className="rounded-xl bg-accent/5 border border-border/10 p-4 text-center">
+                  <Sparkles className="w-5 h-5 text-primary/60 mx-auto mb-2" />
+                  <p className="text-sm font-semibold mb-1">AI-powered visual</p>
+                  <p className="text-xs text-muted-foreground">Our AI will create the perfect infographic based on your content.</p>
                 </div>
 
                 {/* Error banner + retry */}
@@ -808,13 +781,10 @@ export default function InfographicModal({ open, onClose, content, platform, con
                     <p className="text-xs text-destructive font-medium">{generationError}</p>
                     {(generationError.includes("overloaded") || generationError.includes("529")) && (
                       retryCountdown > 0 ? (
-                        <p className="text-xs text-muted-foreground font-mono">
-                          Auto-retry in {retryCountdown}s...
-                        </p>
+                        <p className="text-xs text-muted-foreground font-mono">Auto-retry in {retryCountdown}s...</p>
                       ) : (
                         <Button size="sm" variant="outline" className="h-8 gap-2 text-xs" onClick={handleRetryWithDelay}>
-                          <RefreshCw className="w-3.5 h-3.5" />
-                          Retry in 30s
+                          <RefreshCw className="w-3.5 h-3.5" /> Retry in 30s
                         </Button>
                       )
                     )}
@@ -826,8 +796,6 @@ export default function InfographicModal({ open, onClose, content, platform, con
                   <p className="text-xs text-muted-foreground leading-relaxed">{contentPreview}</p>
                 </div>
 
-                {/* API key warning — only shown if server-side key missing (will show after failed generation) */}
-
                 {/* Generate button */}
                 <Button
                   className="w-full h-14 text-base font-bold gap-3"
@@ -835,7 +803,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
                   disabled={retryCountdown > 0}
                 >
                   <Sparkles className="w-5 h-5" />
-                  {retryCountdown > 0 ? `Retry in ${retryCountdown}s...` : `Generate ${styleChoice === "auto" ? templateSelection.templateId : styleChoice} infographic →`}
+                  {retryCountdown > 0 ? `Retry in ${retryCountdown}s...` : "Generate Visual →"}
                 </Button>
               </div>
             )}
