@@ -17,46 +17,52 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { prompt, size, quality } = await req.json();
+    const { prompt } = await req.json();
 
     if (!prompt) {
       return json({ error: "Missing required field: prompt" }, 400);
     }
 
-    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
-    if (!OPENAI_API_KEY) {
-      throw new Error("OPENAI_API_KEY not configured");
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    if (!GEMINI_API_KEY) {
+      throw new Error("GEMINI_API_KEY not configured");
     }
 
-    console.log("[generate-image] Calling gpt-image-1, size:", size || "1024x1536");
+    const MODEL = "gemini-2.0-flash-exp";
+    console.log("[generate-image] Calling Gemini", MODEL, "prompt length:", prompt.length);
 
-    const response = await fetch("https://api.openai.com/v1/images/generations", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseModalities: ["IMAGE", "TEXT"],
+          },
+        }),
       },
-      body: JSON.stringify({
-        model: "gpt-image-1",
-        prompt,
-        n: 1,
-        size: size || "1024x1536",
-        quality: quality || "high",
-        output_format: "b64_json",
-      }),
-    });
+    );
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error("[generate-image] OpenAI error:", response.status, errText.slice(0, 300));
-      return json({ error: `OpenAI error (${response.status}): ${errText.slice(0, 200)}` }, response.status);
+      console.error("[generate-image] Gemini error:", response.status, errText.slice(0, 300));
+      return json({ error: `Gemini error (${response.status}): ${errText.slice(0, 200)}` }, response.status);
     }
 
     const data = await response.json();
-    const base64 = data.data?.[0]?.b64_json;
+
+    // Find the image part in the response
+    const imagePart = data.candidates?.[0]?.content?.parts
+      ?.find((p: { inlineData?: { mimeType?: string; data?: string } }) =>
+        p.inlineData?.mimeType?.startsWith("image/"));
+
+    const base64 = imagePart?.inlineData?.data;
 
     if (!base64) {
-      throw new Error("No image returned from gpt-image-1");
+      console.error("[generate-image] No image in Gemini response:", JSON.stringify(data).slice(0, 300));
+      throw new Error("No image returned from Gemini");
     }
 
     console.log("[generate-image] Success, base64 length:", base64.length);
