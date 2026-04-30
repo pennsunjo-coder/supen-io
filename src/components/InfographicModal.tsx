@@ -53,16 +53,24 @@ function getImageSize(platform: string): ImageSizeConfig {
 
 // ─── DALL-E 3 Image Generation via Edge Function (avoids CORS) ───
 
+function getAspectRatio(pl: string): string {
+  const p = pl?.toLowerCase() || "";
+  if (p.includes("facebook")) return "1:1";
+  if (p.includes("twitter") || p.includes("x (")) return "16:9";
+  return "3:4";
+}
+
 async function generateWithOpenAI(
   prompt: string,
   imageSize: ImageSizeConfig,
+  platformName?: string,
 ): Promise<string> {
-  console.log("[Infographic] Calling DALL-E 3 via Edge Function...");
-  console.log("[Infographic] Size:", imageSize.size, imageSize.label);
+  const ar = getAspectRatio(platformName || "");
+  console.log("[Infographic] Calling Edge Function... aspect:", ar);
   console.log("[Infographic] Prompt length:", prompt.length);
 
   const { data, error } = await supabase.functions.invoke("generate-image", {
-    body: { prompt, size: imageSize.size, quality: "high" },
+    body: { prompt, aspectRatio: ar },
   });
 
   if (error) {
@@ -413,14 +421,14 @@ export default function InfographicModal({ open, onClose, content, platform, con
       if (IS_DEV) console.log("[InfographicModal] Attempt 1 — generating with DALL-E 3...");
       let base64: string | null = null;
       try {
-        base64 = await generateWithOpenAI(dallePrompt, imageConfig);
+        base64 = await generateWithOpenAI(dallePrompt, imageConfig, platform);
       } catch (firstErr) {
         if (IS_DEV) console.warn("[InfographicModal] Attempt 1 failed:", firstErr);
 
         // Attempt 2: retry with simplified prompt
         if (IS_DEV) console.log("[InfographicModal] Attempt 2 — retrying...");
         try {
-          base64 = await generateWithOpenAI(dallePrompt + "\n\nIMPORTANT: Generate a clean, readable infographic. All text in English. No footer or watermark.", imageConfig);
+          base64 = await generateWithOpenAI(dallePrompt + "\n\nIMPORTANT: Generate a clean, readable infographic. All text in English. Pure white background. No table, no notebook props.", imageConfig, platform);
         } catch (secondErr) {
           if (IS_DEV) console.error("[InfographicModal] Attempt 2 also failed:", secondErr);
           throw secondErr;

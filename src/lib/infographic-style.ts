@@ -682,13 +682,13 @@ export function buildDallEPrompt(
 
   const baseRules = `CRITICAL RULES — NO EXCEPTIONS:
 1. ALL TEXT IN ENGLISH ONLY — no other language
-2. NO footer, NO signature, NO watermark, NO "follow for more", NO branding
-3. Every word FULLY READABLE — never cut off, never truncated, never blurry
-4. 50px safe margin on ALL sides — text NEVER touches edges
-5. Minimum 18px body text, 32px titles — HIGH CONTRAST always
-6. NO text overlapping other elements — clean visual hierarchy
-7. Fill 88% of canvas with information — DENSE but organized
-8. Use ONLY the exact content below — do NOT invent or add anything`;
+2. Every word FULLY READABLE — never cut off, never truncated, never blurry
+3. 50px safe margin on ALL sides — text NEVER touches edges
+4. Minimum 18px body text, 32px titles — HIGH CONTRAST always
+5. NO text overlapping other elements — clean visual hierarchy
+6. Fill 88% of canvas with information — DENSE but organized
+7. Use ONLY the exact content below — do NOT invent or add anything
+8. BACKGROUND: The infographic IS the entire canvas. Pure white #FFFFFF or warm white #FAFAFA background ONLY. NO table surface, NO wooden background, NO brown texture, NO notebook on a desk, NO physical props. Fill the ENTIRE canvas edge to edge with the design.`;
 
   const contentBlock = `CONTENT TYPE: ${ext.contentType}
 This is a ${ext.contentType} infographic — the visual must match this type.
