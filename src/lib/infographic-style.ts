@@ -703,7 +703,7 @@ function detectTemplate(content: string): string {
   return "WHITEBOARD";
 }
 
-// ─── DALL-E prompt builder — reference template system ───
+// ─── Infographic Architect prompt builder ───
 
 export function buildInfographicPrompt(
   content: string,
@@ -712,66 +712,82 @@ export function buildInfographicPrompt(
   const ext = extractKeyPoints(content);
   const extD = extractForDallE(content);
 
-  // Build main sections from structured content or flat points
-  const mainSections = ext.sections.length >= 2
-    ? ext.sections.slice(0, 5)
-    : ext.points.slice(0, 5).map((p) => ({
-        header: (p.title || "").toUpperCase() || extD.points[ext.points.indexOf(p)]?.split(' ').slice(0, 5).join(' ').toUpperCase() || "",
-        bullets: [p.body || extD.points[ext.points.indexOf(p)] || ""],
+  // Build structured sections
+  const hasSections = ext.sections.length >= 2 && ext.sections.some(s => s.bullets.length > 0);
+  const mainSections = hasSections
+    ? ext.sections.slice(0, 4)
+    : extD.points.slice(0, 4).map((p) => ({
+        header: p.split(' ').slice(0, 5).join(' ').toUpperCase(),
+        bullets: [p],
       }));
 
-  const colors = ['blue', 'green', 'red', 'orange', 'purple'];
+  const COLORS = [
+    { color: 'Blue', hex: '#4A90D9', icon: 'gear ⚙' },
+    { color: 'Green', hex: '#5BA85B', icon: 'graduation cap 🎓' },
+    { color: 'Red', hex: '#E05555', icon: 'robot 🤖' },
+    { color: 'Orange', hex: '#F5A623', icon: 'lightbulb 💡' },
+  ];
 
-  const sectionsDescription = mainSections
-    .map((s, i) => `${i + 1}. A ${colors[i % colors.length]} box '${s.header}'`)
+  const sectionsBlock = mainSections.map((section, i) => {
+    const c = COLORS[i % COLORS.length];
+    const bullets = (section.bullets || [])
+      .slice(0, 4)
+      .map(b => `- ${b.split(' ').slice(0, 8).join(' ')}`)
+      .join('\n');
+    return `BLOCK ${i + 1} (Color: ${c.color} ${c.hex}):
+Icon: ${c.icon}
+Title: ${section.header}
+Bullet list:
+${bullets}`;
+  }).join('\n\n');
+
+  // Bottom flash cards (deduplicated)
+  const allPoints = [...extD.points, ...mainSections.flatMap(s => s.bullets || [])]
+    .filter((v, i, a) => a.indexOf(v) === i);
+  const icons = ['💬', '📅', '📊', '🎯', '🚀', '✅'];
+  const flashCards = allPoints.slice(0, 6)
+    .map((p, i) => `Card ${i + 1}: "${p.split(' ').slice(0, 3).join(' ')}" (Icon: ${icons[i % icons.length]})`)
     .join(', ');
 
-  const bulletsPerSection = mainSections
-    .map((s, i) => {
-      const bullets = (s.bullets || []).slice(0, 3).map(b => `• ${b}`).join(' ');
-      return `Section ${i + 1} (${colors[i % colors.length]}): ${bullets}`;
-    })
-    .join('. ');
-
-  const bottomBoxDetails = extD.points.slice(0, 6)
-    .map((p, i) => `Box ${i + 1}: '${p.split(' ').slice(0, 3).join(' ').toUpperCase()}' — "${p.slice(0, 100)}"`)
-    .join('. ');
+  const footerText = extD.stats.length > 0
+    ? `Key stat: ${extD.stats[0]}. Apply this framework to get results.`
+    : 'Apply this framework consistently. Results follow action.';
 
   const pl = platform?.toLowerCase() || "";
-  const formatNote = pl.includes('linkedin') ? 'Vertical poster format optimized for LinkedIn feed.'
-    : pl.includes('facebook') ? 'Square format optimized for Facebook.'
-    : pl.includes('twitter') || pl.includes('x (') ? 'Landscape format optimized for X/Twitter.'
-    : 'Vertical poster format.';
+  const formatNote = pl.includes('linkedin') ? 'LinkedIn vertical format (4:5). Professional audience.'
+    : pl.includes('facebook') ? 'Facebook square format (1:1). Engaging feed post.'
+    : pl.includes('twitter') || pl.includes('x (') ? 'X/Twitter landscape format (16:9). Viral tweet visual.'
+    : 'Vertical format (4:5). Social media optimized.';
 
-  // Deduplicate for bottom boxes
-  const allPoints = [...extD.points, ...mainSections.flatMap(s => s.bullets)]
-    .filter((v, i, a) => a.indexOf(v) === i);
+  return `Generate a PROFESSIONAL infographic for ${platform || 'social media'}.
 
-  const bottomLabels = allPoints.slice(0, 6)
-    .map(p => `'${p.split(' ').slice(0, 3).join(' ').toUpperCase()}'`)
-    .join(', ');
+MAIN TITLE (top, large bold hand-drawn letters, orange underline):
+"${ext.title.toUpperCase()}"
 
-  const bottomBoxesFull = allPoints.slice(0, 6)
-    .map((p, i) => `Box ${i + 1}: '${p.split(' ').slice(0, 4).join(' ').toUpperCase()}' — "${p.length > 120 ? p.slice(0, 117) + '...' : p}"`)
-    .join('. ');
+LAYOUT: Divide the image into ${mainSections.length} large colored vertical blocks on the LEFT side, each with a number, icon, and colored background. On the RIGHT side of each block, show the corresponding bullet list.
 
-  return `A high-quality educational infographic on a clean white whiteboard background.
+${sectionsBlock}
 
-The title at the top is '${ext.title}' in bold, black hand-drawn style capital letters. Highlight 2-3 key words in the title with a soft orange marker effect.
+BOTTOM ZONE — "KEY INSIGHTS" SECTION:
+Add a horizontal divider line.
+Section title: "KEY INSIGHTS" (bold, centered)
+Below: ${Math.min(allPoints.length, 6)} mini flash-cards in a 2-3 column grid:
+${flashCards}
 
-The layout is divided into ${mainSections.length} main color-coded sections on the left: ${sectionsDescription}. Each box has a corresponding arrow pointing to a bulleted list of instructions on the right side.
+FOOTER (bottom, colored background strip):
+Text: "${footerText}"
+Style: Bold white text on dark colored background.
+Small: "Follow @supenli.io for more | Repost"
 
-Bullet point details for each section: ${bulletsPerSection}.
+${extD.quotes.length > 0 ? `PULL QUOTE: Display in a highlighted box: "${extD.quotes[0]}"` : ''}
 
-Below these sections, a horizontal divider line separates the top from a bottom section titled 'KEY INSIGHTS'. The bottom part contains ${Math.min(allPoints.length, 6)} distinct text boxes with labels like ${bottomLabels}. Full content per box: ${bottomBoxesFull}.
+FORMAT: ${formatNote}
 
-${extD.stats.length > 0 ? `Highlight these key statistics prominently within the infographic: ${extD.stats.join(', ')}.` : ''}${extD.quotes.length > 0 ? ` Include this pull quote in a highlighted box: "${extD.quotes[0]}"` : ''}
+TEXT STYLE: Clean sans-serif, high contrast, all text human-readable.
+All bullet points: maximum 8 words each.
+All titles: maximum 6 words, ALL CAPS.
 
-Use a mix of professional and hand-drawn aesthetics with small icons like gears, a graduation cap, books, arrows, checkmarks, and lightbulbs.
-
-Visual style requirements: Clean white background #FFFFFF with subtle drop shadow border (like a real whiteboard). All titles and box labels in bold, black handwritten-style capital letters. Consistent black outlines on ALL elements (boxes, arrows, dividers). Pastel color fills: blue #4A90D9, green #5BA85B, red #E05555, orange #F5A623, purple #7B2FBE. Arrows between left boxes and right bullet lists must be clearly visible and directional. Simple flat 2D icons only — no realistic photos, no 3D renders. ALL text must be FULLY READABLE — minimum 16px equivalent, never cut off at edges. Safe margin: minimum 60px on ALL sides. Even spacing, perfectly aligned. High contrast between text and backgrounds. ${formatNote} ALL text in ENGLISH only. Include "Follow @supenli.io for more | Repost" at the bottom.
-
-STRICTLY AVOID: blurry output, messy layout, cluttered design, too many colors, realistic photography, 3D rendering, low resolution, bad typography, misaligned text, overlapping elements, dark background, watermarks, cut-off text, generic stock photo aesthetic.`;
+MANDATORY: Every block has its icon clearly visible. All arrows between left blocks and right content are visible and directional. Zero placeholder squares or raw data. 100% human-readable text throughout.`;
 }
 
 // Keep old name as alias for backward compatibility

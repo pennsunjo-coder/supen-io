@@ -11,6 +11,27 @@ function json(data: unknown, status = 200) {
   });
 }
 
+// System prompt — prepended to every generation request
+const SYSTEM_PROMPT = `You are an expert information designer and UI/UX specialist for social media.
+
+ROLE: Transform provided text into a premium, instantly readable visual infographic.
+
+VISUAL STYLE — MANDATORY:
+- Professional hand-drawn style with clean crisp lines
+- All information in neat colored boxes/containers with clear borders
+- White clean background #FFFFFF
+- Dynamic color palette: blue #4A90D9, green #5BA85B, red #E05555, orange #F5A623
+
+STRICT RULES — NO EXCEPTIONS:
+1. FORBIDDEN: raw CSS code, layout percentages, black placeholder squares, Lorem Ipsum
+2. REQUIRED: Every text section has a clear icon (gear, graduation cap, book, robot, arrow)
+3. REQUIRED: Text in clear human language — short, punchy, maximum 8 words per bullet
+4. REQUIRED: Colored containers with black outlines for every section
+5. REQUIRED: Visible directional arrows between left boxes and right content
+6. REQUIRED: Bottom conclusion/footer zone with key takeaway
+7. REQUIRED: All text 100% readable, never cut off, minimum font size 16px
+8. FORBIDDEN: Dark backgrounds, 3D renders, realistic photos, watermarks`;
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -28,8 +49,11 @@ Deno.serve(async (req) => {
       throw new Error("GEMINI_API_KEY not configured");
     }
 
+    // Combine system prompt + user prompt
+    const fullPrompt = `${SYSTEM_PROMPT}\n\n---\n\n${prompt}`;
+
     const MODEL = "gemini-2.0-flash-exp";
-    console.log("[generate-image] Calling Gemini", MODEL, "prompt length:", prompt.length);
+    console.log("[generate-image] Calling Gemini", MODEL, "prompt length:", fullPrompt.length);
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}`,
@@ -37,7 +61,7 @@ Deno.serve(async (req) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
+          contents: [{ parts: [{ text: fullPrompt }] }],
           generationConfig: {
             responseModalities: ["IMAGE", "TEXT"],
           },
@@ -53,7 +77,6 @@ Deno.serve(async (req) => {
 
     const data = await response.json();
 
-    // Find the image part in the response
     const imagePart = data.candidates?.[0]?.content?.parts
       ?.find((p: { inlineData?: { mimeType?: string; data?: string } }) =>
         p.inlineData?.mimeType?.startsWith("image/"));
@@ -61,7 +84,7 @@ Deno.serve(async (req) => {
     const base64 = imagePart?.inlineData?.data;
 
     if (!base64) {
-      console.error("[generate-image] No image in Gemini response:", JSON.stringify(data).slice(0, 300));
+      console.error("[generate-image] No image in response:", JSON.stringify(data).slice(0, 300));
       throw new Error("No image returned from Gemini");
     }
 

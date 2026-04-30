@@ -394,8 +394,8 @@ export default function InfographicModal({ open, onClose, content, platform, con
 
       if (IS_DEV) {
         console.log("=== INFOGRAPHIC PROMPT ===");
-        console.log("Prompt length:", infographicPrompt.length);
-        console.log(infographicPrompt.slice(0, 600));
+        console.log(infographicPrompt);
+        console.log("=== END PROMPT (", infographicPrompt.length, "chars) ===");
         console.log("=== END PROMPT ===");
       }
 
