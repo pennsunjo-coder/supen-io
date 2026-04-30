@@ -20,20 +20,11 @@ interface Point {
   body: string;
 }
 
-interface Section {
-  header: string;
-  bullets: string[];
-}
-
 interface ExtractionResult {
   title: string;
   badge: string;
   subtitle: string;
   points: Point[];
-  sections: Section[];
-  stats: string[];
-  quotes: string[];
-  contentType: string;
   proTip: string;
 }
 
@@ -195,79 +186,55 @@ function detectBadge(content: string): string {
 }
 
 export function extractKeyPoints(content: string): ExtractionResult {
-  const lines = content.split(/\n+/).map(l => l.trim()).filter(l => l.length > 5);
+  const lines = content.split("\n").map(l => l.trim()).filter(l => l.length > 5);
 
-  const title = (lines[0] || "Key Insights")
-    .replace(/^#+\s*/, '')
-    .replace(/^\*+\s*/, '')
-    .replace(/^Post \d+:\s*/i, '')
-    .slice(0, 65);
+  const title = (lines[0]?.slice(0, 70) || "Key Insights").toUpperCase();
   const badge = detectBadge(content);
   const subtitle = lines[1]?.slice(0, 100) || "";
 
-  // Extract sections with headers and bullets
-  const sections: Section[] = [];
-  let currentSection: Section = { header: '', bullets: [] };
+  const points: Point[] = [];
 
-  for (const line of lines.slice(1)) {
-    const isHeader = (
-      /^(STEP|PROMPT|SECTION|PART|PHASE|RULE|TIP|WAY|METHOD)\s*\d*/i.test(line) ||
-      /^[A-Z\s]{10,}$/.test(line) ||
-      /^\d+[\.\)]\s+[A-Z]/.test(line) ||
-      line.startsWith('##')
-    ) && line.length < 60;
-
-    if (isHeader && currentSection.header) {
-      sections.push({ ...currentSection });
-      currentSection = { header: line.replace(/^#+\s*/, ''), bullets: [] };
-    } else if (isHeader) {
-      currentSection.header = line.replace(/^#+\s*/, '');
-    } else if (line.length > 15 && !/^https?:\/\//.test(line)) {
-      const cleaned = line
-        .replace(/^[\d]+[\.\)\/]\s*/, '')
-        .replace(/^[▸→•\-\*☑✦↳]\s*/, '')
-        .replace(/\*\*/g, '')
-        .trim();
-      if (cleaned.length > 10) {
-        currentSection.bullets.push(cleaned);
+  // Pass 1: numbered/bulleted lines
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (/^[\d\.\-•→\*▸]\s*/.test(trimmed)) {
+      const text = trimmed.replace(/^[\d\.\-•→\*▸\s]+/, "").trim();
+      if (text.length > 10 && points.length < 9) {
+        const colonSplit = text.split(/[:—–]/);
+        if (colonSplit.length >= 2) {
+          points.push({ title: colonSplit[0].trim().slice(0, 50), body: colonSplit.slice(1).join(":").trim().slice(0, 200) });
+        } else {
+          points.push({ title: text.slice(0, 45), body: text.slice(45, 200).trim() });
+        }
       }
     }
   }
-  if (currentSection.bullets.length > 0 || currentSection.header) {
-    sections.push(currentSection);
-  }
 
-  // Points (flat list fallback)
-  const points: Point[] = [];
-  const flatLines = lines.slice(1)
-    .filter(l => l.length > 20 && !/^https?:\/\//.test(l))
-    .map(l => l.replace(/^[\d]+[\.\)\/]\s*/, '').replace(/^[▸→•\-\*☑✦↳]\s*/, '').replace(/\*\*/g, '').trim())
-    .filter(l => l.length > 15)
-    .slice(0, 8);
-
-  for (const text of flatLines) {
-    const colonSplit = text.split(/[:—–]/);
-    if (colonSplit.length >= 2) {
-      points.push({ title: colonSplit[0].trim().slice(0, 50), body: colonSplit.slice(1).join(":").trim().slice(0, 200) });
-    } else {
-      points.push({ title: text.slice(0, 45), body: text.slice(45, 200).trim() });
+  // Pass 2: sentences
+  if (points.length < 5) {
+    const sentences = content.match(/[^.!?\n]+[.!?]+/g) || [];
+    for (const s of sentences) {
+      const trimmed = s.trim();
+      if (trimmed.length > 20 && points.length < 8) {
+        points.push({ title: trimmed.slice(0, 45), body: trimmed.slice(45, 200).trim() });
+      }
     }
   }
 
-  // Stats
-  const stats = (content.match(
-    /\d+[\.,]?\d*\s*(%|€|\$|K|M|x|×|days?|months?|years?|hours?|followers?|impressions?|views?|steps?|ways?)/gi,
-  ) || []).slice(0, 4);
+  // Pass 3: paragraphs
+  if (points.length < 5) {
+    const chunks = content.split(/\n\n+/).filter(c => c.trim().length > 20);
+    for (const chunk of chunks) {
+      if (points.length < 8) {
+        const t = chunk.trim();
+        points.push({ title: t.slice(0, 45), body: t.slice(45, 200).trim() });
+      }
+    }
+  }
 
-  // Quotes
-  const quotes = (content.match(/["«»"]([^"«»"]{10,80})["«»"]/g) || [])
-    .map(q => q.replace(/["«»"]/g, '').trim())
-    .slice(0, 2);
-
-  const contentType = detectContentType(content);
   const proTip = generateProTip(content);
 
-  return { title, badge, subtitle, points: points.slice(0, 8), sections, stats, quotes, contentType, proTip };
+  return { title, badge, subtitle, points: points.slice(0, 8), proTip };
 }
 
 // ─── Enhanced extraction for DALL-E prompts ───
@@ -701,7 +668,7 @@ function detectTemplate(content: string): string {
   return "WHITEBOARD";
 }
 
-// ─── DALL-E prompt builder — reference template system ───
+// ─── DALL-E prompt builder — "WOW" level prompts ───
 
 export function buildDallEPrompt(
   content: string,
@@ -710,7 +677,6 @@ export function buildDallEPrompt(
 ): string {
   const selectedTemplate = template || detectTemplate(content);
   const ext = extractForDallE(content);
-  const kp = extractKeyPoints(content);
   const pl = platform?.toLowerCase() || "";
 
   const baseRules = `CRITICAL RULES — NO EXCEPTIONS:
@@ -744,105 +710,55 @@ CRITICAL: Use ONLY the text above. Do NOT invent, paraphrase, or add unrelated g
   const n = ext.points.length;
   const AVOID = "\n\nAVOID: blurry, cluttered, messy layout, too many colors, realistic photo, 3D render, low resolution, bad typography, misaligned text, dark background (unless dark template), generic stock photo style.";
 
-  // ── UNIFIED DIGITAL NATIVE TEMPLATE (V2) ──
-  // All templates route here — single premium digital document
-  {
-    const SECTION_STYLES = [
-      { color: 'Indigo', bg: '#EEF2FF', border: '#4338CA', icon: '⚙️' },
-      { color: 'Emerald', bg: '#ECFDF5', border: '#059669', icon: '🎓' },
-      { color: 'Rose', bg: '#FFF1F2', border: '#E11D48', icon: '🚀' },
-      { color: 'Amber', bg: '#FFFBEB', border: '#D97706', icon: '💡' },
-      { color: 'Blue', bg: '#EFF6FF', border: '#2563EB', icon: '📊' },
-    ];
+  // ── WHITEBOARD ──
+  if (selectedTemplate === "WHITEBOARD" || selectedTemplate === "UI_CARDS" || selectedTemplate === "AWA_CLASSIC") {
+    return `Generate a single image of a physical, hand-drawn infographic on a large whiteboard or notebook page.
 
-    const hasSections = kp.sections.length >= 2 && kp.sections.some(s => s.bullets.length > 0);
+${baseRules}
 
-    const mainSections = hasSections
-      ? kp.sections.slice(0, 5)
-      : ext.points.slice(0, 5).map((point) => ({
-          header: point.split(' ').slice(0, 5).join(' ').toUpperCase(),
-          bullets: [point],
-        }));
+${contentBlock}
 
-    const sectionsBlock = mainSections.map((section, i) => {
-      const s = SECTION_STYLES[i % SECTION_STYLES.length];
-      const bullets = (section.bullets || [])
-        .slice(0, 4)
-        .map(b => `• ${b.split(' ').slice(0, 12).join(' ')}`)
-        .join('\n');
-      return `SECTION ${i + 1} — ${s.color.toUpperCase()} CARD:
-Background: ${s.bg}, Border-left: 4px solid ${s.border}
-Icon: ${s.icon} (semantic, positioned next to number)
-Title (Nunito 800, color ${s.border}): "${section.header}"
-Content (Nunito 400, #1E293B):
-${bullets}`;
-    }).join('\n\n');
+CRUCIAL STYLE INSTRUCTIONS:
+- MEDIUM: The image must look like a photograph of a REAL whiteboard or large paper notepad
+- TEXTURE: All elements must look created by hand using colored marker pens (black, blue, red, green) and highlighters (yellow/orange). Lines should be slightly imperfect, wobbly, and have the texture of ink on a surface
+- NO DIGITAL FONTS: All text, headings, and bullet points must appear handwritten or hand-printed in marker pen
+- Use multi-colored markers for emphasis
+- Keep text large and legible
+- Make everything look hand-drawn with slight imperfections
+- Make it look like a photograph of an actual notebook page
+- Use simple language. Avoid technical terms unless necessary
+- Make it easy to scan in less than 10 seconds
+- Use a consistent structure throughout
+- Use realistic hand-drawn icons, logos and elements like the ultimate best design expert
+- ${formatHint}
 
-    const allPoints = [...ext.points, ...mainSections.flatMap(s => s.bullets || [])]
-      .filter((v, i, a) => a.indexOf(v) === i).slice(0, 6);
+LAYOUT (1080x1350 structured, top to bottom):
 
-    const flashCards = allPoints.map((p, i) => {
-      const icons = ['💬', '📅', '📊', '🎯', '⚡', '✅'];
-      const label = p.split(' ').slice(0, 3).join(' ').toUpperCase();
-      const body = p.split(' ').slice(0, 8).join(' ');
-      return `Card ${i + 1}: ${icons[i % icons.length]} "${label}" — "${body}"`;
-    }).join('\n');
+━━━ HEADER (top 15%) ━━━
+Large bold handwritten title in black marker: "${ext.title}"
+Underlined with thick orange highlighter stroke.
+2-3 key words highlighted with yellow/orange marker effect.
 
-    const footerText = ext.stats.length > 0
-      ? `${ext.stats[0]} | Save this. Apply this. Share it.`
-      : 'Save this framework. Apply it. Share it with your network.';
+━━━ MAIN CONTENT (70%) ━━━
+${ext.points.map((point, i) => {
+  const colors = ['blue marker', 'green marker', 'red marker', 'orange marker', 'purple marker'];
+  return `Section ${i + 1} (${colors[i % colors.length]} heading):
+- Hand-drawn numbered circle badge in ${colors[i % colors.length]}
+- Bold marker header: "${point.split(' ').slice(0, 4).join(' ').toUpperCase()}"
+- Handwritten body text: "${point}"
+- Yellow highlighter on 1-2 key words
+- Hand-drawn arrow → connecting to next section
+- Small hand-drawn icon (gear, lightbulb, star, checkmark) on the right`;
+}).join('\n\n')}
 
-    return `Generate a PREMIUM digital native infographic HTML document.
+${ext.stats.length > 0 ? `━━━ STATS ━━━\nHighlight these numbers prominently with colored marker circles:\n${ext.stats.join(', ')}` : ''}
 
-CRITICAL: This is a FLAT DIGITAL DOCUMENT — NOT a photograph of a physical object.
-NO notebook, NO spiral bindings, NO table surface, NO camera perspective, NO physical shadows.
-The output IS the document itself — clean, downloadable, professional.
+━━━ FOOTER (15%) ━━━
+Wobbly hand-drawn divider line.
+Bottom: Key takeaway in bold centered marker text.
+Handwritten text: "Follow @supenli.io for more | Repost ♻️" in smaller marker style.
 
-CANVAS: 1080px × 1350px fixed. Background: #F8F8F8 (warm off-white).
-
-━━━ HEADER ZONE (top 12%) ━━━
-Subtle gradient banner (#F0F4FF → #F8F8F8).
-Title in Caveat 700, 48px, centered, color #1E293B:
-"${kp.title.toUpperCase()}"
-Key words highlighted with clean digital #FEF08A background.
-Small subtitle below: "${platform || 'Social Media'} Infographic"
-
-━━━ SECTIONS ZONE (middle 60%) ━━━
-${mainSections.length} content cards stacked vertically, full width.
-Each card: white #FFFFFF, border-radius 12px, border 2px solid #E2E8F0, box-shadow 0 2px 8px rgba(0,0,0,0.06).
-Left accent border 4px in section color. Generous padding 24px.
-
-${sectionsBlock}
-
-Small colored arrows (→) between cards, centered.
-
-━━━ KEY INSIGHTS ZONE (20%) ━━━
-Title: "KEY INSIGHTS" — Caveat 700, 28px, centered, with thin underline.
-2-3 column CSS grid of mini flash cards.
-
-${flashCards}
-
-Each card: white bg, border 2px solid #E2E8F0, border-radius 8px, padding 16px.
-
-━━━ FOOTER BANNER (5%) ━━━
-Background: #1E293B (dark slate). Border-radius: 12px.
-Text (white, Nunito 700, centered): "${footerText}"
-Small: "Follow @supenli.io for more | Repost ♻️"
-
-━━━ TYPOGRAPHY ━━━
-- Titles: Caveat 700 (warm hand-lettered feel)
-- Body: Nunito 400/700 (clean professional)
-- Section titles: alternate ${SECTION_STYLES.map(s => `${s.color} ${s.border}`).join(', ')}
-- Body text: #1E293B (dark slate, NOT pure black)
-- Highlights: #FEF08A background (clean digital, not handwritten)
-- Line-height: 1.6 on all body text
-
-━━━ RULES ━━━
-- ALL ${n} content points must appear, fully readable
-- Icons: real Unicode emoji, semantically matched to content
-- Font sizes: Title 48px, Section titles 22px, Body 15px, Cards 14px
-- Zero physical simulation. Zero code visible as text.
-- Output: complete self-contained HTML. Start with <!DOCTYPE html>.`;
+QUALITY: Must look like a real photograph of handwritten marker notes on a whiteboard. Imperfect, human, warm, information-dense.${AVOID}`;
   }
 
   // ── PROCESS_STEPS ──
@@ -1107,18 +1023,9 @@ ${ext.points.slice(0, 4).map((point, i) => `Folder ${i + 1}: "${point.slice(0, 3
   }
 
   // Default
-  return `Create a HIGH-QUALITY professional educational infographic.
-
-TITLE: "${ext.title}"
-${ext.points.map((p, i) => `Point ${i + 1}: "${p}"`).join('\n')}
-
-STYLE:
-- Clean white background. Bold readable typography.
-- Organized sections with clear hierarchy.
-- ${formatHint}
-- Professional, high contrast. ALL text fully visible.
-
-AVOID: blurry, cluttered, 3D, photos, misaligned text.`;
+  return `${baseRules}\n\n${contentBlock}\n\nVISUAL STYLE: Professional educational infographic.
+${formatHint}
+Dense information layout. High contrast. Scroll-stopping design. Viral social media quality.`;
 }
 
 // ─── Post-process generated HTML ───

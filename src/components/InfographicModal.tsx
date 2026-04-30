@@ -51,68 +51,37 @@ function getImageSize(platform: string): ImageSizeConfig {
   return { size: "1024x1536", label: "Portrait", description: `Optimized for ${platform || "social media"}` };
 }
 
-// ─── Infographic Generation via Edge Function (Claude HTML → canvas → PNG) ───
+// ─── DALL-E 3 Image Generation via Edge Function (avoids CORS) ───
 
-async function generateImage(prompt: string): Promise<string> {
-  console.log("[Infographic] Calling Edge Function...");
+async function generateWithOpenAI(
+  prompt: string,
+  imageSize: ImageSizeConfig,
+): Promise<string> {
+  console.log("[Infographic] Calling DALL-E 3 via Edge Function...");
+  console.log("[Infographic] Size:", imageSize.size, imageSize.label);
+  console.log("[Infographic] Prompt length:", prompt.length);
 
   const { data, error } = await supabase.functions.invoke("generate-image", {
-    body: { prompt },
+    body: { prompt, size: imageSize.size, quality: "high" },
   });
 
   if (error) {
     console.error("[Infographic] Edge Function error:", error);
-    throw new Error(error.message || "Generation failed. Please try again.");
+    throw new Error(error.message || "Image generation failed. Please try again.");
   }
+
   if (data?.error) {
     console.error("[Infographic] API error:", data.error);
     throw new Error(data.error);
   }
 
-  // HTML infographic → convert to PNG via html2canvas
-  if (data?.html) {
-    console.log("[Infographic] Converting HTML to image...");
-    return await htmlToBase64(data.html);
+  const base64 = data?.image;
+  if (!base64) {
+    throw new Error("No image returned from DALL-E 3. Please try again.");
   }
 
-  // Direct base64 image (fallback for Gemini)
-  if (data?.image) return data.image;
-
-  throw new Error("No content returned. Please try again.");
-}
-
-async function htmlToBase64(html: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const iframe = document.createElement("iframe");
-    iframe.style.cssText = "position:fixed;left:-9999px;top:0;width:1080px;height:1350px;border:none;z-index:-999;visibility:hidden";
-    document.body.appendChild(iframe);
-
-    const doc = iframe.contentDocument;
-    if (!doc) {
-      document.body.removeChild(iframe);
-      return reject(new Error("Cannot access iframe"));
-    }
-
-    doc.open();
-    doc.write(html);
-    doc.close();
-
-    setTimeout(async () => {
-      try {
-        const h2c = (await import("html2canvas")).default;
-        const canvas = await h2c(doc.documentElement, {
-          width: 1080, height: 1350, scale: 1,
-          useCORS: true, allowTaint: true,
-          backgroundColor: "#F8F8F8", logging: false,
-        });
-        document.body.removeChild(iframe);
-        resolve(canvas.toDataURL("image/png").split(",")[1]);
-      } catch (err) {
-        if (document.body.contains(iframe)) document.body.removeChild(iframe);
-        reject(err);
-      }
-    }, 2500);
-  });
+  console.log("[Infographic] Generated! Size:", base64.length);
+  return base64;
 }
 
 function wrapBase64AsHtml(base64: string, dims: { width: number; height: number }): string {
@@ -438,14 +407,14 @@ export default function InfographicModal({ open, onClose, content, platform, con
       if (IS_DEV) console.log("[InfographicModal] Attempt 1 — generating with DALL-E 3...");
       let base64: string | null = null;
       try {
-        base64 = await generateImage(dallePrompt);
+        base64 = await generateWithOpenAI(dallePrompt, imageConfig);
       } catch (firstErr) {
         if (IS_DEV) console.warn("[InfographicModal] Attempt 1 failed:", firstErr);
 
         // Attempt 2: retry with simplified prompt
         if (IS_DEV) console.log("[InfographicModal] Attempt 2 — retrying...");
         try {
-          base64 = await generateImage(dallePrompt + "\n\nIMPORTANT: Generate a clean, readable infographic. All text in English. No footer or watermark.");
+          base64 = await generateWithOpenAI(dallePrompt + "\n\nIMPORTANT: Generate a clean, readable infographic. All text in English. No footer or watermark.", imageConfig);
         } catch (secondErr) {
           if (IS_DEV) console.error("[InfographicModal] Attempt 2 also failed:", secondErr);
           throw secondErr;
