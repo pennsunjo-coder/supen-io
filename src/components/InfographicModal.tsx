@@ -51,18 +51,16 @@ function getImageSize(platform: string): ImageSizeConfig {
   return { size: "1024x1536", label: "Portrait", description: `Optimized for ${platform || "social media"}` };
 }
 
-// ─── DALL-E 3 Image Generation via Edge Function (avoids CORS) ───
+// ─── Gemini Image Generation via Edge Function ───
 
-async function generateWithOpenAI(
+async function generateImage(
   prompt: string,
-  imageSize: ImageSizeConfig,
 ): Promise<string> {
-  console.log("[Infographic] Calling DALL-E 3 via Edge Function...");
-  console.log("[Infographic] Size:", imageSize.size, imageSize.label);
+  console.log("[Infographic] Calling Gemini via Edge Function...");
   console.log("[Infographic] Prompt length:", prompt.length);
 
   const { data, error } = await supabase.functions.invoke("generate-image", {
-    body: { prompt, size: imageSize.size, quality: "high" },
+    body: { prompt },
   });
 
   if (error) {
@@ -407,14 +405,14 @@ export default function InfographicModal({ open, onClose, content, platform, con
       if (IS_DEV) console.log("[InfographicModal] Attempt 1 — generating with DALL-E 3...");
       let base64: string | null = null;
       try {
-        base64 = await generateWithOpenAI(dallePrompt, imageConfig);
+        base64 = await generateImage(dallePrompt);
       } catch (firstErr) {
         if (IS_DEV) console.warn("[InfographicModal] Attempt 1 failed:", firstErr);
 
         // Attempt 2: retry with simplified prompt
         if (IS_DEV) console.log("[InfographicModal] Attempt 2 — retrying...");
         try {
-          base64 = await generateWithOpenAI(dallePrompt + "\n\nIMPORTANT: Generate a clean, readable infographic. All text in English. No footer or watermark.", imageConfig);
+          base64 = await generateImage(dallePrompt + "\n\nIMPORTANT: Generate a clean, readable infographic. All text in English. No footer or watermark.");
         } catch (secondErr) {
           if (IS_DEV) console.error("[InfographicModal] Attempt 2 also failed:", secondErr);
           throw secondErr;
