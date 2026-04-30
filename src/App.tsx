@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect } from "react";
+import Index from "./pages/Index.tsx"; // Eager load — landing page priority
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -12,7 +13,7 @@ import AdminRoute from "@/components/AdminRoute";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 // Lazy-loaded pages
-const Index = lazy(() => import("./pages/Index.tsx"));
+// Index is eager-loaded above for instant landing page
 const Login = lazy(() => import("./pages/Login.tsx"));
 const Dashboard = lazy(() => import("./pages/Dashboard.tsx"));
 const Tools = lazy(() => import("./pages/Tools.tsx"));
@@ -38,11 +39,7 @@ const queryClient = new QueryClient();
 const IS_DEV = import.meta.env.DEV;
 
 function PageLoader() {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
+  return <div style={{ background: "#0f0f1a", height: "100vh" }} />;
 }
 
 const App = () => {
