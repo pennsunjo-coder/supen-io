@@ -705,387 +705,49 @@ function detectTemplate(content: string): string {
 
 export function buildDallEPrompt(
   content: string,
-  platform: string,
-  template?: string,
+  _platform: string,
+  _template?: string,
 ): string {
-  const selectedTemplate = template || detectTemplate(content);
   const ext = extractForDallE(content);
   const kp = extractKeyPoints(content);
-  const pl = platform?.toLowerCase() || "";
 
-  const baseRules = `CRITICAL RULES — NO EXCEPTIONS:
-1. ALL TEXT IN ENGLISH ONLY — no other language
-2. NO footer, NO signature, NO watermark, NO "follow for more", NO branding
-3. Every word FULLY READABLE — never cut off, never truncated, never blurry
-4. 50px safe margin on ALL sides — text NEVER touches edges
-5. Minimum 18px body text, 32px titles — HIGH CONTRAST always
-6. NO text overlapping other elements — clean visual hierarchy
-7. Fill 88% of canvas with information — DENSE but organized
-8. Use ONLY the exact content below — do NOT invent or add anything`;
-
-  const contentBlock = `CONTENT TYPE: ${ext.contentType}
-This is a ${ext.contentType} infographic — the visual must match this type.
-
-MANDATORY CONTENT — USE WORD FOR WORD:
-
-TITLE (display prominently): "${ext.title}"
-${ext.points.length > 0 ? `\nKEY POINTS (display ALL ${ext.points.length} points):\n${ext.points.map((p, i) => `${i + 1}. "${p}"`).join('\n')}` : ''}
-${ext.stats.length > 0 ? `\nKEY NUMBERS (highlight visually):\n${ext.stats.map(s => `• ${s}`).join('\n')}` : ''}
-${ext.quotes.length > 0 ? `\nPULL QUOTE (display in quote box):\n"${ext.quotes[0]}"` : ''}
-
-CRITICAL: Use ONLY the text above. Do NOT invent, paraphrase, or add unrelated graphics. Every point must be FULLY READABLE with no text cut off.`;
-
-  let formatHint = "Portrait format.";
-  if (pl.includes("linkedin")) formatHint = "Portrait (1024x1536). LinkedIn-optimized.";
-  else if (pl.includes("facebook")) formatHint = "Square (1024x1024). Facebook-optimized.";
-  else if (pl.includes("instagram")) formatHint = "Portrait (1024x1536). Instagram-optimized.";
-  else if (pl.includes("twitter") || pl.includes("x (")) formatHint = "Landscape (1536x1024). X/Twitter-optimized.";
-
+  // Build structured content from sections or flat points
+  const hasSections = kp.sections.length >= 2 && kp.sections.some(s => s.bullets.length > 0);
+  const title = kp.title || ext.title;
   const n = ext.points.length;
-  const AVOID = "\n\nAVOID: blurry, cluttered, messy layout, too many colors, realistic photo, 3D render, low resolution, bad typography, misaligned text, dark background (unless dark template), generic stock photo style.";
 
-  // ── WHITEBOARD (Reference template — ultra dense) ──
-  if (selectedTemplate === "WHITEBOARD" || selectedTemplate === "UI_CARDS" || selectedTemplate === "AWA_CLASSIC" || selectedTemplate === "auto") {
-    const kp = extractKeyPoints(content);
-    const fills = ["light blue #D6E8FA", "light green #D4EDDA", "light red/pink #FAD7D6", "light orange #FDE8C8", "light purple #E8D5F5"];
-    const icons = ["gear", "open book", "stack of books", "graduation cap", "star"];
-
-    // Use sections if content has clear headers, otherwise use flat points
-    const hasSections = kp.sections.length >= 2 && kp.sections.some(s => s.bullets.length > 0);
-
-    const contentStructure = hasSections
-      ? kp.sections.slice(0, 4).map((section, i) => `
-SECTION ${i + 1} — ${['BLUE', 'GREEN', 'RED', 'ORANGE'][i % 4]} BOX:
-Box label (${fills[i % fills.length]} fill, black outline): "${section.header || kp.points[i]?.title || ''}"
-Small ${icons[i % icons.length]} icon. Arrow → pointing right to bullets:
-${section.bullets.slice(0, 4).map(b => `• ${b}`).join('\n')}`).join('\n')
-      : ext.points.slice(0, Math.min(n, 5)).map((point, i) => `
-SECTION ${i + 1} — ${['BLUE', 'GREEN', 'RED', 'ORANGE', 'PURPLE'][i % 5]} BOX:
-Box (${fills[i % fills.length]} fill, black outline): "${point.split(' ').slice(0, 4).join(' ').toUpperCase()}"
-Small ${icons[i % icons.length]} icon. Arrow → to explanation:
-- ${point}${kp.stats[i] ? `\n• Key number: ${kp.stats[i]}` : ''}`).join('\n');
-
-    const bottomBoxes = n > 3 ? `
-━━━ BOTTOM — KEY TAKEAWAYS ━━━
-Horizontal divider line. Centered bold title: "KEY TAKEAWAYS"
-6 rectangular boxes in 2-column grid (3 rows × 2 cols):
-
-${ext.points.slice(0, 6).map((point, i) => {
-  const hl = ['soft blue #D6E8FA', 'soft green #D4EDDA', 'white', 'white', 'white', 'soft orange #FDE8C8'];
-  return `Box ${i + 1} (${hl[i % hl.length]}): "${point.split(' ').slice(0, 3).join(' ').toUpperCase()}:" — "${point.length > 100 ? point.slice(0, 97) + '...' : point}"`;
-}).join('\n')}` : '';
-
-    return `Create a HIGH-QUALITY educational whiteboard infographic poster.
-
-━━━ TITLE ━━━
-"${kp.title}"
-Large bold handwritten BLACK capitals. Orange marker highlight on 2-3 key words.
-
-━━━ VISUAL STYLE ━━━
-Background: Pure WHITE #FFFFFF. Subtle shadow border.
-Hand-drawn marker aesthetic — clean, professional, slightly playful.
-Black outlines on ALL elements.
-Pastel: Blue #4A90D9, Green #5BA85B, Red #E05555, Orange #F5A623.
-Flat icons: gears, books, arrows, checkmarks.
-${formatHint}
-High resolution. Easy to scan in under 10 seconds.
-
-━━━ LAYOUT ━━━
-
-TOP (12%): Bold title "${kp.title}" with orange underline.
-
-MAIN — TWO COLUMNS (12% to 75%):
-
-LEFT (35%) — Colored boxes stacked with arrows:
-${contentStructure}
-
-RIGHT (65%) — Explanations aligned with each box (listed above per section).
-${bottomBoxes}
-
-FOOTER (5%): Divider line. "Save this. Apply this. Share this."
-
-━━━ RULES ━━━
-- Every word FULLY VISIBLE. 60px margins. Title 40px+. Body 16px+.
-- ALL ${n} points must appear. Use EXACTLY the text above.
-- Icons: flat 2D. Arrows: visible, colored.
-
-AVOID: blurry, cluttered, photo, 3D, misaligned, dark bg, watermark, cut-off text.`;
-  }
-
-  // ── PROCESS_STEPS ──
-  if (selectedTemplate === "PROCESS_STEPS") {
-    return `Generate a single image of a clean, professional step-by-step process infographic.
-
-${baseRules}
-
-${contentBlock}
-
-CRUCIAL STYLE INSTRUCTIONS:
-- MEDIUM: Clean printed poster aesthetic — looks like a high-quality design agency output
-- Clean minimal design, cream background #FAF8F5 with subtle dot grid pattern
-- Bold sans-serif typography (Inter/Helvetica style)
-- Numbered steps with gradient colored circle badges
-- Connecting dashed arrows between steps with gradient color progression
-- Soft drop shadows on step cards
-- Simple flat icons next to each step (gear, rocket, chart, target)
-- ${formatHint}
-- No photos, no 3D, no realistic elements
-- Make it easy to scan in less than 10 seconds
-
-LAYOUT (top to bottom):
-
-━━━ HEADER (top 15%) ━━━
-Small orange category pill badge above title.
-Large bold title: "${ext.title}" (48px, charcoal #1A1A1B)
-
-━━━ STEPS (70%) ━━━
-${ext.points.map((point, i) => `STEP ${i + 1}:
-- Large numbered circle badge (gradient blue #1A73E8 → purple #7B2FBE, white number inside)
-- Bold step title: "${point.split(' ').slice(0, 5).join(' ')}"
-- Description in gray: "${point}"
-- Simple flat icon on the right side
-- Dashed gradient connecting line to next step`).join('\n\n')}
-
-━━━ FOOTER (15%) ━━━
-Green result box with key outcome text.
-"Follow @supenli.io for more | Repost ♻️" in small text.
-
-QUALITY: Magazine editorial meets Apple product page. Premium SaaS aesthetic. Information-dense but scannable.${AVOID}`;
-  }
-
-  // ── EDITORIAL_LIST ──
-  if (selectedTemplate === "EDITORIAL_LIST") {
-    return `Generate a single image of a bold editorial magazine-style list infographic.
-
-${baseRules}
-
-${contentBlock}
-
-CRUCIAL STYLE INSTRUCTIONS:
-- MEDIUM: Premium design magazine page aesthetic — like a spread from The Economist or Monocle
-- Warm cream background #FDFAF6 with thin black border frame (3px, inset 8px)
-- Corner registration marks like a print proof
-- Large bold orange numbers #FF6B35 as list markers (80px size)
-- Clean sans-serif typography — tight letter-spacing on titles
-- Horizontal thin divider lines between items
-- ${formatHint}
-- No photos, no 3D
-- Make it easy to scan in less than 10 seconds
-- Use consistent structure across all items
-
-LAYOUT (top to bottom):
-
-━━━ HEADER (12%) ━━━
-"INSIGHTS" small caps label in orange #FF6B35.
-Title: "${ext.title}" ultra-bold black 44px.
-Full-width black divider line (2px).
-
-━━━ LIST ITEMS (76%) ━━━
-${ext.points.map((point, i) => `ITEM ${i + 1}:
-- Giant number "${i + 1}" in orange #FF6B35 (80px, left-aligned)
-- Bold title: "${point.split(' ').slice(0, 5).join(' ')}" (22px, black #0F0F0F)
-- Body: "${point}" (15px, dark gray #333)
-- Full-width thin separator line below`).join('\n\n')}
-
-━━━ FOOTER (12%) ━━━
-Pull quote box with most impactful insight (large quotation marks).
-"Follow @supenli.io for more | Repost ♻️" in small text.
-
-QUALITY: Sophisticated, scroll-stopping, The Economist meets Instagram carousel.${AVOID}`;
-  }
-
-  // ── COMMAND_CENTER ──
-  if (selectedTemplate === "COMMAND_CENTER") {
-    return `Create a terminal/command-center dark UI infographic.
-
-${baseRules}
-
-${contentBlock}
-
-STYLE:
-- Near-black background #0A0E1A
-- Terminal window with chrome bar (traffic lights red/yellow/green top-left)
-- Monospace font (JetBrains Mono style)
-- Green prompt $ symbol #00FF41
-- Cyan output text #00D4FF
-- Orange accent #FF8B00
-- ${formatHint}
-
-LAYOUT:
-Terminal window title bar with red/yellow/green dots.
-Window path: "~/strategy"
-
-COMMAND LINES:
-${ext.points.map((point, i) => `$ ${point.split(' ').slice(0, 3).join('_').toLowerCase()}
-▸ "${point}"`).join('\n\n')}
-
-AVOID: light background, photos, blur, 3D, cluttered.`;
-  }
-
-  // ── ICON_GRID ──
-  if (selectedTemplate === "ICON_GRID") {
-    return `Create a modern bento grid icon infographic.
-
-${baseRules}
-
-${contentBlock}
-
-STYLE:
-- Pure white background #FFFFFF
-- 3-column bento grid layout
-- Rounded cards (12px radius, thin #F0F0F0 border)
-- Orange circled numbers #FF6B35
-- Flat bicolor icons (orange + black)
-- ${formatHint}
-- No photos, no 3D
-
-LAYOUT:
-Header: "${ext.title}" centered 32px bold. Category badge above.
-
-GRID CELLS:
-${ext.points.map((point, i) => `Cell ${i + 1}: Orange circled number ${i + 1}, bold title, text: "${point.slice(0, 40)}"`).join('\n')}${AVOID}`;
-  }
-
-  // ── COMPARISON / DATA_GRID ──
-  if (selectedTemplate === "COMPARISON" || selectedTemplate === "DATA_GRID") {
-    return `Create a dark luxury comparison table infographic.
-
-${baseRules}
-
-${contentBlock}
-
-STYLE:
-- Dark background #0D1117
-- Neon accent colors: blue #00B4FF, green #00D4AA, orange #FF8B00
-- White text, high contrast
-- Rounded card columns with subtle glow effects
-- ${formatHint}
-- No photos, no realistic elements
-
-LAYOUT:
-Header: White bold title "${ext.title}" on dark background. Small colored badge.
-
-${Math.min(n, 3)} COLUMNS side by side:
-${ext.points.slice(0, 3).map((point, i) => {
-  const colors = ['#00B4FF', '#00D4AA', '#FF8B00'];
-  return `Column ${i + 1}:
-- Header badge color: ${colors[i]}
-- Dark card background #161B22
-- Content: "${point}"`;
-}).join('\n\n')}
-
-Bottom: Gradient bar (blue → green → orange).
-
-AVOID: light background, photos, blur, cluttered.`;
-  }
-
-  // ── NOTEBOOK ──
-  if (selectedTemplate === "NOTEBOOK") {
-    return `Generate a single image of a physical spiral notebook page with hand-drawn colorful notes.
-
-${baseRules}
-
-${contentBlock}
-
-CRUCIAL STYLE INSTRUCTIONS:
-- MEDIUM: Must look like a photograph of a REAL spiral notebook page lying on a desk
-- TEXTURE: All text written by hand with colored marker pens and highlighters
-- Lines slightly imperfect and wobbly — real handwriting feel
-- NO digital fonts — everything handwritten or hand-printed
-- Metallic spiral binding at top (18 silver coils, 3D realistic)
-- Faint blue ruled lines on warm white paper #FFFEF8
-- Red vertical margin line on the left
-- ${formatHint}
-
-LAYOUT (top to bottom):
-
-━━━ SPIRAL BINDING (top edge) ━━━
-18 realistic metallic spiral coils across full width.
-
-━━━ TITLE (top 15%) ━━━
-Title "${ext.title}" in large colorful handwriting.
-Each word in a different marker color (green, blue, orange, red).
-Bouncy, energetic lettering.
-
-━━━ CONTENT (70%) ━━━
-${ext.points.map((point, i) => {
-  const colors = ['blue marker', 'orange marker', 'green marker', 'purple marker'];
-  return `Item ${i + 1}:
-- Hand-drawn ${colors[i % colors.length]} oval number badge: "${i + 1}"
-- Handwritten text: "${point}"
-- Yellow highlighter on key words
-- Small hand-drawn doodle icon (star, arrow, heart) in margin`;
-}).join('\n\n')}
-
-━━━ BOTTOM (15%) ━━━
-Yellow sticky note (tilted -3 degrees, drop shadow) with key insight.
-Handwritten: "Follow @supenli.io for more | Repost ♻️"
-
-QUALITY: Must look like a real photograph of handwritten study notes. Warm, personal, creative, dense with information.${AVOID}`;
-  }
-
-  // ── FUNNEL ──
-  if (selectedTemplate === "FUNNEL") {
-    return `Create a conversion funnel flow infographic.
-
-${baseRules}
-
-${contentBlock}
-
-STYLE:
-- Warm off-white background #FFFEF5
-- Large trapezoid funnel shape
-- Hand-drawn irregular outlines
-- ${formatHint}
-- No photos, no 3D
-
-LAYOUT:
-Top: Title "${ext.title}" very large bold centered, thick underline.
-
-FUNNEL (wide top → narrow bottom, ${Math.min(n, 5)} stages):
-${ext.points.slice(0, 5).map((point, i) => {
-  const colors = ['Red #D93025', 'Orange #FF6B35', 'Gold #F59E0B', 'Green #188038', 'Blue #1A73E8'];
-  return `Stage ${i + 1} (${colors[i]}): White label box — "${point}"`;
-}).join('\n')}
-
-Side: Two red curved arrows flanking funnel. Gold sparkle stars.${AVOID}`;
-  }
-
-  // ── CTA_VISUAL ──
-  if (selectedTemplate === "CTA_VISUAL") {
-    return `Create a clean promotional infographic.
-
-${baseRules}
-
-${contentBlock}
-
-STYLE:
-- Light gray background #F5F5F5 with dot grid
-- Orange accent #FF6B35
-- Clean structured layout, rounded corners 8px
-- ${formatHint}
-- No photos, no 3D
-
-LAYOUT:
-Top: Large text "${ext.title}" with yellow highlight on key word.
-Center: Minimalist icon (orange).
-${Math.min(n, 4)} floating rounded folder cards (blue #4A90D9) connected by dotted lines.
-${ext.points.slice(0, 4).map((point, i) => `Folder ${i + 1}: "${point.slice(0, 30)}"`).join('\n')}${AVOID}`;
-  }
-
-  // Default
-  return `Create a HIGH-QUALITY professional educational infographic.
-
-TITLE: "${ext.title}"
-${ext.points.map((p, i) => `Point ${i + 1}: "${p}"`).join('\n')}
-
-STYLE:
-- Clean white background. Bold readable typography.
-- Organized sections with clear hierarchy.
-- ${formatHint}
-- Professional, high contrast. ALL text fully visible.
-
-AVOID: blurry, cluttered, 3D, photos, misaligned text.`;
+  const contentBody = hasSections
+    ? kp.sections.slice(0, 5).map((section, i) =>
+        `${section.header || ext.points[i] || `Section ${i + 1}`}:\n${section.bullets.slice(0, 4).map(b => `• ${b}`).join('\n')}`,
+      ).join('\n\n')
+    : ext.points.map((point, i) => `${i + 1}. ${point}`).join('\n');
+
+  // Single unified prompt — reference whiteboard template
+  return `Generate a single image of a physical, hand-drawn infographic on a large whiteboard or notebook page.
+
+Crucial Style Instructions (Read First):
+Medium: The image must look like a photograph of a real whiteboard or large paper notepad.
+Texture: All elements must look created by hand using colored marker pens (black, blue, red, green) and highlighters (yellow/orange). Lines should be slightly imperfect, wobbly, and have the texture of ink on a surface.
+No Digital Fonts: All text, headings, and bullet points must appear handwritten or hand-printed in marker pen.
+Layout: Structure the 1080x1350 image as follows:
+Use multi-colored markers for emphasis. Keep text large and legible. Make everything look hand-drawn with slight imperfections. Make it look like a photograph of an actual notebook page.
+Always include the handwritten text "Follow @supenli.io for more amazing AI content | Repost ♻️" at the bottom of the image, in the same hand-drawn marker style.
+
+Use simple language. Avoid technical terms unless necessary.
+Do not explain too much.
+Make it easy to scan in less than 10 seconds.
+Use a consistent structure across all.
+Make use of realistic icons, logos and elements like the ultimate and best design expert in the world.
+
+TITLE: "${title}"
+
+CONTENT TO DISPLAY ON THE INFOGRAPHIC:
+${contentBody}
+
+${ext.stats.length > 0 ? `KEY NUMBERS (highlight with colored marker circles):\n${ext.stats.map(s => `• ${s}`).join('\n')}\n` : ''}
+ALL text must be in ENGLISH only.
+Every single word must be FULLY VISIBLE and READABLE — never cut off at edges.
+Use EXACTLY the content provided above — do not invent or paraphrase.`;
 }
 
 // ─── Post-process generated HTML ───
