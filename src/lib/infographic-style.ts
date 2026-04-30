@@ -744,72 +744,105 @@ CRITICAL: Use ONLY the text above. Do NOT invent, paraphrase, or add unrelated g
   const n = ext.points.length;
   const AVOID = "\n\nAVOID: blurry, cluttered, messy layout, too many colors, realistic photo, 3D render, low resolution, bad typography, misaligned text, dark background (unless dark template), generic stock photo style.";
 
-  // ── WHITEBOARD (Reference template — ultra dense) ──
-  if (selectedTemplate === "WHITEBOARD" || selectedTemplate === "UI_CARDS" || selectedTemplate === "AWA_CLASSIC" || selectedTemplate === "auto") {
-    const kp = extractKeyPoints(content);
-    const fills = ["light blue #D6E8FA", "light green #D4EDDA", "light red/pink #FAD7D6", "light orange #FDE8C8", "light purple #E8D5F5"];
-    const icons = ["gear", "open book", "stack of books", "graduation cap", "star"];
+  // ── UNIFIED DIGITAL NATIVE TEMPLATE (V2) ──
+  // All templates route here — single premium digital document
+  {
+    const SECTION_STYLES = [
+      { color: 'Indigo', bg: '#EEF2FF', border: '#4338CA', icon: '⚙️' },
+      { color: 'Emerald', bg: '#ECFDF5', border: '#059669', icon: '🎓' },
+      { color: 'Rose', bg: '#FFF1F2', border: '#E11D48', icon: '🚀' },
+      { color: 'Amber', bg: '#FFFBEB', border: '#D97706', icon: '💡' },
+      { color: 'Blue', bg: '#EFF6FF', border: '#2563EB', icon: '📊' },
+    ];
 
-    // Use sections if content has clear headers, otherwise use flat points
     const hasSections = kp.sections.length >= 2 && kp.sections.some(s => s.bullets.length > 0);
 
-    const contentStructure = hasSections
-      ? kp.sections.slice(0, 4).map((section, i) => `
-SECTION ${i + 1} — ${['BLUE', 'GREEN', 'RED', 'ORANGE'][i % 4]} BOX:
-Box label (${fills[i % fills.length]} fill, black outline): "${section.header || kp.points[i]?.title || ''}"
-Small ${icons[i % icons.length]} icon. Arrow → pointing right to bullets:
-${section.bullets.slice(0, 4).map(b => `• ${b}`).join('\n')}`).join('\n')
-      : ext.points.slice(0, Math.min(n, 5)).map((point, i) => `
-SECTION ${i + 1} — ${['BLUE', 'GREEN', 'RED', 'ORANGE', 'PURPLE'][i % 5]} BOX:
-Box (${fills[i % fills.length]} fill, black outline): "${point.split(' ').slice(0, 4).join(' ').toUpperCase()}"
-Small ${icons[i % icons.length]} icon. Arrow → to explanation:
-- ${point}${kp.stats[i] ? `\n• Key number: ${kp.stats[i]}` : ''}`).join('\n');
+    const mainSections = hasSections
+      ? kp.sections.slice(0, 5)
+      : ext.points.slice(0, 5).map((point) => ({
+          header: point.split(' ').slice(0, 5).join(' ').toUpperCase(),
+          bullets: [point],
+        }));
 
-    const bottomBoxes = n > 3 ? `
-━━━ BOTTOM — KEY TAKEAWAYS ━━━
-Horizontal divider line. Centered bold title: "KEY TAKEAWAYS"
-6 rectangular boxes in 2-column grid (3 rows × 2 cols):
+    const sectionsBlock = mainSections.map((section, i) => {
+      const s = SECTION_STYLES[i % SECTION_STYLES.length];
+      const bullets = (section.bullets || [])
+        .slice(0, 4)
+        .map(b => `• ${b.split(' ').slice(0, 12).join(' ')}`)
+        .join('\n');
+      return `SECTION ${i + 1} — ${s.color.toUpperCase()} CARD:
+Background: ${s.bg}, Border-left: 4px solid ${s.border}
+Icon: ${s.icon} (semantic, positioned next to number)
+Title (Nunito 800, color ${s.border}): "${section.header}"
+Content (Nunito 400, #1E293B):
+${bullets}`;
+    }).join('\n\n');
 
-${ext.points.slice(0, 6).map((point, i) => {
-  const hl = ['soft blue #D6E8FA', 'soft green #D4EDDA', 'white', 'white', 'white', 'soft orange #FDE8C8'];
-  return `Box ${i + 1} (${hl[i % hl.length]}): "${point.split(' ').slice(0, 3).join(' ').toUpperCase()}:" — "${point.length > 100 ? point.slice(0, 97) + '...' : point}"`;
-}).join('\n')}` : '';
+    const allPoints = [...ext.points, ...mainSections.flatMap(s => s.bullets || [])]
+      .filter((v, i, a) => a.indexOf(v) === i).slice(0, 6);
 
-    return `Create a HIGH-QUALITY educational whiteboard infographic poster.
+    const flashCards = allPoints.map((p, i) => {
+      const icons = ['💬', '📅', '📊', '🎯', '⚡', '✅'];
+      const label = p.split(' ').slice(0, 3).join(' ').toUpperCase();
+      const body = p.split(' ').slice(0, 8).join(' ');
+      return `Card ${i + 1}: ${icons[i % icons.length]} "${label}" — "${body}"`;
+    }).join('\n');
 
-━━━ TITLE ━━━
-"${kp.title}"
-Large bold handwritten BLACK capitals. Orange marker highlight on 2-3 key words.
+    const footerText = ext.stats.length > 0
+      ? `${ext.stats[0]} | Save this. Apply this. Share it.`
+      : 'Save this framework. Apply it. Share it with your network.';
 
-━━━ VISUAL STYLE ━━━
-Background: Pure WHITE #FFFFFF. Subtle shadow border.
-Hand-drawn marker aesthetic — clean, professional, slightly playful.
-Black outlines on ALL elements.
-Pastel: Blue #4A90D9, Green #5BA85B, Red #E05555, Orange #F5A623.
-Flat icons: gears, books, arrows, checkmarks.
-${formatHint}
-High resolution. Easy to scan in under 10 seconds.
+    return `Generate a PREMIUM digital native infographic HTML document.
 
-━━━ LAYOUT ━━━
+CRITICAL: This is a FLAT DIGITAL DOCUMENT — NOT a photograph of a physical object.
+NO notebook, NO spiral bindings, NO table surface, NO camera perspective, NO physical shadows.
+The output IS the document itself — clean, downloadable, professional.
 
-TOP (12%): Bold title "${kp.title}" with orange underline.
+CANVAS: 1080px × 1350px fixed. Background: #F8F8F8 (warm off-white).
 
-MAIN — TWO COLUMNS (12% to 75%):
+━━━ HEADER ZONE (top 12%) ━━━
+Subtle gradient banner (#F0F4FF → #F8F8F8).
+Title in Caveat 700, 48px, centered, color #1E293B:
+"${kp.title.toUpperCase()}"
+Key words highlighted with clean digital #FEF08A background.
+Small subtitle below: "${platform || 'Social Media'} Infographic"
 
-LEFT (35%) — Colored boxes stacked with arrows:
-${contentStructure}
+━━━ SECTIONS ZONE (middle 60%) ━━━
+${mainSections.length} content cards stacked vertically, full width.
+Each card: white #FFFFFF, border-radius 12px, border 2px solid #E2E8F0, box-shadow 0 2px 8px rgba(0,0,0,0.06).
+Left accent border 4px in section color. Generous padding 24px.
 
-RIGHT (65%) — Explanations aligned with each box (listed above per section).
-${bottomBoxes}
+${sectionsBlock}
 
-FOOTER (5%): Divider line. "Save this. Apply this. Share this."
+Small colored arrows (→) between cards, centered.
+
+━━━ KEY INSIGHTS ZONE (20%) ━━━
+Title: "KEY INSIGHTS" — Caveat 700, 28px, centered, with thin underline.
+2-3 column CSS grid of mini flash cards.
+
+${flashCards}
+
+Each card: white bg, border 2px solid #E2E8F0, border-radius 8px, padding 16px.
+
+━━━ FOOTER BANNER (5%) ━━━
+Background: #1E293B (dark slate). Border-radius: 12px.
+Text (white, Nunito 700, centered): "${footerText}"
+Small: "Follow @supenli.io for more | Repost ♻️"
+
+━━━ TYPOGRAPHY ━━━
+- Titles: Caveat 700 (warm hand-lettered feel)
+- Body: Nunito 400/700 (clean professional)
+- Section titles: alternate ${SECTION_STYLES.map(s => `${s.color} ${s.border}`).join(', ')}
+- Body text: #1E293B (dark slate, NOT pure black)
+- Highlights: #FEF08A background (clean digital, not handwritten)
+- Line-height: 1.6 on all body text
 
 ━━━ RULES ━━━
-- Every word FULLY VISIBLE. 60px margins. Title 40px+. Body 16px+.
-- ALL ${n} points must appear. Use EXACTLY the text above.
-- Icons: flat 2D. Arrows: visible, colored.
-
-AVOID: blurry, cluttered, photo, 3D, misaligned, dark bg, watermark, cut-off text.`;
+- ALL ${n} content points must appear, fully readable
+- Icons: real Unicode emoji, semantically matched to content
+- Font sizes: Title 48px, Section titles 22px, Body 15px, Cards 14px
+- Zero physical simulation. Zero code visible as text.
+- Output: complete self-contained HTML. Start with <!DOCTYPE html>.`;
   }
 
   // ── PROCESS_STEPS ──
