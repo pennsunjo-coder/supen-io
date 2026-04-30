@@ -702,11 +702,10 @@ ${ext.quotes.length > 0 ? `\nPULL QUOTE (display in quote box):\n"${ext.quotes[0
 
 CRITICAL: Use ONLY the text above. Do NOT invent, paraphrase, or add unrelated graphics. Every point must be FULLY READABLE with no text cut off.`;
 
-  let formatHint = "Portrait format.";
-  if (pl.includes("linkedin")) formatHint = "Portrait (1024x1536). LinkedIn-optimized.";
-  else if (pl.includes("facebook")) formatHint = "Square (1024x1024). Facebook-optimized.";
-  else if (pl.includes("instagram")) formatHint = "Portrait (1024x1536). Instagram-optimized.";
-  else if (pl.includes("twitter") || pl.includes("x (")) formatHint = "Landscape (1536x1024). X/Twitter-optimized.";
+  let formatHint = "FORMAT: LinkedIn portrait 1236x1536px. Fill ENTIRE tall canvas edge to edge. Rich detailed content — 5-6 sections minimum. NO white side borders around the design.";
+  if (pl.includes("facebook")) formatHint = "FORMAT: Perfect square 1080x1080px. Fill entire square canvas edge to edge. Compact design, 3 bold sections, large text. NO padding around design.";
+  else if (pl.includes("twitter") || pl.includes("x (")) formatHint = "FORMAT: Wide landscape 1200x675px. Fill entire canvas edge to edge. Compact horizontal layout.";
+  else if (pl.includes("instagram")) formatHint = "FORMAT: Instagram portrait 1080x1350px. Fill ENTIRE canvas edge to edge.";
 
   const n = ext.points.length;
   const AVOID = "\n\nAVOID: blurry, cluttered, messy layout, too many colors, realistic photo, 3D render, low resolution, bad typography, misaligned text, dark background (unless dark template), generic stock photo style.";
