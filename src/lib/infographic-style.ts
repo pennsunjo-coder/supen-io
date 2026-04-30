@@ -210,12 +210,14 @@ export function extractKeyPoints(content: string): ExtractionResult {
   let currentSection: Section = { header: '', bullets: [] };
 
   for (const line of lines.slice(1)) {
+    const cleanLine = line.replace(/^#+\s*/, '').replace(/^\*\*(.+)\*\*$/, '$1').trim();
     const isHeader = (
-      /^(STEP|PROMPT|SECTION|PART|PHASE|RULE|TIP|WAY|METHOD)\s*\d*/i.test(line) ||
-      /^[A-Z\s]{10,}$/.test(line) ||
-      /^\d+[\.\)]\s+[A-Z]/.test(line) ||
+      /^(STEP|PROMPT|SECTION|PART|PHASE|RULE|TIP|WAY|METHOD)\s*\d*/i.test(cleanLine) ||
+      /^[A-Z][A-Z\s]{8,}$/.test(cleanLine) ||
+      /^\d+[\.\)]\s+[A-Z]/.test(cleanLine) ||
+      (cleanLine.endsWith(':') && cleanLine.length < 50) ||
       line.startsWith('##')
-    ) && line.length < 60;
+    ) && cleanLine.length < 65;
 
     if (isHeader && currentSection.header) {
       sections.push({ ...currentSection });
@@ -741,21 +743,35 @@ export function buildInfographicPrompt(
     : pl.includes('twitter') || pl.includes('x (') ? 'Landscape format optimized for X/Twitter.'
     : 'Vertical poster format.';
 
+  // Deduplicate for bottom boxes
+  const allPoints = [...extD.points, ...mainSections.flatMap(s => s.bullets)]
+    .filter((v, i, a) => a.indexOf(v) === i);
+
+  const bottomLabels = allPoints.slice(0, 6)
+    .map(p => `'${p.split(' ').slice(0, 3).join(' ').toUpperCase()}'`)
+    .join(', ');
+
+  const bottomBoxesFull = allPoints.slice(0, 6)
+    .map((p, i) => `Box ${i + 1}: '${p.split(' ').slice(0, 4).join(' ').toUpperCase()}' — "${p.length > 120 ? p.slice(0, 117) + '...' : p}"`)
+    .join('. ');
+
   return `A high-quality educational infographic on a clean white whiteboard background.
 
-The title at the top is '${ext.title}' in bold, black hand-drawn style capital letters. Highlight 2-3 key words with a soft orange marker effect.
+The title at the top is '${ext.title}' in bold, black hand-drawn style capital letters. Highlight 2-3 key words in the title with a soft orange marker effect.
 
-The layout is divided into ${mainSections.length} main color-coded sections on the left: ${sectionsDescription}. Each box has a corresponding arrow pointing to a bulleted list of instructions on the right.
+The layout is divided into ${mainSections.length} main color-coded sections on the left: ${sectionsDescription}. Each box has a corresponding arrow pointing to a bulleted list of instructions on the right side.
 
-Bullet points per section: ${bulletsPerSection}.
+Bullet point details for each section: ${bulletsPerSection}.
 
-Below these sections, a horizontal line separates the top from a bottom section titled 'KEY INSIGHTS'. The bottom part contains ${Math.min(extD.points.length, 6)} distinct text boxes: ${bottomBoxDetails}.
+Below these sections, a horizontal divider line separates the top from a bottom section titled 'KEY INSIGHTS'. The bottom part contains ${Math.min(allPoints.length, 6)} distinct text boxes with labels like ${bottomLabels}. Full content per box: ${bottomBoxesFull}.
 
-Use a mix of professional and hand-drawn aesthetics with small icons like gears, a graduation cap, books, arrows, and checkmarks.${extD.stats.length > 0 ? ` Highlight these key numbers prominently: ${extD.stats.join(', ')}.` : ''}
+${extD.stats.length > 0 ? `Highlight these key statistics prominently within the infographic: ${extD.stats.join(', ')}.` : ''}${extD.quotes.length > 0 ? ` Include this pull quote in a highlighted box: "${extD.quotes[0]}"` : ''}
 
-Style: Crisp lines, high resolution, organized and easy to read. White background with subtle shadow border. Consistent black outlines. Pastel colors (blue #4A90D9, green #5BA85B, red #E05555, orange #F5A623). Simple flat icons only. ALL text fully readable, never cut off. 60px margin on all sides. ${formatNote} ALL text in ENGLISH only. Include "Follow @supenli.io for more | Repost" at the bottom.
+Use a mix of professional and hand-drawn aesthetics with small icons like gears, a graduation cap, books, arrows, checkmarks, and lightbulbs.
 
-AVOID: blurry, messy, cluttered, realistic photo, 3D render, dark background, bad typography, misaligned text, cut-off text.`;
+Visual style requirements: Clean white background #FFFFFF with subtle drop shadow border (like a real whiteboard). All titles and box labels in bold, black handwritten-style capital letters. Consistent black outlines on ALL elements (boxes, arrows, dividers). Pastel color fills: blue #4A90D9, green #5BA85B, red #E05555, orange #F5A623, purple #7B2FBE. Arrows between left boxes and right bullet lists must be clearly visible and directional. Simple flat 2D icons only — no realistic photos, no 3D renders. ALL text must be FULLY READABLE — minimum 16px equivalent, never cut off at edges. Safe margin: minimum 60px on ALL sides. Even spacing, perfectly aligned. High contrast between text and backgrounds. ${formatNote} ALL text in ENGLISH only. Include "Follow @supenli.io for more | Repost" at the bottom.
+
+STRICTLY AVOID: blurry output, messy layout, cluttered design, too many colors, realistic photography, 3D rendering, low resolution, bad typography, misaligned text, overlapping elements, dark background, watermarks, cut-off text, generic stock photo aesthetic.`;
 }
 
 // Keep old name as alias for backward compatibility
