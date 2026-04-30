@@ -674,6 +674,7 @@ export function buildDallEPrompt(
   content: string,
   platform: string,
   template?: string,
+  userName?: string,
 ): string {
   const selectedTemplate = template || detectTemplate(content);
   const ext = extractForDallE(content);
@@ -756,7 +757,7 @@ ${ext.stats.length > 0 ? `━━━ STATS ━━━\nHighlight these numbers pro
 ━━━ FOOTER (15%) ━━━
 Wobbly hand-drawn divider line.
 Bottom: Key takeaway in bold centered marker text.
-Handwritten text: "Follow @supenli.io for more | Repost ♻️" in smaller marker style.
+Handwritten text: "Follow ${userName ? '@' + userName : '@supenli.io'} for more | Repost ♻️" in smaller marker style.
 
 QUALITY: Must look like a real photograph of handwritten marker notes on a whiteboard. Imperfect, human, warm, information-dense.${AVOID}`;
   }
@@ -797,7 +798,7 @@ ${ext.points.map((point, i) => `STEP ${i + 1}:
 
 ━━━ FOOTER (15%) ━━━
 Green result box with key outcome text.
-"Follow @supenli.io for more | Repost ♻️" in small text.
+"Follow ${userName ? '@' + userName : '@supenli.io'} for more | Repost ♻️" in small text.
 
 QUALITY: Magazine editorial meets Apple product page. Premium SaaS aesthetic. Information-dense but scannable.${AVOID}`;
   }
@@ -838,7 +839,7 @@ ${ext.points.map((point, i) => `ITEM ${i + 1}:
 
 ━━━ FOOTER (12%) ━━━
 Pull quote box with most impactful insight (large quotation marks).
-"Follow @supenli.io for more | Repost ♻️" in small text.
+"Follow ${userName ? '@' + userName : '@supenli.io'} for more | Repost ♻️" in small text.
 
 QUALITY: Sophisticated, scroll-stopping, The Economist meets Instagram carousel.${AVOID}`;
   }
@@ -968,7 +969,7 @@ ${ext.points.map((point, i) => {
 
 ━━━ BOTTOM (15%) ━━━
 Yellow sticky note (tilted -3 degrees, drop shadow) with key insight.
-Handwritten: "Follow @supenli.io for more | Repost ♻️"
+Handwritten: "Follow ${userName ? '@' + userName : '@supenli.io'} for more | Repost ♻️"
 
 QUALITY: Must look like a real photograph of handwritten study notes. Warm, personal, creative, dense with information.${AVOID}`;
   }

@@ -390,10 +390,16 @@ export default function InfographicModal({ open, onClose, content, platform, con
     try {
       assertOnline();
 
+      // Get user name for footer
+      let userName = "supenli.io";
+      try {
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        userName = authUser?.user_metadata?.full_name || authUser?.email?.split("@")[0] || "supenli.io";
+      } catch { /* use default */ }
+
       console.log("[Infographic] Content length:", content.length);
-      console.log("[Infographic] Content preview:", content.slice(0, 200));
-      console.log("[Infographic] Template:", templateSelection.templateId, "—", templateSelection.reason);
-      const dallePrompt = buildDallEPrompt(content, platform, templateSelection.templateId);
+      console.log("[Infographic] Template:", templateSelection.templateId, "| User:", userName);
+      const dallePrompt = buildDallEPrompt(content, platform, templateSelection.templateId, userName);
 
       if (IS_DEV) {
         console.log("=== DALL-E PROMPT ===");
