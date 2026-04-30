@@ -712,7 +712,6 @@ export function buildInfographicPrompt(
   const ext = extractKeyPoints(content);
   const extD = extractForDallE(content);
 
-  // Build structured sections
   const hasSections = ext.sections.length >= 2 && ext.sections.some(s => s.bullets.length > 0);
   const mainSections = hasSections
     ? ext.sections.slice(0, 4)
@@ -721,73 +720,95 @@ export function buildInfographicPrompt(
         bullets: [p],
       }));
 
-  const COLORS = [
-    { color: 'Blue', hex: '#4A90D9', icon: 'gear ⚙' },
-    { color: 'Green', hex: '#5BA85B', icon: 'graduation cap 🎓' },
-    { color: 'Red', hex: '#E05555', icon: 'robot 🤖' },
-    { color: 'Orange', hex: '#F5A623', icon: 'lightbulb 💡' },
+  const STYLES = [
+    { color: 'Blue', bg: '#EBF3FF', border: '#4A90D9', icon: '⚙️' },
+    { color: 'Green', bg: '#EDFAF1', border: '#5BA85B', icon: '🎓' },
+    { color: 'Red', bg: '#FFEEF0', border: '#E05555', icon: '🚀' },
+    { color: 'Orange', bg: '#FFF4E5', border: '#F5A623', icon: '💡' },
   ];
 
-  const sectionsBlock = mainSections.map((section, i) => {
-    const c = COLORS[i % COLORS.length];
+  const sectionsHTML = mainSections.map((section, i) => {
+    const s = STYLES[i % STYLES.length];
     const bullets = (section.bullets || [])
       .slice(0, 4)
-      .map(b => `- ${b.split(' ').slice(0, 8).join(' ')}`)
+      .map(b => `• ${b.split(' ').slice(0, 10).join(' ')}`)
       .join('\n');
-    return `BLOCK ${i + 1} (Color: ${c.color} ${c.hex}):
-Icon: ${c.icon}
-Title: ${section.header}
-Bullet list:
+    return `SECTION ${i + 1} — ${s.color.toUpperCase()} CARD:
+Background: ${s.bg}
+Border: 2px solid ${s.border}
+Icon: ${s.icon}
+Title (bold, color ${s.border}): "${section.header}"
+Content:
 ${bullets}`;
   }).join('\n\n');
 
-  // Bottom flash cards (deduplicated)
   const allPoints = [...extD.points, ...mainSections.flatMap(s => s.bullets || [])]
-    .filter((v, i, a) => a.indexOf(v) === i);
-  const icons = ['💬', '📅', '📊', '🎯', '🚀', '✅'];
-  const flashCards = allPoints.slice(0, 6)
-    .map((p, i) => `Card ${i + 1}: "${p.split(' ').slice(0, 3).join(' ')}" (Icon: ${icons[i % icons.length]})`)
-    .join(', ');
+    .filter((v, i, a) => a.indexOf(v) === i).slice(0, 6);
+
+  const flashCards = allPoints.map((p, i) => {
+    const icons = ['💬', '📅', '📊', '🎯', '⚡', '✅'];
+    const label = p.split(' ').slice(0, 3).join(' ').toUpperCase();
+    const body = p.split(' ').slice(0, 8).join(' ');
+    return `Flash Card ${i + 1}: Icon ${icons[i % icons.length]} | Label: "${label}" | Text: "${body}"`;
+  }).join('\n');
 
   const footerText = extD.stats.length > 0
-    ? `Key stat: ${extD.stats[0]}. Apply this framework to get results.`
-    : 'Apply this framework consistently. Results follow action.';
+    ? `KEY STAT: ${extD.stats[0]} | Save this. Apply this. Share this.`
+    : 'Save this framework. Apply it. Share it with your network.';
 
   const pl = platform?.toLowerCase() || "";
-  const formatNote = pl.includes('linkedin') ? 'LinkedIn vertical format (4:5). Professional audience.'
-    : pl.includes('facebook') ? 'Facebook square format (1:1). Engaging feed post.'
-    : pl.includes('twitter') || pl.includes('x (') ? 'X/Twitter landscape format (16:9). Viral tweet visual.'
-    : 'Vertical format (4:5). Social media optimized.';
+  const platformNote = pl.includes('linkedin') ? 'LinkedIn vertical (4:5) — professional audience'
+    : pl.includes('facebook') ? 'Facebook square (1:1) — engaging feed'
+    : 'Vertical social media format (4:5)';
 
-  return `Generate a PROFESSIONAL infographic for ${platform || 'social media'}.
+  return `Generate a PREMIUM infographic HTML file.
 
-MAIN TITLE (top, large bold hand-drawn letters, orange underline):
+PLATFORM: ${platformNote}
+CANVAS: 1080px × 1350px (fixed, no scrolling)
+
+━━━ FONTS ━━━
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Caveat:wght@700;800&display=swap');
+Titles: Caveat (hand-drawn feel). Body: Nunito (clean, readable).
+
+━━━ HEADER ZONE (top 15%) ━━━
+Background: #FAFAFA
+Main title in Caveat font, 48px, bold, centered:
 "${ext.title.toUpperCase()}"
+Orange underline stroke below title.
 
-LAYOUT: Divide the image into ${mainSections.length} large colored vertical blocks on the LEFT side, each with a number, icon, and colored background. On the RIGHT side of each block, show the corresponding bullet list.
+━━━ MAIN SECTIONS ZONE (middle 60%) ━━━
+${mainSections.length} colored cards stacked vertically, full width.
+Each card: rounded corners 12px, left border accent, emoji icon top-left.
 
-${sectionsBlock}
+${sectionsHTML}
 
-BOTTOM ZONE — "KEY INSIGHTS" SECTION:
-Add a horizontal divider line.
-Section title: "KEY INSIGHTS" (bold, centered)
-Below: ${Math.min(allPoints.length, 6)} mini flash-cards in a 2-3 column grid:
+Small → arrows between cards (in section color, centered).
+
+━━━ KEY INSIGHTS ZONE (20%) ━━━
+Section title: "KEY INSIGHTS" — Caveat font, 28px, centered, underlined.
+Layout: 2-3 column CSS grid of flash cards.
+
 ${flashCards}
 
-FOOTER (bottom, colored background strip):
+Each flash card: white bg #FFFFFF, border 2px solid #E5E5E5, border-radius 8px, padding 16px, box-shadow 2px 2px 0 rgba(0,0,0,0.08).
+
+━━━ FOOTER (5%) ━━━
+Background: linear-gradient(135deg, #1A1A1B, #333)
 Text: "${footerText}"
-Style: Bold white text on dark colored background.
-Small: "Follow @supenli.io for more | Repost"
+Color: white, bold, centered, Nunito.
+Small: "Follow @supenli.io for more | Repost ♻️"
 
-${extD.quotes.length > 0 ? `PULL QUOTE: Display in a highlighted box: "${extD.quotes[0]}"` : ''}
+${extD.stats.length > 0 ? `━━━ STATS ━━━\nHighlight prominently: ${extD.stats.join(', ')}` : ''}
 
-FORMAT: ${formatNote}
+━━━ GLOBAL STYLE ━━━
+body: margin 0, padding 40px, overflow hidden, background #FAFAFA.
+All text: real human words, ZERO code as content.
+Font sizes: Title 48px, Section titles 24px, Body 15px, Bullets 14px.
+Line-height: 1.6. Padding on cards: min 20px.
+High contrast: dark text #1A1A1B on light backgrounds.
+All emojis: real Unicode characters.
 
-TEXT STYLE: Clean sans-serif, high contrast, all text human-readable.
-All bullet points: maximum 8 words each.
-All titles: maximum 6 words, ALL CAPS.
-
-MANDATORY: Every block has its icon clearly visible. All arrows between left blocks and right content are visible and directional. Zero placeholder squares or raw data. 100% human-readable text throughout.`;
+OUTPUT: Complete self-contained HTML file. Start with <!DOCTYPE html>.`;
 }
 
 // Keep old name as alias for backward compatibility

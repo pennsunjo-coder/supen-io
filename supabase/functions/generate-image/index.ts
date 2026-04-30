@@ -23,7 +23,30 @@ Deno.serve(async (req) => {
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
     if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY not configured");
 
-    console.log("[generate-image] Generating HTML via Claude, prompt length:", prompt.length);
+    console.log("[generate-image] Generating HTML infographic...");
+
+    const systemPrompt = `You are an elite infographic designer specializing in viral LinkedIn content and personal branding.
+
+YOUR EXPERTISE:
+- "Minimalisme Informatif": every graphic element serves content comprehension
+- "Hand-drawn Digital" style: marker-on-whiteboard aesthetic, human and authentic
+- Cognitive hierarchy: color zoning, visual anchoring, scan patterns (F and Z reading)
+
+YOUR MISSION:
+Transform any text into a PREMIUM, instantly readable HTML infographic.
+
+STRICT RULES:
+1. Output ONLY valid HTML starting with <!DOCTYPE html> — zero explanations, zero markdown
+2. FORBIDDEN: raw CSS as visible text, placeholder squares, Lorem Ipsum, code snippets shown as content
+3. REQUIRED: Real human-readable text only — short, punchy, maximum 10 words per bullet
+4. REQUIRED: Google Fonts imported (Nunito + Caveat) in a <style> tag
+5. REQUIRED: Fixed canvas 1080×1350px with body { width:1080px; height:1350px; margin:0; padding:40px; overflow:hidden; box-sizing:border-box; }
+6. REQUIRED: Every section has emoji icon + bold colored title + bullet points
+7. REQUIRED: Generous white space (min 20px padding in all cards)
+8. REQUIRED: Box-shadow on all cards: 3px 3px 0 rgba(0,0,0,0.15)
+9. REQUIRED: Border on all elements: 2px solid #1A1A1B
+10. REQUIRED: High contrast — dark text (#1A1A1B) on light backgrounds only
+11. Font sizes: Main title 48px Caveat, section titles 24px Nunito 800, body 15px Nunito 400, bullets 14px`;
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -35,33 +58,10 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         model: "claude-haiku-4-5-20251001",
         max_tokens: 4000,
-        system: `You are an elite infographic designer specializing in LinkedIn viral content.
-Your ONLY job: generate complete, self-contained HTML files for premium infographics.
-Style reference: Hand-drawn professional style (like popular LinkedIn carousels).
-NEVER output explanations. NEVER output markdown. Output ONLY valid HTML starting with <!DOCTYPE html>.`,
+        system: systemPrompt,
         messages: [{
           role: "user",
-          content: `${prompt}
-
-TECHNICAL REQUIREMENTS:
-- Return ONLY the complete HTML file. Start with <!DOCTYPE html>
-- Canvas: 1080px wide, 1350px tall, fixed dimensions
-- Import fonts: @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Caveat:wght@700&display=swap')
-- Font: Nunito for body text, Caveat for titles (hand-drawn feel)
-- Background: #FAFAFA (warm white)
-- Use CSS box-shadow: 3px 3px 0px rgba(0,0,0,0.15) on all cards (hand-drawn depth)
-- Use border: 2.5px solid #1A1A1B on all elements (marker outline feel)
-- Use border-radius: 12px on cards, 8px on boxes
-- Section colors: Blue #4A90D9, Green #5BA85B, Red #E05555, Orange #F5A623
-- All text: real human-readable words, NO code, NO CSS properties as text
-- Minimum font-size: 14px for body, 28px for section titles, 48px for main title
-- Arrows between left boxes and right content: use CSS border or Unicode arrows
-- Include emoji icons inline in HTML
-- Bottom grid: 2-3 columns of insight cards
-- Footer: colored strip with white bold text
-- Everything inline — no external CSS files
-- ALL styles in a single <style> tag in <head>
-- body must have: width:1080px; height:1350px; margin:0; padding:40px; overflow:hidden; box-sizing:border-box;`
+          content: prompt
         }],
       }),
     });
