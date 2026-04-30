@@ -707,75 +707,55 @@ export function buildInfographicPrompt(
   content: string,
   platform: string,
 ): string {
-  const ext = extractForDallE(content);
-  const kp = extractKeyPoints(content);
-  const title = kp.title || ext.title;
+  const ext = extractKeyPoints(content);
+  const extD = extractForDallE(content);
 
-  // Build colored sections from structured content or flat points
-  const coloredSections = kp.sections.length >= 2
-    ? kp.sections.slice(0, 5)
+  // Build main sections from structured content or flat points
+  const mainSections = ext.sections.length >= 2
+    ? ext.sections.slice(0, 5)
     : ext.points.slice(0, 5).map((p) => ({
-        header: p.split(' ').slice(0, 5).join(' ').toUpperCase(),
-        bullets: [p],
+        header: (p.title || "").toUpperCase() || extD.points[ext.points.indexOf(p)]?.split(' ').slice(0, 5).join(' ').toUpperCase() || "",
+        bullets: [p.body || extD.points[ext.points.indexOf(p)] || ""],
       }));
 
-  const sectionColors = [
-    { color: 'blue', hex: '#4A90D9' },
-    { color: 'green', hex: '#5BA85B' },
-    { color: 'red', hex: '#E05555' },
-    { color: 'orange', hex: '#F5A623' },
-    { color: 'purple', hex: '#7B2FBE' },
-  ];
+  const colors = ['blue', 'green', 'red', 'orange', 'purple'];
 
-  const sectionsText = coloredSections.map((section, i) => {
-    const c = sectionColors[i % sectionColors.length];
-    const bullets = (section.bullets || []).slice(0, 4).map(b => `• ${b}`).join('\n');
-    return `${i + 1}. A ${c.color} box: '${section.header}'\n   Arrow → pointing right to:\n   ${bullets}`;
-  }).join('\n\n');
+  const sectionsDescription = mainSections
+    .map((s, i) => `${i + 1}. A ${colors[i % colors.length]} box '${s.header}'`)
+    .join(', ');
 
-  const bottomBoxes = ext.points.slice(0, 6).map((point, i) => {
-    const label = point.split(' ').slice(0, 3).join(' ').toUpperCase();
-    const body = point.length > 120 ? point.slice(0, 117) + '...' : point;
-    return `Box ${i + 1}: '${label}' — "${body}"`;
-  }).join('\n');
+  const bulletsPerSection = mainSections
+    .map((s, i) => {
+      const bullets = (s.bullets || []).slice(0, 3).map(b => `• ${b}`).join(' ');
+      return `Section ${i + 1} (${colors[i % colors.length]}): ${bullets}`;
+    })
+    .join('. ');
+
+  const bottomBoxDetails = extD.points.slice(0, 6)
+    .map((p, i) => `Box ${i + 1}: '${p.split(' ').slice(0, 3).join(' ').toUpperCase()}' — "${p.slice(0, 100)}"`)
+    .join('. ');
 
   const pl = platform?.toLowerCase() || "";
-  const formatNote = pl.includes('linkedin') ? 'Vertical poster format (4:5 ratio), optimized for LinkedIn.'
-    : pl.includes('facebook') ? 'Square format (1:1 ratio), optimized for Facebook.'
-    : pl.includes('twitter') || pl.includes('x (') ? 'Landscape format (16:9), optimized for X/Twitter.'
-    : 'Vertical poster format (4:5 ratio).';
+  const formatNote = pl.includes('linkedin') ? 'Vertical poster format optimized for LinkedIn feed.'
+    : pl.includes('facebook') ? 'Square format optimized for Facebook.'
+    : pl.includes('twitter') || pl.includes('x (') ? 'Landscape format optimized for X/Twitter.'
+    : 'Vertical poster format.';
 
   return `A high-quality educational infographic on a clean white whiteboard background.
 
-The title at the top is '${title}' in bold, black hand-drawn style capital letters.
-Highlight 2-3 key words in the title with a soft orange marker effect.
+The title at the top is '${ext.title}' in bold, black hand-drawn style capital letters. Highlight 2-3 key words with a soft orange marker effect.
 
-The layout is divided into ${coloredSections.length} main color-coded sections on the left:
-${sectionsText}
+The layout is divided into ${mainSections.length} main color-coded sections on the left: ${sectionsDescription}. Each box has a corresponding arrow pointing to a bulleted list of instructions on the right.
 
-Each box has a corresponding arrow pointing to a bulleted list of instructions on the right.
+Bullet points per section: ${bulletsPerSection}.
 
-Below these sections, a horizontal line separates the top from a bottom section titled 'KEY TAKEAWAYS'.
-The bottom part contains ${Math.min(ext.points.length, 6)} distinct text boxes:
-${bottomBoxes}
+Below these sections, a horizontal line separates the top from a bottom section titled 'KEY INSIGHTS'. The bottom part contains ${Math.min(extD.points.length, 6)} distinct text boxes: ${bottomBoxDetails}.
 
-Use a mix of professional and hand-drawn aesthetics with small icons like gears, a graduation cap, books, arrows, and checkmarks.
+Use a mix of professional and hand-drawn aesthetics with small icons like gears, a graduation cap, books, arrows, and checkmarks.${extD.stats.length > 0 ? ` Highlight these key numbers prominently: ${extD.stats.join(', ')}.` : ''}
 
-${ext.stats.length > 0 ? `Highlight these key numbers prominently: ${ext.stats.join(', ')}.` : ''}
+Style: Crisp lines, high resolution, organized and easy to read. White background with subtle shadow border. Consistent black outlines. Pastel colors (blue #4A90D9, green #5BA85B, red #E05555, orange #F5A623). Simple flat icons only. ALL text fully readable, never cut off. 60px margin on all sides. ${formatNote} ALL text in ENGLISH only. Include "Follow @supenli.io for more | Repost" at the bottom.
 
-Style requirements:
-- Crisp lines, high resolution, organized and easy to read
-- White background #FFFFFF with subtle shadow border
-- Consistent black outlines on all elements
-- Pastel colors: blue #4A90D9, green #5BA85B, red #E05555, orange #F5A623
-- Simple flat icons, no realistic photos
-- All text must be FULLY READABLE, never cut off
-- Minimum 60px margin on all sides
-- ${formatNote}
-- ALL text in ENGLISH only
-- Include "Follow @supenli.io for more | Repost" at the bottom
-
-AVOID: blurry, messy layout, cluttered, too many colors, realistic photo, 3D render, low resolution, bad typography, misaligned text, dark background.`;
+AVOID: blurry, messy, cluttered, realistic photo, 3D render, dark background, bad typography, misaligned text, cut-off text.`;
 }
 
 // Keep old name as alias for backward compatibility
