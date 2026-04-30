@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import GenerationProgress, { INFOGRAPHIC_STEPS } from "@/components/GenerationProgress";
 import {
-  buildInfographicPrompt,
+  buildDallEPrompt,
   analyzeContent,
   getFormatDimensions,
   selectBestTemplate,
@@ -51,82 +51,37 @@ function getImageSize(platform: string): ImageSizeConfig {
   return { size: "1024x1536", label: "Portrait", description: `Optimized for ${platform || "social media"}` };
 }
 
-// ─── Infographic Generation via Edge Function (Claude HTML → canvas) ───
+// ─── DALL-E 3 Image Generation via Edge Function (avoids CORS) ───
 
-async function generateImage(prompt: string): Promise<string> {
-  console.log("[Infographic] Calling Edge Function...");
+async function generateWithOpenAI(
+  prompt: string,
+  imageSize: ImageSizeConfig,
+): Promise<string> {
+  console.log("[Infographic] Calling DALL-E 3 via Edge Function...");
+  console.log("[Infographic] Size:", imageSize.size, imageSize.label);
+  console.log("[Infographic] Prompt length:", prompt.length);
 
   const { data, error } = await supabase.functions.invoke("generate-image", {
-    body: { prompt },
+    body: { prompt, size: imageSize.size, quality: "high" },
   });
 
   if (error) {
     console.error("[Infographic] Edge Function error:", error);
-    throw new Error(error.message || "Generation failed. Please try again.");
+    throw new Error(error.message || "Image generation failed. Please try again.");
   }
+
   if (data?.error) {
     console.error("[Infographic] API error:", data.error);
     throw new Error(data.error);
   }
 
-  // HTML infographic → convert to image via html2canvas
-  if (data?.html) {
-    console.log("[Infographic] Converting HTML to image...");
-    return await htmlToBase64(data.html);
+  const base64 = data?.image;
+  if (!base64) {
+    throw new Error("No image returned from DALL-E 3. Please try again.");
   }
 
-  // Direct base64 image (Gemini fallback)
-  if (data?.image) {
-    console.log("[Infographic] Direct image, size:", data.image.length);
-    return data.image;
-  }
-
-  throw new Error("No content returned. Please try again.");
-}
-
-async function htmlToBase64(html: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const iframe = document.createElement("iframe");
-    iframe.style.cssText = "position:fixed;left:-9999px;top:0;width:1080px;height:1350px;border:none;z-index:-999;visibility:hidden";
-    document.body.appendChild(iframe);
-
-    const doc = iframe.contentDocument;
-    if (!doc) {
-      document.body.removeChild(iframe);
-      return reject(new Error("Cannot access iframe document"));
-    }
-
-    doc.open();
-    doc.write(html);
-    doc.close();
-
-    // Wait for fonts + layout to settle
-    setTimeout(async () => {
-      try {
-        const html2canvasModule = await import("html2canvas");
-        const html2canvas = html2canvasModule.default;
-        const canvas = await html2canvas(doc.documentElement, {
-          width: 1080,
-          height: 1350,
-          scale: 1,
-          useCORS: true,
-          allowTaint: true,
-          backgroundColor: "#FAFAFA",
-          logging: false,
-        });
-
-        document.body.removeChild(iframe);
-
-        const dataUrl = canvas.toDataURL("image/png");
-        const base64 = dataUrl.split(",")[1];
-        console.log("[Infographic] HTML→Image done, size:", base64.length);
-        resolve(base64);
-      } catch (err) {
-        if (document.body.contains(iframe)) document.body.removeChild(iframe);
-        reject(err);
-      }
-    }, 2500);
-  });
+  console.log("[Infographic] Generated! Size:", base64.length);
+  return base64;
 }
 
 function wrapBase64AsHtml(base64: string, dims: { width: number; height: number }): string {
@@ -437,12 +392,14 @@ export default function InfographicModal({ open, onClose, content, platform, con
 
       console.log("[Infographic] Content length:", content.length);
       console.log("[Infographic] Content preview:", content.slice(0, 200));
-      const infographicPrompt = buildInfographicPrompt(content, platform);
+      console.log("[Infographic] Template:", templateSelection.templateId, "—", templateSelection.reason);
+      const dallePrompt = buildDallEPrompt(content, platform, templateSelection.templateId);
 
       if (IS_DEV) {
-        console.log("=== INFOGRAPHIC PROMPT ===");
-        console.log(infographicPrompt);
-        console.log("=== END PROMPT (", infographicPrompt.length, "chars) ===");
+        console.log("=== DALL-E PROMPT ===");
+        console.log("Template:", templateSelection.templateId);
+        console.log("Prompt length:", dallePrompt.length);
+        console.log(dallePrompt.slice(0, 600));
         console.log("=== END PROMPT ===");
       }
 
@@ -450,14 +407,14 @@ export default function InfographicModal({ open, onClose, content, platform, con
       if (IS_DEV) console.log("[InfographicModal] Attempt 1 — generating with DALL-E 3...");
       let base64: string | null = null;
       try {
-        base64 = await generateImage(infographicPrompt);
+        base64 = await generateWithOpenAI(dallePrompt, imageConfig);
       } catch (firstErr) {
         if (IS_DEV) console.warn("[InfographicModal] Attempt 1 failed:", firstErr);
 
         // Attempt 2: retry with simplified prompt
         if (IS_DEV) console.log("[InfographicModal] Attempt 2 — retrying...");
         try {
-          base64 = await generateImage(infographicPrompt);
+          base64 = await generateWithOpenAI(dallePrompt + "\n\nIMPORTANT: Generate a clean, readable infographic. All text in English. No footer or watermark.", imageConfig);
         } catch (secondErr) {
           if (IS_DEV) console.error("[InfographicModal] Attempt 2 also failed:", secondErr);
           throw secondErr;
@@ -786,19 +743,64 @@ export default function InfographicModal({ open, onClose, content, platform, con
           <div className="p-6">
             {/* ═══ State 1: Ready ═══ */}
             {step === "ready" && (
-              <div className="space-y-4">
-                {/* Content preview */}
-                <div className="rounded-xl bg-accent/5 border border-border/10 p-4">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Content to visualize</p>
-                  <p className="text-xs text-muted-foreground leading-relaxed line-clamp-4">{content}</p>
+              <div className="space-y-5">
+                {/* AI analysis preview */}
+                <div className="text-center space-y-3">
+                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
+                    <Sparkles className="w-8 h-8 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium mb-1">Our AI will generate:</p>
+                    <div className="flex flex-wrap justify-center gap-2">
+                      {[
+                        { label: `Template: ${templateSelection.templateId}`, color: "bg-blue-500/10 text-blue-400" },
+                        { label: `Theme: ${analysis.colorTheme}`, color: "bg-green-500/10 text-green-400" },
+                        { label: `${dims.width}x${dims.height}`, color: "bg-orange-500/10 text-orange-400" },
+                      ].map((tag) => (
+                        <span key={tag.label} className={cn("text-[10px] px-2 py-1 rounded-full font-medium", tag.color)}>
+                          {tag.label}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
-                {/* AI info */}
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-primary/5 border border-primary/10">
-                  <Sparkles className="w-4 h-4 text-primary shrink-0" />
-                  <div>
-                    <p className="text-xs font-semibold">AI-powered whiteboard infographic</p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">Structured layout with colored sections, arrows, and key insights boxes.</p>
+                {/* Platform format indicator */}
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span>Format:</span>
+                  <span className="px-2 py-0.5 rounded-full bg-accent/30 font-medium">{imageConfig.label}</span>
+                  <span className="text-muted-foreground/60">{imageConfig.description}</span>
+                </div>
+
+                {/* Style selector with visual previews */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Choose a style</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {STYLE_OPTIONS.map((opt) => {
+                      const active = styleChoice === opt.id;
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => setStyleChoice(opt.id)}
+                          className={cn(
+                            "group rounded-xl border p-2 transition-all flex flex-col gap-1.5",
+                            active
+                              ? "border-primary bg-primary/10 ring-1 ring-primary/40"
+                              : "border-border/40 bg-accent/20 hover:border-border/70 hover:bg-accent/40",
+                          )}
+                        >
+                          <div className="aspect-[3/2] w-full rounded-md overflow-hidden bg-white/80 border border-border/30 flex items-center justify-center">
+                            {STYLE_PREVIEWS[opt.id]}
+                          </div>
+                          <div className="flex items-center gap-1 px-0.5">
+                            <span className={cn("text-[11px] font-bold leading-tight", active && "text-primary")}>{opt.label}</span>
+                            {active && <Check className="w-3 h-3 text-primary flex-shrink-0" />}
+                          </div>
+                          <p className="text-[9px] text-muted-foreground leading-tight px-0.5">{opt.desc}</p>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -808,10 +810,13 @@ export default function InfographicModal({ open, onClose, content, platform, con
                     <p className="text-xs text-destructive font-medium">{generationError}</p>
                     {(generationError.includes("overloaded") || generationError.includes("529")) && (
                       retryCountdown > 0 ? (
-                        <p className="text-xs text-muted-foreground font-mono">Auto-retry in {retryCountdown}s...</p>
+                        <p className="text-xs text-muted-foreground font-mono">
+                          Auto-retry in {retryCountdown}s...
+                        </p>
                       ) : (
                         <Button size="sm" variant="outline" className="h-8 gap-2 text-xs" onClick={handleRetryWithDelay}>
-                          <RefreshCw className="w-3.5 h-3.5" /> Retry in 30s
+                          <RefreshCw className="w-3.5 h-3.5" />
+                          Retry in 30s
                         </Button>
                       )
                     )}
@@ -823,6 +828,8 @@ export default function InfographicModal({ open, onClose, content, platform, con
                   <p className="text-xs text-muted-foreground leading-relaxed">{contentPreview}</p>
                 </div>
 
+                {/* API key warning — only shown if server-side key missing (will show after failed generation) */}
+
                 {/* Generate button */}
                 <Button
                   className="w-full h-14 text-base font-bold gap-3"
@@ -830,7 +837,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
                   disabled={retryCountdown > 0}
                 >
                   <Sparkles className="w-5 h-5" />
-                  {retryCountdown > 0 ? `Retry in ${retryCountdown}s...` : "Generate Visual →"}
+                  {retryCountdown > 0 ? `Retry in ${retryCountdown}s...` : `Generate ${styleChoice === "auto" ? templateSelection.templateId : styleChoice} infographic →`}
                 </Button>
               </div>
             )}
