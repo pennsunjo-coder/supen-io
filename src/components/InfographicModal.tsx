@@ -51,13 +51,10 @@ function getImageSize(platform: string): ImageSizeConfig {
   return { size: "1024x1536", label: "Portrait", description: `Optimized for ${platform || "social media"}` };
 }
 
-// ─── Gemini Image Generation via Edge Function ───
+// ─── Infographic Generation via Edge Function (Claude HTML → canvas) ───
 
-async function generateImage(
-  prompt: string,
-): Promise<string> {
-  console.log("[Infographic] Calling Gemini via Edge Function...");
-  console.log("[Infographic] Prompt length:", prompt.length);
+async function generateImage(prompt: string): Promise<string> {
+  console.log("[Infographic] Calling Edge Function...");
 
   const { data, error } = await supabase.functions.invoke("generate-image", {
     body: { prompt },
@@ -65,21 +62,71 @@ async function generateImage(
 
   if (error) {
     console.error("[Infographic] Edge Function error:", error);
-    throw new Error(error.message || "Image generation failed. Please try again.");
+    throw new Error(error.message || "Generation failed. Please try again.");
   }
-
   if (data?.error) {
     console.error("[Infographic] API error:", data.error);
     throw new Error(data.error);
   }
 
-  const base64 = data?.image;
-  if (!base64) {
-    throw new Error("No image returned from DALL-E 3. Please try again.");
+  // HTML infographic → convert to image via html2canvas
+  if (data?.html) {
+    console.log("[Infographic] Converting HTML to image...");
+    return await htmlToBase64(data.html);
   }
 
-  console.log("[Infographic] Generated! Size:", base64.length);
-  return base64;
+  // Direct base64 image (Gemini fallback)
+  if (data?.image) {
+    console.log("[Infographic] Direct image, size:", data.image.length);
+    return data.image;
+  }
+
+  throw new Error("No content returned. Please try again.");
+}
+
+async function htmlToBase64(html: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const iframe = document.createElement("iframe");
+    iframe.style.cssText = "position:fixed;left:-9999px;top:0;width:1080px;height:1350px;border:none;z-index:-999;visibility:hidden";
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentDocument;
+    if (!doc) {
+      document.body.removeChild(iframe);
+      return reject(new Error("Cannot access iframe document"));
+    }
+
+    doc.open();
+    doc.write(html);
+    doc.close();
+
+    // Wait for fonts + layout to settle
+    setTimeout(async () => {
+      try {
+        const html2canvasModule = await import("html2canvas");
+        const html2canvas = html2canvasModule.default;
+        const canvas = await html2canvas(doc.documentElement, {
+          width: 1080,
+          height: 1350,
+          scale: 1,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: "#FAFAFA",
+          logging: false,
+        });
+
+        document.body.removeChild(iframe);
+
+        const dataUrl = canvas.toDataURL("image/png");
+        const base64 = dataUrl.split(",")[1];
+        console.log("[Infographic] HTML→Image done, size:", base64.length);
+        resolve(base64);
+      } catch (err) {
+        if (document.body.contains(iframe)) document.body.removeChild(iframe);
+        reject(err);
+      }
+    }, 2500);
+  });
 }
 
 function wrapBase64AsHtml(base64: string, dims: { width: number; height: number }): string {
