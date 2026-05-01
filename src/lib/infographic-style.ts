@@ -717,8 +717,9 @@ CRITICAL: Use ONLY the text above. Do NOT invent, paraphrase, or add unrelated g
     return `Generate a digital whiteboard-style infographic.
 
 STYLE — MANDATORY:
-- Canvas: vertical 4:5 format, fill ENTIRE canvas edge to edge
-- Background: creamy paper texture #FAF9F6
+- Canvas: vertical 4:5 format, fill ENTIRE canvas edge to edge — NO white space at top or bottom
+- Background: creamy paper texture #FAF9F6 — this color must extend to ALL 4 edges
+- Content must use the FULL HEIGHT of the canvas — distribute sections evenly across the entire vertical space
 - Hand-drawn marker aesthetic — imperfect lines, human feel
 - Blocks with hand-drawn borders (slightly wobbly, not perfectly straight)
 - Title at top: large handwritten font, double orange underline (thick marker effect)

@@ -302,7 +302,7 @@ const Dashboard = () => {
                     <motion.div
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      className="rounded-xl border-2 border-dashed border-border/15 hover:border-primary/25 hover:bg-primary/[0.03] transition-all duration-200 cursor-pointer flex flex-col items-center justify-center aspect-[4/3] group"
+                      className="rounded-xl border-2 border-dashed border-border/15 hover:border-primary/25 hover:bg-primary/[0.03] transition-all duration-200 cursor-pointer flex flex-col items-center justify-center aspect-[4/5] group"
                       onClick={() => navigate("/dashboard/studio")}
                     >
                       <div className="w-10 h-10 rounded-xl bg-primary/[0.08] flex items-center justify-center mb-2.5 group-hover:bg-primary/15 transition-colors duration-200">
@@ -327,7 +327,7 @@ const Dashboard = () => {
                         >
                           <div className="rounded-xl overflow-hidden border border-border/10 bg-card hover:border-border/25 hover:shadow-xl hover:shadow-black/15 transition-all duration-300">
                             {/* Visual zone */}
-                            <div className="relative overflow-hidden aspect-[4/3] bg-accent/[0.08]">
+                            <div className="relative overflow-hidden aspect-[4/5] bg-accent/[0.08]">
                               {hasVisual ? (
                                 <img
                                   src={`data:image/png;base64,${s.infographic}`}
