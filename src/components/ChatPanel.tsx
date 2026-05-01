@@ -2,8 +2,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Send, Bot, User, Loader2, Trash2, Sparkles, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { anthropic, CLAUDE_MODEL, isAnthropicConfigured } from "@/lib/anthropic";
-import type { MessageParam } from "@anthropic-ai/sdk/resources/messages";
+import { callClaude } from "@/lib/anthropic";
 import { sanitizeInput, createRateLimiter } from "@/lib/security";
 import { assertOnline, friendlyError } from "@/lib/resilience";
 import { getUserStyleMemory } from "@/lib/user-memory";
@@ -288,11 +287,6 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
       setError(e instanceof Error ? e.message : "No internet connection.");
       return;
     }
-    if (!isAnthropicConfigured()) {
-      setError("Anthropic API key not configured. Add VITE_ANTHROPIC_API_KEY to your environment.");
-      return;
-    }
-
     setError(null);
     setInput("");
     setIsLoading(true);
@@ -302,18 +296,11 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
     const updatedMessages = [...messages, userMessage];
     onMessagesChange(() => updatedMessages);
 
-    const apiMessages: MessageParam[] = updatedMessages.map((msg) => ({ role: msg.role, content: msg.content }));
+    const apiMessages = updatedMessages.map((msg) => ({ role: msg.role as "user" | "assistant", content: msg.content }));
 
     try {
-      abortRef.current = new AbortController();
       const systemPrompt = buildCoachPrompt(profile || null, sources, lastGeneratedContent, styleMemory);
-      const stream = anthropic.messages.stream(
-        { model: CLAUDE_MODEL, max_tokens: 2048, system: systemPrompt, messages: apiMessages },
-        { signal: abortRef.current.signal },
-      );
-      let fullResponse = "";
-      stream.on("text", (t) => { fullResponse += t; setStreamingContent(fullResponse); });
-      await stream.finalMessage();
+      const fullResponse = await callClaude(systemPrompt, apiMessages);
       const cleaned = cleanAIResponse(fullResponse);
       setStreamingContent("");
       onMessagesChange((prev) => [...prev, { role: "assistant", content: cleaned }]);

@@ -1,21 +1,46 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { supabase } from "@/lib/supabase";
 
-const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY ?? "";
+/**
+ * Secure Claude API proxy — all calls go through the "chat" Edge Function.
+ * The API key lives server-side only (ANTHROPIC_API_KEY secret in Supabase).
+ */
 
-if (!apiKey && import.meta.env.DEV) {
-  console.warn("VITE_ANTHROPIC_API_KEY is not set");
+export interface ClaudeMessage {
+  role: "user" | "assistant";
+  content: string;
 }
 
-export const anthropic = new Anthropic({
-  apiKey: apiKey || "placeholder-not-configured",
-  dangerouslyAllowBrowser: true,
-  maxRetries: 0,
-});
+export interface ClaudeResponse {
+  text: string;
+}
 
-export const CLAUDE_MODEL = "claude-sonnet-4-5";
+/**
+ * Call Claude via the secure "chat" Edge Function.
+ * Supports system prompt + messages array.
+ */
+export async function callClaude(
+  system: string,
+  messages: ClaudeMessage[],
+  options?: { maxTokens?: number; model?: string },
+): Promise<string> {
+  const { data, error } = await supabase.functions.invoke("chat", {
+    body: {
+      system,
+      messages,
+      max_tokens: options?.maxTokens || 2048,
+      model: options?.model,
+    },
+  });
 
-export function isAnthropicConfigured(): boolean {
-  return !!import.meta.env.VITE_ANTHROPIC_API_KEY;
+  if (error) {
+    throw new Error(error.message || "Claude API call failed");
+  }
+
+  if (data?.error) {
+    throw new Error(data.error);
+  }
+
+  return data?.text || "";
 }
 
 export const SYSTEM_PROMPT = `You are a social media content creation assistant, integrated into Supenli.io.

@@ -10,7 +10,7 @@ import {
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { anthropic, CLAUDE_MODEL } from "@/lib/anthropic";
+import { callClaude } from "@/lib/anthropic";
 import { supabase } from "@/lib/supabase";
 import { useProfile } from "@/hooks/use-profile";
 import { useSources } from "@/hooks/use-sources";
@@ -278,17 +278,14 @@ function HookGenerator({ profileNiche, profilePlatforms }: { profileNiche?: stri
 
     try {
       assertOnline();
-      const response = await withTimeout(
-        anthropic.messages.create({
-          model: CLAUDE_MODEL,
-          max_tokens: 1000,
-          system: `You are an expert in viral hooks for social media. Generate 10 powerful hooks in English for ${platform}, niche ${niche || "creator"}.\n\nStrict rules:\n- Each hook is MAX 12 words\n- No intro, just the 10 numbered hooks 1. to 10.\n- Variety of styles: question, shocking stat, contrarian, confession, promise, story, FOMO\n- Avoid AI cliches (never "delve", "tapestry", "in today's world")\n- Direct, punchy, natural English tone\n- Respond ONLY with the 10 numbered hooks, nothing else`,
-          messages: [{ role: "user", content: `Sujet : ${topic.trim()}` }],
-        }),
+      const text = await withTimeout(
+        callClaude(
+          `You are an expert in viral hooks for social media. Generate 10 powerful hooks in English for ${platform}, niche ${niche || "creator"}.\n\nStrict rules:\n- Each hook is MAX 12 words\n- No intro, just the 10 numbered hooks 1. to 10.\n- Variety of styles: question, shocking stat, contrarian, confession, promise, story, FOMO\n- Avoid AI cliches (never "delve", "tapestry", "in today's world")\n- Direct, punchy, natural English tone\n- Respond ONLY with the 10 numbered hooks, nothing else`,
+          [{ role: "user", content: `Topic: ${topic.trim()}` }],
+          { maxTokens: 1000 },
+        ),
         30_000,
       );
-
-      const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
       const parsed = text
         .split("\n")
         .map((line) => line.replace(/^\d+[\.\)]\s*/, "").trim())
@@ -410,17 +407,14 @@ function Humanizer() {
 
     try {
       assertOnline();
-      const response = await withTimeout(
-        anthropic.messages.create({
-          model: CLAUDE_MODEL,
-          max_tokens: 2000,
-          system: `You are an expert in anti-AI rewriting. Transform this text into 100% human writing undetectable by AI detectors.\n\nStrict rules:\n- English only\n- Vary sentence length (mix short + long)\n- Natural, imperfect, sometimes casual phrasing\n- No banned AI words: delve, tapestry, vibrant, garner, intricate, foster, leverage, robust, seamless\n- No AI expressions: "in today's world", "game changer", "embark on a journey"\n- Keep the meaning and main message\n- No markdown, no lists\n- Respond ONLY with the rewritten text, nothing else`,
-          messages: [{ role: "user", content: input.trim() }],
-        }),
+      const text = await withTimeout(
+        callClaude(
+          `You are an expert in anti-AI rewriting. Transform this text into 100% human writing undetectable by AI detectors.\n\nStrict rules:\n- English only\n- Vary sentence length (mix short + long)\n- Natural, imperfect, sometimes casual phrasing\n- No banned AI words: delve, tapestry, vibrant, garner, intricate, foster, leverage, robust, seamless\n- No AI expressions: "in today's world", "game changer", "embark on a journey"\n- Keep the meaning and main message\n- No markdown, no lists\n- Respond ONLY with the rewritten text, nothing else`,
+          [{ role: "user", content: input.trim() }],
+          { maxTokens: 2000 },
+        ),
         45_000,
       );
-
-      const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
       setOutput(text.trim());
       toast.success("Text humanized!");
     } catch (err) {
@@ -493,17 +487,14 @@ function ViralAnalyzer() {
 
     try {
       assertOnline();
-      const response = await withTimeout(
-        anthropic.messages.create({
-          model: CLAUDE_MODEL,
-          max_tokens: 800,
-          system: `You are an expert in viral content. Analyze this post and evaluate its viral potential.\n\nRespond ONLY with this exact JSON (no markdown, no backticks):\n{\n  "hookScore": N (0-100, hook strength),\n  "structureScore": N (0-100, structure quality),\n  "ctaScore": N (0-100, CTA strength),\n  "strengths": ["strength 1", "strength 2", "strength 3"],\n  "weaknesses": ["weakness 1", "weakness 2"],\n  "improvements": ["improvement 1", "improvement 2", "improvement 3"]\n}\n\nBe strict in scoring. All in English.`,
-          messages: [{ role: "user", content: input.trim() }],
-        }),
+      const text = await withTimeout(
+        callClaude(
+          `You are an expert in viral content. Analyze this post and evaluate its viral potential.\n\nRespond ONLY with this exact JSON (no markdown, no backticks):\n{\n  "hookScore": N (0-100, hook strength),\n  "structureScore": N (0-100, structure quality),\n  "ctaScore": N (0-100, CTA strength),\n  "strengths": ["strength 1", "strength 2", "strength 3"],\n  "weaknesses": ["weakness 1", "weakness 2"],\n  "improvements": ["improvement 1", "improvement 2", "improvement 3"]\n}\n\nBe strict in scoring. All in English.`,
+          [{ role: "user", content: input.trim() }],
+          { maxTokens: 800 },
+        ),
         30_000,
       );
-
-      const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
       const cleaned = text.replace(/```json?/g, "").replace(/```/g, "").trim();
       const parsed = JSON.parse(cleaned) as ViralAnalysis;
       setAnalysis(parsed);

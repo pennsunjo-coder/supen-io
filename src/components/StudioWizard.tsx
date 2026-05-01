@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { anthropic, CLAUDE_MODEL, isAnthropicConfigured } from "@/lib/anthropic";
+import { callClaude } from "@/lib/anthropic";
 import { sanitizeInput } from "@/lib/security";
 import { toast } from "sonner";
 import { searchViralReferences, ViralReference, searchUserSources } from "@/lib/embeddings";
@@ -664,43 +664,18 @@ Each variation includes: HOOK, PROBLEM, SOLUTION, PROOF, CTA, ON-SCREEN TEXT.`;
       }
 
       assertOnline();
-      if (!isAnthropicConfigured()) {
-        throw new Error("Anthropic API key not configured. Add VITE_ANTHROPIC_API_KEY to your environment.");
-      }
 
-      // Use Haiku for fast generation (5x faster than Sonnet)
-      const FAST_MODEL = "claude-haiku-4-5-20251001";
-
-      // Retry with backoff on rate limit
-      let response;
-      for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-          response = await withTimeout(
-            anthropic.messages.create({
-              model: FAST_MODEL,
-              max_tokens: 4000,
-              system: systemPrompt,
-              messages: [{ role: "user", content: userMessage }],
-            }),
-            60_000,
-            "Generation took too long. Try again with shorter content.",
-          );
-          break;
-        } catch (retryErr: any) {
-          const is429 = retryErr?.status === 429 || /too many|rate/i.test(retryErr?.message || "");
-          if (is429 && attempt < 2) {
-            const delay = (attempt + 1) * 3000;
-            if (IS_DEV) console.log(`[Gen] Rate limited. Retrying in ${delay}ms...`);
-            await new Promise((r) => setTimeout(r, delay));
-            continue;
-          }
-          throw retryErr;
-        }
-      }
-      if (!response) throw new Error("Generation failed after retries.");
+      // Call Claude via secure Edge Function (API key server-side only)
+      const text = await withTimeout(
+        callClaude(systemPrompt, [{ role: "user", content: userMessage }], {
+          maxTokens: 4000,
+          model: "claude-haiku-4-5-20251001",
+        }),
+        60_000,
+        "Generation took too long. Try again with shorter content.",
+      );
 
       setError(null);
-      const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
       if (IS_DEV) {
         console.log("=== RAW RESPONSE ===");
         console.log(text.slice(0, 500));
@@ -905,13 +880,10 @@ Each variation includes: HOOK, PROBLEM, SOLUTION, PROOF, CTA, ON-SCREEN TEXT.`;
     setIsHumanizing(true);
     setError(null);
     try {
-      const response = await anthropic.messages.create({
-        model: CLAUDE_MODEL,
-        max_tokens: 2048,
-        system: `You are an expert in content rewriting. Make this text undetectable by AI detectors while keeping the same message.\nRules: English only. Natural, imperfect, human phrasing. Vary sentence length. Keep the format adapted to ${selectedPlatform.name}. Respond only with the rewritten text.`,
-        messages: [{ role: "user", content: `Humanize this content:\n\n${original.content}` }],
-      });
-      const raw = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
+      const raw = await callClaude(
+        `You are an expert in content rewriting. Make this text undetectable by AI detectors while keeping the same message.\nRules: English only. Natural, imperfect, human phrasing. Vary sentence length. Keep the format adapted to ${selectedPlatform.name}. Respond only with the rewritten text.`,
+        [{ role: "user", content: `Humanize this content:\n\n${original.content}` }],
+      );
       const text = stripMarkdown(raw);
       setVariations((prev) => prev.map((v, i) => i === idx ? { ...v, content: text, words: wordCount(text) } : v));
       toast.success("Humanized! Undetectable by AI detectors ✓");
@@ -1022,13 +994,12 @@ Each variation includes: HOOK, PROBLEM, SOLUTION, PROOF, CTA, ON-SCREEN TEXT.`;
     setInfraContent("");
     setGenInfra(true);
     try {
-      const response = await anthropic.messages.create({
-        model: CLAUDE_MODEL,
-        max_tokens: 400,
-        system: `You are an expert in viral infographic design. Create an infographic structure for this ${selectedPlatform?.name || ""} content. Format: TITLE: [max 8 words]\nPOINT 1: [short text]\nPOINT 2: [short text]\nPOINT 3: [short text]\nCTA: [call to action]\nIn English. Respond ONLY with the structure.`,
-        messages: [{ role: "user", content: variations[idx].content.slice(0, 600) }],
-      });
-      setInfraContent(response.content.filter((b) => b.type === "text").map((b) => b.text).join(""));
+      const infraResult = await callClaude(
+        `You are an expert in viral infographic design. Create an infographic structure for this ${selectedPlatform?.name || ""} content. Format: TITLE: [max 8 words]\nPOINT 1: [short text]\nPOINT 2: [short text]\nPOINT 3: [short text]\nCTA: [call to action]\nIn English. Respond ONLY with the structure.`,
+        [{ role: "user", content: variations[idx].content.slice(0, 600) }],
+        { maxTokens: 400 },
+      );
+      setInfraContent(infraResult);
     } catch (err) {
       if (IS_DEV) console.error("Infographic error:", err);
       toast.error("Infographic generation error");

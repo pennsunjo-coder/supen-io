@@ -1,9 +1,9 @@
 /**
- * Real viral scoring via Claude Haiku.
+ * Real viral scoring via Claude Haiku (through secure Edge Function).
  * Evaluates content on 5 criteria (0-20 each) for a total /100.
  */
 
-import Anthropic from "@anthropic-ai/sdk";
+import { callClaude } from "@/lib/anthropic";
 
 export interface ScoreDetails {
   total: number;
@@ -41,21 +41,13 @@ Respond ONLY with this exact JSON format (no markdown, no backticks):
 export async function scoreVariation(
   content: string,
   platform: string,
-  client: Anthropic,
 ): Promise<ScoreDetails> {
   try {
-    const response = await client.messages.create({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 200,
-      system: `Platform: ${platform}\n\n${SCORING_PROMPT}`,
-      messages: [{ role: "user", content: content.slice(0, 800) }],
-    });
-
-    const text = response.content
-      .filter((b) => b.type === "text")
-      .map((b) => b.text)
-      .join("")
-      .trim();
+    const text = await callClaude(
+      `Platform: ${platform}\n\n${SCORING_PROMPT}`,
+      [{ role: "user", content: content.slice(0, 800) }],
+      { maxTokens: 200, model: "claude-haiku-4-5-20251001" },
+    );
 
     const jsonStr = text.replace(/```json?\s*/g, "").replace(/```/g, "").trim();
     const data = JSON.parse(jsonStr);
@@ -79,9 +71,8 @@ export async function scoreVariation(
 export async function scoreAllVariations(
   variations: { content: string }[],
   platform: string,
-  client: Anthropic,
 ): Promise<ScoreDetails[]> {
-  return Promise.all(variations.map((v) => scoreVariation(v.content, platform, client)));
+  return Promise.all(variations.map((v) => scoreVariation(v.content, platform)));
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -103,7 +94,7 @@ export function scoreBarColor(total: number): string {
 }
 
 export function scoreBadge(total: number): string | null {
-  if (total >= 86) return "Fort potentiel viral";
-  if (total >= 76) return "Bon potentiel";
+  if (total >= 86) return "High viral potential";
+  if (total >= 76) return "Good potential";
   return null;
 }
