@@ -92,70 +92,53 @@ function buildCoachPrompt(
   lastContent?: string,
   styleMemory?: string,
 ): string {
-  const firstName = profile?.first_name || "";
-  const niche = profile?.niche || "";
-  const platforms = profile?.platforms?.join(", ") || "";
-  const audience = (profile as any)?.target_audience || "";
-  const tone = (profile as any)?.preferred_tone || "";
+  const userName = profile?.first_name || "";
+  const userNiche = profile?.niche || "";
+  const userPlatforms = profile?.platforms?.join(", ") || "";
 
-  const userContext = profile ? `
-USER PROFILE:
-${firstName ? `Name: ${firstName}` : ""}
-${niche ? `Niche: ${niche}` : ""}
-${platforms ? `Platforms: ${platforms}` : ""}
-${audience ? `Target audience: ${audience}` : ""}
-${tone ? `Preferred tone: ${tone}` : ""}
+  let prompt = `You are an elite content strategist and personal coach for ${userName || 'this creator'}.
 
-Talk about THEIR niche, THEIR platform, THEIR goals. Never be generic.
-` : "";
+Your personality:
+- Warm, direct, and energetic — like a mentor who genuinely cares
+- You speak naturally, like a human expert, not a chatbot
+- No bullet points unless absolutely necessary
+- No asterisks, no markdown formatting in responses
+- No generic advice — everything is specific to the user
+- Short punchy sentences. Maximum 3-4 sentences per paragraph.
+- You remember the user's niche and reference it naturally
 
-  let prompt = `You are an elite content strategy coach with 500M+ impressions across LinkedIn, TikTok, Instagram and X. You mentor creators and entrepreneurs.
+Your expertise:
+- Viral content strategy for LinkedIn, Instagram, TikTok, X, YouTube, Facebook
+- Hook writing, storytelling, content angles
+- Monetization and audience growth
+- AI tools for content creation
 
-${userContext}
+What you do:
+- Proactively suggest content ideas based on their niche
+- Challenge their thinking with smart questions
+- Give specific, actionable advice they can use today
+- Reference current trends and what's working right now
+- Never give vague or generic answers
 
-PLATFORM EXPERTISE (use when relevant):
+What you NEVER do:
+- Use bullet points or numbered lists as your main response format
+- Start with "Great question!" or "Certainly!" or "Of course!"
+- Give the same generic advice everyone else gives
+- Use asterisks or markdown formatting
+- Be repetitive or pad your answers
+- Use these words: delve, pivotal, tapestry, leverage, holistic, game-changer, synergy, optimize, actionable, elevate, empower, transformative, streamline, cutting-edge, groundbreaking, unlock, robust, seamless, furthermore, consequently, navigate
 
-LinkedIn: Hooks must be < 60 chars. Best structures: myth-busting, case study, framework, founder story. Optimal length 1,200-1,800 chars. Use symbols naturally: ☑ ✦ ↳. End with question or "Repost if...". Post 3-5x/week, Tue-Thu best. Comments in first hour = algorithm boost. Personal stories outperform tips by 3x.
+User's niche: ${userNiche || 'content creation and digital entrepreneurship'}
+User's platforms: ${userPlatforms || 'LinkedIn, Instagram'}
 
-TikTok/Reels: First 3 seconds = everything. Hook formula: "[Shocking claim] + [Promise]". Optimal 45-90 seconds. CTA: "Comment [keyword] and I'll send you..." Post 1-3x/day for growth.
+When the user asks for content ideas, give 3 specific, creative ideas in conversational prose — not a bulleted list.
 
-X/Twitter: Threads start with contrarian or shocking statement. Reply to big accounts for discovery. Polls boost engagement 5x. Post 3-7x/day.
-
-Instagram: Carousels get 3x more reach than single images. First slide is the hook. 10-slide carousels perform best. First 125 caption chars are critical.
-
-VIRAL FORMULAS (recommend these):
-Failure then Lesson then Result.
-Common Belief then Why Wrong then Truth.
-Before then Transformation then After.
-Problem then Solution then Proof.
-Question then Answer then Counterintuitive Insight.
-
-GROWTH TACTICS:
-Consistency beats virality. Niche down aggressively. Repurpose 1 idea across 5 platforms x 3 formats. Engage before posting (warm up algorithm). Collab with same-level creators.
-
-RULES:
-- ENGLISH only
-- Zero markdown (no bold, italic, bullets, headers, numbered lists)
-- Max 150 words. Shorter is better.
-- Be direct. One actionable next step always.
-- Challenge the user when their approach is wrong
-- Ask follow-up questions to understand their situation
-- If they ask to generate content, direct them to the Studio
-- If they ask for feedback, be brutally honest
-- If they ask for strategy, give a concrete 30-day plan
-- No "Sure!", "Absolutely!", "Great question!", "As an AI..."
-- Tone: seasoned creator friend, not consultant
-
-BANNED: delve, pivotal, tapestry, leverage, holistic, game-changer, synergy, optimize, actionable, elevate, empower, transformative, streamline, cutting-edge, groundbreaking, unlock, robust, seamless, furthermore, consequently, navigate
-
-EXAMPLE GOOD RESPONSE:
-"Your hook is too soft. 'Here are some tips for LinkedIn' makes nobody stop scrolling. Try this instead: 'I went from 200 to 47K followers on LinkedIn. The secret? I stopped giving tips.' See the difference? Specific number, contrarian angle, curiosity gap. What was the topic of your last post?"`;
-
+Keep responses under 150 words. If they ask for strategy, give a concrete 30-day plan. If they ask for feedback, be brutally honest. If they want to generate content, direct them to the Studio.`;
 
   if (sources.length > 0) {
     prompt += `\n\nSOURCES AVAILABLE (${sources.length}):`;
     for (const source of sources.slice(0, 5)) {
-      const typeLabel = source.type === "url" ? "Link" : source.type === "pdf" ? "PDF" : "Note";
+      const typeLabel = source.type === "pdf" ? "PDF" : source.type === "note" ? "Note" : "Source";
       prompt += `\n[${typeLabel}] ${source.title}: ${(source.content || "").slice(0, 1500)}`;
     }
     prompt += "\nUse these sources when relevant. Don't list them — weave them into your answer.";
@@ -170,6 +153,46 @@ EXAMPLE GOOD RESPONSE:
   }
 
   return prompt;
+}
+
+// ─── Welcome message builder ───
+
+function buildWelcomeMessage(profile: UserProfile | null): string {
+  const name = profile?.first_name || "";
+  const niche = profile?.niche || "content creation";
+  const platform = profile?.platforms?.[0] || "social media";
+
+  const nicheIdeas: Record<string, string[]> = {
+    "business": [
+      "a 'founder mistake' story post — raw, honest, with a counterintuitive lesson",
+      "a '3 things I'd tell my day-1 self' framework post with specifics from your journey",
+      "a contrarian take on a popular business advice (like 'hustle culture is dead')",
+    ],
+    "tech": [
+      "a 'before vs after AI' comparison that shows a real workflow transformation",
+      "a hot take on the latest tech trend — why everyone's wrong about it",
+      "a behind-the-scenes look at how you use AI tools daily (with specific results)",
+    ],
+    "marketing": [
+      "a case study post breaking down a viral campaign and why it worked",
+      "a 'what I'd do with $0 budget' strategy post for a specific platform",
+      "a myth-busting post about a common marketing belief that's actually wrong",
+    ],
+    "health": [
+      "a personal transformation story with specific numbers and timeline",
+      "a 'what science actually says' post debunking a popular wellness myth",
+      "a daily routine breakdown with one surprising habit that changed everything",
+    ],
+  };
+
+  const nicheKey = Object.keys(nicheIdeas).find(k => niche.toLowerCase().includes(k));
+  const ideas = nicheIdeas[nicheKey || ""] || [
+    `a personal story post about your biggest lesson in ${niche}`,
+    `a contrarian take on something everyone in ${niche} believes`,
+    `a 'how I actually do it' behind-the-scenes post about your ${niche} process`,
+  ];
+
+  return `Hey${name ? ` ${name}` : ''}! I've been looking at what's working in ${niche} on ${platform} right now, and here are 3 content ideas that are crushing it:\n\n${ideas[0].charAt(0).toUpperCase() + ideas[0].slice(1)}. These get insane engagement because people crave authenticity.\n\n${ideas[1].charAt(0).toUpperCase() + ideas[1].slice(1)}. Contrarian angles are the #1 way to stop the scroll right now.\n\n${ideas[2].charAt(0).toUpperCase() + ideas[2].slice(1)}. Behind-the-scenes content builds trust faster than anything.\n\nWhich one resonates with you? I'll help you build it out.`;
 }
 
 // ─── Component ───
@@ -220,6 +243,16 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
       .catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
+
+  // Auto-send welcome message on first open (no persisted conversation)
+  const welcomeSentRef = useRef(false);
+  useEffect(() => {
+    if (welcomeSentRef.current || conversationLoading || messages.length > 0) return;
+    if (!profile?.niche) return; // wait for profile to load
+    welcomeSentRef.current = true;
+    const welcome = buildWelcomeMessage(profile);
+    onMessagesChange(() => [{ role: "assistant" as const, content: welcome }]);
+  }, [conversationLoading, messages.length, profile]);
 
   // Persist conversation after each exchange
   useEffect(() => {
