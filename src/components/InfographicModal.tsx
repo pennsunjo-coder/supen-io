@@ -473,7 +473,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
     }, 1000);
   }
 
-  // ─── Downloads (direct base64 for DALL-E images) ───
+  // ─── Downloads (resized to exact platform dimensions) ───
 
   function base64ToBlob(b64: string, type: string): Blob {
     const binary = atob(b64);
@@ -482,47 +482,52 @@ export default function InfographicModal({ open, onClose, content, platform, con
     return new Blob([bytes], { type });
   }
 
+  function getDownloadDims(): { w: number; h: number; label: string } {
+    const pl = platform?.toLowerCase() || "";
+    if (pl.includes("facebook")) return { w: 1080, h: 1080, label: "facebook-1080x1080" };
+    if (pl.includes("twitter") || pl.includes("x (")) return { w: 1200, h: 675, label: "twitter-1200x675" };
+    return { w: 1080, h: 1350, label: "linkedin-1080x1350" };
+  }
+
   async function handleDownload(format: "png" | "jpeg") {
     if (downloading) return;
     setDownloading(true);
 
     try {
       if (imageBase64) {
-        // ── Image path: base64 → direct or canvas conversion ──
-        if (format === "png") {
-          const link = document.createElement("a");
-          link.style.display = "none";
-          link.href = `data:image/png;base64,${imageBase64}`;
-          link.download = `supen-infographic-${Date.now()}.png`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          toast.success("PNG downloaded!");
-        } else {
-          // JPEG: composite over white to avoid transparent-black artifacts
-          const img = new Image();
-          img.src = `data:image/png;base64,${imageBase64}`;
-          await new Promise<void>((resolve, reject) => {
-            img.onload = () => resolve();
-            img.onerror = () => reject(new Error("Failed to load image"));
-          });
-          const canvas = document.createElement("canvas");
-          canvas.width = img.naturalWidth;
-          canvas.height = img.naturalHeight;
-          const ctx = canvas.getContext("2d");
-          if (!ctx) throw new Error("Canvas not supported");
-          ctx.fillStyle = "#f8f9f7";
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(img, 0, 0);
-          const link = document.createElement("a");
-          link.style.display = "none";
-          link.href = canvas.toDataURL("image/jpeg", 0.95);
-          link.download = `supen-infographic-${Date.now()}.jpg`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          toast.success("JPEG downloaded!");
+        const { w, h, label } = getDownloadDims();
+        const img = new Image();
+        img.src = `data:image/png;base64,${imageBase64}`;
+        await new Promise<void>((resolve, reject) => {
+          img.onload = () => resolve();
+          img.onerror = () => reject(new Error("Failed to load image"));
+        });
+
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) throw new Error("Canvas not supported");
+
+        if (format === "jpeg") {
+          ctx.fillStyle = "#FAF9F6";
+          ctx.fillRect(0, 0, w, h);
         }
+        ctx.drawImage(img, 0, 0, w, h);
+
+        const link = document.createElement("a");
+        link.style.display = "none";
+        if (format === "png") {
+          link.href = canvas.toDataURL("image/png", 1.0);
+          link.download = `supenli-${label}-${Date.now()}.png`;
+        } else {
+          link.href = canvas.toDataURL("image/jpeg", 0.95);
+          link.download = `supenli-${label}-${Date.now()}.jpg`;
+        }
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success(`${format.toUpperCase()} downloaded!`);
       } else if (htmlCode) {
         // ── HTML fallback path: capture iframe via html2canvas ──
         await new Promise((r) => setTimeout(r, 1500));
