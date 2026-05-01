@@ -708,15 +708,11 @@ CRITICAL: Use ONLY the text above. Do NOT invent, paraphrase, or add unrelated g
   else if (pl.includes("twitter") || pl.includes("x (")) formatHint = "Landscape (1536x1024). X/Twitter-optimized.";
 
   const n = ext.points.length;
-  const AVOID = "\n\nAVOID: blurry, cluttered, messy layout, too many colors, realistic photo, 3D render, low resolution, bad typography, misaligned text, dark background (unless dark template), generic stock photo style.\n\nFill the ENTIRE canvas edge to edge like a PDF page. NO white borders, NO brown table background, NO empty space around the design.";
-
-  const aspectNote = pl.includes("facebook") || pl.includes("instagram")
-    ? "FORMAT: Square 1080x1080px (1:1).\n"
-    : "FORMAT: Vertical rectangle 1236x1536px (4:5). LinkedIn portrait.\n";
+  const AVOID = "\n\nAVOID: blurry, cluttered, messy layout, too many colors, realistic photo, 3D render, low resolution, bad typography, misaligned text, dark background (unless dark template), generic stock photo style.";
 
   // ── WHITEBOARD ──
   if (selectedTemplate === "WHITEBOARD" || selectedTemplate === "UI_CARDS" || selectedTemplate === "AWA_CLASSIC") {
-    return `${aspectNote}Generate a single image of a physical, hand-drawn infographic on a large whiteboard or notebook page.
+    return `Generate a single image of a physical, hand-drawn infographic on a large whiteboard or notebook page.
 
 ${baseRules}
 
@@ -767,7 +763,7 @@ QUALITY: Must look like a real photograph of handwritten marker notes on a white
 
   // ── PROCESS_STEPS ──
   if (selectedTemplate === "PROCESS_STEPS") {
-    return `${aspectNote}Generate a single image of a clean, professional step-by-step process infographic.
+    return `Generate a single image of a clean, professional step-by-step process infographic.
 
 ${baseRules}
 
@@ -808,7 +804,7 @@ QUALITY: Magazine editorial meets Apple product page. Premium SaaS aesthetic. In
 
   // ── EDITORIAL_LIST ──
   if (selectedTemplate === "EDITORIAL_LIST") {
-    return `${aspectNote}Generate a single image of a bold editorial magazine-style list infographic.
+    return `Generate a single image of a bold editorial magazine-style list infographic.
 
 ${baseRules}
 
@@ -849,7 +845,7 @@ QUALITY: Sophisticated, scroll-stopping, The Economist meets Instagram carousel.
 
   // ── COMMAND_CENTER ──
   if (selectedTemplate === "COMMAND_CENTER") {
-    return `${aspectNote}Create a terminal/command-center dark UI infographic.
+    return `Create a terminal/command-center dark UI infographic.
 
 ${baseRules}
 
@@ -877,7 +873,7 @@ AVOID: light background, photos, blur, 3D, cluttered.`;
 
   // ── ICON_GRID ──
   if (selectedTemplate === "ICON_GRID") {
-    return `${aspectNote}Create a modern bento grid icon infographic.
+    return `Create a modern bento grid icon infographic.
 
 ${baseRules}
 
@@ -901,7 +897,7 @@ ${ext.points.map((point, i) => `Cell ${i + 1}: Orange circled number ${i + 1}, b
 
   // ── COMPARISON / DATA_GRID ──
   if (selectedTemplate === "COMPARISON" || selectedTemplate === "DATA_GRID") {
-    return `${aspectNote}Create a dark luxury comparison table infographic.
+    return `Create a dark luxury comparison table infographic.
 
 ${baseRules}
 
@@ -934,7 +930,7 @@ AVOID: light background, photos, blur, cluttered.`;
 
   // ── NOTEBOOK ──
   if (selectedTemplate === "NOTEBOOK") {
-    return `${aspectNote}Generate a single image of a physical spiral notebook page with hand-drawn colorful notes.
+    return `Generate a single image of a physical spiral notebook page with hand-drawn colorful notes.
 
 ${baseRules}
 
@@ -979,7 +975,7 @@ QUALITY: Must look like a real photograph of handwritten study notes. Warm, pers
 
   // ── FUNNEL ──
   if (selectedTemplate === "FUNNEL") {
-    return `${aspectNote}Create a conversion funnel flow infographic.
+    return `Create a conversion funnel flow infographic.
 
 ${baseRules}
 
@@ -1006,7 +1002,7 @@ Side: Two red curved arrows flanking funnel. Gold sparkle stars.${AVOID}`;
 
   // ── CTA_VISUAL ──
   if (selectedTemplate === "CTA_VISUAL") {
-    return `${aspectNote}Create a clean promotional infographic.
+    return `Create a clean promotional infographic.
 
 ${baseRules}
 
@@ -1027,7 +1023,7 @@ ${ext.points.slice(0, 4).map((point, i) => `Folder ${i + 1}: "${point.slice(0, 3
   }
 
   // Default
-  return `${aspectNote}${baseRules}\n\n${contentBlock}\n\nVISUAL STYLE: Professional educational infographic.
+  return `${baseRules}\n\n${contentBlock}\n\nVISUAL STYLE: Professional educational infographic.
 ${formatHint}
 Dense information layout. High contrast. Scroll-stopping design. Viral social media quality.`;
 }

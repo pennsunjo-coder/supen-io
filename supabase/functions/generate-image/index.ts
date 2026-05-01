@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { prompt, size, quality, aspectRatio = "4:5" } = await req.json();
+    const { prompt, size, quality } = await req.json();
 
     if (!prompt) {
       return json({ error: "Missing required field: prompt" }, 400);
@@ -28,16 +28,7 @@ Deno.serve(async (req) => {
       throw new Error("OPENAI_API_KEY not configured");
     }
 
-    // Inject size instruction into prompt
-    const sizeInstruction = aspectRatio === "1:1"
-      ? "IMAGE SIZE: Perfect square 1080x1080px. Facebook format. Fill entire square edge to edge."
-      : aspectRatio === "16:9"
-        ? "IMAGE SIZE: Wide landscape 1200x675px. Twitter format. Fill entire canvas edge to edge."
-        : "IMAGE SIZE: Vertical rectangle 1236x1536px. LinkedIn format (4:5). Fill entire tall canvas edge to edge. NO white borders.";
-
-    const fullPrompt = `${sizeInstruction}\n\n${prompt}`;
-
-    console.log("[generate-image] Calling gpt-image-1, size:", size || "1024x1536", "aspect:", aspectRatio);
+    console.log("[generate-image] Calling gpt-image-1, size:", size || "1024x1536");
 
     const response = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
@@ -47,7 +38,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model: "gpt-image-1",
-        prompt: fullPrompt,
+        prompt,
         n: 1,
         size: size || "1024x1536",
         quality: quality || "high",
