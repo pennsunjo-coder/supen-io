@@ -20,11 +20,17 @@ interface Point {
   body: string;
 }
 
+interface Section {
+  header: string;
+  bullets: string[];
+}
+
 interface ExtractionResult {
   title: string;
   badge: string;
   subtitle: string;
   points: Point[];
+  sections: Section[];
   proTip: string;
 }
 
@@ -234,7 +240,18 @@ export function extractKeyPoints(content: string): ExtractionResult {
 
   const proTip = generateProTip(content);
 
-  return { title, badge, subtitle, points: points.slice(0, 8), proTip };
+  // Build sections from points (group by 2-3 bullets per section)
+  const sections: Section[] = [];
+  const finalPoints = points.slice(0, 8);
+  for (let i = 0; i < finalPoints.length; i += 3) {
+    const group = finalPoints.slice(i, i + 3);
+    sections.push({
+      header: group[0]?.title?.toUpperCase() || `SECTION ${sections.length + 1}`,
+      bullets: group.map(p => p.title + (p.body ? ` — ${p.body}` : '')),
+    });
+  }
+
+  return { title, badge, subtitle, points: finalPoints, sections, proTip };
 }
 
 // ─── Enhanced extraction for DALL-E prompts ───
@@ -303,7 +320,7 @@ export function extractForDallE(content: string): EnhancedExtraction & { quotes:
 
   const contentType = detectContentType(content);
 
-  return { title, points, stats, keywords, quotes, contentType };
+  return { title, points: points || [], stats: stats || [], keywords: keywords || [], quotes: quotes || [], contentType: contentType || "general" };
 }
 
 function generateProTip(content: string): string {
@@ -677,7 +694,15 @@ export function buildDallEPrompt(
   userName?: string,
 ): string {
   const selectedTemplate = template || detectTemplate(content);
-  const ext = extractForDallE(content);
+  const rawExt = extractForDallE(content);
+  const ext = {
+    title: rawExt?.title || "Key Insights",
+    points: rawExt?.points || [],
+    stats: rawExt?.stats || [],
+    keywords: rawExt?.keywords || [],
+    quotes: rawExt?.quotes || [],
+    contentType: rawExt?.contentType || "general",
+  };
   const pl = platform?.toLowerCase() || "";
 
   const baseRules = `CRITICAL RULES — NO EXCEPTIONS:
@@ -735,9 +760,10 @@ CRITICAL: Use ONLY the text above. Do NOT invent, paraphrase, or add unrelated g
 
     // Build rich content analysis
     const kp = extractKeyPoints(content);
-    const hasSections = kp.sections.length >= 2 && kp.sections.some(s => s.bullets.length > 0);
+    const sections = kp?.sections || [];
+    const hasSections = sections.length >= 2 && sections.some(s => s.bullets.length > 0);
     const mainSections = hasSections
-      ? kp.sections.slice(0, 5)
+      ? sections.slice(0, 5)
       : ext.points.slice(0, 5).map(p => ({ header: p.split(' ').slice(0, 5).join(' ').toUpperCase(), bullets: [p] }));
 
     return `ABSOLUTE RULE: Fill 100% of canvas vertically and horizontally. NO white space at any edge. Background reaches ALL 4 edges.
