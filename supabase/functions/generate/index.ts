@@ -13,14 +13,14 @@ Deno.serve(async (req) => {
   try {
     // Auth
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) return new Response(JSON.stringify({ error: "Non authentifié" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!authHeader) return new Response(JSON.stringify({ error: "Not authenticated" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: authHeader } },
     });
 
     const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) return new Response(JSON.stringify({ error: "Session invalide" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (userError || !user) return new Response(JSON.stringify({ error: "Invalid session" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     // Rate limit
     const adminClient = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
 
     // Body
     const { platform, format, sourceText, sourceMode, activeSourceIds } = await req.json();
-    if (!platform || !format || !sourceText) return new Response(JSON.stringify({ error: "platform, format et sourceText requis" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!platform || !format || !sourceText) return new Response(JSON.stringify({ error: "platform, format and sourceText are required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     // RAG — sources utilisateur
     let userSection = "";
@@ -93,7 +93,7 @@ Rules:
 
     const text = response.content.filter((b: { type: string }) => b.type === "text").map((b: { text: string }) => b.text).join("");
 
-    // Sauvegarder
+    // Save to DB
     let parts = text.split(/---VARIATION---/).map((s: string) => s.trim()).filter((s: string) => s.length > 20);
     if (parts.length < 2) parts = text.split(/\n\s*(?=\d\.\s)/).map((v: string) => v.replace(/^\d\.\s*/, "").trim()).filter((v: string) => v.length > 20);
     if (parts.length === 0) parts = [text.trim()];

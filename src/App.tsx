@@ -55,7 +55,7 @@ const App = () => {
         /529|overloaded|surcharge/i.test(msg) ||
         /network|fetch|load failed/i.test(msg);
       if (msg && !isSilent) {
-        toast.error("Une erreur inattendue s'est produite");
+        toast.error("An unexpected error occurred");
       }
     }
     function handleError(event: ErrorEvent) {

@@ -36,7 +36,7 @@ export function useConversation() {
     load();
   }, [user]);
 
-  // Sauvegarder les messages dans Supabase (debounced)
+  // Save messages to Supabase (debounced)
   const persistMessages = useCallback(
     (updatedMessages: ConversationMessage[]) => {
       if (!user) return;
