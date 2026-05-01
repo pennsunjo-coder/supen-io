@@ -61,8 +61,9 @@ async function generateWithOpenAI(
   console.log("[Infographic] Size:", imageSize.size, imageSize.label);
   console.log("[Infographic] Prompt length:", prompt.length);
 
+  const aspectRatio = imageSize.size === "1024x1024" ? "1:1" : imageSize.size === "1536x1024" ? "16:9" : "4:5";
   const { data, error } = await supabase.functions.invoke("generate-image", {
-    body: { prompt, size: imageSize.size, quality: "high" },
+    body: { prompt, size: imageSize.size, quality: "high", aspectRatio },
   });
 
   if (error) {

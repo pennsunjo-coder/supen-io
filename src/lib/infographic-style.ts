@@ -707,11 +707,13 @@ export function buildDallEPrompt(
   const isFacebook = pl.includes("facebook");
   const isTwitter = pl.includes("twitter") || pl.includes("x (");
 
+  const FILL_EDGES = `CRITICAL: The infographic must fill the ENTIRE canvas like a PDF page. NO white borders on left/right sides. NO brown table or desk visible. NO empty space around the design. The background color must extend to ALL 4 edges of the image. Think of it as printing directly on the paper — no margins, no frame, no mock-up.`;
+
   const formatSpec = isFacebook
-    ? `CANVAS: Perfect square 1080x1080px (1:1).\n${NEGATIVE}\n${POSITIVE}\nLAYOUT: Compact 3-section design. Large bold text. Fill entire square.`
+    ? `CANVAS: Perfect square 1080x1080px (1:1).\n${NEGATIVE}\n${POSITIVE}\n${FILL_EDGES}\nLAYOUT: Compact 3-section design. Large bold text. Fill entire square.`
     : isTwitter
-      ? `CANVAS: Wide landscape 1200x675px (16:9).\n${NEGATIVE}\n${POSITIVE}\nLAYOUT: Horizontal flow, 3 sections side by side. Fill entire canvas.`
-      : `CANVAS: LinkedIn vertical 1236x1536px (4:5 ratio).\n${NEGATIVE}\n${POSITIVE}\nLAYOUT: Rich vertical design, 5-6 colored sections. Use ALL vertical space. Fill edge to edge like a PDF export.`;
+      ? `CANVAS: Wide landscape 1200x675px (16:9).\n${NEGATIVE}\n${POSITIVE}\n${FILL_EDGES}\nLAYOUT: Horizontal flow, 3 sections side by side. Fill entire canvas.`
+      : `CANVAS: LinkedIn vertical 1236x1536px (4:5 ratio).\n${NEGATIVE}\n${POSITIVE}\n${FILL_EDGES}\nLAYOUT: Rich vertical design, 5-6 colored sections. Use ALL vertical space.`;
 
   const baseRules = formatSpec;
 
