@@ -1038,6 +1038,45 @@ export default function InfographicModal({ open, onClose, content, platform, con
                   </Button>
                 </div>
 
+                {/* Custom Image Generator — prominent position */}
+                {imageBase64 && !showCustomGen && (
+                  <div className="p-3 rounded-xl bg-primary/5 border border-primary/10 text-center mb-3">
+                    <p className="text-xs text-muted-foreground mb-2">Want a completely different visual?</p>
+                    <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => setShowCustomGen(true)}>
+                      <Sparkles className="w-3 h-3" /> Generate with my own prompt
+                    </Button>
+                  </div>
+                )}
+
+                {showCustomGen && (
+                  <div className="space-y-3 p-3 rounded-xl bg-primary/5 border border-primary/10 mb-3">
+                    <p className="text-xs font-semibold">Describe the image you want:</p>
+                    <textarea
+                      value={customGenPrompt}
+                      onChange={(e) => setCustomGenPrompt(e.target.value)}
+                      placeholder="A clean infographic about productivity tips with blue and orange colors, hand-drawn style..."
+                      className="w-full h-20 p-3 text-xs bg-background border border-border/20 rounded-xl resize-none focus:outline-none focus:border-primary/40 placeholder:text-muted-foreground/40"
+                    />
+                    <Button className="w-full h-9 text-xs font-bold gap-2" onClick={generateCustomImage} disabled={customGenLoading || !customGenPrompt.trim()}>
+                      {customGenLoading ? <><Loader2 className="w-3 h-3 animate-spin" /> Generating...</> : <><Sparkles className="w-3 h-3" /> Generate Image</>}
+                    </Button>
+                    {customGenImage && (
+                      <div className="space-y-2">
+                        <img src={`data:image/png;base64,${customGenImage}`} alt="Custom" className="w-full rounded-xl border border-border/20" />
+                        <Button variant="outline" size="sm" className="w-full text-xs gap-2" onClick={() => {
+                          const link = document.createElement("a");
+                          link.download = `supenli-custom-${Date.now()}.png`;
+                          link.href = `data:image/png;base64,${customGenImage}`;
+                          link.click();
+                          toast.success("Downloaded!");
+                        }}>
+                          <Download className="w-3 h-3" /> Download Custom Image
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* History link */}
                 {saved && (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-3">
@@ -1068,45 +1107,6 @@ export default function InfographicModal({ open, onClose, content, platform, con
                   </div>
                 )}
 
-                {/* Custom Image Generator */}
-                {imageBase64 && !showCustomGen && (
-                  <div className="mt-3 p-3 rounded-xl bg-accent/5 border border-border/10 text-center">
-                    <p className="text-xs text-muted-foreground mb-2">Want a different visual?</p>
-                    <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => setShowCustomGen(true)}>
-                      <Sparkles className="w-3 h-3" /> Generate with my own prompt
-                    </Button>
-                  </div>
-                )}
-
-                {showCustomGen && (
-                  <div className="mt-3 space-y-3 p-3 rounded-xl bg-accent/5 border border-border/10">
-                    <p className="text-xs font-semibold">Describe the image you want:</p>
-                    <textarea
-                      value={customGenPrompt}
-                      onChange={(e) => setCustomGenPrompt(e.target.value)}
-                      placeholder="A clean infographic about productivity tips with blue and orange colors, hand-drawn style, white background..."
-                      className="w-full h-20 p-3 text-xs bg-background border border-border/20 rounded-xl resize-none focus:outline-none focus:border-primary/40 placeholder:text-muted-foreground/40"
-                    />
-                    <Button className="w-full h-9 text-xs font-bold gap-2" onClick={generateCustomImage} disabled={customGenLoading || !customGenPrompt.trim()}>
-                      {customGenLoading ? <><Loader2 className="w-3 h-3 animate-spin" /> Generating...</> : <><Sparkles className="w-3 h-3" /> Generate Image</>}
-                    </Button>
-
-                    {customGenImage && (
-                      <div className="space-y-2">
-                        <img src={`data:image/png;base64,${customGenImage}`} alt="Custom generated" className="w-full rounded-xl border border-border/20" />
-                        <Button variant="outline" size="sm" className="w-full text-xs gap-2" onClick={() => {
-                          const link = document.createElement("a");
-                          link.download = `supenli-custom-${Date.now()}.png`;
-                          link.href = `data:image/png;base64,${customGenImage}`;
-                          link.click();
-                          toast.success("Downloaded!");
-                        }}>
-                          <Download className="w-3 h-3" /> Download Custom Image
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
             )}
           </div>
