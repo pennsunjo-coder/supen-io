@@ -679,43 +679,15 @@ export function buildDallEPrompt(
   const ext = extractForDallE(content);
   const pl = platform?.toLowerCase() || "";
 
-  // Master Full-Bleed constraints
-  const NEGATIVE = `STRICT NEGATIVE CONSTRAINTS:
-- NO spiral notebook rings or bindings
-- NO table surface or wooden desk background
-- NO perspective shadows or 3D mockup style
-- NO physical objects around the design
-- NO margins or white space outside document edges
-- NO photographic mockup style
-- NO camera angle or perspective distortion
-- NEVER show the infographic as an object IN a photo`;
-
-  const POSITIVE = `MANDATORY POSITIVE CONSTRAINTS:
-- Generate a FULL-BLEED Digital Infographic
-- Design MUST occupy 100% of image frame, edge to edge
-- Like a high-quality PDF export — design IS the file
-- Structured 2D FLAT DESIGN only
-- Background: clean digital off-white #FDFDFD
-- Typography: high-definition handwritten-style font, aligned on digital grid
-- Color coding: Blue #4A90D9, Orange #F5A623, Green #5BA85B, Purple #7B2FBE
-- All icons: flat 2D, contextually relevant
-- Footer: clean horizontal digital banner, perfectly centered
-- ALL text in ENGLISH only
-- Every word FULLY READABLE — minimum 18px body, 32px titles
-- Use ONLY the exact content below — do NOT invent`;
-
-  const isFacebook = pl.includes("facebook");
-  const isTwitter = pl.includes("twitter") || pl.includes("x (");
-
-  const FILL_EDGES = `CRITICAL: The infographic must fill the ENTIRE canvas like a PDF page. NO white borders on left/right sides. NO brown table or desk visible. NO empty space around the design. The background color must extend to ALL 4 edges of the image. Think of it as printing directly on the paper — no margins, no frame, no mock-up.`;
-
-  const formatSpec = isFacebook
-    ? `CANVAS: Perfect square 1080x1080px (1:1).\n${NEGATIVE}\n${POSITIVE}\n${FILL_EDGES}\nLAYOUT: Compact 3-section design. Large bold text. Fill entire square.`
-    : isTwitter
-      ? `CANVAS: Wide landscape 1200x675px (16:9).\n${NEGATIVE}\n${POSITIVE}\n${FILL_EDGES}\nLAYOUT: Horizontal flow, 3 sections side by side. Fill entire canvas.`
-      : `CANVAS: LinkedIn vertical 1236x1536px (4:5 ratio).\n${NEGATIVE}\n${POSITIVE}\n${FILL_EDGES}\nLAYOUT: Rich vertical design, 5-6 colored sections. Use ALL vertical space.`;
-
-  const baseRules = formatSpec;
+  const baseRules = `CRITICAL RULES — NO EXCEPTIONS:
+1. ALL TEXT IN ENGLISH ONLY — no other language
+2. NO footer, NO signature, NO watermark, NO "follow for more", NO branding
+3. Every word FULLY READABLE — never cut off, never truncated, never blurry
+4. 50px safe margin on ALL sides — text NEVER touches edges
+5. Minimum 18px body text, 32px titles — HIGH CONTRAST always
+6. NO text overlapping other elements — clean visual hierarchy
+7. Fill 88% of canvas with information — DENSE but organized
+8. Use ONLY the exact content below — do NOT invent or add anything`;
 
   const contentBlock = `CONTENT TYPE: ${ext.contentType}
 This is a ${ext.contentType} infographic — the visual must match this type.
