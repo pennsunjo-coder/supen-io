@@ -393,9 +393,17 @@ export default function InfographicModal({ open, onClose, content, platform, con
       assertOnline();
 
       console.log("[Infographic] Content length:", content.length);
-      console.log("[Infographic] Content preview:", content.slice(0, 200));
-      console.log("[Infographic] Template:", templateSelection.templateId, "—", templateSelection.reason);
-      const dallePrompt = buildDallEPrompt(content, platform, templateSelection.templateId);
+      console.log("[Infographic] Template:", templateSelection.templateId);
+
+      // Platform-specific format hint prepended to prompt
+      const pl = platform?.toLowerCase() || "";
+      const formatHint = pl.includes("facebook")
+        ? "FORMAT: Square 1080x1080px. Facebook feed.\n\n"
+        : pl.includes("twitter") || pl.includes("x (")
+          ? "FORMAT: Landscape 1200x675px. X/Twitter.\n\n"
+          : "FORMAT: Vertical A4 1236x1536px. LinkedIn portrait.\n\n";
+
+      const dallePrompt = formatHint + buildDallEPrompt(content, platform, templateSelection.templateId);
 
       if (IS_DEV) {
         console.log("=== INFOGRAPHIC PROMPT ===");
