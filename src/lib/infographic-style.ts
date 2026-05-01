@@ -728,6 +728,26 @@ CRITICAL: Use ONLY the text above. Do NOT invent, paraphrase, or add unrelated g
 
     return `ABSOLUTE RULE: Fill 100% of the canvas vertically. NO white space at top. NO white space at bottom. The background color must reach ALL 4 edges of the image. Start content at the very top edge. End content at the very bottom edge. If needed, increase font sizes or spacing to fill the space.
 
+QUALITY & ACCURACY — ZERO TOLERANCE:
+1. SPELLING: Every word spelled correctly. Double-check all text.
+2. NO REPETITION: Never repeat the same word or phrase twice.
+3. NO TRUNCATION: Every word complete. Never cut off at edges.
+4. COHERENCE: Title → sections → footer must tell one story.
+5. GRAMMAR: Perfect English grammar throughout.
+6. HIERARCHY: Title largest → subtitles medium → body smallest.
+7. CONTRAST: Dark text on light background. Min 4.5:1 ratio.
+8. ALIGNMENT: All elements on an invisible grid. Nothing random.
+9. CONSISTENCY: Same font family. Max 2 weights per infographic.
+10. COMPLETENESS: Every section complete. No "..." or placeholder.
+
+VISUAL COHERENCE:
+- One dominant color per section (never mix)
+- Consistent border radius throughout
+- Consistent icon style (all doodle OR all flat, never mixed)
+- Consistent line weight for all hand-drawn elements
+- Equal spacing between all sections
+- Visual rhythm: alternating colors guide the eye down
+
 Generate a digital whiteboard-style infographic.
 
 STYLE — MANDATORY:
