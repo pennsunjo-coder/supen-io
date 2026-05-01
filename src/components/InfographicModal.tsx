@@ -302,6 +302,14 @@ export default function InfographicModal({ open, onClose, content, platform, con
   const [showPrompt, setShowPrompt] = useState(false);
   const [styleChoice, setStyleChoice] = useState<StyleChoice>("auto");
   const [generationError, setGenerationError] = useState<string | null>(null);
+  const [userName, setUserName] = useState("");
+
+  // Get user name for infographic footer
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user: u } }) => {
+      setUserName(u?.user_metadata?.full_name || u?.user_metadata?.name || u?.email?.split("@")[0] || "");
+    }).catch(() => {});
+  }, []);
   const [retryCountdown, setRetryCountdown] = useState(0);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const retryIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -403,7 +411,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
           ? "FORMAT: Landscape 1200x675px. X/Twitter.\n\n"
           : "FORMAT: Vertical A4 1236x1536px. LinkedIn portrait.\n\n";
 
-      const dallePrompt = formatHint + buildDallEPrompt(content, platform, templateSelection.templateId);
+      const dallePrompt = formatHint + buildDallEPrompt(content, platform, templateSelection.templateId, userName);
 
       if (IS_DEV) {
         console.log("=== INFOGRAPHIC PROMPT ===");
