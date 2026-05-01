@@ -797,51 +797,19 @@ Each variation includes: HOOK, PROBLEM, SOLUTION, PROOF, CTA, ON-SCREEN TEXT.`;
         format: selectedFormat,
       }).then(() => {}, () => {}); // Fire-and-forget, ignore errors
 
-      const allSourceIds = [...new Set([...activeSourceIds, ...selectedDocumentIds])];
-
-      // Attempt 1: all columns including session_id + source_ids
-      const fullInserts = parsed.map((v) => ({
+      // Insert only base columns to avoid 400 errors from missing columns
+      const rows = parsed.map((v) => ({
         user_id: user.id,
         platform: selectedPlatform.name,
         format: selectedFormat,
         content: v.content,
         viral_score: v.score || 0,
-        image_prompt: v.scoreDetails ? JSON.stringify(v.scoreDetails) : null,
-        source_ids: allSourceIds,
         session_id: sessionId,
       }));
-      let { data: savedRows, error: saveErr } = await supabase.from("generated_content").insert(fullInserts).select("id");
-
-      // Attempt 2: without source_ids + image_prompt (columns may not exist)
-      if (saveErr) {
-        if (IS_DEV) console.warn("[StudioWizard] Attempt 1 failed:", saveErr.message);
-        const mediumInserts = parsed.map((v) => ({
-          user_id: user.id,
-          platform: selectedPlatform.name,
-          format: selectedFormat,
-          content: v.content,
-          viral_score: v.score || 0,
-          session_id: sessionId,
-        }));
-        const r2 = await supabase.from("generated_content").insert(mediumInserts).select("id");
-        savedRows = r2.data;
-        saveErr = r2.error;
-      }
-
-      // Attempt 3: minimal columns only
-      if (saveErr) {
-        if (IS_DEV) console.warn("[StudioWizard] Attempt 2 failed:", saveErr.message);
-        const minInserts = parsed.map((v) => ({
-          user_id: user.id,
-          platform: selectedPlatform.name,
-          format: selectedFormat,
-          content: v.content,
-          viral_score: v.score || 0,
-        }));
-        const r3 = await supabase.from("generated_content").insert(minInserts).select("id");
-        savedRows = r3.data;
-        saveErr = r3.error;
-      }
+      const { data: savedRows, error: saveErr } = await supabase
+        .from("generated_content")
+        .insert(rows)
+        .select("id");
 
       if (saveErr) {
         console.error("[StudioWizard] Save failed:", saveErr.message, saveErr.details, saveErr.hint);
