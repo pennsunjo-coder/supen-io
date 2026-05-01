@@ -51,18 +51,14 @@ function getImageSize(platform: string): ImageSizeConfig {
   return { size: "1024x1536", label: "Portrait", description: `Optimized for ${platform || "social media"}` };
 }
 
-// ─── DALL-E 3 Image Generation via Edge Function (avoids CORS) ───
+// ─── Image Generation via Edge Function ───
 
-async function generateWithOpenAI(
-  prompt: string,
-  imageSize: ImageSizeConfig,
-): Promise<string> {
-  console.log("[Infographic] Calling DALL-E 3 via Edge Function...");
-  console.log("[Infographic] Size:", imageSize.size, imageSize.label);
+async function generateInfographic(prompt: string): Promise<string> {
+  console.log("[Infographic] Calling Edge Function...");
   console.log("[Infographic] Prompt length:", prompt.length);
 
   const { data, error } = await supabase.functions.invoke("generate-image", {
-    body: { prompt, size: imageSize.size, quality: "high" },
+    body: { prompt },
   });
 
   if (error) {
@@ -75,9 +71,15 @@ async function generateWithOpenAI(
     throw new Error(data.error);
   }
 
+  // Support both HTML and direct image responses
+  if (data?.html) {
+    console.log("[Infographic] Got HTML, length:", data.html.length);
+    return data.html; // Caller handles HTML→image conversion if needed
+  }
+
   const base64 = data?.image;
   if (!base64) {
-    throw new Error("No image returned from DALL-E 3. Please try again.");
+    throw new Error("No image returned. Please try again.");
   }
 
   console.log("[Infographic] Generated! Size:", base64.length);
@@ -371,7 +373,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
   const previewWidth = 480;
   const iframeScale = previewWidth / dims.width;
 
-  // ─── Generation (DALL-E 3 via Edge Function — with retry) ───
+  // ─── Generation (Edge Function — with retry) ───
 
   // Key is server-side (Edge Function secret), no client-side check needed
   const hasOpenAIKey = true;
@@ -396,7 +398,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
       const dallePrompt = buildDallEPrompt(content, platform, templateSelection.templateId);
 
       if (IS_DEV) {
-        console.log("=== DALL-E PROMPT ===");
+        console.log("=== INFOGRAPHIC PROMPT ===");
         console.log("Template:", templateSelection.templateId);
         console.log("Prompt length:", dallePrompt.length);
         console.log(dallePrompt.slice(0, 600));
@@ -404,17 +406,17 @@ export default function InfographicModal({ open, onClose, content, platform, con
       }
 
       // Attempt 1
-      if (IS_DEV) console.log("[InfographicModal] Attempt 1 — generating with DALL-E 3...");
+      if (IS_DEV) console.log("[InfographicModal] Attempt 1 — generating infographic...");
       let base64: string | null = null;
       try {
-        base64 = await generateWithOpenAI(dallePrompt, imageConfig);
+        base64 = await generateInfographic(dallePrompt);
       } catch (firstErr) {
         if (IS_DEV) console.warn("[InfographicModal] Attempt 1 failed:", firstErr);
 
         // Attempt 2: retry with simplified prompt
         if (IS_DEV) console.log("[InfographicModal] Attempt 2 — retrying...");
         try {
-          base64 = await generateWithOpenAI(dallePrompt + "\n\nIMPORTANT: Generate a clean, readable infographic. All text in English. No footer or watermark.", imageConfig);
+          base64 = await generateInfographic(dallePrompt + "\n\nIMPORTANT: Clean infographic. All text in English. No table background.");
         } catch (secondErr) {
           if (IS_DEV) console.error("[InfographicModal] Attempt 2 also failed:", secondErr);
           throw secondErr;
@@ -478,7 +480,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
 
     try {
       if (imageBase64) {
-        // ── DALL-E image path: base64 → direct or canvas conversion ──
+        // ── Image path: base64 → direct or canvas conversion ──
         if (format === "png") {
           const link = document.createElement("a");
           link.style.display = "none";
