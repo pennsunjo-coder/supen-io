@@ -303,6 +303,10 @@ export default function InfographicModal({ open, onClose, content, platform, con
   const [styleChoice, setStyleChoice] = useState<StyleChoice>("auto");
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [userName, setUserName] = useState("");
+  const [showCustomGen, setShowCustomGen] = useState(false);
+  const [customGenPrompt, setCustomGenPrompt] = useState("");
+  const [customGenImage, setCustomGenImage] = useState<string | null>(null);
+  const [customGenLoading, setCustomGenLoading] = useState(false);
 
   // Get user name for infographic footer
   useEffect(() => {
@@ -588,6 +592,28 @@ export default function InfographicModal({ open, onClose, content, platform, con
       toast.error("Copy failed — your browser may not support this.");
     }
     setDownloading(false);
+  }
+
+  // ─── Custom Image Generation ───
+
+  async function generateCustomImage() {
+    if (!customGenPrompt.trim()) return;
+    setCustomGenLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-image", {
+        body: { prompt: customGenPrompt.trim() },
+      });
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+      if (data?.image) {
+        setCustomGenImage(data.image);
+        toast.success("Image generated!");
+      }
+    } catch {
+      toast.error("Generation failed. Please try again.");
+    } finally {
+      setCustomGenLoading(false);
+    }
   }
 
   // ─── Save ───
@@ -1039,6 +1065,46 @@ export default function InfographicModal({ open, onClose, content, platform, con
                     <Button size="sm" className="h-8 text-xs gap-1.5" onClick={handleGenerate}>
                       <Sparkles className="w-3 h-3" /> Regenerate
                     </Button>
+                  </div>
+                )}
+
+                {/* Custom Image Generator */}
+                {imageBase64 && !showCustomGen && (
+                  <div className="mt-3 p-3 rounded-xl bg-accent/5 border border-border/10 text-center">
+                    <p className="text-xs text-muted-foreground mb-2">Want a different visual?</p>
+                    <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => setShowCustomGen(true)}>
+                      <Sparkles className="w-3 h-3" /> Generate with my own prompt
+                    </Button>
+                  </div>
+                )}
+
+                {showCustomGen && (
+                  <div className="mt-3 space-y-3 p-3 rounded-xl bg-accent/5 border border-border/10">
+                    <p className="text-xs font-semibold">Describe the image you want:</p>
+                    <textarea
+                      value={customGenPrompt}
+                      onChange={(e) => setCustomGenPrompt(e.target.value)}
+                      placeholder="A clean infographic about productivity tips with blue and orange colors, hand-drawn style, white background..."
+                      className="w-full h-20 p-3 text-xs bg-background border border-border/20 rounded-xl resize-none focus:outline-none focus:border-primary/40 placeholder:text-muted-foreground/40"
+                    />
+                    <Button className="w-full h-9 text-xs font-bold gap-2" onClick={generateCustomImage} disabled={customGenLoading || !customGenPrompt.trim()}>
+                      {customGenLoading ? <><Loader2 className="w-3 h-3 animate-spin" /> Generating...</> : <><Sparkles className="w-3 h-3" /> Generate Image</>}
+                    </Button>
+
+                    {customGenImage && (
+                      <div className="space-y-2">
+                        <img src={`data:image/png;base64,${customGenImage}`} alt="Custom generated" className="w-full rounded-xl border border-border/20" />
+                        <Button variant="outline" size="sm" className="w-full text-xs gap-2" onClick={() => {
+                          const link = document.createElement("a");
+                          link.download = `supenli-custom-${Date.now()}.png`;
+                          link.href = `data:image/png;base64,${customGenImage}`;
+                          link.click();
+                          toast.success("Downloaded!");
+                        }}>
+                          <Download className="w-3 h-3" /> Download Custom Image
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
