@@ -1039,7 +1039,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
                 </div>
 
                 {/* Custom Image Generator — prominent position */}
-                {imageBase64 && !showCustomGen && (
+                {(imageBase64 || htmlCode) && !showCustomGen && (
                   <div className="p-3 rounded-xl bg-primary/5 border border-primary/10 text-center mb-3">
                     <p className="text-xs text-muted-foreground mb-2">Want a completely different visual?</p>
                     <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => setShowCustomGen(true)}>
