@@ -710,16 +710,29 @@ CRITICAL: Use ONLY the text above. Do NOT invent, paraphrase, or add unrelated g
   const n = ext.points.length;
   const AVOID = "\n\nAVOID: blurry, cluttered, messy layout, too many colors, realistic photo, 3D render, low resolution, bad typography, misaligned text, dark background (unless dark template), generic stock photo style.";
 
-  // ── WHITEBOARD (single forced style) ──
+  // ── WHITEBOARD (single forced style with variation) ──
   {
     const COLORS = ['Blue', 'Red', 'Orange', 'Purple', 'Green'];
 
-    return `Generate a digital whiteboard-style infographic.
+    const backgrounds = ["creamy paper #FAF9F6", "pure white #FFFFFF", "warm white #FDFCFA", "light cream #FFF8F0"];
+    const bgChoice = backgrounds[Math.floor(Math.random() * backgrounds.length)];
+
+    const layouts = [
+      "vertical stacked blocks with numbers on left",
+      "two-column layout with icons on left, text on right",
+      "timeline layout with connecting arrows between sections",
+      "grid layout with key points in colored cards",
+    ];
+    const layoutChoice = layouts[Math.floor(Math.random() * layouts.length)];
+
+    return `ABSOLUTE RULE: Fill 100% of the canvas vertically. NO white space at top. NO white space at bottom. The background color must reach ALL 4 edges of the image. Start content at the very top edge. End content at the very bottom edge. If needed, increase font sizes or spacing to fill the space.
+
+Generate a digital whiteboard-style infographic.
 
 STYLE — MANDATORY:
-- Canvas: vertical 4:5 format, fill ENTIRE canvas edge to edge — NO white space at top or bottom
-- Background: creamy paper texture #FAF9F6 — this color must extend to ALL 4 edges
-- Content must use the FULL HEIGHT of the canvas — distribute sections evenly across the entire vertical space
+- Canvas: vertical 4:5 format, fill ENTIRE canvas edge to edge
+- Background: ${bgChoice} — must extend to ALL 4 edges, zero empty space
+- Layout: ${layoutChoice}
 - Hand-drawn marker aesthetic — imperfect lines, human feel
 - Blocks with hand-drawn borders (slightly wobbly, not perfectly straight)
 - Title at top: large handwritten font, double orange underline (thick marker effect)
@@ -730,7 +743,6 @@ STYLE — MANDATORY:
 - Footer: hand-drawn black line separator + CTA text
 - Typography: handwritten-style font (Caveat or similar)
 - 100% flat digital design, NO perspective, NO 3D, NO dark background
-- Fill ENTIRE canvas edge to edge like a PDF
 - NO table surface, NO wooden desk, NO notebook rings, NO camera angle
 - ALL text in ENGLISH only
 - Every word FULLY READABLE — never cut off
@@ -744,7 +756,7 @@ ${ext.stats.length > 0 ? `KEY NUMBERS: ${ext.stats.join(', ')}` : ''}
 
 FOOTER: "Follow @supenli.io for more | Repost ♻️"
 
-AVOID: blurry, cluttered, 3D, photos, dark background, perspective, table surface, cut-off text.`;
+AVOID: blurry, cluttered, 3D, photos, dark background, perspective, table surface, cut-off text, white space at top/bottom.`;
   }
 
   // ── PROCESS_STEPS ──
