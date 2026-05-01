@@ -76,12 +76,13 @@ const platforms: Platform[] = [
   { id: "youtube", name: "YouTube", icon: IconYouTube, formats: ["Script long", "Script Shorts"] },
 ];
 
-type SourceMode = "document" | "idea" | "keyword";
+type SourceMode = "document" | "idea" | "keyword" | "websearch";
 
 const sourceModes: { id: SourceMode; label: string; placeholder: string; icon: React.FC<{ className?: string }> }[] = [
   { id: "document", label: "Document", placeholder: "Paste the text from your article, PDF or web page...", icon: FileText },
   { id: "idea", label: "Idea", placeholder: "Describe your idea, what you want to convey...", icon: Lightbulb },
   { id: "keyword", label: "Keyword", placeholder: "E.g.: productivity, AI, digital marketing...", icon: Hash },
+  { id: "websearch", label: "Web Search", placeholder: "Search the web for fresh data, trends, stats...", icon: GlobeIcon },
 ];
 
 /* ─── Angles & scores ─── */
@@ -234,6 +235,8 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
   const [sourceText, setSourceText] = useState("");
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
   const [sourceDirectives, setSourceDirectives] = useState<Record<string, string>>({});
+  const [webSearchResults, setWebSearchResults] = useState<string>("");
+  const [webSearching, setWebSearching] = useState(false);
 
   const [variations, setVariations] = useState<ParsedVariation[]>([]);
   const [selectedVariation, setSelectedVariation] = useState<number | null>(null);
@@ -347,12 +350,39 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
     if (step === 2) setSourceText("");
   }
 
+  /* ── Web Search ── */
+
+  async function handleWebSearch() {
+    if (!sourceText.trim()) return;
+    setWebSearching(true);
+    setWebSearchResults("");
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("search-web", {
+        body: { query: sourceText.trim(), max_results: 5 },
+      });
+      if (fnError) throw new Error(fnError.message);
+      if (data?.error) throw new Error(data.error);
+      if (data?.content) {
+        setWebSearchResults(data.content);
+        toast.success(`Found ${data.results?.length || 0} web results`);
+      } else {
+        toast.error("No results found");
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Web search failed";
+      toast.error(msg);
+    } finally {
+      setWebSearching(false);
+    }
+  }
+
   /* ── Generation ── */
 
   async function handleGenerate() {
     const isDocMode = sourceMode === "document" && selectedDocumentIds.length > 0;
+    const isWebMode = sourceMode === "websearch" && webSearchResults.length > 0;
     if (!selectedPlatform || !selectedFormat) return;
-    if (!isDocMode && !sourceText.trim()) return;
+    if (!isDocMode && !isWebMode && !sourceText.trim()) return;
 
     const sanitized = isDocMode
       ? sources.filter((s) => selectedDocumentIds.includes(s.id)).map((s) => s.title).join(", ")
@@ -419,26 +449,34 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
         }
       }
 
+      // Inject web search results if available
+      if (isWebMode && webSearchResults) {
+        sourceContext = sourceContext
+          ? `${sourceContext}\n\n━━━ WEB SEARCH RESULTS ━━━\n${webSearchResults}`
+          : webSearchResults;
+      }
+
       console.log("[RAG] Context length:", sourceContext.length);
 
       // === Build user message ===
       const sanitizedInput = sanitized;
+      const combinedContext = sourceContext;
       const userMessage = `
-${sourceContext ? `
+${combinedContext ? `
 ╔══════════════════════════════════════╗
-║         DOCUMENT CONTEXT (RAG)       ║
+║     ${isWebMode ? '  WEB RESEARCH CONTEXT   ' : '    DOCUMENT CONTEXT (RAG)  '}      ║
 ╚══════════════════════════════════════╝
 
-${sourceContext}
+${combinedContext}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 CRITICAL INSTRUCTION:
 - Extract SPECIFIC facts, quotes, examples from above
-- Use REAL data and insights from the documents
+- Use REAL data and insights from the ${isWebMode ? 'web research' : 'documents'}
 - Reference specific details (numbers, names, methods)
 - DO NOT invent anything not present in the sources
-- The content must feel written by someone who deeply read these documents
+- The content must feel written by someone who deeply researched this topic
 ${directive ? `- Focus specifically on: ${directive}` : ''}
 
 ` : ''}CONTENT TO CREATE:
@@ -450,7 +488,7 @@ ${profile?.preferred_tone ? `Tone: ${profile.preferred_tone}` : ''}
 
 Generate 5 complete ${selectedFormat} variations.
 Each must be radically different in angle and structure.
-${sourceContext ? 'Use insights from the documents to make content SPECIFIC and evidence-based.' : ''}
+${combinedContext ? `Use insights from the ${isWebMode ? 'web research' : 'documents'} to make content SPECIFIC and evidence-based.` : ''}
 Use white space and line breaks generously.
 Make each post visually clean and easy to read.
 `.trim();
@@ -1184,6 +1222,28 @@ Each variation includes: HOOK, PROBLEM, SOLUTION, PROOF, CTA, ON-SCREEN TEXT.`;
                         </div>
                       )}
 
+                      {/* WEB SEARCH MODE */}
+                      {sourceMode === "websearch" && (
+                        <div>
+                          <div className="flex gap-2">
+                            <Input value={sourceText} onChange={(e) => setSourceText(e.target.value)} placeholder={sourceModes.find((m) => m.id === sourceMode)?.placeholder} maxLength={200} className="bg-accent/20 border-border/30 h-11 text-sm flex-1" onKeyDown={(e) => e.key === "Enter" && sourceText.trim() && handleWebSearch()} />
+                            <Button onClick={handleWebSearch} disabled={!sourceText.trim() || webSearching} className="h-11 px-4 gap-2 shrink-0">
+                              {webSearching ? <><Loader2 className="w-4 h-4 animate-spin" /> Searching...</> : <><GlobeIcon className="w-4 h-4" /> Search</>}
+                            </Button>
+                          </div>
+                          {webSearchResults && (
+                            <div className="mt-3 p-3 rounded-xl bg-accent/20 border border-border/20 max-h-[200px] overflow-y-auto">
+                              <div className="flex items-center gap-1.5 mb-2">
+                                <GlobeIcon className="w-3 h-3 text-primary" />
+                                <span className="text-[10px] font-semibold text-primary">Web results loaded</span>
+                                <span className="text-[10px] text-muted-foreground/50 ml-auto">{webSearchResults.length} chars</span>
+                              </div>
+                              <p className="text-[11px] text-muted-foreground/70 whitespace-pre-wrap leading-relaxed line-clamp-6">{webSearchResults.slice(0, 500)}{webSearchResults.length > 500 ? '...' : ''}</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       {/* Hook suggestions for idea/keyword modes */}
                       {(sourceMode === "idea" || sourceMode === "keyword") && sourceText.trim().length > 3 && suggestedHooks.length > 0 && (
                         <div className="mt-3 space-y-1">
@@ -1205,7 +1265,7 @@ Each variation includes: HOOK, PROBLEM, SOLUTION, PROOF, CTA, ON-SCREEN TEXT.`;
                       <Button
                         onClick={handleGenerate}
                         disabled={
-                          (sourceMode === "document" ? selectedDocumentIds.length === 0 : !sourceText.trim()) || isGenerating
+                          (sourceMode === "document" ? selectedDocumentIds.length === 0 : sourceMode === "websearch" ? !webSearchResults : !sourceText.trim()) || isGenerating
                         }
                         className="w-full h-12 mt-5 glow-sm gap-2.5 font-bold text-base shadow-lg"
                       >

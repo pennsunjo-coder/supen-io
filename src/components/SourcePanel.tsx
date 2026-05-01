@@ -4,7 +4,6 @@ import {
   Globe,
   StickyNote,
   Upload,
-  Link2,
   Search,
   Trash2,
   Loader2,
@@ -23,7 +22,7 @@ interface SourcePanelProps {
   loading: boolean;
   activeSourceIds: Set<string>;
   onToggleGroup: (ids: string[]) => void;
-  onAddUrl: (url: string) => Promise<{ error: string | null }>;
+  onAddUrl?: (url: string) => Promise<{ error: string | null }>;
   onAddNote: (title: string, content: string) => Promise<{ error: string | null }>;
   onAddPdf: (file: File) => Promise<{ error: string | null }>;
   onSearchWeb: (query: string) => Promise<{ error: string | null }>;
@@ -42,7 +41,7 @@ const typeLabels: Record<string, string> = {
   note: "Note",
 };
 
-type FormMode = "url" | "note" | "search";
+type FormMode = "note" | "search";
 
 const SourcePanel = ({
   groupedSources,
@@ -56,8 +55,7 @@ const SourcePanel = ({
   onRemoveGroup,
 }: SourcePanelProps) => {
   const [showForm, setShowForm] = useState(false);
-  const [formMode, setFormMode] = useState<FormMode>("url");
-  const [urlValue, setUrlValue] = useState("");
+  const [formMode, setFormMode] = useState<FormMode>("note");
   const [noteTitle, setNoteTitle] = useState("");
   const [noteContent, setNoteContent] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -80,14 +78,12 @@ const SourcePanel = ({
     setSavingDirective(false);
   }
   const fileRef = useRef<HTMLInputElement>(null);
-  const urlRef = useRef<HTMLInputElement>(null);
   const noteTitleRef = useRef<HTMLInputElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
   const activeCount = activeSourceIds.size;
 
   const openForm = (mode: FormMode) => {
-    setUrlValue("");
     setNoteTitle("");
     setNoteContent("");
     setSearchQuery("");
@@ -95,7 +91,6 @@ const SourcePanel = ({
     setFormMode(mode);
     setShowForm(true);
     requestAnimationFrame(() => {
-      if (mode === "url") urlRef.current?.focus();
       if (mode === "note") noteTitleRef.current?.focus();
       if (mode === "search") searchRef.current?.focus();
     });
@@ -113,16 +108,7 @@ const SourcePanel = ({
     try {
       let result: { error: string | null };
 
-      if (formMode === "url") {
-        const cleaned = urlValue.trim();
-        if (!cleaned) { setSaving(false); return; }
-        try { new URL(cleaned); } catch {
-          setError("Invalid URL (e.g. https://example.com)");
-          setSaving(false);
-          return;
-        }
-        result = await onAddUrl(cleaned);
-      } else if (formMode === "note") {
+      if (formMode === "note") {
         const title = sanitizeInput(noteTitle, 200);
         const content = sanitizeInput(noteContent, 10000);
         if (!title || !content) {
@@ -200,13 +186,11 @@ const SourcePanel = ({
 
   const actions: { mode: FormMode | "pdf"; icon: typeof Globe; label: string }[] = [
     { mode: "pdf", icon: Upload, label: "PDF" },
-    { mode: "url", icon: Link2, label: "URL" },
     { mode: "note", icon: StickyNote, label: "Note" },
     { mode: "search", icon: Search, label: "Web" },
   ];
 
   const formLabels: Record<FormMode, string> = {
-    url: "Add a link",
     note: "Add a note",
     search: "Web search",
   };
@@ -224,8 +208,8 @@ const SourcePanel = ({
         </p>
       </div>
 
-      {/* 4 action buttons */}
-      <div className="px-4 pb-3 grid grid-cols-4 gap-1.5 shrink-0">
+      {/* 3 action buttons */}
+      <div className="px-4 pb-3 grid grid-cols-3 gap-1.5 shrink-0">
         {actions.map(({ mode, icon: Icon, label }) => {
           const isActive = showForm && formMode === mode;
           const isPdf = mode === "pdf";
@@ -268,10 +252,6 @@ const SourcePanel = ({
           <button type="button" onClick={closeForm} className="text-muted-foreground hover:text-foreground transition-colors">
             <X className="w-3.5 h-3.5" />
           </button>
-        </div>
-
-        <div className={formMode === "url" ? "block" : "hidden"}>
-          <input ref={urlRef} value={urlValue} onChange={(e) => setUrlValue(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSubmit()} placeholder="https://example.com/article" className="w-full bg-accent/30 border border-border/30 rounded-md px-2.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary/30 mb-2" />
         </div>
 
         <div className={formMode === "note" ? "block" : "hidden"}>

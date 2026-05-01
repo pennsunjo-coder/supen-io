@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    const title = `Recherche : ${query.slice(0, 100)}`;
+    const title = `Search: ${query.slice(0, 100)}`;
 
     // Return both formatted content (for source insertion) AND raw results (for trends)
     return json({
