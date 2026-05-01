@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Supenli.io** — plateforme de création de contenu propulsée par l'IA pour les créateurs de réseaux sociaux. Centralise les sources de recherche (PDFs, URLs, YouTube, notes), permet de chatter avec un assistant IA, et génère des posts prêts à publier pour X, LinkedIn, Instagram, YouTube, Facebook et TikTok.
+**Supenli.io** — AI-powered content creation platform for social media creators. Centralizes research sources (PDFs, URLs, YouTube, notes), provides an AI chat assistant, and generates ready-to-publish posts for X, LinkedIn, Instagram, YouTube, Facebook and TikTok.
 
-**Langue de l'interface : Français.** Tout texte visible par l'utilisateur (labels, placeholders, messages, toasts) doit être en français.
+**Interface language: English.** All user-facing text (labels, placeholders, messages, toasts) must be in English.
 
 ## Commands
 
@@ -29,9 +29,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Backend & Services
 - **Supabase** — auth, database (PostgreSQL), storage
-- **Claude Sonnet** (Anthropic API) — AI chat et génération de contenu
+- **Claude Sonnet** (Anthropic API) — AI chat and content generation
 - **Tavily API** — web search
-- **Stripe** — paiements et abonnements
+- **Stripe** — payments and subscriptions
 
 ### Testing
 - **Vitest** + **React Testing Library** + **jsdom** for unit tests
@@ -80,7 +80,7 @@ All dashboard routes wrap their content in `DashboardLayout`, which provides a c
 - `noImplicitAny` is **off**
 - `noUnusedLocals` and `noUnusedParameters` are **off**
 
-## Règles de développement
+## Development Rules
 
-- **TypeScript strict** : écrire du code propre et typé. Typer explicitement les props, les retours de fonctions, les états. Éviter `any`.
-- **Jamais de placeholder/setTimeout pour simuler l'IA** : toujours brancher la vraie API (Anthropic pour le chat/génération, Tavily pour la recherche web). Si une intégration manque, l'implémenter — ne pas la simuler.
+- **Strict TypeScript**: Write clean, typed code. Explicitly type props, function returns, and state. Avoid `any`.
+- **Never use placeholder/setTimeout to simulate AI**: Always use the real API (Anthropic for chat/generation, Tavily for web search). If an integration is missing, implement it — never simulate it.

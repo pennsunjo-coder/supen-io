@@ -54,6 +54,6 @@ Deno.serve(async (req) => {
       answer: data.answer || "",
     });
   } catch (err) {
-    return json({ error: err instanceof Error ? err.message : "Erreur serveur" }, 500);
+    return json({ error: err instanceof Error ? err.message : "Server error" }, 500);
   }
 });

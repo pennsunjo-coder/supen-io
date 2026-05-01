@@ -74,13 +74,13 @@ export class ErrorBoundary extends Component<Props, State> {
                 className="w-full gap-2"
               >
                 <Home className="w-4 h-4" />
-                Retour au dashboard
+                Back to dashboard
               </Button>
               <button
                 onClick={() => window.location.reload()}
                 className="text-xs text-muted-foreground/60 hover:text-foreground transition-colors"
               >
-                Recharger la page
+                Reload page
               </button>
             </div>
           </div>

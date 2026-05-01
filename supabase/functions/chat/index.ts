@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
     const { data: allowed } = await adminClient.rpc("check_rate_limit", {
       p_user_id: user.id, p_function: "chat", p_max_requests: 30, p_window_hours: 1,
     });
-    if (!allowed) return new Response(JSON.stringify({ error: "Limite de requêtes atteinte. Réessaie dans quelques minutes." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!allowed) return new Response(JSON.stringify({ error: "Rate limit reached. Please try again in a few minutes." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     // Body
     const { messages, system } = await req.json();
@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({ text }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "Erreur serveur";
+    const msg = err instanceof Error ? err.message : "Server error";
     return new Response(JSON.stringify({ error: msg }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });

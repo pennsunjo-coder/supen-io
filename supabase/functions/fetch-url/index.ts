@@ -48,10 +48,10 @@ Deno.serve(async (req) => {
       .trim()
       .slice(0, 50000);
 
-    if (text.length < 100) return json({ error: "Pas assez de contenu sur cette page." }, 422);
+    if (text.length < 100) return json({ error: "Not enough content on this page." }, 422);
 
     return json({ title, text, url });
   } catch (err) {
-    return json({ error: err instanceof Error ? err.message : "Erreur serveur" }, 500);
+    return json({ error: err instanceof Error ? err.message : "Server error" }, 500);
   }
 });

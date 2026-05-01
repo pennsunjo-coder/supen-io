@@ -61,11 +61,11 @@ serve(async (req) => {
     try {
       captions = JSON.parse(captionMatch[1]);
     } catch {
-      throw new Error("Impossible de parser les sous-titres");
+      throw new Error("Unable to parse subtitles");
     }
 
     if (!captions || captions.length === 0) {
-      throw new Error("Aucune piste de sous-titres trouvee");
+      throw new Error("No subtitle tracks found");
     }
 
     // Prefer French, fallback to first available
@@ -75,7 +75,7 @@ serve(async (req) => {
       captions[0];
 
     if (!preferredCaption?.baseUrl) {
-      throw new Error("URL de sous-titres introuvable");
+      throw new Error("Subtitle URL not found");
     }
 
     // Decode the URL (it's escaped JSON)

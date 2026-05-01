@@ -15,10 +15,10 @@ const HTML_ESCAPE_RE = /[&<>"'/]/g;
 
 /**
  * Sanitise un input utilisateur :
- * - Trim les espaces
- * - Échappe les caractères HTML dangereux (prévention XSS)
- * - Supprime les caractères de contrôle invisibles (sauf newlines et tabs)
- * - Limite la longueur
+ * - Trims whitespace
+ * - Escapes dangerous HTML characters (XSS prevention)
+ * - Removes invisible control characters (except newlines and tabs)
+ * - Limits length
  */
 export function sanitizeInput(
   input: string,
@@ -48,8 +48,8 @@ export function validateEmail(email: string): boolean {
 }
 
 /**
- * Rate limiter côté client basé sur une fenêtre glissante.
- * Retourne un objet avec `canProceed()` et `getRemainingTime()`.
+ * Client-side rate limiter based on a sliding window.
+ * Returns an object with `canProceed()` and `getRemainingTime()`.
  */
 export function createRateLimiter(maxRequests: number, windowMs: number) {
   const timestamps: number[] = [];
@@ -62,7 +62,7 @@ export function createRateLimiter(maxRequests: number, windowMs: number) {
   }
 
   return {
-    /** Vérifie et enregistre une tentative. Retourne true si autorisé. */
+    /** Check and record an attempt. Returns true if allowed. */
     canProceed(): boolean {
       cleanup();
       if (timestamps.length >= maxRequests) {
@@ -72,14 +72,14 @@ export function createRateLimiter(maxRequests: number, windowMs: number) {
       return true;
     },
 
-    /** Millisecondes avant que le prochain slot se libère. 0 si disponible. */
+    /** Milliseconds until the next slot frees up. 0 if available. */
     getRemainingTime(): number {
       cleanup();
       if (timestamps.length < maxRequests) return 0;
       return Math.max(0, timestamps[0] + windowMs - Date.now());
     },
 
-    /** Nombre de requêtes restantes dans la fenêtre actuelle. */
+    /** Number of remaining requests in the current window. */
     getRemainingRequests(): number {
       cleanup();
       return Math.max(0, maxRequests - timestamps.length);

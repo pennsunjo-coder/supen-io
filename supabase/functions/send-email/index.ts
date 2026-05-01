@@ -186,7 +186,7 @@ Deno.serve(async (req) => {
     let html = "";
     if (type === "welcome") html = buildWelcomeEmail(data?.name || "there");
     else if (type === "reset-password") html = buildResetEmail(data?.resetLink || "#", data?.name);
-    else if (type === "content-ready") html = buildContentReadyEmail(data?.name || "there", data?.platform || "Social Media", data?.topic || "ton sujet");
+    else if (type === "content-ready") html = buildContentReadyEmail(data?.name || "there", data?.platform || "Social Media", data?.topic || "your topic");
     else if (type === "feedback") html = buildFeedbackEmail(data?.name || "there");
     else if (type === "waitlist") html = buildWaitlistEmail(data?.name || "there");
     else html = data?.html || "<p>No content</p>";

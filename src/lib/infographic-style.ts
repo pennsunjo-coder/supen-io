@@ -655,9 +655,9 @@ RAPPEL FINAL :
 - Styles INLINE uniquement (jamais de classes CSS)
 - Background #f8f9f7 (jamais #ffffff pur)
 - Couleurs saturées et confiantes (pas de pastels trop pâles)
-- Génère UNIQUEMENT le code HTML complet
+- Generate ONLY the complete HTML code
 - Commence par <!DOCTYPE html> et termine par </html>
-- Aucun texte avant ou après le HTML
+- No text before or after the HTML
 - All visible text must be in ENGLISH`;
 }
 

@@ -1,31 +1,31 @@
 /**
- * Gestion d'erreurs centralisée pour Supenli.io.
+ * Centralized error handling for Supenli.io.
  */
 
 export function handleApiError(error: unknown): string {
   if (error instanceof TypeError && error.message === "Load failed") {
-    return "Erreur réseau. Vérifie ta connexion internet.";
+    return "Network error. Check your internet connection.";
   }
   if (error instanceof TypeError && error.message.includes("fetch")) {
-    return "Impossible de contacter le serveur. Réessaie.";
+    return "Unable to reach the server. Please try again.";
   }
   if (error instanceof Error) {
     const msg = error.message.toLowerCase();
     if (msg.includes("rate limit") || msg.includes("429") || msg.includes("limite")) {
-      return "Trop de requêtes. Attends quelques minutes.";
+      return "Too many requests. Wait a few minutes.";
     }
     if (msg.includes("401") || msg.includes("unauthorized") || msg.includes("session")) {
-      return "Session expirée. Reconnecte-toi.";
+      return "Session expired. Please sign in again.";
     }
     if (msg.includes("timeout") || msg.includes("aborted")) {
-      return "La requête a pris trop de temps. Réessaie.";
+      return "Request took too long. Please try again.";
     }
     if (msg.includes("500") || msg.includes("internal")) {
-      return "Erreur serveur. Réessaie dans un instant.";
+      return "Server error. Please try again shortly.";
     }
     return error.message;
   }
-  return "Erreur inattendue. Réessaie.";
+  return "Unexpected error. Please try again.";
 }
 
 export async function withRetry<T>(
@@ -39,7 +39,7 @@ export async function withRetry<T>(
       return await fn();
     } catch (err) {
       lastError = err;
-      // Ne pas retry sur les erreurs client (4xx)
+      // Don't retry on client errors (4xx)
       if (err instanceof Error) {
         const msg = err.message.toLowerCase();
         if (msg.includes("401") || msg.includes("403") || msg.includes("429")) throw err;
@@ -59,7 +59,7 @@ export async function withTimeout<T>(
   return Promise.race([
     fn(),
     new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error("Timeout : la requête a pris trop de temps")), ms)
+      setTimeout(() => reject(new Error("Timeout: request took too long")), ms)
     ),
   ]);
 }

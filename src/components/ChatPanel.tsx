@@ -252,7 +252,7 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
     }
 
     try { assertOnline(); } catch (e) {
-      setError(e instanceof Error ? e.message : "Pas de connexion internet.");
+      setError(e instanceof Error ? e.message : "No internet connection.");
       return;
     }
     if (!isAnthropicConfigured()) {

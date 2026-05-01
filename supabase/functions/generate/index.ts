@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
     const { data: allowed } = await adminClient.rpc("check_rate_limit", {
       p_user_id: user.id, p_function: "generate", p_max_requests: 20, p_window_hours: 1,
     });
-    if (!allowed) return new Response(JSON.stringify({ error: "Limite de générations atteinte (20/h). Réessaie plus tard." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!allowed) return new Response(JSON.stringify({ error: "Generation limit reached (20/h). Please try again later." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     // Body
     const { platform, format, sourceText, sourceMode, activeSourceIds } = await req.json();
@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
         match_count: 5,
       });
       if (userRefs && userRefs.length > 0) {
-        userSection = "\n\n## CONTEXTE UTILISATEUR\n" +
+        userSection = "\n\n## USER CONTEXT\n" +
           userRefs.map((r: { type: string; title: string; content: string }) => `### [${r.type.toUpperCase()}] ${r.title}\n${r.content}`).join("\n\n");
       }
     }
@@ -56,31 +56,31 @@ Deno.serve(async (req) => {
       filter_format: format,
     });
     if (viralRefs && viralRefs.length > 0) {
-      viralSection = "\n\n## MODÈLES VIRAUX\n" +
-        viralRefs.map((r: { content: string }, i: number) => `### Modèle ${i + 1}\n${r.content}`).join("\n\n");
+      viralSection = "\n\n## VIRAL TEMPLATES\n" +
+        viralRefs.map((r: { content: string }, i: number) => `### Template ${i + 1}\n${r.content}`).join("\n\n");
     }
 
-    const modeLabel = sourceMode === "document" ? "Document source à transformer"
-      : sourceMode === "idea" ? "Idée à développer" : "Sujet / mot-clé";
+    const modeLabel = sourceMode === "document" ? "Source document to transform"
+      : sourceMode === "idea" ? "Idea to develop" : "Topic / keyword";
 
     const isDocMode = sourceMode === "document";
 
-    const systemPrompt = `## IDENTITÉ
-Tu es un expert en création de contenu viral pour les réseaux sociaux.${userSection}${viralSection}
+    const systemPrompt = `## IDENTITY
+You are an expert in viral social media content creation.${userSection}${viralSection}
 
 ## INSTRUCTIONS
-Plateforme : ${platform}
-Format : ${format}
+Platform: ${platform}
+Format: ${format}
 
-Règles :
-1. Génère exactement 5 variations séparées par ---VARIATION---
-2. Angles dans l'ordre : Éducatif, Storytelling, Provocation, Pratique, Débat
-3. Hook ultra fort en première ligne (max 10 mots)
-4. Écriture directe, humaine, niveau CM2. Phrases courtes.
-5. JAMAIS de formules enthousiastes artificielles.
-6. Adapte le ton à ${platform} + ${format}.
-7. Réponds UNIQUEMENT avec les 5 variations. Rien d'autre.
-8. Réponds toujours en français.${isDocMode ? "\n9. Base le contenu UNIQUEMENT sur les sources fournies." : ""}`;
+Rules:
+1. Generate exactly 5 variations separated by ---VARIATION---
+2. Angles in order: Educational, Storytelling, Provocative, Practical, Debate
+3. Ultra-strong hook on the first line (max 10 words)
+4. Direct, human writing. Short sentences. Simple language.
+5. NEVER use artificially enthusiastic phrases.
+6. Adapt the tone to ${platform} + ${format}.
+7. Reply ONLY with the 5 variations. Nothing else.
+8. Always reply in English.${isDocMode ? "\n9. Base the content ONLY on the provided sources." : ""}`;
 
     // Claude
     const anthropic = new Anthropic({ apiKey: Deno.env.get("ANTHROPIC_API_KEY")! });
@@ -98,7 +98,7 @@ Règles :
     if (parts.length < 2) parts = text.split(/\n\s*(?=\d\.\s)/).map((v: string) => v.replace(/^\d\.\s*/, "").trim()).filter((v: string) => v.length > 20);
     if (parts.length === 0) parts = [text.trim()];
 
-    const angles = ["Éducatif", "Storytelling", "Provocation", "Pratique", "Débat"];
+    const angles = ["Educational", "Storytelling", "Provocative", "Practical", "Debate"];
     const variations = parts.map((content: string, idx: number) => ({
       angle: angles[idx % 5],
       content,
@@ -119,7 +119,7 @@ Règles :
 
     return new Response(JSON.stringify({ variations }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "Erreur serveur";
+    const msg = err instanceof Error ? err.message : "Server error";
     return new Response(JSON.stringify({ error: msg }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });

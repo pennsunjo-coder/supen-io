@@ -141,7 +141,7 @@ function TopContentCard({
       onUpdateImagePrompt(item.id, text);
     } catch (err) {
       if (IS_DEV) console.error("[DashboardWidgets] Image prompt error:", err);
-      toast.error("Erreur lors de la génération du prompt image");
+      toast.error("Error generating image prompt");
     }
     setGenerating(false);
   }
@@ -324,13 +324,13 @@ function relativeTime(dateStr: string): string {
 /* ─── Angle colors ─── */
 
 const angleColors: Record<string, string> = {
-  "Éducatif": "bg-blue-500/15 text-blue-400",
+  "Educational": "bg-blue-500/15 text-blue-400",
   "Storytelling": "bg-purple-500/15 text-purple-400",
-  "Provocation": "bg-red-500/15 text-red-400",
-  "Pratique": "bg-emerald-500/15 text-emerald-400",
-  "Débat": "bg-amber-500/15 text-amber-400",
+  "Provocative": "bg-red-500/15 text-red-400",
+  "Practical": "bg-emerald-500/15 text-emerald-400",
+  "Debate": "bg-amber-500/15 text-amber-400",
 };
-const angleLabels = ["Éducatif", "Storytelling", "Provocation", "Pratique", "Débat"];
+const angleLabels = ["Educational", "Storytelling", "Provocative", "Practical", "Debate"];
 
 /* ─── Session Variation Card (with Image + Infographic panels) ─── */
 
@@ -376,7 +376,7 @@ function SessionVariationCard({
       onUpdateImagePrompt(item.id, t);
     } catch (err) {
       if (IS_DEV) console.error("[SessionCard] Image prompt error:", err);
-      toast.error("Erreur lors de la génération du prompt image");
+      toast.error("Error generating image prompt");
     }
     setGenerating(false);
   }
@@ -396,7 +396,7 @@ function SessionVariationCard({
       onUpdateImagePrompt(item.id, t);
     } catch (err) {
       if (IS_DEV) console.error("[SessionCard] Image regen error:", err);
-      toast.error("Erreur lors de la régénération");
+      toast.error("Error during regeneration");
     }
     setGenerating(false);
   }
