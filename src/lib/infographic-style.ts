@@ -718,13 +718,20 @@ CRITICAL: Use ONLY the text above. Do NOT invent, paraphrase, or add unrelated g
     const backgrounds = ["creamy paper #FAF9F6", "pure white #FFFFFF", "warm white #FDFCFA", "light cream #FFF8F0"];
     const bgChoice = backgrounds[Math.floor(Math.random() * backgrounds.length)];
 
-    const layouts = [
-      "vertical stacked blocks with numbers on left",
-      "two-column layout with icons on left, text on right",
-      "timeline layout with connecting arrows between sections",
-      "grid layout with key points in colored cards",
-    ];
-    const layoutChoice = layouts[Math.floor(Math.random() * layouts.length)];
+    // Detect content type and adapt layout
+    const contentLower = content.toLowerCase();
+    const layoutByContent =
+      contentLower.includes('step') || contentLower.includes('how to') || contentLower.includes('guide')
+        ? `Numbered step-by-step vertical flow. Each step in its own colored box with number badge. Connecting arrows between steps. Timeline feel from top to bottom.`
+      : contentLower.includes('vs') || contentLower.includes('compare') || contentLower.includes('difference') || contentLower.includes('before') || contentLower.includes('after')
+        ? `Two-column comparison layout. LEFT column: "Before/Wrong/Old" in red tones. RIGHT column: "After/Right/New" in green tones. Bold header above each column. Checkmarks vs X marks.`
+      : contentLower.includes('tip') || contentLower.includes('mistake') || contentLower.includes('rule') || contentLower.includes('secret')
+        ? `Grid of cards (2 columns x 3 rows). Each card: number badge + icon + short text. Alternating background colors. Bold key word highlighted in each card.`
+      : contentLower.includes('stat') || contentLower.includes('%') || contentLower.includes('data') || contentLower.includes('research')
+        ? `Data-focused design. Large numbers prominently displayed. Bar or circle visual elements. Source citations in small text. Key insight box at bottom.`
+      : contentLower.includes('story') || contentLower.includes('journey') || contentLower.includes('went from') || contentLower.includes('used to')
+        ? `Story arc / timeline layout. Start at top left, flow to bottom right. Key turning points highlighted. Before/after transformation shown. Personal and emotional visual style.`
+      : `Vertical stacked blocks. Each block: hand-drawn border, icon, title, bullets. Color changes per block. Arrows connecting sections.`;
 
     // Build rich content analysis
     const kp = extractKeyPoints(content);
@@ -742,7 +749,7 @@ QUALITY — ZERO TOLERANCE:
 STYLE — "HANDWRITTEN WHITEBOARD":
 Background: ${bgChoice}. Font: handwritten (Caveat/Patrick Hand).
 Title: large bold, double orange underline. Body: clean handwritten.
-Layout: ${layoutChoice}
+LAYOUT: ${layoutByContent}
 
 SECTIONS:
 - Wobbly hand-drawn border frames. Number in hand-drawn circle on left.

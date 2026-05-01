@@ -1042,8 +1042,8 @@ export default function InfographicModal({ open, onClose, content, platform, con
                 {(imageBase64 || htmlCode) && !showCustomGen && (
                   <div className="p-3 rounded-xl bg-primary/5 border border-primary/10 text-center mb-3">
                     <p className="text-xs text-muted-foreground mb-2">Want a completely different visual?</p>
-                    <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => setShowCustomGen(true)}>
-                      <Sparkles className="w-3 h-3" /> Generate with my own prompt
+                    <Button variant="default" className="w-full h-12 text-sm font-bold gap-2 bg-gradient-to-r from-primary to-primary/80 shadow-lg" onClick={() => setShowCustomGen(true)}>
+                      <Sparkles className="w-4 h-4" /> ✨ Generate a Custom Visual
                     </Button>
                   </div>
                 )}
