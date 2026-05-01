@@ -149,6 +149,30 @@ export const VIRAL_HOOKS: Hook[] = [
   { text: "Why the hardest workers aren't the most successful.", type: "question", niche: "general" },
   { text: "The one thing successful people do differently.", type: "fomo", niche: "general" },
   { text: "I've been watching for 3 years. Here's what I learned.", type: "story", niche: "general" },
+
+  // ═══ LINKEDIN REFERENCE HOOKS (extracted from viral posts) ═══
+  { text: "Half of what 'experts' say about [topic] is wrong.", type: "contrarian", niche: "general", platform: "linkedin" },
+  { text: "840 out of 1000 people have never tried this. Here's the plan:", type: "stat", niche: "general", platform: "linkedin" },
+  { text: "I tracked my entire workflow for 30 days. It was brutal:", type: "story", niche: "general", platform: "linkedin" },
+  { text: "47,000 creators switched this year. Here's what they know:", type: "stat", niche: "marketing", platform: "linkedin" },
+  { text: "You're still doing it the old way. But the rules changed.", type: "contrarian", niche: "general", platform: "linkedin" },
+  { text: "I (secretly) became a SaaS founder. Here's what happened:", type: "confession", niche: "business", platform: "linkedin" },
+  { text: "In 2026, this will replace 80% of manual work.", type: "fomo", niche: "tech", platform: "linkedin" },
+  { text: "12 minutes per task. That's 45 days of your year.", type: "stat", niche: "general", platform: "linkedin" },
+  { text: "While most people learn tools, smart people learn systems.", type: "contrarian", niche: "tech", platform: "linkedin" },
+  { text: "I spent $0 and built what others charge $500/month for.", type: "story", niche: "tech", platform: "linkedin" },
+  { text: "Everyone's talking about AI. Nobody's talking about this:", type: "fomo", niche: "tech", platform: "linkedin" },
+  { text: "Your hook has 1.3 seconds. Here's how to use them:", type: "stat", niche: "marketing", platform: "linkedin" },
+
+  // ═══ THREAD HOOKS (X/Facebook threads) ═══
+  { text: "I grew 15K followers in 90 days. Here are the 7 prompts I use:", type: "story", niche: "marketing", platform: "x" },
+  { text: "Most people build content wrong. Here's the system that works:", type: "contrarian", niche: "marketing", platform: "x" },
+  { text: "BREAKING: Claude + Cursor is literally a cheatcode.", type: "fomo", niche: "tech", platform: "x" },
+  { text: "I tested 50 AI tools this month. Only 7 were worth keeping:", type: "stat", niche: "tech", platform: "x" },
+  { text: "RIP ChatGPT free tier. This open-source alternative is better:", type: "provocateur", niche: "tech", platform: "x" },
+  { text: "In 2007, iPhone killed Nokia. In 2026, this will kill LinkedIn:", type: "provocateur", niche: "tech", platform: "x" },
+  { text: "I automated my entire content pipeline. Total cost: $0.", type: "story", niche: "tech", platform: "x" },
+  { text: "The 5-minute morning routine that 10x'd my output:", type: "promise", niche: "general", platform: "x" },
 ];
 
 // ─── Niche detection from text ───
