@@ -726,57 +726,61 @@ CRITICAL: Use ONLY the text above. Do NOT invent, paraphrase, or add unrelated g
     ];
     const layoutChoice = layouts[Math.floor(Math.random() * layouts.length)];
 
+    // Build rich content analysis
+    const kp = extractKeyPoints(content);
+    const hasSections = kp.sections.length >= 2 && kp.sections.some(s => s.bullets.length > 0);
+    const mainSections = hasSections
+      ? kp.sections.slice(0, 5)
+      : ext.points.slice(0, 5).map(p => ({ header: p.split(' ').slice(0, 5).join(' ').toUpperCase(), bullets: [p] }));
+
     return `ABSOLUTE RULE: Fill 100% of canvas vertically and horizontally. NO white space at any edge. Background reaches ALL 4 edges.
 
-QUALITY RULES — ZERO TOLERANCE:
-- Every word spelled correctly
-- No repeated words or phrases
-- No truncated text at edges
-- Perfect grammar throughout
-- Dark text on light background only
-- Every section complete, no placeholders
+QUALITY — ZERO TOLERANCE:
+- Every word spelled correctly. No repeated phrases. No truncated text.
+- Perfect grammar. Dark text on light background. All sections complete.
 
-VISUAL COHERENCE:
-- One dominant color per section
-- Consistent icon style throughout (doodle)
-- Consistent border radius (all slightly wobbly)
-- Equal spacing between all sections
-- Visual rhythm guides eye top to bottom
-
-STYLE — MANDATORY "HANDWRITTEN WHITEBOARD":
-Background: creamy paper texture ${bgChoice}
-Font: handwritten style (Caveat/Patrick Hand)
-- Title: large, bold, double orange underline
-- Body: clean handwritten, easy to read
-
-LAYOUT: ${layoutChoice}
+STYLE — "HANDWRITTEN WHITEBOARD":
+Background: ${bgChoice}. Font: handwritten (Caveat/Patrick Hand).
+Title: large bold, double orange underline. Body: clean handwritten.
+Layout: ${layoutChoice}
 
 SECTIONS:
-- Each section: hand-drawn wobbly border frame
-- Left side: number in hand-drawn circle
-- Color changes each section: Blue→Red→Orange→Purple→Green
-- Yellow highlighter behind 2-3 key words per section
-- Small doodle icon inside each block (contextual)
-- Hand-drawn arrow connecting sections
+- Wobbly hand-drawn border frames. Number in hand-drawn circle on left.
+- Colors per section: Blue→Red→Orange→Purple→Green
+- Yellow highlighter on 2-3 key words per section
+- Contextual doodle icon per block: 💰 money, 📈 growth, 🧠 learning, ⚡ speed, 🎯 goals, 💡 ideas, ✅ success, ❌ mistakes
+- Hand-drawn arrows connecting sections
 
-CREATIVITY — MAKE IT UNIQUE:
-- Vary shapes: rectangles/speech bubbles/banners
-- Match visual mood to content tone
+RICHNESS — MAKE IT DENSE BUT AIRY:
+- ALL statistics as large highlighted numbers
+- Highlight most important word per section with yellow marker
+- Each section: minimum 3 bullet points
+- Numbers displayed prominently
+- Add "Key Takeaway" box at bottom with single most important insight
+- Subtle decorative elements: small stars, arrows, underlines
 - 50% visuals/whitespace, 50% text
-- Eye-catching on social media feed
-- Look like a professional graphic designer made it
+
+CONTENT ANALYSIS — USE ALL OF THIS:
+
+MAIN TITLE: "${ext.title}"
+
+KEY SECTIONS (${mainSections.length}):
+${mainSections.map((s, i) => `Section ${i + 1}: "${s.header}"
+${s.bullets.slice(0, 5).map(b => `• ${b}`).join('\n')}`).join('\n\n')}
+
+${ext.stats.length > 0 ? `KEY STATISTICS:\n${ext.stats.map(s => `→ ${s}`).join('\n')}` : ''}
+
+ACTION ITEMS:
+${ext.points.slice(0, 6).map((p, i) => `${i + 1}. ${p}`).join('\n')}
 
 FOOTER:
-- Hand-drawn black separator line
+- Hand-drawn separator line
 - "Follow @${userName || 'supenli.io'} for more | Save & Repost"
-- Clean, centered, small handwritten text
+- Small decorative star element
 
-CONTENT TO VISUALIZE:
-Title: "${ext.title}"
-${ext.points.map((p, i) => `Section ${i + 1}: ${p}`).join('\n')}
-${ext.stats.length > 0 ? `Key stats: ${ext.stats.join(', ')}` : ''}
+CREATIVITY: Vary shapes (rectangles/speech bubbles/banners). Match mood to content. Eye-catching on social media. Professional designer quality.
 
-AVOID: dark background, 3D, perspective, spiral rings, table surface, Lorem Ipsum, repeated text, cut-off words, pure white borders.`;
+AVOID: dark background, 3D, perspective, table surface, Lorem Ipsum, empty sections, vague text, repeated information, spiral rings, cut-off words.`;
   }
 
   // ── PROCESS_STEPS ──
