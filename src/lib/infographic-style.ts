@@ -726,66 +726,57 @@ CRITICAL: Use ONLY the text above. Do NOT invent, paraphrase, or add unrelated g
     ];
     const layoutChoice = layouts[Math.floor(Math.random() * layouts.length)];
 
-    return `ABSOLUTE RULE: Fill 100% of the canvas vertically. NO white space at top. NO white space at bottom. The background color must reach ALL 4 edges of the image. Start content at the very top edge. End content at the very bottom edge. If needed, increase font sizes or spacing to fill the space.
+    return `ABSOLUTE RULE: Fill 100% of canvas vertically and horizontally. NO white space at any edge. Background reaches ALL 4 edges.
 
-QUALITY & ACCURACY — ZERO TOLERANCE:
-1. SPELLING: Every word spelled correctly. Double-check all text.
-2. NO REPETITION: Never repeat the same word or phrase twice.
-3. NO TRUNCATION: Every word complete. Never cut off at edges.
-4. COHERENCE: Title → sections → footer must tell one story.
-5. GRAMMAR: Perfect English grammar throughout.
-6. HIERARCHY: Title largest → subtitles medium → body smallest.
-7. CONTRAST: Dark text on light background. Min 4.5:1 ratio.
-8. ALIGNMENT: All elements on an invisible grid. Nothing random.
-9. CONSISTENCY: Same font family. Max 2 weights per infographic.
-10. COMPLETENESS: Every section complete. No "..." or placeholder.
+QUALITY RULES — ZERO TOLERANCE:
+- Every word spelled correctly
+- No repeated words or phrases
+- No truncated text at edges
+- Perfect grammar throughout
+- Dark text on light background only
+- Every section complete, no placeholders
 
 VISUAL COHERENCE:
-- One dominant color per section (never mix)
-- Consistent border radius throughout
-- Consistent icon style (all doodle OR all flat, never mixed)
-- Consistent line weight for all hand-drawn elements
+- One dominant color per section
+- Consistent icon style throughout (doodle)
+- Consistent border radius (all slightly wobbly)
 - Equal spacing between all sections
-- Visual rhythm: alternating colors guide the eye down
+- Visual rhythm guides eye top to bottom
 
-Generate a digital whiteboard-style infographic.
+STYLE — MANDATORY "HANDWRITTEN WHITEBOARD":
+Background: creamy paper texture ${bgChoice}
+Font: handwritten style (Caveat/Patrick Hand)
+- Title: large, bold, double orange underline
+- Body: clean handwritten, easy to read
 
-STYLE — MANDATORY:
-- Canvas: vertical 4:5 format, fill ENTIRE canvas edge to edge
-- Background: ${bgChoice} — must extend to ALL 4 edges, zero empty space
-- Layout: ${layoutChoice}
-- Hand-drawn marker aesthetic — imperfect lines, human feel
-- Blocks with hand-drawn borders (slightly wobbly, not perfectly straight)
-- Title at top: large handwritten font, double orange underline (thick marker effect)
-- Color palette: marker colors — Blue, Red, Orange, Purple, Green (changes per section)
-- Numbers: hand-drawn circles on left of each block
-- Highlights: yellow fluorescent highlighter effect behind key words
-- Icons: doodle style (lightbulb, star, gear, dollar) inside blocks
-- Footer: hand-drawn black line separator + CTA text
-- Typography: handwritten-style font (Caveat or similar)
-- 100% flat digital design, NO perspective, NO 3D, NO dark background
-- NO table surface, NO wooden desk, NO notebook rings, NO camera angle
-- ALL text in ENGLISH only
-- Every word FULLY READABLE — never cut off
+LAYOUT: ${layoutChoice}
 
-TITLE: "${ext.title}"
+SECTIONS:
+- Each section: hand-drawn wobbly border frame
+- Left side: number in hand-drawn circle
+- Color changes each section: Blue→Red→Orange→Purple→Green
+- Yellow highlighter behind 2-3 key words per section
+- Small doodle icon inside each block (contextual)
+- Hand-drawn arrow connecting sections
 
-CONTENT (display ALL ${n} points):
-${ext.points.map((point, i) => `${i + 1}. [${COLORS[i % COLORS.length]} block] "${point}"`).join('\n')}
-
-${ext.stats.length > 0 ? `KEY NUMBERS: ${ext.stats.join(', ')}` : ''}
-
-FOOTER: "Follow @${userName || 'supenli.io'} for more | Repost ♻️"
-
-CREATIVITY:
-- Vary section shapes: rectangles, rounded cards, speech bubbles, banners
-- Vary title treatment: underlined, circled, highlighted, boxed
+CREATIVITY — MAKE IT UNIQUE:
+- Vary shapes: rectangles/speech bubbles/banners
 - Match visual mood to content tone
-- Make it UNIQUE and eye-catching on a social media feed
-- Balance: 50% visuals/whitespace, 50% text
-- Guide the eye from top to bottom naturally
+- 50% visuals/whitespace, 50% text
+- Eye-catching on social media feed
+- Look like a professional graphic designer made it
 
-AVOID: blurry, cluttered, 3D, photos, dark background, perspective, table surface, cut-off text, white space at top/bottom.`;
+FOOTER:
+- Hand-drawn black separator line
+- "Follow @${userName || 'supenli.io'} for more | Save & Repost"
+- Clean, centered, small handwritten text
+
+CONTENT TO VISUALIZE:
+Title: "${ext.title}"
+${ext.points.map((p, i) => `Section ${i + 1}: ${p}`).join('\n')}
+${ext.stats.length > 0 ? `Key stats: ${ext.stats.join(', ')}` : ''}
+
+AVOID: dark background, 3D, perspective, spiral rings, table surface, Lorem Ipsum, repeated text, cut-off words, pure white borders.`;
   }
 
   // ── PROCESS_STEPS ──
