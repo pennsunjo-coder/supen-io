@@ -710,55 +710,40 @@ CRITICAL: Use ONLY the text above. Do NOT invent, paraphrase, or add unrelated g
   const n = ext.points.length;
   const AVOID = "\n\nAVOID: blurry, cluttered, messy layout, too many colors, realistic photo, 3D render, low resolution, bad typography, misaligned text, dark background (unless dark template), generic stock photo style.";
 
-  // ── WHITEBOARD ──
-  if (selectedTemplate === "WHITEBOARD" || selectedTemplate === "UI_CARDS" || selectedTemplate === "AWA_CLASSIC") {
-    return `Generate a single image of a physical, hand-drawn infographic on a large whiteboard or notebook page.
+  // ── WHITEBOARD (single forced style) ──
+  {
+    const COLORS = ['Blue', 'Red', 'Orange', 'Purple', 'Green'];
 
-${baseRules}
+    return `Generate a digital whiteboard-style infographic.
 
-${contentBlock}
+STYLE — MANDATORY:
+- Canvas: vertical 4:5 format, fill ENTIRE canvas edge to edge
+- Background: creamy paper texture #FAF9F6
+- Hand-drawn marker aesthetic — imperfect lines, human feel
+- Blocks with hand-drawn borders (slightly wobbly, not perfectly straight)
+- Title at top: large handwritten font, double orange underline (thick marker effect)
+- Color palette: marker colors — Blue, Red, Orange, Purple, Green (changes per section)
+- Numbers: hand-drawn circles on left of each block
+- Highlights: yellow fluorescent highlighter effect behind key words
+- Icons: doodle style (lightbulb, star, gear, dollar) inside blocks
+- Footer: hand-drawn black line separator + CTA text
+- Typography: handwritten-style font (Caveat or similar)
+- 100% flat digital design, NO perspective, NO 3D, NO dark background
+- Fill ENTIRE canvas edge to edge like a PDF
+- NO table surface, NO wooden desk, NO notebook rings, NO camera angle
+- ALL text in ENGLISH only
+- Every word FULLY READABLE — never cut off
 
-CRUCIAL STYLE INSTRUCTIONS:
-- MEDIUM: The image must look like a photograph of a REAL whiteboard or large paper notepad
-- TEXTURE: All elements must look created by hand using colored marker pens (black, blue, red, green) and highlighters (yellow/orange). Lines should be slightly imperfect, wobbly, and have the texture of ink on a surface
-- NO DIGITAL FONTS: All text, headings, and bullet points must appear handwritten or hand-printed in marker pen
-- Use multi-colored markers for emphasis
-- Keep text large and legible
-- Make everything look hand-drawn with slight imperfections
-- Make it look like a photograph of an actual notebook page
-- Use simple language. Avoid technical terms unless necessary
-- Make it easy to scan in less than 10 seconds
-- Use a consistent structure throughout
-- Use realistic hand-drawn icons, logos and elements like the ultimate best design expert
-- ${formatHint}
+TITLE: "${ext.title}"
 
-LAYOUT (1080x1350 structured, top to bottom):
+CONTENT (display ALL ${n} points):
+${ext.points.map((point, i) => `${i + 1}. [${COLORS[i % COLORS.length]} block] "${point}"`).join('\n')}
 
-━━━ HEADER (top 15%) ━━━
-Large bold handwritten title in black marker: "${ext.title}"
-Underlined with thick orange highlighter stroke.
-2-3 key words highlighted with yellow/orange marker effect.
+${ext.stats.length > 0 ? `KEY NUMBERS: ${ext.stats.join(', ')}` : ''}
 
-━━━ MAIN CONTENT (70%) ━━━
-${ext.points.map((point, i) => {
-  const colors = ['blue marker', 'green marker', 'red marker', 'orange marker', 'purple marker'];
-  return `Section ${i + 1} (${colors[i % colors.length]} heading):
-- Hand-drawn numbered circle badge in ${colors[i % colors.length]}
-- Bold marker header: "${point.split(' ').slice(0, 4).join(' ').toUpperCase()}"
-- Handwritten body text: "${point}"
-- Yellow highlighter on 1-2 key words
-- Hand-drawn arrow → connecting to next section
-- Small hand-drawn icon (gear, lightbulb, star, checkmark) on the right`;
-}).join('\n\n')}
+FOOTER: "Follow @supenli.io for more | Repost ♻️"
 
-${ext.stats.length > 0 ? `━━━ STATS ━━━\nHighlight these numbers prominently with colored marker circles:\n${ext.stats.join(', ')}` : ''}
-
-━━━ FOOTER (15%) ━━━
-Wobbly hand-drawn divider line.
-Bottom: Key takeaway in bold centered marker text.
-Handwritten text: "Follow @supenli.io for more | Repost ♻️" in smaller marker style.
-
-QUALITY: Must look like a real photograph of handwritten marker notes on a whiteboard. Imperfect, human, warm, information-dense.${AVOID}`;
+AVOID: blurry, cluttered, 3D, photos, dark background, perspective, table surface, cut-off text.`;
   }
 
   // ── PROCESS_STEPS ──

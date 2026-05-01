@@ -363,10 +363,10 @@ export default function InfographicModal({ open, onClose, content, platform, con
 
   // ─── Auto-analysis ───
 
-  const forcedTemplate = styleChoice === "auto" ? undefined : styleChoice;
   const analysis = analyzeContent(content, platform);
   const dims = getFormatDimensions(analysis.format);
-  const templateSelection = selectBestTemplate(content, platform, forcedTemplate);
+  // Force WHITEBOARD style always — no template switching
+  const templateSelection = { templateId: "WHITEBOARD" as const, reason: "Forced whiteboard style" };
   const imageConfig = getImageSize(platform);
   const aspectRatio = dims.height / dims.width;
   // Scale infographic to fit ~480px wide modal content area
