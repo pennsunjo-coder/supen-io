@@ -1,4 +1,6 @@
 import { useState } from "react";
+
+const IS_DEV = import.meta.env.DEV;
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,14 +27,14 @@ export function WaitlistPopup({ isOpen, onClose }: WaitlistPopupProps) {
 
     setLoading(true);
     setError("");
-    console.log("[Waitlist] Submitting:", { name: name.trim(), email: email.trim() });
+    if (IS_DEV) console.log("[Waitlist] Submitting:", { name: name.trim(), email: email.trim() });
 
     try {
       const { error: dbError } = await supabase
         .from("waitlist")
         .insert({ name: name.trim(), email: email.trim().toLowerCase() });
 
-      console.log("[Waitlist] Insert result:", dbError ? dbError.message : "OK");
+      if (IS_DEV) console.log("[Waitlist] Insert result:", dbError ? dbError.message : "OK");
 
       if (dbError) {
         if (dbError.code === "23505") {
@@ -50,7 +52,7 @@ export function WaitlistPopup({ isOpen, onClose }: WaitlistPopupProps) {
           type: "waitlist",
           data: { name: name.trim() },
         },
-      }).catch((e) => console.warn("[Waitlist] Email failed:", e));
+      }).catch((e) => { if (IS_DEV) console.warn("[Waitlist] Email failed:", e); });
 
       // Confetti explosion
       confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ["#24A89B", "#1a8a7f", "#ffffff", "#a7f3d0", "#34d399"] });

@@ -141,7 +141,7 @@ function parseVariations(raw: string): ParsedVariation[] {
   );
 
   if (tagged && tagged.length >= 3) {
-    console.log("[Parser] Tagged format:", tagged.length, "variations");
+    if (IS_DEV) console.log("[Parser] Tagged format:", tagged.length, "variations");
     return tagged.map((block, i) => {
       const content = block
         .replace(/\[VARIATION_\d+_START\]/, '')
@@ -164,7 +164,7 @@ function parseVariations(raw: string): ParsedVariation[] {
     .filter(v => v.length > 50);
 
   if (dashes.length >= 3) {
-    console.log("[Parser] Dash format:", dashes.length, "variations");
+    if (IS_DEV) console.log("[Parser] Dash format:", dashes.length, "variations");
     return dashes.slice(0, 5).map((content, i) => ({
       content: stripMarkdown(content),
       words: wordCount(content),
@@ -181,7 +181,7 @@ function parseVariations(raw: string): ParsedVariation[] {
     .filter(v => v.length > 100);
 
   if (blocks.length >= 2) {
-    console.log("[Parser] Newline format:", blocks.length, "variations");
+    if (IS_DEV) console.log("[Parser] Newline format:", blocks.length, "variations");
     return blocks.slice(0, 5).map((content, i) => ({
       content: stripMarkdown(content),
       words: wordCount(content),
@@ -193,7 +193,7 @@ function parseVariations(raw: string): ParsedVariation[] {
 
   // Fallback: entire response as single variation
   if (raw.trim().length > 50) {
-    console.warn("[Parser] Could not split — returning as single variation");
+    if (IS_DEV) console.warn("[Parser] Could not split — returning as single variation");
     return [{
       content: stripMarkdown(raw.trim()),
       words: wordCount(raw),
@@ -220,7 +220,7 @@ interface StudioWizardProps {
   profile?: UserProfile | null;
   sessions?: ContentSession[];
   onUpdateImagePrompt?: (id: string, prompt: string) => void;
-  activityData?: ActivityData & { DAYS_FR: string[]; refetch: () => void };
+  activityData?: ActivityData & { DAYS: string[]; refetch: () => void };
   onContentGenerated?: (content: string) => void;
   onGenerationComplete?: () => void;
 }
@@ -410,7 +410,7 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
           const ragResults = await searchUserSources(ragQuery, allSourceIds, 8);
 
           if (ragResults.length > 0) {
-            console.log("[RAG] Found", ragResults.length, "relevant chunks");
+            if (IS_DEV) console.log("[RAG] Found", ragResults.length, "relevant chunks");
             const seen = new Set<string>();
             sourceContext = ragResults
               .filter(r => {
@@ -426,7 +426,7 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
               .join('\n\n');
           }
         } catch (e) {
-          console.warn("[RAG] Search failed, falling back to direct load:", e);
+          if (IS_DEV) console.warn("[RAG] Search failed, falling back to direct load:", e);
         }
 
         // Fallback: direct source loading if RAG returned nothing
@@ -439,7 +439,7 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
               .limit(5);
 
             if (sourcesData && sourcesData.length > 0) {
-              console.log("[RAG] Direct load:", sourcesData.length, "sources");
+              if (IS_DEV) console.log("[RAG] Direct load:", sourcesData.length, "sources");
               sourceContext = sourcesData.map(s => {
                 const title = s.title.replace(/\s*\(\d+\/\d+\)\s*$/, '').trim();
                 return `━━━ ${title} ━━━\n${s.content?.slice(0, 2500)}`;
@@ -456,7 +456,7 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
           : webSearchResults;
       }
 
-      console.log("[RAG] Context length:", sourceContext.length);
+      if (IS_DEV) console.log("[RAG] Context length:", sourceContext.length);
 
       // === Build user message ===
       const sanitizedInput = sanitized;
@@ -646,12 +646,14 @@ Each variation includes: HOOK, PROBLEM, SOLUTION, PROOF, CTA, ON-SCREEN TEXT.`;
       }
 
       // === DEBUG LOGS ===
-      console.log("=== GENERATION START ===");
-      console.log("Platform:", selectedPlatform?.name);
-      console.log("Format:", selectedFormat);
-      console.log("Sources:", allSourceIds.length);
-      console.log("Source context length:", sourceContext.length);
-      console.log("User message preview:", userMessage.slice(0, 300));
+      if (IS_DEV) {
+        console.log("=== GENERATION START ===");
+        console.log("Platform:", selectedPlatform?.name);
+        console.log("Format:", selectedFormat);
+        console.log("Sources:", allSourceIds.length);
+        console.log("Source context length:", sourceContext.length);
+        console.log("User message preview:", userMessage.slice(0, 300));
+      }
 
       assertOnline();
       if (!isAnthropicConfigured()) {
@@ -680,7 +682,7 @@ Each variation includes: HOOK, PROBLEM, SOLUTION, PROOF, CTA, ON-SCREEN TEXT.`;
           const is429 = retryErr?.status === 429 || /too many|rate/i.test(retryErr?.message || "");
           if (is429 && attempt < 2) {
             const delay = (attempt + 1) * 3000;
-            console.log(`[Gen] Rate limited. Retrying in ${delay}ms...`);
+            if (IS_DEV) console.log(`[Gen] Rate limited. Retrying in ${delay}ms...`);
             await new Promise((r) => setTimeout(r, delay));
             continue;
           }
@@ -691,10 +693,12 @@ Each variation includes: HOOK, PROBLEM, SOLUTION, PROOF, CTA, ON-SCREEN TEXT.`;
 
       setError(null);
       const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
-      console.log("=== RAW RESPONSE ===");
-      console.log(text.slice(0, 500));
+      if (IS_DEV) {
+        console.log("=== RAW RESPONSE ===");
+        console.log(text.slice(0, 500));
+      }
       const parsed = parseVariations(text);
-      console.log("Parsed variations:", parsed.length);
+      if (IS_DEV) console.log("Parsed variations:", parsed.length);
 
       // Instant scoring (no extra API calls) — save immediately
       const scored = parsed.map((v) => ({
@@ -795,7 +799,7 @@ Each variation includes: HOOK, PROBLEM, SOLUTION, PROOF, CTA, ON-SCREEN TEXT.`;
 
       // Attempt 2: without source_ids + image_prompt (columns may not exist)
       if (saveErr) {
-        console.warn("[StudioWizard] Attempt 1 failed:", saveErr.message);
+        if (IS_DEV) console.warn("[StudioWizard] Attempt 1 failed:", saveErr.message);
         const mediumInserts = parsed.map((v) => ({
           user_id: user.id,
           platform: selectedPlatform.name,
@@ -811,7 +815,7 @@ Each variation includes: HOOK, PROBLEM, SOLUTION, PROOF, CTA, ON-SCREEN TEXT.`;
 
       // Attempt 3: minimal columns only
       if (saveErr) {
-        console.warn("[StudioWizard] Attempt 2 failed:", saveErr.message);
+        if (IS_DEV) console.warn("[StudioWizard] Attempt 2 failed:", saveErr.message);
         const minInserts = parsed.map((v) => ({
           user_id: user.id,
           platform: selectedPlatform.name,

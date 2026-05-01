@@ -31,8 +31,8 @@ const PLATFORM_TEXT_COLORS: Record<string, string> = {
 };
 
 const PLATFORMS = ["Instagram", "TikTok", "LinkedIn", "Facebook", "X (Twitter)", "YouTube"];
-const DAYS_FR = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const MONTHS_FR = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 function getMonthDays(year: number, month: number): Date[] {
   const firstDay = new Date(year, month, 1);
@@ -198,7 +198,7 @@ const Calendar = () => {
                     <ChevronLeft className="w-4 h-4" />
                   </button>
                   <h2 className="text-sm font-bold">
-                    {MONTHS_FR[currentDate.getMonth()]} {currentDate.getFullYear()}
+                    {MONTHS[currentDate.getMonth()]} {currentDate.getFullYear()}
                   </h2>
                   <button onClick={() => navigateMonth(1)} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-accent/50 transition-colors">
                     <ChevronRight className="w-4 h-4" />
@@ -207,7 +207,7 @@ const Calendar = () => {
 
                 {/* Day headers */}
                 <div className="grid grid-cols-7 border-b border-border/20">
-                  {DAYS_FR.map((d) => (
+                  {DAYS.map((d) => (
                     <div key={d} className="px-2 py-2 text-center text-[10px] font-semibold text-muted-foreground/60 uppercase">
                       {d}
                     </div>

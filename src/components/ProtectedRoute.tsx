@@ -37,17 +37,17 @@ export default function ProtectedRoute({ children, skipOnboardingCheck = false }
     );
   }
 
-  // 4. Skip onboarding check (pour la route /onboarding elle-même)
+  // 4. Skip onboarding check (for the /onboarding route itself)
   if (skipOnboardingCheck) {
     return <>{children}</>;
   }
 
-  // 5. Onboarding pas fait → /onboarding
-  // SEULEMENT quand profileLoading = false (on a la réponse de Supabase)
+  // 5. Onboarding not completed → /onboarding
+  // ONLY when profileLoading = false (we have the Supabase response)
   if (!onboardingCompleted && location.pathname !== "/onboarding") {
     return <Navigate to="/onboarding" replace />;
   }
 
-  // 6. Tout est bon → afficher la page
+  // 6. All good → render the page
   return <>{children}</>;
 }

@@ -43,15 +43,15 @@ function getDateLabel(dateStr: string): string {
   const weekAgo = new Date(today);
   weekAgo.setDate(weekAgo.getDate() - 7);
 
-  if (date >= today) return "Aujourd'hui";
-  if (date >= yesterday) return "Hier";
-  if (date >= weekAgo) return "Cette semaine";
-  return "Plus ancien";
+  if (date >= today) return "Today";
+  if (date >= yesterday) return "Yesterday";
+  if (date >= weekAgo) return "This week";
+  return "Older";
 }
 
 function groupByDate(items: GeneratedItem[]): HistoryGroup[] {
   const groups = new Map<string, GeneratedItem[]>();
-  const order = ["Aujourd'hui", "Hier", "Cette semaine", "Plus ancien"];
+  const order = ["Today", "Yesterday", "This week", "Older"];
 
   for (const item of items) {
     const label = getDateLabel(item.created_at);

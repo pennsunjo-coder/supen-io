@@ -54,8 +54,8 @@ function getImageSize(platform: string): ImageSizeConfig {
 // ─── Image Generation via Edge Function ───
 
 async function generateInfographic(prompt: string): Promise<string> {
-  console.log("[Infographic] Calling Edge Function...");
-  console.log("[Infographic] Prompt length:", prompt.length);
+  if (IS_DEV) console.log("[Infographic] Calling Edge Function...");
+  if (IS_DEV) console.log("[Infographic] Prompt length:", prompt.length);
 
   const { data, error } = await supabase.functions.invoke("generate-image", {
     body: { prompt },
@@ -73,7 +73,7 @@ async function generateInfographic(prompt: string): Promise<string> {
 
   // Support both HTML and direct image responses
   if (data?.html) {
-    console.log("[Infographic] Got HTML, length:", data.html.length);
+    if (IS_DEV) console.log("[Infographic] Got HTML, length:", data.html.length);
     return data.html; // Caller handles HTML→image conversion if needed
   }
 
@@ -82,7 +82,7 @@ async function generateInfographic(prompt: string): Promise<string> {
     throw new Error("No image returned. Please try again.");
   }
 
-  console.log("[Infographic] Generated! Size:", base64.length);
+  if (IS_DEV) console.log("[Infographic] Generated! Size:", base64.length);
   return base64;
 }
 
@@ -404,8 +404,8 @@ export default function InfographicModal({ open, onClose, content, platform, con
     try {
       assertOnline();
 
-      console.log("[Infographic] Content length:", content.length);
-      console.log("[Infographic] Template:", templateSelection.templateId);
+      if (IS_DEV) console.log("[Infographic] Content length:", content.length);
+      if (IS_DEV) console.log("[Infographic] Template:", templateSelection.templateId);
 
       // Platform-specific format hint prepended to prompt
       const pl = platform?.toLowerCase() || "";

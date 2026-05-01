@@ -21,22 +21,22 @@ interface TavilyResult {
 }
 
 const NICHE_QUERIES: Record<string, string> = {
-  business: "entrepreneur business tendances actualite 2026",
-  marketing: "marketing digital tendances contenu viral 2026",
-  tech: "intelligence artificielle technologie tendances 2026",
-  finance: "finance investissement tendances 2026",
-  fitness: "fitness sante sport tendances 2026",
-  education: "formation apprentissage tendances 2026",
-  lifestyle: "developpement personnel lifestyle tendances 2026",
+  business: "entrepreneur business trends news 2026",
+  marketing: "digital marketing trends viral content 2026",
+  tech: "artificial intelligence technology trends 2026",
+  finance: "finance investment trends 2026",
+  fitness: "fitness health sports trends 2026",
+  education: "education learning trends 2026",
+  lifestyle: "personal development lifestyle trends 2026",
 };
 
 function buildTrendQuery(niche: string): string {
-  if (!niche) return "tendances reseaux sociaux 2026";
+  if (!niche) return "social media trends 2026";
   const n = niche.toLowerCase();
   for (const [key, query] of Object.entries(NICHE_QUERIES)) {
     if (n.includes(key)) return query;
   }
-  return `${niche} tendances actualite 2026`;
+  return `${niche} trends news 2026`;
 }
 
 function extractDomain(url: string): string {

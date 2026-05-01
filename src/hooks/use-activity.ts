@@ -108,5 +108,5 @@ export function useActivity() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  return { ...data, refetch: fetchData, DAYS_FR: ["D", "L", "M", "M", "J", "V", "S"] };
+  return { ...data, refetch: fetchData, DAYS: ["S", "M", "T", "W", "T", "F", "S"] };
 }

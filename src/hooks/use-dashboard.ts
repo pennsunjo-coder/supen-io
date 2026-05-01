@@ -125,7 +125,7 @@ function calculateStreak(dates: string[]): number {
   const today = new Date().toDateString();
   const yesterday = new Date(Date.now() - 86400000).toDateString();
 
-  // Le streak doit inclure aujourd'hui ou hier
+  // Streak must include today or yesterday
   if (unique[0] !== today && unique[0] !== yesterday) return 0;
 
   let streak = 1;
@@ -168,7 +168,7 @@ export function useDashboard() {
       const contentCount = weekData?.length ?? 0;
       const platforms = [...new Set((weekData ?? []).map((r) => r.platform))];
 
-      // Streak (30 derniers jours)
+      // Streak (last 30 days)
       const { data: streakData } = await supabase
         .from("generated_content")
         .select("created_at")

@@ -34,7 +34,7 @@ export function ActivityWidget({ data }: { data: ActivityData; daysLabels?: stri
           <div
             key={day.date}
             className={cn("w-[10px] h-[10px] rounded-[2px]", heatColor(day.count))}
-            title={`${day.count} contenu${day.count > 1 ? "s" : ""} — ${day.label}`}
+            title={`${day.count} post${day.count > 1 ? "s" : ""} — ${day.label}`}
           />
         ))}
       </div>
