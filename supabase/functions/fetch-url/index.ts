@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
 
     const response = await fetch(url, {
       headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; Supenli.io/1.0)",
+        "User-Agent": "Mozilla/5.0 (compatible; Supenli.ai/1.0)",
         "Accept": "text/html,application/xhtml+xml",
       },
       redirect: "follow",

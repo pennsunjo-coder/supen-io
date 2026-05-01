@@ -1,5 +1,5 @@
 /**
- * Centralized error handling for Supenli.io.
+ * Centralized error handling for Supenli.ai.
  */
 
 export function handleApiError(error: unknown): string {

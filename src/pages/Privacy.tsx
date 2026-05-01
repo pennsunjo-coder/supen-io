@@ -19,7 +19,7 @@ export default function Privacy() {
         <div className="space-y-10 text-sm text-muted-foreground leading-relaxed">
           <section>
             <h2 className="text-xl font-semibold text-foreground mb-4">1. Information We Collect</h2>
-            <p className="mb-3">When you use Supenli.io, we collect the following information:</p>
+            <p className="mb-3">When you use Supenli.ai, we collect the following information:</p>
             <ul className="list-disc list-inside space-y-1.5 ml-2">
               <li><strong className="text-foreground">Account information</strong> — your email address and name, provided during sign-up or via Google OAuth.</li>
               <li><strong className="text-foreground">Content you generate</strong> — posts, infographics, and other content created through our platform.</li>
@@ -31,7 +31,7 @@ export default function Privacy() {
           <section>
             <h2 className="text-xl font-semibold text-foreground mb-4">2. How We Use Your Information</h2>
             <ul className="list-disc list-inside space-y-1.5 ml-2">
-              <li>To provide and maintain the Supenli.io service, including content generation and AI chat.</li>
+              <li>To provide and maintain the Supenli.ai service, including content generation and AI chat.</li>
               <li>To personalize your experience based on your niche, platforms, and preferences.</li>
               <li>To improve our AI models and platform features through aggregated, anonymized usage patterns.</li>
               <li>To communicate with you about your account, updates, and support requests.</li>
@@ -51,7 +51,7 @@ export default function Privacy() {
 
           <section>
             <h2 className="text-xl font-semibold text-foreground mb-4">4. Third-Party Services</h2>
-            <p>We use the following third-party services to power Supenli.io:</p>
+            <p>We use the following third-party services to power Supenli.ai:</p>
             <ul className="list-disc list-inside space-y-1.5 ml-2 mt-3">
               <li><strong className="text-foreground">Anthropic (Claude)</strong> — for AI content generation and chat.</li>
               <li><strong className="text-foreground">Google Gemini</strong> — for image generation features.</li>
@@ -76,7 +76,7 @@ export default function Privacy() {
             <h2 className="text-xl font-semibold text-foreground mb-4">6. Contact</h2>
             <p>
               For any privacy-related questions or requests, contact us at{" "}
-              <a href="mailto:privacy@supenli.io" className="text-primary hover:underline">privacy@supenli.io</a>.
+              <a href="mailto:privacy@supenli.ai" className="text-primary hover:underline">privacy@supenli.ai</a>.
             </p>
           </section>
         </div>

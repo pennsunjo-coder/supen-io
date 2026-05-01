@@ -18,7 +18,7 @@ export function isOpenAIConfigured(): boolean {
   return !!import.meta.env.VITE_OPENAI_API_KEY;
 }
 
-export const SYSTEM_PROMPT = `You are a social media content creation assistant, integrated into Supenli.io.
+export const SYSTEM_PROMPT = `You are a social media content creation assistant, integrated into Supenli.ai.
 
 Strict rules:
 - Always respond in English.

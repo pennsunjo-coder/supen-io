@@ -5,7 +5,7 @@ import { X, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TOUR_STEPS = [
-  { id: "welcome", title: "Welcome to Supenli.io!", description: "Let's take a quick tour. This will only take 30 seconds.", target: "body" },
+  { id: "welcome", title: "Welcome to Supenli.ai!", description: "Let's take a quick tour. This will only take 30 seconds.", target: "body" },
   { id: "create", title: "Create Content", description: "Click here to generate viral posts for LinkedIn, Instagram, TikTok and more.", target: "[data-tour='create-btn']" },
   { id: "sources", title: "Add Sources", description: "Upload PDFs, paste URLs, or add notes. The AI uses these to generate relevant content.", target: "[data-tour='sources']" },
   { id: "coach", title: "AI Coach", description: "Chat with your personal AI coach to get advice on growing your audience.", target: "[data-tour='coach']" },

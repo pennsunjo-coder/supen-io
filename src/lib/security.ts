@@ -1,5 +1,5 @@
 /**
- * Utilitaires de sécurité pour Supenli.io
+ * Security utilities for Supenli.ai
  */
 
 const HTML_ESCAPE_MAP: Record<string, string> = {

@@ -104,7 +104,7 @@ const NotFound = () => {
 
       {/* Footer */}
       <footer className="py-6 text-center text-[11px] text-muted-foreground/40">
-        © 2026 Supenli.io
+        © 2026 Supenli.ai
       </footer>
     </div>
   );

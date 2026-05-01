@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       supabase.functions.invoke("bright-processor", {
         body: {
           to: data.user.email,
-          subject: "Welcome to Supenli.io!",
+          subject: "Welcome to Supenli.ai!",
           type: "welcome",
           data: {
             name: data.user.user_metadata?.full_name

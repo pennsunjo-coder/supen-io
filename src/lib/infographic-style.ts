@@ -808,7 +808,7 @@ ${ext.points.slice(0, 6).map((p, i) => `${i + 1}. ${p}`).join('\n')}
 
 FOOTER:
 - Hand-drawn separator line
-- "Follow @${userName || 'supenli.io'} for more | Save & Repost"
+- "Follow @${userName || 'supenli.ai'} for more | Save & Repost"
 - Small decorative star element
 
 CREATIVITY: Vary shapes (rectangles/speech bubbles/banners). Match mood to content. Eye-catching on social media. Professional designer quality.
@@ -852,7 +852,7 @@ ${ext.points.map((point, i) => `STEP ${i + 1}:
 
 ━━━ FOOTER (15%) ━━━
 Green result box with key outcome text.
-"Follow @${userName || 'supenli.io'} for more | Repost ♻️" in small text.
+"Follow @${userName || 'supenli.ai'} for more | Repost ♻️" in small text.
 
 QUALITY: Magazine editorial meets Apple product page. Premium SaaS aesthetic. Information-dense but scannable.${AVOID}`;
   }
@@ -893,7 +893,7 @@ ${ext.points.map((point, i) => `ITEM ${i + 1}:
 
 ━━━ FOOTER (12%) ━━━
 Pull quote box with most impactful insight (large quotation marks).
-"Follow @${userName || 'supenli.io'} for more | Repost ♻️" in small text.
+"Follow @${userName || 'supenli.ai'} for more | Repost ♻️" in small text.
 
 QUALITY: Sophisticated, scroll-stopping, The Economist meets Instagram carousel.${AVOID}`;
   }
@@ -1023,7 +1023,7 @@ ${ext.points.map((point, i) => {
 
 ━━━ BOTTOM (15%) ━━━
 Yellow sticky note (tilted -3 degrees, drop shadow) with key insight.
-Handwritten: "Follow @${userName || 'supenli.io'} for more | Repost ♻️"
+Handwritten: "Follow @${userName || 'supenli.ai'} for more | Repost ♻️"
 
 QUALITY: Must look like a real photograph of handwritten study notes. Warm, personal, creative, dense with information.${AVOID}`;
   }

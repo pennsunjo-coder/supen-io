@@ -58,11 +58,11 @@ const I = {
 
 const LOGO = `<div style="text-align:center">
 <svg xmlns="http://www.w3.org/2000/svg" width="160" height="42" viewBox="0 0 420 110" style="max-width:160px">
-<text x="0" y="82" font-family="-apple-system,BlinkMacSystemFont,Helvetica,sans-serif" font-size="72" font-weight="800" fill="#ffffff" letter-spacing="-2">Supenli<tspan fill="#24A89B">.io</tspan></text>
+<text x="0" y="82" font-family="-apple-system,BlinkMacSystemFont,Helvetica,sans-serif" font-size="72" font-weight="800" fill="#ffffff" letter-spacing="-2">Supenli<tspan fill="#24A89B">.ai</tspan></text>
 </svg>
 </div>`;
 
-const APP = "https://supenli.io/dashboard";
+const APP = "https://supenli.ai/dashboard";
 
 // ── Welcome ──
 
@@ -84,7 +84,7 @@ function buildWelcomeEmail(name: string): string {
 <div class="dv"></div>
 <p class="tx" style="font-size:13px;margin-bottom:0;text-align:center">Questions? Reply directly to this email.</p>
 </div>
-<div class="fo"><p>&copy; 2026 Supenli.io &middot; You're receiving this because you created an account.</p></div>
+<div class="fo"><p>&copy; 2026 Supenli.ai &middot; You're receiving this because you created an account.</p></div>
 </div></div></body></html>`;
 }
 
@@ -97,13 +97,13 @@ function buildResetEmail(resetLink: string, name?: string): string {
 <div class="bd">
 <div class="bg">${I.lck} Account Security</div>
 <div class="gr">Reset your password</div>
-<p class="tx">${name ? `Hey <span class="hl">${name}</span>,<br><br>` : ''}We received a request to reset your <strong>Supenli.io</strong> password. Click the button below to create a new one.</p>
+<p class="tx">${name ? `Hey <span class="hl">${name}</span>,<br><br>` : ''}We received a request to reset your <strong>Supenli.ai</strong> password. Click the button below to create a new one.</p>
 <div class="ct"><a href="${resetLink}" class="cta">Reset my password &rarr;</a></div>
 <div class="wn">${I.lck} This link expires in <strong>1 hour</strong>. If you didn't request this, you can safely ignore this email.</div>
 <div class="dv"></div>
 <p class="tx" style="font-size:12px;margin-bottom:0;color:rgba(255,255,255,.4)">If the button doesn't work, copy this link:<br><span style="color:#24A89B;word-break:break-all;font-size:11px">${resetLink}</span></p>
 </div>
-<div class="fo"><p>&copy; 2026 Supenli.io &middot; This email was sent for security purposes.</p></div>
+<div class="fo"><p>&copy; 2026 Supenli.ai &middot; This email was sent for security purposes.</p></div>
 </div></div></body></html>`;
 }
 
@@ -123,7 +123,7 @@ function buildContentReadyEmail(name: string, platform: string, topic: string): 
 </div>
 <div class="ct"><a href="${APP}" class="cta">View my content &rarr;</a></div>
 </div>
-<div class="fo"><p>&copy; 2026 Supenli.io</p></div>
+<div class="fo"><p>&copy; 2026 Supenli.ai</p></div>
 </div></div></body></html>`;
 }
 
@@ -135,16 +135,16 @@ function buildFeedbackEmail(name: string): string {
 <div class="hd">${LOGO}<p class="sub">Your feedback matters</p></div>
 <div class="bd">
 <div class="bg">${I.heart} Feedback</div>
-<div class="gr">How are you finding Supenli.io?</div>
-<p class="tx">Hey <span class="hl">${name}</span>,<br><br>You've been using Supenli.io for a few days and your feedback means a lot to us. In 2 minutes, you can help us build the tool you actually need.</p>
+<div class="gr">How are you finding Supenli.ai?</div>
+<p class="tx">Hey <span class="hl">${name}</span>,<br><br>You've been using Supenli.ai for a few days and your feedback means a lot to us. In 2 minutes, you can help us build the tool you actually need.</p>
 <div class="ft">
 <div class="fi">${I.msg}<div class="fi-t"><strong>What we want to know:</strong><br>&rarr; What's working well for you?<br>&rarr; What could be improved?<br>&rarr; What feature do you miss most?</div></div>
 </div>
-<div class="ct"><a href="mailto:feedback@supenli.io?subject=My feedback on Supenli.io" class="cta">Share my feedback &rarr;</a></div>
+<div class="ct"><a href="mailto:feedback@supenli.ai?subject=My feedback on Supenli.ai" class="cta">Share my feedback &rarr;</a></div>
 <div class="dv"></div>
 <p class="tx" style="font-size:13px;margin-bottom:0;text-align:center">You can also reply directly to this email.<br>Every message is read personally.</p>
 </div>
-<div class="fo"><p>&copy; 2026 Supenli.io &middot; We're building this tool for you.</p></div>
+<div class="fo"><p>&copy; 2026 Supenli.ai &middot; We're building this tool for you.</p></div>
 </div></div></body></html>`;
 }
 
@@ -157,16 +157,16 @@ function buildWaitlistEmail(name: string): string {
 <div class="bd">
 <div class="bg">${I.str} Early Access</div>
 <div class="gr">You're on the list, ${name}!</div>
-<p class="tx">You just joined the priority access list for <span class="hl">Supenli.io</span> &mdash; the AI-powered viral content creation platform.<br><br>You'll be among the <strong>first</strong> to be notified on launch day.</p>
+<p class="tx">You just joined the priority access list for <span class="hl">Supenli.ai</span> &mdash; the AI-powered viral content creation platform.<br><br>You'll be among the <strong>first</strong> to be notified on launch day.</p>
 <div class="ft">
 <div class="fi">${I.zap}<div class="fi-t"><strong>Early access guaranteed</strong><br>You'll receive an email the moment the platform goes live.</div></div>
 <div class="fi">${I.str}<div class="fi-t"><strong>Exclusive deals</strong><br>Waitlist members get special conditions at launch.</div></div>
-<div class="fi">${I.heart}<div class="fi-t"><strong>We can't wait to show you</strong><br>Supenli.io will transform the way you create content.</div></div>
+<div class="fi">${I.heart}<div class="fi-t"><strong>We can't wait to show you</strong><br>Supenli.ai will transform the way you create content.</div></div>
 </div>
 <div class="dv"></div>
 <p class="tx" style="font-size:13px;margin-bottom:0;text-align:center">Questions? Reply directly to this email.</p>
 </div>
-<div class="fo"><p>&copy; 2026 Supenli.io &middot; You're receiving this because you joined our waitlist.</p></div>
+<div class="fo"><p>&copy; 2026 Supenli.ai &middot; You're receiving this because you joined our waitlist.</p></div>
 </div></div></body></html>`;
 }
 
@@ -194,7 +194,7 @@ Deno.serve(async (req) => {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
-      body: JSON.stringify({ from: "Supenli.io <onboarding@resend.dev>", to: [to], subject, html }),
+      body: JSON.stringify({ from: "Supenli.ai <onboarding@resend.dev>", to: [to], subject, html }),
     });
 
     if (!res.ok) { const e = await res.json(); throw new Error(e.message || `Resend ${res.status}`); }

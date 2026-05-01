@@ -48,7 +48,7 @@ export function WaitlistPopup({ isOpen, onClose }: WaitlistPopupProps) {
       supabase.functions.invoke("bright-processor", {
         body: {
           to: email.trim(),
-          subject: "You're on the list! Supenli.io is coming soon",
+          subject: "You're on the list! Supenli.ai is coming soon",
           type: "waitlist",
           data: { name: name.trim() },
         },
@@ -91,7 +91,7 @@ export function WaitlistPopup({ isOpen, onClose }: WaitlistPopupProps) {
               </div>
               <h2 className="text-2xl font-bold text-white mb-3">Congratulations!</h2>
               <p className="text-white/60 text-sm leading-relaxed mb-2">
-                You're officially on the <span className="text-[#24A89B] font-semibold">Supenli.io</span> priority list!
+                You're officially on the <span className="text-[#24A89B] font-semibold">Supenli.ai</span> priority list!
               </p>
               <p className="text-white/60 text-sm leading-relaxed mb-6">
                 We'll notify you the moment we go live. You'll be among the first to get access.
@@ -108,7 +108,7 @@ export function WaitlistPopup({ isOpen, onClose }: WaitlistPopupProps) {
                   <span className="text-[#24A89B] text-xs font-semibold">Early Access</span>
                 </div>
                 <h2 className="text-2xl font-bold text-white mb-2 leading-tight">
-                  Supenli.io is coming<br /><span className="text-[#24A89B]">very soon</span>
+                  Supenli.ai is coming<br /><span className="text-[#24A89B]">very soon</span>
                 </h2>
                 <p className="text-white/60 text-sm leading-relaxed">
                   Join now to be notified first and get <strong className="text-white">priority access</strong> on launch day.

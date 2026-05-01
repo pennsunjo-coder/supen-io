@@ -43,7 +43,7 @@ export async function callClaude(
   return data?.text || "";
 }
 
-export const SYSTEM_PROMPT = `You are a social media content creation assistant, integrated into Supenli.io.
+export const SYSTEM_PROMPT = `You are a social media content creation assistant, integrated into Supenli.ai.
 
 Strict rules:
 - Always respond in English.

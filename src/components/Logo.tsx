@@ -15,7 +15,7 @@ const heights = {
 };
 
 /**
- * Full Supenli.io logo (text + icon).
+ * Full Supenli.ai logo (text + icon).
  * - Dark theme → /logo-light.svg (white text for dark backgrounds)
  * - Light theme → /logo-dark.svg (black text for light backgrounds)
  */
@@ -32,7 +32,7 @@ export function LogoFull({
   return (
     <img
       src={isDark ? "/logo-light.svg" : "/logo-dark.svg"}
-      alt="Supenli.io"
+      alt="Supenli.ai"
       className={cn(heights[size], "w-auto", className)}
     />
   );
@@ -42,7 +42,7 @@ export function LogoIcon({ className }: { className?: string }) {
   return (
     <img
       src="/logo-dark.svg"
-      alt="Supenli.io"
+      alt="Supenli.ai"
       className={cn("h-8 w-8 object-contain", className)}
     />
   );

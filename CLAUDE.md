@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Supenli.io** — AI-powered content creation platform for social media creators. Centralizes research sources (PDFs, URLs, YouTube, notes), provides an AI chat assistant, and generates ready-to-publish posts for X, LinkedIn, Instagram, YouTube, Facebook and TikTok.
+**Supenli.ai** — AI-powered content creation platform for social media creators. Centralizes research sources (PDFs, URLs, YouTube, notes), provides an AI chat assistant, and generates ready-to-publish posts for X, LinkedIn, Instagram, YouTube, Facebook and TikTok.
 
 **Interface language: English.** All user-facing text (labels, placeholders, messages, toasts) must be in English.
 

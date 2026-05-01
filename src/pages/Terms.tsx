@@ -20,7 +20,7 @@ export default function Terms() {
           <section>
             <h2 className="text-xl font-semibold text-foreground mb-4">1. Acceptance of Terms</h2>
             <p>
-              By accessing or using Supenli.io, you agree to be bound by these Terms of Service.
+              By accessing or using Supenli.ai, you agree to be bound by these Terms of Service.
               If you do not agree, you may not use the service. We may update these terms at any time,
               and continued use constitutes acceptance of the updated terms.
             </p>
@@ -29,7 +29,7 @@ export default function Terms() {
           <section>
             <h2 className="text-xl font-semibold text-foreground mb-4">2. Description of Service</h2>
             <p>
-              Supenli.io is an AI-powered content creation platform that helps creators generate
+              Supenli.ai is an AI-powered content creation platform that helps creators generate
               platform-ready social media posts. The service includes a research notebook,
               AI chat assistant, content studio with multi-platform support, and anti-AI
               humanization features.
@@ -41,14 +41,14 @@ export default function Terms() {
             <ul className="list-disc list-inside space-y-1.5 ml-2">
               <li>You must provide accurate information when creating an account.</li>
               <li>You are responsible for maintaining the security of your account credentials.</li>
-              <li>You must be at least 16 years old to use Supenli.io.</li>
+              <li>You must be at least 16 years old to use Supenli.ai.</li>
               <li>One person may not maintain more than one account.</li>
             </ul>
           </section>
 
           <section>
             <h2 className="text-xl font-semibold text-foreground mb-4">4. Acceptable Use</h2>
-            <p className="mb-3">You agree not to use Supenli.io to:</p>
+            <p className="mb-3">You agree not to use Supenli.ai to:</p>
             <ul className="list-disc list-inside space-y-1.5 ml-2">
               <li>Generate spam, misleading, or deceptive content.</li>
               <li>Impersonate other individuals or organizations.</li>
@@ -57,15 +57,15 @@ export default function Terms() {
               <li>Attempt to reverse-engineer, hack, or disrupt the service.</li>
             </ul>
             <p className="mt-4 font-medium text-foreground">
-              You are solely responsible for the content you generate and publish using Supenli.io.
+              You are solely responsible for the content you generate and publish using Supenli.ai.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-semibold text-foreground mb-4">5. Intellectual Property</h2>
             <ul className="list-disc list-inside space-y-1.5 ml-2">
-              <li><strong className="text-foreground">Your content</strong> — You retain full ownership of all content you generate using Supenli.io. We claim no rights over your generated posts, infographics, or other outputs.</li>
-              <li><strong className="text-foreground">Our platform</strong> — Supenli.io, including its design, code, AI models integration, and branding, is owned by Supenli.io and protected by intellectual property laws.</li>
+              <li><strong className="text-foreground">Your content</strong> — You retain full ownership of all content you generate using Supenli.ai. We claim no rights over your generated posts, infographics, or other outputs.</li>
+              <li><strong className="text-foreground">Our platform</strong> — Supenli.ai, including its design, code, AI models integration, and branding, is owned by Supenli.ai and protected by intellectual property laws.</li>
               <li><strong className="text-foreground">Research sources</strong> — You are responsible for ensuring you have the right to use any sources you upload.</li>
             </ul>
           </section>
@@ -92,7 +92,7 @@ export default function Terms() {
           <section>
             <h2 className="text-xl font-semibold text-foreground mb-4">8. Limitation of Liability</h2>
             <p>
-              Supenli.io is provided "as is" without warranties of any kind. To the maximum extent
+              Supenli.ai is provided "as is" without warranties of any kind. To the maximum extent
               permitted by law, we are not liable for any indirect, incidental, or consequential
               damages arising from your use of the service. Our total liability is limited to
               the amount you paid us in the 12 months preceding the claim.
@@ -112,7 +112,7 @@ export default function Terms() {
             <h2 className="text-xl font-semibold text-foreground mb-4">10. Contact</h2>
             <p>
               For questions about these terms, contact us at{" "}
-              <a href="mailto:legal@supenli.io" className="text-primary hover:underline">legal@supenli.io</a>.
+              <a href="mailto:legal@supenli.ai" className="text-primary hover:underline">legal@supenli.ai</a>.
             </p>
           </section>
         </div>

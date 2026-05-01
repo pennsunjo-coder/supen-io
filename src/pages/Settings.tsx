@@ -547,17 +547,17 @@ export default function Settings() {
                     to="/"
                     className="text-sm text-primary hover:underline flex items-center gap-1"
                   >
-                    supenli.io <ExternalLink className="w-3 h-3" />
+                    supenli.ai <ExternalLink className="w-3 h-3" />
                   </Link>
                 </div>
                 <div className="border-t border-border/20" />
                 <div className="flex items-center justify-between py-2">
                   <p className="text-sm text-muted-foreground">Support</p>
                   <a
-                    href="mailto:support@supenli.io"
+                    href="mailto:support@supenli.ai"
                     className="text-sm text-primary hover:underline"
                   >
-                    support@supenli.io
+                    support@supenli.ai
                   </a>
                 </div>
                 <div className="border-t border-border/20" />
