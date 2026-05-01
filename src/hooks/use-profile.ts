@@ -44,6 +44,13 @@ export function useProfile() {
       return;
     }
 
+    // 5-second timeout to prevent infinite loading on 522/timeout
+    const timeout = setTimeout(() => {
+      if (IS_DEV) console.warn("useProfile: timeout after 5s — using defaults");
+      setProfile(null);
+      setLoading(false);
+    }, 5000);
+
     try {
       const { data, error } = await supabase
         .from("user_profiles")
@@ -51,18 +58,17 @@ export function useProfile() {
         .eq("user_id", user.id)
         .maybeSingle();
 
+      clearTimeout(timeout);
+
       if (error) {
-        // Most common case: one of the newer columns is missing on an older
-        // database. Retry with a minimal column set so the app still works,
-        // then surface a warning in dev so the user knows to run migrations.
-        if (IS_DEV) console.warn("useProfile select(*) failed, retrying with core columns:", error.message);
+        if (IS_DEV) console.warn("useProfile select(*) failed, retrying:", error.message);
         const { data: retryData, error: retryErr } = await supabase
           .from("user_profiles")
-          .select("id, user_id, first_name, platforms, source_platform, niche, onboarding_completed, created_at, plan, stripe_customer_id, stripe_subscription_id, plan_expires_at")
+          .select("id, user_id, first_name, platforms, source_platform, niche, onboarding_completed, created_at, plan")
           .eq("user_id", user.id)
           .maybeSingle();
         if (retryErr) {
-          if (IS_DEV) console.warn("useProfile retry also failed:", retryErr.message);
+          if (IS_DEV) console.warn("useProfile retry failed:", retryErr.message);
           setProfile(null);
         } else {
           setProfile((retryData as UserProfile) ?? null);
@@ -73,6 +79,7 @@ export function useProfile() {
         setProfile(null);
       }
     } catch (err) {
+      clearTimeout(timeout);
       if (IS_DEV) console.warn("useProfile fetch error:", err);
       setProfile(null);
     }
