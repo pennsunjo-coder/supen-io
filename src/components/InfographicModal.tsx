@@ -410,10 +410,10 @@ export default function InfographicModal({ open, onClose, content, platform, con
       // Platform-specific format hint prepended to prompt
       const pl = platform?.toLowerCase() || "";
       const formatHint = pl.includes("facebook")
-        ? "FORMAT: Square 1080x1080px. Facebook feed.\n\n"
+        ? "FORMAT: Square 1080x1080px. Facebook optimized.\n\n"
         : pl.includes("twitter") || pl.includes("x (")
-          ? "FORMAT: Landscape 1200x675px. X/Twitter.\n\n"
-          : "FORMAT: Vertical A4 1236x1536px. LinkedIn portrait.\n\n";
+          ? "FORMAT: Landscape 1200x675px. X/Twitter optimized.\n\n"
+          : "FORMAT: Portrait 1080x1350px. LinkedIn optimized.\n\n";
 
       const dallePrompt = formatHint + buildDallEPrompt(content, platform, templateSelection.templateId, userName);
 
@@ -560,11 +560,13 @@ export default function InfographicModal({ open, onClose, content, platform, con
         const link = document.createElement("a");
         link.style.display = "none";
         if (format === "jpeg") {
+          const { label: dlLabel } = getDownloadDims();
           link.href = canvas.toDataURL("image/jpeg", 0.95);
-          link.download = `supen-infographic-${Date.now()}.jpg`;
+          link.download = `supenli-${dlLabel}-${Date.now()}.jpg`;
         } else {
+          const { label: dlLabel } = getDownloadDims();
           link.href = canvas.toDataURL("image/png");
-          link.download = `supen-infographic-${Date.now()}.png`;
+          link.download = `supenli-${dlLabel}-${Date.now()}.png`;
         }
         document.body.appendChild(link);
         link.click();
@@ -1063,11 +1065,22 @@ export default function InfographicModal({ open, onClose, content, platform, con
                     {customGenImage && (
                       <div className="space-y-2">
                         <img src={`data:image/png;base64,${customGenImage}`} alt="Custom" className="w-full rounded-xl border border-border/20" />
-                        <Button variant="outline" size="sm" className="w-full text-xs gap-2" onClick={() => {
-                          const link = document.createElement("a");
-                          link.download = `supenli-custom-${Date.now()}.png`;
-                          link.href = `data:image/png;base64,${customGenImage}`;
-                          link.click();
+                        <Button variant="outline" size="sm" className="w-full text-xs gap-2" onClick={async () => {
+                          const { w, h, label } = getDownloadDims();
+                          const img = new Image();
+                          img.src = `data:image/png;base64,${customGenImage}`;
+                          await new Promise<void>((resolve) => { img.onload = () => resolve(); });
+                          const canvas = document.createElement("canvas");
+                          canvas.width = w;
+                          canvas.height = h;
+                          const ctx = canvas.getContext("2d");
+                          if (ctx) {
+                            ctx.drawImage(img, 0, 0, w, h);
+                            const link = document.createElement("a");
+                            link.download = `supenli-custom-${label}-${Date.now()}.png`;
+                            link.href = canvas.toDataURL("image/png", 1.0);
+                            link.click();
+                          }
                           toast.success("Downloaded!");
                         }}>
                           <Download className="w-3 h-3" /> Download Custom Image

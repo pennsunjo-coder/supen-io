@@ -336,6 +336,14 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
     setGeneratedInfographicBase64(null);
   }
 
+  function canGenerateInfographic(): boolean {
+    const pl = selectedPlatform?.id?.toLowerCase() || "";
+    const fmt = (selectedFormat || "").toLowerCase();
+    const allowedPlatform = pl.includes("linkedin") || pl.includes("facebook") || pl.includes("x") || pl === "x";
+    const allowedFormat = fmt.includes("post") || fmt.includes("thread") || fmt.includes("caption") || fmt.includes("tweet");
+    return allowedPlatform && allowedFormat;
+  }
+
   function toggleDocumentId(id: string) {
     setSelectedDocumentIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
@@ -1432,13 +1440,13 @@ Each variation includes: HOOK, PROBLEM, SOLUTION, PROOF, CTA, ON-SCREEN TEXT.`;
                               {isHumanizing ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
                               Humanize
                             </Button>
-                            {!/thread|script|reel|video/i.test(selectedFormat || "") && (
+                            {canGenerateInfographic() && (
                               <Button variant="ghost" size="sm" className={cn("h-7 text-[11px] gap-1.5 px-2.5", imagePanel === idx ? "text-primary" : generatedImages[idx] ? "text-emerald-400" : "text-muted-foreground hover:text-foreground")} disabled={imageGenerating !== null && imageGenerating !== idx} onClick={(e) => { e.stopPropagation(); handleGenerateImage(idx); }}>
                                 {imageGenerating === idx ? <Loader2 className="w-3 h-3 animate-spin" /> : <ImagePlus className="w-3 h-3" />}
                                 {generatedImages[idx] ? (imagePanel === idx ? "Hide" : "View image") : imageGenerating === idx ? "Generating..." : "Image"}
                               </Button>
                             )}
-                            {!/thread|script|reel|video/i.test(selectedFormat || "") && (
+                            {canGenerateInfographic() && (
                               <Button variant="ghost" size="sm" className={cn("h-7 text-[11px] gap-1.5 px-2.5", infraPanel === idx ? "text-primary" : "text-muted-foreground hover:text-foreground")} onClick={(e) => { e.stopPropagation(); handleInfraPrompt(idx); }}>
                                 <Layers className="w-3 h-3" /> Infographic
                               </Button>
@@ -1504,7 +1512,7 @@ Each variation includes: HOOK, PROBLEM, SOLUTION, PROOF, CTA, ON-SCREEN TEXT.`;
                   );
                 })}
                 {/* ═══ INLINE INFOGRAPHIC SECTION ═══ */}
-                {saveStatus === "saved" && (
+                {saveStatus === "saved" && canGenerateInfographic() && (
                   <div className="border-t border-border/20 mt-4 pt-4">
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="text-sm font-semibold flex items-center gap-2">
