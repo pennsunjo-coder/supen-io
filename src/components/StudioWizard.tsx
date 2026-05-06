@@ -17,7 +17,7 @@ import { searchViralReferences, ViralReference, searchUserSources } from "@/lib/
 import { supabase } from "@/lib/supabase";
 import { assertOnline, withRetry, withTimeout, friendlyError } from "@/lib/resilience";
 import GenerationProgress, { CONTENT_STEPS } from "@/components/GenerationProgress";
-import { scoreAllVariations, scoreColor, scoreBarColor, scoreBadge, type ScoreDetails } from "@/lib/viral-scorer";
+import { scoreAllVariations, scoreColor, scoreBarColor, scoreBadge, scoreVariationHeuristic, type ScoreDetails } from "@/lib/viral-scorer";
 import { saveInteraction, getUserStyleMemory, hasStyleMemory } from "@/lib/user-memory";
 import { getHooks, detectNiche, getDailyHook, type Hook } from "@/lib/viral-hooks";
 import { buildThreadPlaybook } from "@/lib/thread-playbook";
@@ -473,6 +473,7 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
       // === Build user message ===
       const sanitizedInput = sanitized;
       const combinedContext = sourceContext;
+      const sourceLabel = isWebMode ? "web research" : "documents";
       const userMessage = `
 ${combinedContext ? `
 ╔══════════════════════════════════════╗
@@ -483,13 +484,39 @@ ${combinedContext}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-CRITICAL INSTRUCTION:
-- Extract SPECIFIC facts, quotes, examples from above
-- Use REAL data and insights from the ${isWebMode ? 'web research' : 'documents'}
-- Reference specific details (numbers, names, methods)
-- DO NOT invent anything not present in the sources
-- The content must feel written by someone who deeply researched this topic
-${directive ? `- Focus specifically on: ${directive}` : ''}
+SOURCE-USAGE RULES (non-negotiable):
+
+1. STAY STRICTLY WITHIN THE SOURCES.
+   Anything not in the ${sourceLabel} above must not appear in the post.
+   No "common-knowledge" bridges. No invented examples. No filler stats.
+
+2. QUOTE VERBATIM AT LEAST ONCE PER VARIATION.
+   Pick ONE phrase or sentence from the ${sourceLabel} and reproduce it
+   word-for-word inside straight quotation marks "...". Keep the quote
+   short (under 20 words) and tie it to the surrounding paragraph so it
+   reads as evidence, not as a pasted quote.
+
+3. USE AT LEAST ONE HARD NUMBER FROM THE SOURCES.
+   Real percentage, real dollar amount, real follower count, real
+   timeframe. Pulled directly from the ${sourceLabel} — not paraphrased,
+   not rounded, not invented.
+
+4. NAME REAL ENTITIES (when the sources name them).
+   If the ${sourceLabel} mention specific tools, people, products,
+   companies, or URLs, use those names verbatim. Never replace them
+   with "a tool" or "a popular platform".
+
+5. WHEN THE SOURCES DON'T COVER SOMETHING, SAY SO.
+   If the post needs a fact the ${sourceLabel} don't contain, either
+   pivot to a fact they DO cover, or write the post around the gap
+   ("the public data doesn't say how X works, but it does show Y").
+   Never invent to fill a gap.
+
+6. DO NOT REPRODUCE LARGE BLOCKS.
+   Verbatim quotes are short (under 20 words). The post is your voice
+   carrying the source's facts — not a copy-paste of the source.
+
+${directive ? `7. USER FOCUS DIRECTIVE: ${directive}` : ""}
 
 ` : ''}CONTENT TO CREATE:
 Topic: ${sanitizedInput}
@@ -500,7 +527,7 @@ ${profile?.preferred_tone ? `Tone: ${profile.preferred_tone}` : ''}
 
 Generate 5 complete ${selectedFormat} variations.
 Each must be radically different in angle and structure.
-${combinedContext ? `Use insights from the ${isWebMode ? 'web research' : 'documents'} to make content SPECIFIC and evidence-based.` : ''}
+${combinedContext ? `Each variation must contain at least one verbatim quote and one hard number from the ${sourceLabel}.` : ''}
 Use white space and line breaks generously.
 Make each post visually clean and easy to read.
 `.trim();
@@ -756,7 +783,7 @@ Each variation includes: HOOK, PROBLEM, SOLUTION, PROOF, CTA, ON-SCREEN TEXT.`;
       // This is a safety net — the system prompt tells the model not to
       // produce these, but the sanitizer guarantees the user never sees them.
       const platformName = selectedPlatform?.name || "";
-      const sanitized = parsed.map((v) => {
+      const sanitizedVariations = parsed.map((v) => {
         const cleanContent = sanitizeForPlatform(v.content, platformName, selectedFormat || "");
         return {
           ...v,
@@ -765,12 +792,18 @@ Each variation includes: HOOK, PROBLEM, SOLUTION, PROOF, CTA, ON-SCREEN TEXT.`;
         };
       });
 
-      // Instant scoring (no extra API calls) — save immediately
-      const scored = sanitized.map((v) => ({
-        ...v,
-        score: Math.floor(Math.random() * 25) + 65, // 65-90 placeholder
-        scoring: false,
-      }));
+      // Heuristic viral score (synchronous, no API call). Real signal
+      // based on hook / emotion / specificity / actionable / CTA presence.
+      // Persisted to DB so analytics and future ranking have a real number.
+      const scored = sanitizedVariations.map((v) => {
+        const details = scoreVariationHeuristic(v.content, platformName);
+        return {
+          ...v,
+          score: details.total,
+          scoreDetails: details,
+          scoring: false,
+        };
+      });
       setVariations(scored);
 
       if (scored.length > 0 && onContentGenerated) {
