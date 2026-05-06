@@ -734,6 +734,51 @@ CRITICAL: Use ONLY the text above. Do NOT invent, paraphrase, or add unrelated g
   else if (pl.includes("twitter") || pl.includes("x (")) formatHint = "Landscape (1536x1024). X/Twitter-optimized.";
 
   const isFacebook = pl.includes("facebook");
+  const isLinkedIn = pl.includes("linkedin");
+
+  // Hard typography quality control — runs for ALL platforms.
+  // Image generators (Gemini Nano Banana, Imagen, etc.) frequently
+  // invent words, drop accents, truncate, or render gibberish letter
+  // shapes. We can't OCR the output cheaply, so the only lever is to
+  // make these rules screamingly explicit at the start of the prompt.
+  const typographyQualityControl = `
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TEXT QUALITY CONTROL — NON-NEGOTIABLE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Every word that appears in the image MUST be a real word from the
+text I provide below. Treat the provided text as SACRED — copy it
+character-for-character into the corresponding cell.
+
+ABSOLUTE RULES:
+- ZERO invented words. ZERO made-up letter shapes. ZERO gibberish.
+- ZERO typos. Every word must be spell-correct in standard English.
+- ZERO truncation. Words must fit fully inside their cell — if a word
+  doesn't fit, REDUCE THE FONT SIZE rather than break or cut letters.
+- ZERO repeated words on the canvas (no "Save Save", "the the", "and
+  and"). If you see a duplicate while drafting, fix it before render.
+- ZERO orphan letters / dangling syllables. A word that starts must end.
+- PRESERVE accents and special characters EXACTLY as written
+  (é, è, ê, à, ñ, ç, ü, ö — never strip them, never replace with the
+  base letter).
+- PRESERVE punctuation: apostrophes, quotation marks, commas, periods,
+  colons, dashes — they belong where I put them.
+- NEVER add bonus words "to fill space". Empty space is acceptable;
+  fake words are not.
+
+When in doubt:
+1. Cut content rather than corrupt it.
+2. Use fewer cells with more legible text rather than more cells with
+   garbled text.
+3. The text I give you below is the only source of truth. Anything
+   not in that block must NOT appear in the image.
+
+If you cannot render a specific word cleanly at the chosen size,
+RESIZE OR REPOSITION until you can. Do not approximate the shapes.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+
   const facebookRules = isFacebook ? `
 
 FACEBOOK SPECIFIC RULES (override defaults — non-negotiable):
@@ -748,6 +793,69 @@ FACEBOOK SPECIFIC RULES (override defaults — non-negotiable):
   (target WCAG AA: contrast ratio ≥ 4.5:1 for body, ≥ 3:1 for titles)
 - Single visual focal point per section — don't compete for attention
 - Square layout: 2x2 or 1+3 grid only (never 3+ rows of small text)` : "";
+
+  // LinkedIn premium enrichment — kicks the visual creativity up a notch
+  // for the platform where infographic engagement is highest.
+  // Adds asymmetry, depth, layered backgrounds, prominent pull quotes,
+  // and varied highlight styles on top of the base matrix dashboard.
+  const linkedinPremiumBlock = isLinkedIn ? `
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+LINKEDIN PREMIUM ENRICHMENT — go beyond the matrix
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+LinkedIn rewards infographics that look DESIGNED, not just structured.
+Apply these enrichments on top of the matrix dashboard rules:
+
+LAYOUT NUANCE:
+- Asymmetry over symmetry — at least one cell breaks the strict grid
+  (e.g. a wide horizontal cell at the top OR a tall featured cell on
+  one side). Pure 2×3 grids look like spreadsheets; broken grids
+  look like editorial layouts.
+- Layered background — under the cells, place ONE soft graphic
+  element (a hand-drawn circle, a torn-paper edge, a faint grid, a
+  geometric blob) at low opacity. It anchors the composition without
+  competing.
+- Visual depth — use soft drop shadows on 1-2 hero cells, while
+  flatter cells stay shadow-free. The shadow draws the eye to the
+  insight that matters most.
+
+TYPOGRAPHY POLISH:
+- Mix font weights MORE: have at least one oversized stat (96-144px)
+  contrasted with body text at 22-28px. Big number = scroll-stopper.
+- Use italic AND bold variations, not just bold.
+- Custom underlines (wavy, double, brush-stroke) on the title and
+  one key noun per cell — never simple straight lines.
+
+PULL QUOTE TREATMENT:
+- If the content has a strong one-liner, give it its OWN feature cell
+  with: oversized opening quote mark in accent color, italic body,
+  small attribution line below ("— from the post"). This cell should
+  feel like a magazine pull quote, not just a text block.
+
+COLOR / HIGHLIGHT VARIATION:
+- Beyond yellow highlighter: use ALSO blue underline, pink scribble
+  circle, green checkmark accent. Three different highlight styles
+  across the canvas — never the same treatment twice.
+- Background tint VARIATION: 2-3 of the cells should have a faint
+  pastel fill (cream, sage, lavender, peach) while others stay on
+  the main background. This adds depth without breaking cohesion.
+
+DECORATIVE ELEMENTS (sparse, premium):
+- 1-2 hand-drawn arrows or doodle elements (not in every cell — that
+  becomes noise).
+- One small "stamp" or "seal" graphic in a corner (e.g. "PROVEN",
+  "2026 EDITION") — adds editorial credibility.
+- Subtle grain or paper texture on the background — never glossy,
+  never flat-vector clean.
+
+DENSITY TARGET (LinkedIn specifically):
+- LinkedIn users dwell longer than other platforms. Push to 6-7
+  cells with rich content per cell rather than 4-5 sparse cells.
+- Each cell must reward a 3-second pause: a real insight, a real
+  number, a real action. No filler.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━` : "";
 
   const n = ext.points.length;
   const AVOID = "\n\nAVOID: blurry, cluttered, messy layout, too many colors, realistic photo, 3D render, low resolution, bad typography, misaligned text, dark background (unless dark template), generic stock photo style.";
@@ -790,12 +898,13 @@ FACEBOOK SPECIFIC RULES (override defaults — non-negotiable):
 
     return `ABSOLUTE RULES — fill 100% of canvas top-to-bottom and edge-to-edge.
 Background reaches ALL 4 edges. No empty corners. No white margin band.
-
+${typographyQualityControl}
 QUALITY — ZERO TOLERANCE:
 - Every word spelled correctly. No repeated phrases. No truncated text.
 - Perfect grammar. Dark text on light background. Every section complete.
 - Maximum ${fbSectionCap} sections / cells. Minimum 4.
 ${facebookRules}
+${linkedinPremiumBlock}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 LAYOUT — "MATRIX DASHBOARD" (this is non-negotiable)

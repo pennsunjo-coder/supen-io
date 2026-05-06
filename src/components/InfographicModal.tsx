@@ -16,6 +16,7 @@ import {
   selectBestTemplate,
   resetRegenerationCounter,
 } from "@/lib/infographic-style";
+import { sanitizeForPlatform } from "@/lib/output-sanitizer";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -415,7 +416,13 @@ export default function InfographicModal({ open, onClose, content, platform, con
           ? "FORMAT: Landscape 1200x675px. X/Twitter optimized.\n\n"
           : "FORMAT: Portrait 1080x1350px. LinkedIn optimized.\n\n";
 
-      const dallePrompt = formatHint + buildDallEPrompt(content, platform, templateSelection.templateId, userName);
+      // Pre-sanitize the source content before it reaches the image
+      // prompt — strips curly quotes, decorative emoji, Title Case
+      // headings, em-dash overuse, markdown leakage. The image model
+      // copies what we give it character-for-character, so any cruft
+      // we leave in propagates onto the canvas.
+      const cleanContent = sanitizeForPlatform(content, platform || "", "Post");
+      const dallePrompt = formatHint + buildDallEPrompt(cleanContent, platform, templateSelection.templateId, userName);
 
       if (IS_DEV) {
         console.log("=== INFOGRAPHIC PROMPT ===");
