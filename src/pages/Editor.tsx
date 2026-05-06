@@ -7,10 +7,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
   ArrowLeft, Copy, Check, Download, Trash2, Plus, ChevronRight,
-  Sparkles, Share2, Loader2, ZoomIn, X,
+  Sparkles, Share2, Loader2, ZoomIn, X, Pencil,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import InfographicModal from "@/components/InfographicModal";
+import { detectAiFlavor } from "@/lib/ai-flavor-detector";
+import { scoreVariationHeuristic } from "@/lib/viral-scorer";
 
 export default function Editor() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -30,6 +32,10 @@ export default function Editor() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [mobileView, setMobileView] = useState<"posts" | "visual">("posts");
+  // Inline-edit state
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (!user || !sessionId) return;
@@ -78,6 +84,83 @@ export default function Editor() {
     setCopied(id);
     toast.success("Copied!");
     setTimeout(() => setCopied(null), 2000);
+  }
+
+  function startEdit(v: { id: string; content: string }) {
+    setEditingId(v.id);
+    setEditText(v.content);
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditText("");
+  }
+
+  // Save the edit:
+  //  1. Compute new viral_score (heuristic) and ai_flavor_score so DB
+  //     reflects the user's final version, not the initial AI draft.
+  //  2. Update generated_content for this row.
+  //  3. Insert a row in user_edits capturing before/after with both
+  //     flavor scores. This becomes the training signal for the style
+  //     memory: every manual edit teaches us how the user actually
+  //     wants their content to read.
+  async function saveEdit(v: { id: string; content: string; platform?: string }) {
+    if (!user || !editText.trim()) return;
+    if (editText === v.content) {
+      cancelEdit();
+      return;
+    }
+    setSaving(true);
+    try {
+      const before = v.content;
+      const after = editText;
+      const beforeFlavor = detectAiFlavor(before).score;
+      const afterFlavor = detectAiFlavor(after).score;
+      const newScore = scoreVariationHeuristic(after, v.platform || "").total;
+
+      // 1+2. Try update with quality columns; gracefully fall back if
+      // the migration hasn't been applied (older deployments).
+      const fullUpdate = await supabase
+        .from("generated_content")
+        .update({ content: after, viral_score: newScore, ai_flavor_score: afterFlavor })
+        .eq("id", v.id)
+        .eq("user_id", user.id);
+      if (fullUpdate.error) {
+        await supabase
+          .from("generated_content")
+          .update({ content: after, viral_score: newScore })
+          .eq("id", v.id)
+          .eq("user_id", user.id);
+      }
+
+      // 3. Best-effort capture in user_edits. Silent fail if the table
+      // isn't there yet (older deployments).
+      try {
+        await supabase.from("user_edits").insert({
+          user_id: user.id,
+          content_id: v.id,
+          platform: v.platform || null,
+          before_content: before,
+          after_content: after,
+          before_word_count: before.trim().split(/\s+/).length,
+          after_word_count: after.trim().split(/\s+/).length,
+          before_flavor_score: beforeFlavor,
+          after_flavor_score: afterFlavor,
+        });
+      } catch { /* user_edits table missing — ignore */ }
+
+      setVariations((prev) =>
+        prev.map((row) =>
+          row.id === v.id ? { ...row, content: after, viral_score: newScore, ai_flavor_score: afterFlavor } : row
+        )
+      );
+      toast.success("Edit saved");
+      cancelEdit();
+    } catch {
+      toast.error("Couldn't save the edit. Try again.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   function copyAll() {
@@ -223,27 +306,71 @@ export default function Editor() {
                         )}
                       </div>
 
-                      {/* Content with generous line-height */}
+                      {/* Content with generous line-height — editable in place */}
                       <div className="flex-1 px-4 pb-3 overflow-y-auto max-h-64">
-                        <p className="text-sm leading-[1.7] whitespace-pre-wrap text-foreground/90">
-                          {v.content}
-                        </p>
+                        {editingId === v.id ? (
+                          <textarea
+                            value={editText}
+                            onChange={(e) => setEditText(e.target.value)}
+                            className="w-full text-sm leading-[1.7] whitespace-pre-wrap text-foreground bg-background border border-border/30 rounded-lg p-3 focus:outline-none focus:ring-1 focus:ring-primary/40 resize-y min-h-[160px] font-[inherit]"
+                            placeholder="Edit this variation..."
+                            disabled={saving}
+                          />
+                        ) : (
+                          <p className="text-sm leading-[1.7] whitespace-pre-wrap text-foreground/90">
+                            {v.content}
+                          </p>
+                        )}
                       </div>
 
                       {/* Actions */}
                       <div className="px-4 py-3 border-t border-border/10 flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-7 text-xs gap-1.5 flex-1 border-border/30"
-                          onClick={() => copyText(v.content, v.id)}
-                        >
-                          {copied === v.id
-                            ? <Check className="w-3 h-3 text-emerald-400" />
-                            : <Copy className="w-3 h-3" />
-                          }
-                          {copied === v.id ? "Copied!" : "Copy"}
-                        </Button>
+                        {editingId === v.id ? (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-xs gap-1.5 flex-1 border-border/30"
+                              onClick={cancelEdit}
+                              disabled={saving}
+                            >
+                              <X className="w-3 h-3" /> Cancel
+                            </Button>
+                            <Button
+                              size="sm"
+                              className="h-7 text-xs gap-1.5 flex-1"
+                              onClick={() => saveEdit(v)}
+                              disabled={saving || !editText.trim() || editText === v.content}
+                            >
+                              {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                              {saving ? "Saving..." : "Save"}
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-xs gap-1.5 flex-1 border-border/30"
+                              onClick={() => copyText(v.content, v.id)}
+                            >
+                              {copied === v.id
+                                ? <Check className="w-3 h-3 text-emerald-400" />
+                                : <Copy className="w-3 h-3" />
+                              }
+                              {copied === v.id ? "Copied!" : "Copy"}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 text-xs gap-1.5 px-3 text-muted-foreground hover:text-foreground"
+                              onClick={() => startEdit(v)}
+                              title="Edit this variation"
+                            >
+                              <Pencil className="w-3 h-3" /> Edit
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </motion.div>
                   ))}

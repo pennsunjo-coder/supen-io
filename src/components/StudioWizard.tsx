@@ -30,7 +30,7 @@ import { buildFacebookPostPlaybook, buildFacebookThreadPlaybook } from "@/lib/fa
 import { buildInstagramPlaybook } from "@/lib/instagram-playbook";
 import { buildAntiAiRules } from "@/lib/anti-ai-rules";
 import { sanitizeForPlatform } from "@/lib/output-sanitizer";
-import { detectAiFlavor } from "@/lib/ai-flavor-detector";
+import { detectAiFlavor, passesDetectorEstimate } from "@/lib/ai-flavor-detector";
 import { fetchTrends, type Trend } from "@/lib/trends";
 import type { Source } from "@/types/database";
 import type { UserProfile } from "@/hooks/use-profile";
@@ -258,6 +258,10 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [generatedInfographicBase64, setGeneratedInfographicBase64] = useState<string | null>(null);
   const [styleMemoryActive, setStyleMemoryActive] = useState(false);
+  // Whether the most recent generation actually had a non-empty style
+  // memory block injected. Persisted with each variation so we can
+  // A/B-measure the memory's impact on engagement and flavor.
+  const [lastStyleMemoryUsed, setLastStyleMemoryUsed] = useState(false);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<Record<number, "liked" | "disliked" | null>>({});
   const { schedulePost } = useCalendar();
@@ -421,6 +425,9 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
           userStyleMemoryBlock = await getUserStyleMemory(u.id, selectedPlatform.name);
         }
       } catch { /* style memory is non-critical */ }
+      // Track whether memory actually carried weight this run, so
+      // saveVariations can persist the flag for later A/B analysis.
+      setLastStyleMemoryUsed(userStyleMemoryBlock.length > 0);
 
       // === RAG: Retrieve relevant source content ===
       const allSourceIds = [...new Set([...activeSourceIds, ...selectedDocumentIds])];
@@ -976,19 +983,36 @@ ${buildAntiAiRules(tightness)}`;
         format: selectedFormat,
       }).then(() => {}, () => {}); // Fire-and-forget, ignore errors
 
-      // Insert only base columns to avoid 400 errors from missing columns
-      const rows = parsed.map((v) => ({
-        user_id: user.id,
-        platform: selectedPlatform.name,
-        format: selectedFormat,
-        content: v.content,
-        viral_score: v.score || 0,
-        session_id: sessionId,
-      }));
-      const { data: savedRows, error: saveErr } = await supabase
+      // Try insert with the full set of quality columns first. If the
+      // ai_flavor_score / style_memory_used migration hasn't been applied
+      // yet (older deployments), fall back to the legacy minimal insert.
+      const rowsWithQuality = parsed.map((v) => {
+        const flavor = detectAiFlavor(v.content);
+        return {
+          user_id: user.id,
+          platform: selectedPlatform.name,
+          format: selectedFormat,
+          content: v.content,
+          viral_score: v.score || 0,
+          ai_flavor_score: flavor.score,
+          style_memory_used: lastStyleMemoryUsed,
+          session_id: sessionId,
+        };
+      });
+      const firstAttempt = await supabase
         .from("generated_content")
-        .insert(rows)
+        .insert(rowsWithQuality)
         .select("id");
+      let savedRows = firstAttempt.data;
+      let saveErr = firstAttempt.error;
+      if (saveErr) {
+        // Drop the optional quality columns and retry with the base shape.
+        const baseRows = rowsWithQuality.map(({ ai_flavor_score: _f, style_memory_used: _s, ...rest }) => rest);
+        if (IS_DEV) console.warn("[saveVariations] Falling back to base insert:", saveErr.message);
+        const fallback = await supabase.from("generated_content").insert(baseRows).select("id");
+        savedRows = fallback.data;
+        saveErr = fallback.error;
+      }
 
       if (saveErr) {
         console.error("[StudioWizard] Save failed:", saveErr.message, saveErr.details, saveErr.hint);
@@ -1531,6 +1555,30 @@ ${buildAntiAiRules(tightness)}`;
                         <div className="flex items-center gap-2 mb-2.5">
                           <span className="text-[11px] font-semibold text-foreground/80">Variation {idx + 1}</span>
                           {isSelected && <span className="text-[9px] text-primary/70 flex items-center gap-0.5"><Check className="w-2.5 h-2.5" /> Selected</span>}
+                          {(() => {
+                            const detector = passesDetectorEstimate(v.content);
+                            const styleByVerdict = {
+                              likely_passes: "text-emerald-400/80 bg-emerald-500/10 border-emerald-500/20",
+                              borderline: "text-amber-400/80 bg-amber-500/10 border-amber-500/20",
+                              likely_flagged: "text-rose-400/80 bg-rose-500/10 border-rose-500/20",
+                            } as const;
+                            const labelByVerdict = {
+                              likely_passes: "human-likely",
+                              borderline: "borderline",
+                              likely_flagged: "AI-flagged",
+                            } as const;
+                            return (
+                              <span
+                                title={detector.reason}
+                                className={cn(
+                                  "text-[9px] px-1.5 py-0.5 rounded-full border font-medium",
+                                  styleByVerdict[detector.verdict]
+                                )}
+                              >
+                                {labelByVerdict[detector.verdict]}
+                              </span>
+                            );
+                          })()}
                           <span className="text-[10px] text-muted-foreground/50 ml-auto">{v.words} words</span>
                         </div>
                         <p className="text-[13px] leading-relaxed whitespace-pre-wrap text-foreground/85">{v.content}</p>

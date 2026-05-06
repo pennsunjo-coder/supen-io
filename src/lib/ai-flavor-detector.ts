@@ -312,3 +312,130 @@ export function detectAiFlavor(content: string): AiFlavorReport {
 export function aiFlavorScore(content: string): number {
   return detectAiFlavor(content).score;
 }
+
+// ─── Composite "passes-detector" indicator ───
+//
+// Goal: estimate, from text alone, the likelihood that a piece of
+// content would pass a real AI-detection tool (GPTZero, Originality,
+// Copyleaks). We don't call those services — we use the same set of
+// signals they rely on, plus a few human-writing positive signals
+// the flavor detector doesn't reward.
+
+/**
+ * Verdict returned by passesDetectorEstimate(). Categorical so the UI
+ * can pick a colour and a copy line without doing any of the math.
+ */
+export type DetectorVerdict = "likely_passes" | "borderline" | "likely_flagged";
+
+export interface DetectorEstimate {
+  verdict: DetectorVerdict;
+  /**
+   * 0-100. Higher = more likely to pass an external AI detector.
+   * Roughly: ≥75 → likely_passes, 50-74 → borderline, <50 → likely_flagged.
+   */
+  confidence: number;
+  /** Short reason line, suitable for showing in a tooltip. */
+  reason: string;
+}
+
+const HUMAN_SIGNAL_WORDS = [
+  // Casual / spoken markers
+  "honestly", "tbh", "y'all", "kinda", "gonna", "gotta",
+  // Strong emotion / vulnerability
+  "burned", "wasted", "regret", "scared", "obsessed",
+  // First-person specifics
+  "i shipped", "i lost", "i wasted", "i tried", "my brain",
+];
+
+const FRAGMENT_RE = /(?:^|\.\s+|\n)[A-Z][a-z]*\.(?:\s|$)/g; // very short sentences like "True." "Done." "Fast."
+
+const CONTRACTION_RE = /\b(?:i'm|you're|don't|can't|won't|it's|that's|we're|they're|let's|isn't|aren't|wasn't|weren't|haven't|hasn't|hadn't|wouldn't|couldn't|shouldn't)\b/gi;
+
+function countContractions(text: string): number {
+  return (text.match(CONTRACTION_RE) || []).length;
+}
+
+function countHumanSignals(text: string): number {
+  const lo = text.toLowerCase();
+  return HUMAN_SIGNAL_WORDS.reduce((acc, w) => (lo.includes(w) ? acc + 1 : acc), 0);
+}
+
+function countShortFragments(text: string): number {
+  return (text.match(FRAGMENT_RE) || []).length;
+}
+
+function sentenceLengthVariance(text: string): number {
+  // Variance > ~70 means the writer mixes short and long sentences,
+  // which is what humans do and what LLMs default away from.
+  const sentences = text
+    .split(/[.!?]+/)
+    .map((s) => s.trim().split(/\s+/).filter(Boolean).length)
+    .filter((n) => n > 0);
+  if (sentences.length < 3) return 0;
+  const mean = sentences.reduce((a, b) => a + b, 0) / sentences.length;
+  const variance = sentences.reduce((acc, n) => acc + (n - mean) ** 2, 0) / sentences.length;
+  return variance;
+}
+
+/**
+ * Estimate, from the text alone, whether the content would pass an
+ * external AI-detection tool. Cheap (no API), deterministic, and
+ * calibrated against the same flavor signals the detector uses.
+ */
+export function passesDetectorEstimate(content: string): DetectorEstimate {
+  if (!content || content.trim().length < 30) {
+    return {
+      verdict: "borderline",
+      confidence: 50,
+      reason: "Too short to estimate reliably.",
+    };
+  }
+
+  const flavor = detectAiFlavor(content);
+  let confidence = 100 - flavor.score; // start from the inverse of flavor
+
+  // Positive human-writing signals (boost confidence)
+  const contractions = countContractions(content);
+  if (contractions >= 4) confidence += 8;
+  else if (contractions >= 2) confidence += 4;
+  else if (contractions === 0) confidence -= 6; // formal/AI register
+
+  const humanWords = countHumanSignals(content);
+  if (humanWords >= 2) confidence += 8;
+  else if (humanWords === 1) confidence += 4;
+
+  const fragments = countShortFragments(content);
+  if (fragments >= 2) confidence += 6;
+
+  const variance = sentenceLengthVariance(content);
+  if (variance > 70) confidence += 6;
+  else if (variance > 40) confidence += 3;
+  else if (variance < 12) confidence -= 8; // monotone — strong AI signal
+
+  confidence = Math.max(0, Math.min(100, confidence));
+
+  let verdict: DetectorVerdict;
+  let reason: string;
+
+  if (confidence >= 75) {
+    verdict = "likely_passes";
+    reason =
+      flavor.severity === "clean"
+        ? "Reads as human-written. Sentence variance and contractions look natural."
+        : `Reads as human-written despite mild flavor signals (${flavor.severity}).`;
+  } else if (confidence >= 50) {
+    verdict = "borderline";
+    const top = flavor.signals[0];
+    reason = top
+      ? `Could go either way. Watch the ${top.type.replace(/_/g, " ")} signal.`
+      : "Could go either way — surface mechanics are clean but voice is flat.";
+  } else {
+    verdict = "likely_flagged";
+    const topThree = flavor.signals.slice(0, 3).map((s) => s.type.replace(/_/g, " ")).join(", ");
+    reason = topThree
+      ? `Likely flagged by AI detectors. Tells: ${topThree}.`
+      : "Likely flagged by AI detectors. Voice reads as machine-generated.";
+  }
+
+  return { verdict, confidence, reason };
+}
