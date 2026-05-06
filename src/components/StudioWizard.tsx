@@ -30,6 +30,7 @@ import { buildFacebookPostPlaybook, buildFacebookThreadPlaybook } from "@/lib/fa
 import { buildInstagramPlaybook } from "@/lib/instagram-playbook";
 import { buildAntiAiRules } from "@/lib/anti-ai-rules";
 import { sanitizeForPlatform } from "@/lib/output-sanitizer";
+import { detectAiFlavor } from "@/lib/ai-flavor-detector";
 import { fetchTrends, type Trend } from "@/lib/trends";
 import type { Source } from "@/types/database";
 import type { UserProfile } from "@/hooks/use-profile";
@@ -409,6 +410,18 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
     setGeneratedInfographicBase64(null);
 
     try {
+      // === User style memory ===
+      // Fetch the user's voice profile (favorite angles, liked posts,
+      // niche, tone preferences) so we can inject it into the system
+      // prompt and personalise generation. Best-effort — silent on error.
+      let userStyleMemoryBlock = "";
+      try {
+        const { data: { user: u } } = await supabase.auth.getUser();
+        if (u && selectedPlatform) {
+          userStyleMemoryBlock = await getUserStyleMemory(u.id, selectedPlatform.name);
+        }
+      } catch { /* style memory is non-critical */ }
+
       // === RAG: Retrieve relevant source content ===
       const allSourceIds = [...new Set([...activeSourceIds, ...selectedDocumentIds])];
       const focusDirectives = Object.values(sourceDirectives).filter(Boolean);
@@ -615,6 +628,10 @@ OUTPUT FORMAT — EXACT:
         return "You are a top social media content writer. You write like a real person — specific, human, direct.";
       })();
 
+      // Combined voice profile + playbook block — same string injected
+      // at every system-prompt branch so we don't duplicate the wiring.
+      const voiceAndPlaybookBlock = `${userStyleMemoryBlock ? `═══ USER VOICE PROFILE ═══\n${userStyleMemoryBlock}\n═══ END VOICE PROFILE ═══\n\n` : ""}${playbookSection ? `═══ PLAYBOOK (follow this structure) ═══\n${playbookSection}\n═══ END PLAYBOOK ═══\n` : ""}`;
+
       let systemPrompt: string;
 
       if (isYoutube && isLongScript) {
@@ -624,7 +641,7 @@ OUTPUT FORMAT — EXACT:
 PLATFORM: ${selectedPlatform?.name}
 FORMAT: ${selectedFormat}
 
-${playbookSection ? `═══ PLAYBOOK (follow this structure) ═══\n${playbookSection}\n═══ END PLAYBOOK ═══\n` : ''}
+${voiceAndPlaybookBlock}
 SCRIPT REQUIREMENTS:
 - 1500-3000 words for a 7-12 minute video
 - Written as SPOKEN words, not text to be read silently
@@ -649,7 +666,7 @@ Each variation = a COMPLETE script ready to record. No placeholders.`;
 PLATFORM: ${selectedPlatform?.name}
 FORMAT: ${selectedFormat}
 
-${playbookSection ? `═══ PLAYBOOK (follow this structure) ═══\n${playbookSection}\n═══ END PLAYBOOK ═══\n` : ''}${isLinkedIn ? `LINKEDIN-SPECIFIC RULES:
+${voiceAndPlaybookBlock}${isLinkedIn ? `LINKEDIN-SPECIFIC RULES:
 1. Hook: MAX 60 characters — must create curiosity or shock
 2. Length: 1,200-1,800 characters total
 3. One idea per line, blank line between sections
@@ -679,7 +696,7 @@ Each = COMPLETE, READY TO POST. Min 100 words. Generous line breaks.`;
 PLATFORM: ${selectedPlatform?.name}
 FORMAT: Thread
 
-${playbookSection ? `═══ PLAYBOOK (follow this structure) ═══\n${playbookSection}\n═══ END PLAYBOOK ═══\n` : ''}${isFacebook ? `FACEBOOK THREAD RULES:
+${voiceAndPlaybookBlock}${isFacebook ? `FACEBOOK THREAD RULES:
 1. 4-6 separate posts, not tweets — each 80-120 words.
 2. Separate posts with "---" on its own line.
 3. Each post stands alone but references "earlier" / "yesterday" to acknowledge the series.
@@ -713,7 +730,7 @@ Each variation = DIFFERENT hook + DIFFERENT structure.`;
 PLATFORM: ${selectedPlatform?.name}
 FORMAT: ${selectedFormat}
 
-${playbookSection ? `═══ PLAYBOOK (follow this structure) ═══\n${playbookSection}\n═══ END PLAYBOOK ═══\n` : ''}
+${voiceAndPlaybookBlock}
 SCRIPT FORMAT (60 seconds max):
 
 [HOOK - 0 to 3 seconds]
@@ -804,7 +821,86 @@ Each variation includes: HOOK, PROBLEM, SOLUTION, PROOF, CTA, ON-SCREEN TEXT.`;
           scoring: false,
         };
       });
+
+      // Show immediately so the user sees output. Auto-retry runs in the
+      // background — if a variation reads as AI-flavoured even after the
+      // sanitizer, we rewrite it once.
       setVariations(scored);
+
+      // Background auto-retry. Budget: up to 2 retries per generation.
+      // This is fire-and-forget — the user is not blocked.
+      (async () => {
+        const RETRY_THRESHOLD = 30; // moderate or heavy severity
+        const MAX_RETRIES = 2;
+        let retriesUsed = 0;
+        const updates: { idx: number; content: string; words: number; score: number; scoreDetails: ScoreDetails }[] = [];
+        for (let i = 0; i < scored.length && retriesUsed < MAX_RETRIES; i++) {
+          const v = scored[i];
+          const flavor = detectAiFlavor(v.content);
+          if (flavor.score < RETRY_THRESHOLD) continue;
+          retriesUsed += 1;
+          try {
+            const isLongFormat = /linkedin|youtube|long/i.test(`${platformName} ${selectedFormat || ""}`);
+            const tightness = isLongFormat ? "strict" : "standard";
+            const retrySystem = `You are a senior editor whose only job is to remove AI tells from a draft while keeping the message and structure intact.
+
+PLATFORM: ${platformName}
+FORMAT: ${selectedFormat || "post"}
+
+The previous draft tripped these AI-flavour detectors: ${flavor.signals.map((s) => s.description).join(" | ")}.
+
+TASK:
+Rewrite the user's draft so it reads as if a sharp human creator wrote it.
+- Keep the same core message, hook, and structural beats.
+- Keep the same approximate length.
+- Fix the specific issues listed above.
+- Replace any banned word with normal English.
+- Cut em-dashes to one per post maximum.
+- Drop "in conclusion" / "overall" / "in summary" closers.
+- Drop didactic disclaimers ("it's important to note").
+- Keep contractions. Mix sentence lengths.
+- Preserve real names, numbers, URLs, prompts, button paths verbatim.
+
+OUTPUT:
+Return ONLY the rewritten draft. No preamble, no explanation, no markdown fences. Just the text.
+
+${buildAntiAiRules(tightness)}`;
+            const raw = await callClaude(
+              retrySystem,
+              [{ role: "user", content: `Rewrite this draft:\n\n${v.content}` }],
+              { maxTokens: 1500, model: "claude-haiku-4-5-20251001" },
+            );
+            const cleaned = sanitizeForPlatform(stripMarkdown(raw).trim(), platformName, selectedFormat || "");
+            // Only accept the rewrite if it actually moved the needle.
+            const newFlavor = detectAiFlavor(cleaned);
+            if (newFlavor.score >= flavor.score) {
+              if (IS_DEV) console.log(`[auto-retry] Variation ${i + 1} rewrite did not improve flavor (${flavor.score} → ${newFlavor.score}); keeping original.`);
+              continue;
+            }
+            const newDetails = scoreVariationHeuristic(cleaned, platformName);
+            updates.push({
+              idx: i,
+              content: cleaned,
+              words: wordCount(cleaned),
+              score: newDetails.total,
+              scoreDetails: newDetails,
+            });
+            if (IS_DEV) console.log(`[auto-retry] Variation ${i + 1} cleaned (flavor ${flavor.score} → ${newFlavor.score}).`);
+          } catch (e) {
+            if (IS_DEV) console.warn(`[auto-retry] Variation ${i + 1} retry failed:`, e);
+            // Silent failure — keep the original variation.
+          }
+        }
+        if (updates.length > 0) {
+          setVariations((prev) =>
+            prev.map((v, i) => {
+              const u = updates.find((up) => up.idx === i);
+              if (!u) return v;
+              return { ...v, content: u.content, words: u.words, score: u.score, scoreDetails: u.scoreDetails };
+            })
+          );
+        }
+      })();
 
       if (scored.length > 0 && onContentGenerated) {
         onContentGenerated(scored[0].content);
