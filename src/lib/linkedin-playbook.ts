@@ -1,3 +1,5 @@
+import { buildAntiAiRules } from "@/lib/anti-ai-rules";
+
 /**
  * LinkedIn post playbook — viral long-form LinkedIn structures.
  * Extracted from 16+ real posts by top AI/tech creators (7.5M+ impressions).
@@ -851,5 +853,210 @@ DATA-BACKED WINNERS (enforce these):
 - Personal story + lesson → 1.3x-1.6x reach
 - Long-form educational → 2.5x-5.8x reach
 - Carousels → 1.9x better than video
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+REFERENCE EXAMPLES — study these openings, then write in this voice
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+These are real, high-performing openings from a top LinkedIn AI creator.
+Match the cadence, the specificity, the willingness to commit to a position.
+Do NOT copy the words — copy the *moves*.
+
+[tool_tutorial] —
+"How to set up Claude so it never forgets you:
+
+Prompts → Projects → Skills (explained in 3 mins)
+
+Prompts = telling a stranger your job every morning.
+Projects = giving a new hire a binder on day one.
+Skills = training an employee once. For forever.
+
+Step 1: Start with a Prompt (but don't stay there)
+✦ Open Claude. Type your task. Get an answer.
+✦ It works. But tomorrow? Claude forgot everything.
+✦ You re-explain. Again. Every. Single. Chat.
+✦ That's Level 1. Most people never leave it."
+
+[n_day_plan] —
+"840 out of 1,000 people have never used AI.
+
+Here's the 7-day plan so you're not one of them:
+
+Day 1: Set up Claude (and actually quit ChatGPT)
+1. Download the desktop app from claude.com
+2. Get the Pro. Select Opus 4.6 + Extended thinking.
+3. Create your 'about me' markdown file.
+
+[...]
+
+If you're reading this, you're already in the top 16%.
+These 7 guides put you in the top 0.4%.
+
+It took me 1,000+ hours to write them.
+It takes you 7 days to use them.
+
+♻️ Repost this if your network is still in the 840."
+
+[myth_busting] —
+"Half of what 'experts' say about LinkedIn is wrong.
+
+Here's the reality of LinkedIn in 2026:
+↳ Follower growth down 59%
+↳ Impressions down 50-65%
+↳ Engagement up 12%
+
+---
+
+Sources:
+Industry data: Richard van der Blom's Algorithm Insights 2025 (1.8M+ posts analysed).
+My data: Stanley helped me analyse 12 months of my posts to validate these findings.
+
+---
+
+LinkedIn isn't broken. The rules just changed.
+
+---
+
+1. Engagement pods boost visibility
+❌ OLD: Pods = more reach.
+✅ NEW: LinkedIn detects artificial engagement. Pods trigger spam filters and suppress your reach.
+
+[...4-5 more myths...]
+
+Stop following 2023 advice in 2026.
+Which myth were you still believing? Drop it below.
+Repost ♻️ to help someone in your network."
+
+[founder_story] —
+"I (secretly) became a SaaS founder.
+
+It took 9+ months to say that publicly.
+
+I started building in June 2025.
+
+This is my first time launching a SaaS product.
+I've been overprotective about every detail.
+
+Right now, this is the worst Vislo will ever be.
+
+It still creates branded infographics better than anything else I've tested.
+
+That's why the founding price is $19/month.
+
+Only for the first 100 users.
+
+What's coming next:
+✦ Carousel creation
+✦ GIFs and video editing
+✦ Even better infographics
+✦ Features I haven't announced yet
+
+Your price stays the same. Locked in for life.
+
+1,608 people joined the waitlist before we opened.
+
+P.S. Have you ever thought about building a SaaS?"
+
+[contrarian_hack] —
+"You don't need to learn to code anymore.
+
+Here's how to prompt Claude Code (zero coding):
+
+1. Open the Claude desktop app.
+2. Click 'Code' (not Chat, not Cowork).
+3. Select a folder from your computer.
+4. Connect a free GitHub account in Settings.
+5. Go to Connectors.
+
+Claude now builds anything you describe in English.
+
+But here's where it gets powerful:
+
+Before you prompt, change these 2 settings:
+1. Select 'Opus 4.6' model. It's the smartest for complex builds.
+2. Turn on 'Auto accept edits.' It stops Claude from pausing after every action.
+
+Then stop describing code. Paste this instead:
+
+'Create a GitHub repo named [NAME]. I do not know how to code. Code everything for me. I want to [GOAL] for [SUCCESS CRITERIA]. Here's an example [attach screenshot].'
+
+Claude reads your screenshot. It builds the site.
+
+The secret is not knowing how to code anymore.
+It is knowing how to prompt.
+
+(save this if you can't code — you won't need to)"
+
+[comparison_table] —
+"You're still paying for ChatGPT.
+
+But Grok 4.20 is now the best at searching:
+
+☑ The #1 AI at instructions following.
+☑ Lowest hallucination rate across AI models.
+☑ Uses a unique 4x simultaneous AI agents tech.
+
+I wrote a full guide with 10 prompts to copy-paste.
+To access it, for free, go to: [link]
+
+♻️ Repost this image to help people search better."
+
+[elements_framework] —
+"My AI infographics generated 7.5M+ impressions.
+
+Here are the 7 elements behind every one:
+
+1. Hook Formula
+✦ Bold title under 10 words
+✦ Use contrast, numbers, or a pattern interrupt
+
+This decides if anyone stops scrolling
+
+2. Rehook Subtitle
+✦ Reinforces the promise
+✦ Adds credibility or specificity
+
+'I grew to 200K followers using this system'
+
+[...5 more elements...]
+
+P.S. Which element do you skip most often?"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SIGNATURE MOVES (use these — they're what readers actually respond to)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Vulnerable confidence
+   "I (secretly) became a SaaS founder. It took 9+ months to say publicly."
+   "It took me 1,000+ hours to write them. It takes you 7 days to use them."
+   The pattern: admit hard work or fear, then deliver value.
+
+2. Time / effort asymmetry
+   "It took me X. It takes you Y." (where X >> Y)
+   Builds gratitude AND credibility in one move.
+
+3. Stat → percentile math
+   "If you're reading this, you're already in the top 16%.
+    These 7 guides put you in the top 0.4%."
+
+4. Emoji used FUNCTIONALLY only
+   ✦ for capability lists, ☑ for checkbox benefits, ↳ for data arrows,
+   ❌/✅ for myth pairs, ♻️ for repost. Never decorative. Never in front
+   of headings. Never random sparkles 🚀✨🔥.
+
+5. Inline real artifact
+   Real prompt in quotes (verbatim, copyable).
+   Real menu path ("Settings → Capabilities → Skills → Upload").
+   Real URL on its own line.
+
+6. Save / Repost trigger as the LAST line
+   "♻️ Repost this if your network is still in the 840."
+   "(save this if you can't code — you won't need to)"
+   "P.S. Which element do you skip most often?"
+   Pick exactly ONE: ♻️ repost, save-this, or P.S. question.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${buildAntiAiRules("strict")}
 `;
 }

@@ -24,6 +24,7 @@ import { buildThreadPlaybook } from "@/lib/thread-playbook";
 import { buildReelPlaybook } from "@/lib/reel-playbook";
 import { buildYoutubePlaybook } from "@/lib/youtube-playbook";
 import { buildLinkedinPlaybook } from "@/lib/linkedin-playbook";
+import { buildAntiAiRules } from "@/lib/anti-ai-rules";
 import { fetchTrends, type Trend } from "@/lib/trends";
 import type { Source } from "@/types/database";
 import type { UserProfile } from "@/hooks/use-profile";
@@ -513,39 +514,11 @@ Make each post visually clean and easy to read.
             ? buildLinkedinPlaybook(profile?.niche || "", sanitizedInput)
             : "";
 
-      const ANTI_AI_RULES = `
-CRITICAL ANTI-AI WRITING RULES — ZERO TOLERANCE:
-
-FORBIDDEN WORDS (never use):
-delve, navigate, tapestry, realm, beacon, underscore, pivotal, crucial, leverage, holistic, game-changer, synergy, streamline, optimize, actionable, elevate, empower, transformative, utilize, furthermore, nevertheless, consequently, robust, seamless, cutting-edge, groundbreaking, unlock
-
-FORBIDDEN PHRASES (never use):
-- "it's important to note" / "it's worth noting"
-- "in today's fast-paced" / "in the dynamic landscape"
-- "certainly" / "absolutely" / "of course" as openers
-- "game-changer" / "revolutionary" / "next-level"
-- "have you ever wondered" / "here's the thing"
-- "in summary" / "in conclusion" / "overall"
-
-FORBIDDEN PATTERNS:
-- Em dashes used more than once per post
-- Bullet points without specific data/examples
-- Generic openings ("Many people think..." / "In today's world...")
-- Conclusions that summarize what was already said
-- Hedging language ("might", "could", "perhaps") used 3+ times
-- Rule of three used more than once (three adjectives in a row)
-- Parallelisms ("It's not just X, it's Y") repeated
-
-REQUIRED ELEMENTS:
-- Specific numbers, dates, tool names, and sources
-- First-person voice mixed with second-person naturally
-- Short sentences (under 15 words) mixed with one longer sentence for rhythm
-- Concrete examples, never abstract concepts
-- Authentic voice with personality and opinions
-- One strong, committed position per post
-- Conversational tone — like texting a smart friend
-- Contractions everywhere (you're, don't, it's, we're)
-- Admit struggle/failure when relevant — vulnerability works`;
+      // LinkedIn already injects strict anti-AI rules via the playbook,
+      // so the inline rules below are scoped to Thread / Reel / Script
+      // (which don't use the LinkedIn playbook).
+      const ANTI_AI_RULES_THREAD = buildAntiAiRules("standard");
+      const ANTI_AI_RULES_SCRIPT = buildAntiAiRules("loose");
 
       const OUTPUT_FORMAT = `
 OUTPUT FORMAT — EXACT:
@@ -592,8 +565,6 @@ LINKEDIN-SPECIFIC RULES:
 9. SHORT sentences — max 15 words per sentence
 10. White space: use line breaks generously for mobile readability
 
-${ANTI_AI_RULES}
-
 5 ANGLES — one per variation:
 1. Story/failure angle: "I wasted 6 months doing X before I realized..."
 2. Contrarian angle: "Everyone says X. They're wrong. Here's why:"
@@ -628,7 +599,7 @@ HOOK FORMULAS (use the most powerful):
 - "Unpopular opinion: [contrarian statement]"
 - "I spent [time/money] on [thing]. Here's what I learned:"
 
-${ANTI_AI_RULES}
+${ANTI_AI_RULES_THREAD}
 
 5 ANGLES for 5 thread variations:
 1. Cheatcode: "BREAKING: [Tool] is a cheatcode for [outcome]. Here are N ways:"
@@ -669,7 +640,7 @@ One clear action. "Comment [keyword] if you want more"
 
 ON-SCREEN TEXT: List 3-5 text overlays for the video.
 
-${ANTI_AI_RULES}
+${ANTI_AI_RULES_SCRIPT}
 
 5 ANGLES for 5 script variations:
 1. AI showcase: "[Tool] can now [impressive claim]. Here's how to use it free."
