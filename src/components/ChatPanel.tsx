@@ -397,29 +397,31 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
             {messages.map((msg, index) => (
               <div key={index} className={cn("flex gap-2", msg.role === "user" ? "justify-end" : "justify-start")}>
                 {msg.role === "assistant" && (
-                  <div className="w-5 h-5 rounded-md bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                    <Bot className="w-3 h-3 text-primary" />
+                  <div className="w-6 h-6 rounded-lg bg-primary/15 flex items-center justify-center shrink-0 mt-0.5 ring-1 ring-primary/15">
+                    <Bot className="w-3.5 h-3.5 text-primary" />
                   </div>
                 )}
                 <div className={cn(
-                  "max-w-[85%] rounded-xl px-3 py-2 text-[13px] leading-relaxed whitespace-pre-wrap",
-                  msg.role === "user" ? "bg-primary text-primary-foreground rounded-br-sm" : "bg-accent/50 text-foreground rounded-bl-sm",
+                  "max-w-[85%] px-3.5 py-2.5 text-[13px] leading-relaxed whitespace-pre-wrap shadow-sm",
+                  msg.role === "user"
+                    ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md font-medium"
+                    : "bg-accent/30 text-foreground rounded-2xl rounded-bl-md border border-border/30",
                 )}>
                   {msg.content}
                 </div>
                 {msg.role === "user" && (
-                  <div className="w-5 h-5 rounded-md bg-accent/60 flex items-center justify-center shrink-0 mt-0.5">
-                    <User className="w-3 h-3 text-muted-foreground" />
+                  <div className="w-6 h-6 rounded-lg bg-primary/15 flex items-center justify-center shrink-0 mt-0.5 ring-1 ring-primary/15">
+                    <User className="w-3.5 h-3.5 text-primary" />
                   </div>
                 )}
               </div>
             ))}
             {isLoading && (
               <div className="flex gap-2 justify-start">
-                <div className="w-5 h-5 rounded-md bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                  <Bot className="w-3 h-3 text-primary" />
+                <div className="w-6 h-6 rounded-lg bg-primary/15 flex items-center justify-center shrink-0 mt-0.5 ring-1 ring-primary/15">
+                  <Bot className="w-3.5 h-3.5 text-primary" />
                 </div>
-                <div className="max-w-[85%] rounded-xl rounded-bl-sm px-3 py-2 bg-accent/50 text-foreground text-[13px] leading-relaxed whitespace-pre-wrap">
+                <div className="max-w-[85%] rounded-2xl rounded-bl-md px-3.5 py-2.5 bg-accent/30 text-foreground text-[13px] leading-relaxed whitespace-pre-wrap shadow-sm border border-border/30">
                   {streamingContent || (
                     <div className="flex items-center gap-1.5 text-muted-foreground">
                       <Loader2 className="w-3 h-3 animate-spin" />

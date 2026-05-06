@@ -207,7 +207,7 @@ const Dashboard = () => {
 
           {/* CENTER — MY CONTENT */}
           <div className={cn(
-            "flex-1 flex flex-col overflow-hidden min-w-0",
+            "flex-1 flex flex-col overflow-hidden min-w-0 md:pl-3 lg:pl-4 lg:pr-3",
             mobileTab !== "content" ? "hidden md:flex" : "flex",
           )}>
             {/* Header */}
@@ -340,28 +340,25 @@ const Dashboard = () => {
                                 </div>
                               )}
 
-                              {/* Platform badge — top left */}
-                              <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full bg-black/40 backdrop-blur-md border border-white/10">
-                                <span className="text-[9px] font-medium text-white/90">{s.platform}</span>
-                              </div>
-
-                              {/* Visual badge — bottom left glassmorphism */}
-                              {hasVisual && (
-                                <div className="absolute bottom-2.5 left-2.5">
-                                  <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-black/30 backdrop-blur-md border border-white/15 text-white/90">
+                              {/* Badges grouped — top right */}
+                              <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 z-10">
+                                {hasVisual && (
+                                  <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-black/40 backdrop-blur-md border border-white/15 text-white/95">
                                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                                     Visual
                                   </span>
-                                </div>
-                              )}
-
-                              {/* Delete — top right on hover */}
-                              <button
-                                className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-red-500/70 z-10"
-                                onClick={(e) => { e.stopPropagation(); setDeletingId(s.sessionId); }}
-                              >
-                                <Trash2 className="w-3 h-3 text-white" />
-                              </button>
+                                )}
+                                <span className="px-2 py-0.5 rounded-full bg-black/45 backdrop-blur-md border border-white/15">
+                                  <span className="text-[10px] font-semibold text-white/95">{s.platform}</span>
+                                </span>
+                                <button
+                                  className="w-7 h-7 rounded-full bg-black/45 backdrop-blur-md border border-white/15 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-red-500/80"
+                                  onClick={(e) => { e.stopPropagation(); setDeletingId(s.sessionId); }}
+                                  title="Delete session"
+                                >
+                                  <Trash2 className="w-3 h-3 text-white" />
+                                </button>
+                              </div>
 
                               {/* Generate visual hint — center on hover (no visual) */}
                               {!hasVisual && (
@@ -375,8 +372,8 @@ const Dashboard = () => {
                             </div>
 
                             {/* Title */}
-                            <div className="px-3.5 pt-3 pb-1">
-                              <p className="text-[13px] font-semibold leading-snug line-clamp-2 text-foreground/90 tracking-tight">
+                            <div className="px-3.5 pt-3 pb-1.5">
+                              <p className="text-[15px] font-bold leading-snug line-clamp-2 text-foreground tracking-tight">
                                 {s.topic || "Untitled session"}
                               </p>
                             </div>
@@ -385,11 +382,11 @@ const Dashboard = () => {
                             <div className="px-3.5 py-2.5 flex items-center justify-between">
                               <div className="flex items-center gap-1.5">
                                 <div className={cn("w-1.5 h-1.5 rounded-full", hasVisual ? "bg-emerald-400" : "bg-amber-400")} />
-                                <span className="text-[11px] text-muted-foreground/50 font-medium">
+                                <span className="text-[11px] text-muted-foreground/70 font-medium">
                                   {hasVisual ? "Complete" : "In progress"}
                                 </span>
                               </div>
-                              <span className="text-[11px] text-muted-foreground/40">
+                              <span className="text-[11px] text-muted-foreground/60">
                                 {timeAgo(s.createdAt)}
                               </span>
                             </div>
