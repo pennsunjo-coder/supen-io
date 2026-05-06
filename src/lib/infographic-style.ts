@@ -752,88 +752,176 @@ FACEBOOK SPECIFIC RULES (override defaults — non-negotiable):
   const n = ext.points.length;
   const AVOID = "\n\nAVOID: blurry, cluttered, messy layout, too many colors, realistic photo, 3D render, low resolution, bad typography, misaligned text, dark background (unless dark template), generic stock photo style.";
 
-  // ── WHITEBOARD (single forced style with variation) ──
+  // ── MATRIX DASHBOARD (high-density multi-viz layout) ──
   {
-    const COLORS = ['Blue', 'Red', 'Orange', 'Purple', 'Green'];
-
     const backgrounds = ["creamy paper #FAF9F6", "pure white #FFFFFF", "warm white #FDFCFA", "light cream #FFF8F0"];
     const bgChoice = backgrounds[Math.floor(Math.random() * backgrounds.length)];
 
-    // Detect content type and adapt layout
-    const contentLower = content.toLowerCase();
-    const layoutByContent =
-      contentLower.includes('step') || contentLower.includes('how to') || contentLower.includes('guide')
-        ? `Numbered step-by-step vertical flow. Each step in its own colored box with number badge. Connecting arrows between steps. Timeline feel from top to bottom.`
-      : contentLower.includes('vs') || contentLower.includes('compare') || contentLower.includes('difference') || contentLower.includes('before') || contentLower.includes('after')
-        ? `Two-column comparison layout. LEFT column: "Before/Wrong/Old" in red tones. RIGHT column: "After/Right/New" in green tones. Bold header above each column. Checkmarks vs X marks.`
-      : contentLower.includes('tip') || contentLower.includes('mistake') || contentLower.includes('rule') || contentLower.includes('secret')
-        ? `Grid of cards (2 columns x 3 rows). Each card: number badge + icon + short text. Alternating background colors. Bold key word highlighted in each card.`
-      : contentLower.includes('stat') || contentLower.includes('%') || contentLower.includes('data') || contentLower.includes('research')
-        ? `Data-focused design. Large numbers prominently displayed. Bar or circle visual elements. Source citations in small text. Key insight box at bottom.`
-      : contentLower.includes('story') || contentLower.includes('journey') || contentLower.includes('went from') || contentLower.includes('used to')
-        ? `Story arc / timeline layout. Start at top left, flow to bottom right. Key turning points highlighted. Before/after transformation shown. Personal and emotional visual style.`
-      : `Vertical stacked blocks. Each block: hand-drawn border, icon, title, bullets. Color changes per block. Arrows connecting sections.`;
-
     // Build rich content analysis
     const kp = extractKeyPoints(content);
-    const sections = kp?.sections || [];
-    const hasSections = sections.length >= 2 && sections.some(s => s.bullets.length > 0);
+    const sectionsRaw = kp?.sections || [];
+    const hasSections = sectionsRaw.length >= 2 && sectionsRaw.some(s => s.bullets.length > 0);
     const mainSections = hasSections
-      ? sections.slice(0, 5)
-      : ext.points.slice(0, 5).map(p => ({ header: p.split(' ').slice(0, 5).join(' ').toUpperCase(), bullets: [p] }));
+      ? sectionsRaw.slice(0, 6)
+      : ext.points.slice(0, 6).map(p => ({ header: p.split(' ').slice(0, 5).join(' ').toUpperCase(), bullets: [p] }));
 
-    const fbSectionCap = isFacebook ? 5 : 8;
-    const fbBranchSections = isFacebook ? mainSections.slice(0, 5) : mainSections;
-    return `ABSOLUTE RULE: Fill 100% of canvas vertically and horizontally. NO white space at any edge. Background reaches ALL 4 edges.
+    const fbSectionCap = isFacebook ? 5 : 6;
+    const fbBranchSections = isFacebook ? mainSections.slice(0, 5) : mainSections.slice(0, fbSectionCap);
+
+    // Extract extra signal from the content for richer modules
+    const contentLower = content.toLowerCase();
+    const hasLevels = /\b(beginner|intermediate|advanced|level\s*\d|tier\s*\d|day\s*\d|step\s*\d|stage\s*\d)\b/i.test(content);
+    const hasComparison = /\bvs\b|\bversus\b|\bbefore\b.*\bafter\b|\bold\b.*\bnew\b/i.test(contentLower);
+    const hasChecklist = /(checklist|to-?do|tips|mistakes|rules|do['' ]?s and don['' ]?ts)/i.test(contentLower);
+    const hasFramework = /(framework|formula|blueprint|model|method|process)/i.test(contentLower);
+    const hasNumbers = ext.stats.length >= 2 || /\d+%|\$\d|\d+x|\d+ ?k\b/i.test(content);
+
+    // Build a recommended viz mix (≥3 distinct types) tailored to the content
+    const vizMix: string[] = [];
+    if (hasLevels) vizMix.push("Pyramid / hierarchy module — ascending tiers stacked, each tier labeled");
+    if (hasComparison) vizMix.push("Two-column comparison — ❌ left vs ✅ right, contrasting tones");
+    if (hasChecklist) vizMix.push("Checklist module — boxes ☐ + short imperative phrases");
+    if (hasFramework) vizMix.push("Process / flow module — boxes connected by hand-drawn arrows");
+    if (hasNumbers) vizMix.push("Stat callout — oversized number with one-line caption");
+    // Always-on modules to guarantee diversity even on plain content
+    vizMix.push("Annotated grid of 4-6 numbered cells, each with its OWN micro-icon");
+    vizMix.push("Pro-tip / Watch-out callout box — distinct accent color, bordered, takes ~10% of canvas");
+    const recommendedViz = Array.from(new Set(vizMix)).slice(0, 6);
+
+    return `ABSOLUTE RULES — fill 100% of canvas top-to-bottom and edge-to-edge.
+Background reaches ALL 4 edges. No empty corners. No white margin band.
 
 QUALITY — ZERO TOLERANCE:
 - Every word spelled correctly. No repeated phrases. No truncated text.
-- Perfect grammar. Dark text on light background. All sections complete.
-- Maximum ${fbSectionCap} sections.
+- Perfect grammar. Dark text on light background. Every section complete.
+- Maximum ${fbSectionCap} sections / cells. Minimum 4.
 ${facebookRules}
 
-STYLE — "HANDWRITTEN WHITEBOARD":
-Background: ${bgChoice}. Font: handwritten (Caveat/Patrick Hand).
-Title: large bold, double orange underline. Body: clean handwritten.
-LAYOUT: ${layoutByContent}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+LAYOUT — "MATRIX DASHBOARD" (this is non-negotiable)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-SECTIONS:
-- Wobbly hand-drawn border frames. Number in hand-drawn circle on left.
-- Colors per section: Blue→Red→Orange→Purple→Green
-- Yellow highlighter on 2-3 key words per section
-- Contextual doodle icon per block: 💰 money, 📈 growth, 🧠 learning, ⚡ speed, 🎯 goals, 💡 ideas, ✅ success, ❌ mistakes
-- Hand-drawn arrows connecting sections
+This is NOT a vertical list. This is a strategic dashboard.
 
-RICHNESS — MAKE IT DENSE BUT AIRY:
-- ALL statistics as large highlighted numbers
-- Highlight most important word per section with yellow marker
-- Each section: minimum 3 bullet points
-- Numbers displayed prominently
-- Add "Key Takeaway" box at bottom with single most important insight
-- Subtle decorative elements: small stars, arrows, underlines
-- 50% visuals/whitespace, 50% text
+GRID: split the canvas into a 2-column × 3-row grid (or 2×2 + a wide
+header row). Each cell is its own self-contained module with its own
+visual logic. Cells are SEPARATED by hand-drawn lines or subtle color
+washes — never just whitespace.
 
-CONTENT ANALYSIS — USE ALL OF THIS:
+The 6 cells must use AT LEAST 3 DIFFERENT visualization types from
+this inventory:
+${recommendedViz.map((v, i) => `  ${i + 1}. ${v}`).join("\n")}
+
+Pick the 3-4 viz types that best match the content. NEVER use the
+same module type more than twice. Visual diversity is the hallmark
+of a premium dashboard — copy-paste of the same block is what makes
+infographics look cheap.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ANTI-REDUNDANCY (the #1 cheap-infographic killer)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+- The TITLE of a section and the BODY of that same section MUST NEVER
+  share more than 2 words. The title sets the topic; the body adds
+  HOW, WHY, HOW MUCH — never re-states the title.
+- Each section delivers a NEW kind of detail: a real platform name,
+  a real number, a real strategy, a real micro-action. Empty filler
+  ("this is important", "this is essential") is forbidden.
+- Each cell must answer at least ONE of: how → process steps;
+  how much → numbers; what to avoid → pitfall; example → named brand.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TYPOGRAPHY HIERARCHY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Five levels of weight, used consistently across all cells:
+1. MAIN TITLE: large bold handwritten, double-underline accent (orange).
+2. CELL HEADER: medium bold, all-caps optional, with cell number badge.
+3. CELL SUB-LABEL: italic medium-weight, color-coded.
+4. BODY BULLETS: regular weight, dark on light.
+5. MICRO-ANNOTATIONS: tiny handwritten notes (~12px), slightly tilted,
+   placed near arrows or transitions. Examples: "← do this first",
+   "+27% engagement", "free tier only".
+
+Body text is JUSTIFIED inside its cell — never floating, never
+ragged on both sides. Use cell borders as the justification frame.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STYLE — "PREMIUM HANDWRITTEN DASHBOARD"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Background: ${bgChoice}.
+Font: handwritten primary (Caveat / Patrick Hand). Sans-serif accent
+(Inter) only for numbers and short labels.
+
+CELL TREATMENT:
+- Wobbly hand-drawn rectangular borders for each cell (NOT perfect).
+- Cell number badge top-left of each cell (hand-drawn circle, color).
+- Color rotation: Blue → Red → Orange → Purple → Green → Teal.
+- Yellow highlighter on 2-3 KEY words per cell (the noun that matters).
+- One contextual doodle icon per cell — must MATCH the cell's topic
+  (not generic). Examples: 💰 finance, 📈 growth, 🧠 learning,
+  ⚡ speed, 🎯 goals, 💡 ideas, ✅ wins, ❌ mistakes, 🛠 tools.
+
+INTER-CELL CONNECTIONS:
+- Hand-drawn arrows between cells where there is a logical flow.
+- Tiny handwritten micro-copy near the arrows
+  ("then →", "leads to", "so that").
+- Subtle color gradients across the grid to suggest progression.
+
+DENSITY TARGET:
+- Every cm² brings new information.
+- 50% visuals / 50% text by area, but visuals must SUPPORT the text,
+  not replace it.
+- Each cell: 3-5 bullets OR one big stat OR a small pyramid OR a
+  comparison pair — not just a one-liner.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CONTENT TO RENDER (use this verbatim — do not invent)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 MAIN TITLE: "${ext.title}"
 
-KEY SECTIONS (${fbBranchSections.length}):
-${fbBranchSections.map((s, i) => `Section ${i + 1}: "${s.header}"
-${s.bullets.slice(0, 5).map(b => `• ${b}`).join('\n')}`).join('\n\n')}
+CELLS (${fbBranchSections.length} total):
+${fbBranchSections.map((s, i) => {
+  const bullets = s.bullets.slice(0, 5);
+  return `Cell ${i + 1}: "${s.header}"
+${bullets.map(b => `  - ${b}`).join("\n")}`;
+}).join("\n\n")}
 
-${ext.stats.length > 0 ? `KEY STATISTICS:\n${ext.stats.map(s => `→ ${s}`).join('\n')}` : ''}
+${ext.stats.length > 0 ? `KEY STATISTICS (use AT LEAST 2 inside cells, oversized):
+${ext.stats.map(s => `  → ${s}`).join("\n")}` : ""}
 
-ACTION ITEMS:
-${ext.points.slice(0, 6).map((p, i) => `${i + 1}. ${p}`).join('\n')}
+${ext.keywords.length > 0 ? `KEYWORDS to highlight (yellow marker):
+  ${ext.keywords.slice(0, 6).join(", ")}` : ""}
 
-FOOTER:
-- Hand-drawn separator line
-- "Follow @${userName || 'supenli.ai'} for more | Save & Repost"
-- Small decorative star element
+${ext.quotes.length > 0 ? `PULL QUOTE (place in a dedicated speech-bubble cell):
+  "${ext.quotes[0]}"` : ""}
 
-CREATIVITY: Vary shapes (rectangles/speech bubbles/banners). Match mood to content. Eye-catching on social media. Professional designer quality.
+ACTION ITEMS (these become a checklist module if useful):
+${ext.points.slice(0, 6).map((p, i) => `  ${i + 1}. ${p}`).join("\n")}
 
-AVOID: dark background, 3D, perspective, table surface, Lorem Ipsum, empty sections, vague text, repeated information, spiral rings, cut-off words.`;
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FOOTER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Hand-drawn separator line across the bottom.
+"Follow @${userName || "supenli.ai"} for more | Save & Repost".
+Small decorative star element.
+
+CREATIVITY: vary cell shapes (rectangles, speech bubbles, banners,
+sticky notes). The dashboard must read like a designer's strategic
+poster, not a school worksheet. Premium magazine quality.
+
+AVOID:
+- Dark background (unless explicitly dark template)
+- 3D, perspective, table-on-desk surface
+- Lorem ipsum, empty cells, vague filler ("this is important")
+- Repeated section content — every cell is unique
+- Single-column vertical layout — this is a MATRIX, not a list
+- Generic stock icons unrelated to the cell topic
+- Cut-off words, orphan letters, rasterised type
+- Title and body of the same cell repeating the same words`;
   }
 
   // ── PROCESS_STEPS ──
