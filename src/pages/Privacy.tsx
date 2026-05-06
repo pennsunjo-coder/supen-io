@@ -76,7 +76,7 @@ export default function Privacy() {
             <h2 className="text-xl font-semibold text-foreground mb-4">6. Contact</h2>
             <p>
               For any privacy-related questions or requests, contact us at{" "}
-              <a href="mailto:privacy@supenli.ai" className="text-primary hover:underline">privacy@supenli.ai</a>.
+              <a href="mailto:pennsunjo@gmail.com" className="text-primary hover:underline">pennsunjo@gmail.com</a>.
             </p>
           </section>
         </div>

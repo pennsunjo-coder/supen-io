@@ -13,7 +13,6 @@ import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/contexts/ThemeContext";
 import { LogoFull } from "@/components/Logo";
-import WaitlistSection from "@/components/WaitlistSection";
 import { WaitlistPopup } from "@/components/WaitlistPopup";
 
 const ROTATING_WORDS = ["Viral", "Compelling", "Human", "Irresistible"];
@@ -33,12 +32,6 @@ const features = [
   { icon: Layers, title: "Infographic generator", desc: "Turn any post into a shareable visual in seconds." },
   { icon: Brain, title: "Style memory", desc: "AI learns your voice. Gets better every generation." },
   { icon: CalendarDays, title: "Content calendar", desc: "Plan, schedule, and never miss a posting day." },
-];
-
-const steps = [
-  { num: "01", title: "Drop your idea", desc: "Paste a topic, URL, or keyword. That's all you need to start.", icon: FileText },
-  { num: "02", title: "Get 5 viral variations", desc: "AI generates platform-optimized content in seconds. Pick the best one.", icon: Sparkles },
-  { num: "03", title: "Post & track", desc: "Schedule directly or copy to your favorite tool. Watch it grow.", icon: BarChart3 },
 ];
 
 const testimonials = [
@@ -80,7 +73,7 @@ const plans = [
   {
     name: "Plus",
     icon: Sparkles,
-    price: "$10",
+    price: "$11",
     period: "/month",
     desc: "For solo creators who want to grow fast",
     features: [
@@ -93,14 +86,14 @@ const plans = [
       "RAG — AI trained on YOUR content",
       "Image & infographic prompt generator",
     ],
-    cta: "Start for $10/month →",
+    cta: "Start for $11/month →",
     highlighted: true,
     rotation: "rotate-[1deg]",
   },
   {
     name: "Pro",
     icon: Users,
-    price: "$29",
+    price: "$30",
     period: "/month",
     desc: "For agencies and content teams",
     features: ["Everything in Plus", "Unlimited generations", "3 team members", "Shared workspaces", "Advanced analytics", "Dedicated onboarding", "Dedicated support"],
@@ -114,7 +107,7 @@ const faqs = [
   { q: "Does it really sound human?", a: "Yes. Supenli.ai uses advanced anti-AI protocols. No 'delve', no 'tapestry', no corporate jargon. Just clean, direct writing that sounds like you." },
   { q: "Which platforms are supported?", a: "LinkedIn, Instagram, X (Twitter), TikTok, Facebook, and YouTube. Each platform gets its own optimized format and tone." },
   { q: "How is this different from ChatGPT?", a: "ChatGPT gives you one generic answer. Supenli.ai gives you 5 variations with different angles, scores them for virality, and remembers your style over time." },
-  { q: "Can I generate infographics too?", a: "Yes. Every post can be turned into a shareable infographic in one click. Style inspired by viral educational content creators." },
+  { q: "Can I generate infographics too?", a: "Infographics are available for Facebook and LinkedIn posts only. For other platforms, you can generate custom images using your own prompt." },
   { q: "Is my content private?", a: "Your content belongs to you. We never train our models on your data. Everything is encrypted and stored securely." },
   { q: "What's the free plan?", a: "The free plan gives you access to content generation, the AI coach, and basic infographics. No credit card required to start." },
 ];
@@ -150,7 +143,6 @@ const platforms = [
   { name: "Threads", icon: PlatformThreads },
   { name: "TikTok", icon: PlatformTikTok },
   { name: "Newsletter", icon: null },
-  { name: "Blog", icon: null },
 ];
 
 // Animated counter that counts up when scrolled into view
@@ -216,7 +208,6 @@ const Index = () => {
               { label: "Features", href: "#features" },
               { label: "Results", href: "#results" },
               { label: "Pricing", href: "#pricing" },
-              { label: "Waitlist", href: "#waitlist" },
               { label: "FAQ", href: "#faq" },
             ].map((item) => (
               <a key={item.label} href={item.href} className="px-4 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-all">{item.label}</a>
@@ -285,9 +276,6 @@ const Index = () => {
             <Button size="lg" onClick={() => navigate("/login")} className="bg-foreground text-background hover:bg-foreground/90 h-11 px-7 text-sm font-medium rounded-lg group">
               Start Creating Free
               <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-0.5 transition-transform" />
-            </Button>
-            <Button size="lg" variant="outline" onClick={() => navigate("/login")} className="bg-foreground/[0.06] border-foreground/10 hover:bg-foreground/10 text-foreground h-11 px-7 text-sm rounded-lg">
-              See how it works
             </Button>
           </motion.div>
 
@@ -420,31 +408,34 @@ const Index = () => {
             viewport={{ once: true }} transition={{ duration: 0.5 }}
             className="rounded-2xl border border-border/40 bg-card overflow-hidden"
           >
-            <div className="grid grid-cols-4 border-b border-border/30 bg-accent/20">
-              <div className="px-3 md:px-5 py-4 text-xs font-semibold text-muted-foreground">Feature</div>
-              <div className="px-3 md:px-5 py-4 text-center">
+            <div className="grid grid-cols-5 border-b border-border/30 bg-accent/20">
+              <div className="px-2 md:px-5 py-4 text-xs font-semibold text-muted-foreground">Feature</div>
+              <div className="px-2 md:px-5 py-4 text-center">
                 <span className="text-xs md:text-sm font-bold text-primary">Supenli.ai</span>
               </div>
-              <div className="px-3 md:px-5 py-4 text-center">
+              <div className="px-2 md:px-5 py-4 text-center">
                 <span className="text-xs md:text-sm font-medium text-muted-foreground">ChatGPT</span>
               </div>
-              <div className="px-3 md:px-5 py-4 text-center">
+              <div className="px-2 md:px-5 py-4 text-center">
                 <span className="text-xs md:text-sm font-medium text-muted-foreground">Jasper</span>
+              </div>
+              <div className="px-2 md:px-5 py-4 text-center">
+                <span className="text-xs md:text-sm font-medium text-muted-foreground">Claude</span>
               </div>
             </div>
             {[
-              { feature: "RAG on your sources", supen: true, chatgpt: false, jasper: false },
-              { feature: "Personalized AI Coach", supen: true, chatgpt: false, jasper: false },
-              { feature: "Auto infographics", supen: true, chatgpt: false, jasper: false },
-              { feature: "Style memory", supen: true, chatgpt: false, jasper: false },
-              { feature: "Real viral scoring", supen: true, chatgpt: false, jasper: false },
-              { feature: "Real-time trends", supen: true, chatgpt: false, jasper: false },
-              { feature: "5 variations per topic", supen: true, chatgpt: false, jasper: true },
-              { feature: "Anti-AI detector", supen: true, chatgpt: false, jasper: false },
+              { feature: "RAG on your sources", supen: true, chatgpt: false, jasper: false, claude: false },
+              { feature: "Personalized AI Coach", supen: true, chatgpt: false, jasper: false, claude: false },
+              { feature: "Auto infographics", supen: true, chatgpt: false, jasper: false, claude: false },
+              { feature: "Style memory", supen: true, chatgpt: false, jasper: false, claude: false },
+              { feature: "Real viral scoring", supen: true, chatgpt: false, jasper: false, claude: false },
+              { feature: "Real-time trends", supen: true, chatgpt: false, jasper: false, claude: false },
+              { feature: "5 variations per topic", supen: true, chatgpt: false, jasper: true, claude: false },
+              { feature: "Anti-AI detector", supen: true, chatgpt: false, jasper: false, claude: false },
             ].map((row, i) => (
-              <div key={i} className={cn("grid grid-cols-4 border-b border-border/15 last:border-b-0", i % 2 === 0 ? "bg-background" : "bg-accent/[0.03]")}>
-                <div className="px-3 md:px-5 py-3.5 text-xs md:text-sm font-medium text-foreground/85">{row.feature}</div>
-                <div className="px-3 md:px-5 py-3.5 flex items-center justify-center">
+              <div key={i} className={cn("grid grid-cols-5 border-b border-border/15 last:border-b-0", i % 2 === 0 ? "bg-background" : "bg-accent/[0.03]")}>
+                <div className="px-2 md:px-5 py-3.5 text-xs md:text-sm font-medium text-foreground/85">{row.feature}</div>
+                <div className="px-2 md:px-5 py-3.5 flex items-center justify-center">
                   {row.supen ? (
                     <div className="w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center">
                       <Check className="w-3 h-3 text-primary" />
@@ -453,52 +444,25 @@ const Index = () => {
                     <XIcon className="w-4 h-4 text-muted-foreground/30" />
                   )}
                 </div>
-                <div className="px-3 md:px-5 py-3.5 flex items-center justify-center">
+                <div className="px-2 md:px-5 py-3.5 flex items-center justify-center">
                   {row.chatgpt ? <Check className="w-4 h-4 text-emerald-400" /> : <XIcon className="w-4 h-4 text-muted-foreground/30" />}
                 </div>
-                <div className="px-3 md:px-5 py-3.5 flex items-center justify-center">
+                <div className="px-2 md:px-5 py-3.5 flex items-center justify-center">
                   {row.jasper ? <Check className="w-4 h-4 text-emerald-400" /> : <XIcon className="w-4 h-4 text-muted-foreground/30" />}
+                </div>
+                <div className="px-2 md:px-5 py-3.5 flex items-center justify-center">
+                  {row.claude ? <Check className="w-4 h-4 text-emerald-400" /> : <XIcon className="w-4 h-4 text-muted-foreground/30" />}
                 </div>
               </div>
             ))}
-            <div className="grid grid-cols-4 bg-accent/30 border-t-2 border-primary/20">
-              <div className="px-3 md:px-5 py-4 text-xs md:text-sm font-bold">Monthly price</div>
-              <div className="px-3 md:px-5 py-4 text-center text-sm font-bold text-primary">$10</div>
-              <div className="px-3 md:px-5 py-4 text-center text-sm text-muted-foreground">$20</div>
-              <div className="px-3 md:px-5 py-4 text-center text-sm text-muted-foreground">$49</div>
+            <div className="grid grid-cols-5 bg-accent/30 border-t-2 border-primary/20">
+              <div className="px-2 md:px-5 py-4 text-xs md:text-sm font-bold">Monthly price</div>
+              <div className="px-2 md:px-5 py-4 text-center text-sm font-bold text-primary">$11</div>
+              <div className="px-2 md:px-5 py-4 text-center text-sm text-muted-foreground">$20</div>
+              <div className="px-2 md:px-5 py-4 text-center text-sm text-muted-foreground">$49</div>
+              <div className="px-2 md:px-5 py-4 text-center text-sm text-muted-foreground">$20</div>
             </div>
           </motion.div>
-        </div>
-      </section>
-
-      {/* ═══════════ HOW IT WORKS ═══════════ */}
-      <section id="how-it-works" className="py-24 px-6 bg-card/30">
-        <div className="max-w-5xl mx-auto">
-          <motion.div className="text-center mb-16"
-            initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }} transition={{ duration: 0.5 }}
-          >
-            <span className="text-xs text-primary font-semibold uppercase tracking-widest">How it works</span>
-            <h2 className="text-3xl md:text-4xl font-bold mt-3 mb-4">From idea to <span className="text-gradient">viral post</span> in 3 steps</h2>
-          </motion.div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {steps.map((s, i) => (
-              <motion.div
-                key={s.num}
-                initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }} transition={{ delay: i * 0.12, duration: 0.4 }}
-                className="relative text-center"
-              >
-                <div className="text-5xl font-black text-primary/10 mb-3">{s.num}</div>
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <s.icon className="w-5 h-5 text-primary" />
-                </div>
-                <h3 className="text-base font-semibold mb-2">{s.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
-              </motion.div>
-            ))}
-          </div>
         </div>
       </section>
 
@@ -554,15 +518,14 @@ const Index = () => {
           {/* Stats headline */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">
             {[
-              { num: "260K+", label: "Likes", platform: "Facebook" },
-              { num: "850M+", label: "Views", platform: "X (Twitter)" },
-              { num: "50K", label: "Shares", platform: "Facebook" },
-              { num: "8,810", label: "Reactions", platform: "LinkedIn" },
+              { num: "260K+", label: "Likes" },
+              { num: "850M+", label: "Views" },
+              { num: "50K", label: "Shares" },
+              { num: "8,810", label: "Reactions" },
             ].map((s, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }}
                 className="bg-foreground/[0.03] border border-foreground/[0.06] rounded-xl p-5 hover:border-primary/30 transition-colors relative"
               >
-                <span className="absolute top-3 right-3 text-[9px] text-muted-foreground/40">{s.platform}</span>
                 <p className="text-3xl font-bold text-primary tracking-tight">{s.num}</p>
                 <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
               </motion.div>
@@ -686,9 +649,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* ═══════════ WAITLIST ═══════════ */}
-      <WaitlistSection />
-
       {/* ═══════════ FAQ ═══════════ */}
       <section id="faq" className="py-24 px-6">
         <div className="max-w-2xl mx-auto">
@@ -769,9 +729,9 @@ const Index = () => {
                 AI-powered content creation platform for creators who want to sound human.
               </p>
               <div className="flex gap-3">
-                <a href="https://x.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors"><Twitter className="w-4 h-4" /></a>
-                <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors"><Linkedin className="w-4 h-4" /></a>
-                <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors"><Instagram className="w-4 h-4" /></a>
+                <a href="https://x.com/tawohawa" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors"><Twitter className="w-4 h-4" /></a>
+                <a href="https://www.linkedin.com/in/awa-k-penn" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors"><Linkedin className="w-4 h-4" /></a>
+                <a href="https://www.instagram.com/awakpenn" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors"><Instagram className="w-4 h-4" /></a>
               </div>
             </div>
 
@@ -790,7 +750,7 @@ const Index = () => {
               <h4 className="text-sm font-semibold mb-3">Resources</h4>
               <ul className="space-y-2 text-xs text-muted-foreground">
                 <li><a href="/contact" onClick={(e) => { e.preventDefault(); navigate("/contact"); }} className="hover:text-foreground transition-colors">Contact</a></li>
-                <li><a href="mailto:support@supenli.ai" className="hover:text-foreground transition-colors">Support</a></li>
+                <li><a href="mailto:pennsunjo@gmail.com" className="hover:text-foreground transition-colors">Support</a></li>
               </ul>
             </div>
 

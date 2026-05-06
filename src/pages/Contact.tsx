@@ -119,8 +119,8 @@ export default function Contact() {
                 <Mail className="w-4 h-4 text-primary" />
                 <h3 className="text-sm font-semibold">Email</h3>
               </div>
-              <a href="mailto:support@supenli.ai" className="text-sm text-primary hover:underline">
-                support@supenli.ai
+              <a href="mailto:pennsunjo@gmail.com" className="text-sm text-primary hover:underline">
+                pennsunjo@gmail.com
               </a>
             </div>
 

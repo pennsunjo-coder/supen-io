@@ -73,7 +73,7 @@ export default function Terms() {
           <section>
             <h2 className="text-xl font-semibold text-foreground mb-4">6. Payment & Billing</h2>
             <ul className="list-disc list-inside space-y-1.5 ml-2">
-              <li>Paid plans (Pro and Business) are billed monthly via Stripe.</li>
+              <li>Paid plans (Pro and Plus) are billed monthly via Stripe.</li>
               <li>You can cancel your subscription at any time — access continues until the end of the billing period.</li>
               <li>Refunds are handled on a case-by-case basis within 14 days of purchase.</li>
               <li>Prices may change with 30 days notice to existing subscribers.</li>

@@ -27,8 +27,8 @@ const FAQS = [
     a: "Yes! The free plan includes access to the YouTube Transcriber tool (unlimited), 5 content generations per day, and basic source management. It's perfect for trying out the platform and seeing the quality of our output before committing to a paid plan.",
   },
   {
-    q: "What's included in Pro and Business plans?",
-    a: "Pro ($10/month) unlocks unlimited generations, all 6 platforms, advanced Anti-AI protocol, content history, and priority support. Business ($29/month) adds team collaboration, API access, custom brand voice profiles, advanced analytics, and a dedicated account manager.",
+    q: "What's included in Pro and Plus plans?",
+    a: "Plus ($11/month) unlocks 100 generations per month, all 6 platforms, advanced Anti-AI protocol, content history, and priority support. Pro ($30/month) adds team collaboration, API access, custom brand voice profiles, advanced analytics, and a dedicated account manager.",
   },
   {
     q: "Can I cancel my subscription anytime?",
