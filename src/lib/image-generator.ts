@@ -68,6 +68,97 @@ export async function generateContentImage(
 // Alias for clarity at call sites
 export const generateIllustration = generateContentImage;
 
+// ─── Custom-prompt image generation ───
+//
+// Lets the user write their OWN prompt instead of having one auto-built
+// from the post content. We still wrap their prompt in light style and
+// safety guardrails so the output stays consistent with the rest of the
+// app (no text in the image, square aspect, clean illustration look),
+// but the creative direction comes from the user.
+
+export async function generateImageFromPrompt(
+  userPrompt: string,
+  platform?: string,
+): Promise<string | null> {
+  if (!GEMINI_API_KEY) return null;
+  const cleaned = userPrompt.trim();
+  if (cleaned.length < 4) return null;
+
+  const wrappedPrompt = buildCustomPromptWrapper(cleaned, platform);
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 120_000);
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: wrappedPrompt }] }],
+          generationConfig: {
+            responseModalities: ["IMAGE", "TEXT"],
+          },
+        }),
+        signal: controller.signal,
+      },
+    );
+    clearTimeout(timeoutId);
+    if (!response.ok) {
+      if (IS_DEV) {
+        const errText = await response.text().catch(() => "");
+        console.warn("[image-generator] custom prompt HTTP", response.status, errText);
+      }
+      return null;
+    }
+    const data = await response.json();
+    const imagePart = data.candidates?.[0]?.content?.parts
+      ?.find((p: { inlineData?: { mimeType?: string; data?: string } }) =>
+        p.inlineData?.mimeType?.startsWith("image/"));
+    return imagePart?.inlineData?.data || null;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (IS_DEV) console.warn("[image-generator] custom prompt error:", err);
+    return null;
+  }
+}
+
+function buildCustomPromptWrapper(userPrompt: string, platform?: string): string {
+  const platformHint = platform === "LinkedIn"
+    ? "Square format, professional editorial look suitable for a LinkedIn feed."
+    : platform === "Instagram"
+      ? "Square format (1:1), vivid and feed-friendly for Instagram."
+      : platform === "X (Twitter)"
+        ? "Square format, clean and punchy for X/Twitter."
+        : platform === "TikTok"
+          ? "Square format, bold and attention-grabbing for a TikTok thumbnail."
+          : platform === "Facebook"
+            ? "Square format, warm and relatable for a Facebook post."
+            : "Square format (1:1), social-media-ready.";
+
+  return `Generate a single high-quality image based on the user's description below.
+
+USER DESCRIPTION (follow this verbatim — this is the creative direction):
+"""
+${userPrompt}
+"""
+
+OUTPUT REQUIREMENTS:
+- ${platformHint}
+- ONE clear focal subject — no cluttered, multi-scene compositions.
+- High-quality rendering. Clean composition. Premium aesthetic.
+
+ABSOLUTELY FORBIDDEN:
+- NO text, letters, words, captions, or watermarks anywhere in the image.
+- NO infographic layout, charts, tables, or numbered sections.
+- NO realistic human faces with identifiable features (use silhouette / abstract / from behind if a person is needed).
+- NO copyrighted logos or brand marks unless the user explicitly named a real public-domain reference.
+- NO sexual, violent, or harmful content.
+
+Generate the image now.`;
+}
+
 // ─── Prompt builder ───
 
 /**

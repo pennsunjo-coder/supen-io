@@ -1131,6 +1131,11 @@ ${buildAntiAiRules(tightness)}`;
   const [imagePanel, setImagePanel] = useState<number | null>(null);
   const [imageGenerating, setImageGenerating] = useState<number | null>(null);
   const [generatedImages, setGeneratedImages] = useState<Record<number, string>>({});
+  // Custom-prompt image generation (available on every platform/format)
+  const [customImagePanel, setCustomImagePanel] = useState<number | null>(null);
+  const [customImagePrompts, setCustomImagePrompts] = useState<Record<number, string>>({});
+  const [customImageGenerating, setCustomImageGenerating] = useState<number | null>(null);
+  const [customImages, setCustomImages] = useState<Record<number, string>>({});
   const [infraPanel, setInfraPanel] = useState<number | null>(null);
   const [infraContent, setInfraContent] = useState("");
   const [genInfra, setGenInfra] = useState(false);
@@ -1219,6 +1224,39 @@ ${buildAntiAiRules(tightness)}`;
     }
 
     setImageGenerating(null);
+  }
+
+  // Toggle the custom-prompt image panel for a given variation.
+  function toggleCustomImagePanel(idx: number) {
+    setCustomImagePanel((prev) => (prev === idx ? null : idx));
+    setImagePanel(null);
+    setInfraPanel(null);
+  }
+
+  // Generate an image FROM the user-provided prompt. Distinct from
+  // handleGenerateImage which auto-builds a prompt from the post content.
+  async function handleCustomImageGenerate(idx: number) {
+    if (customImageGenerating !== null) return;
+    const prompt = (customImagePrompts[idx] || "").trim();
+    if (prompt.length < 4) {
+      toast.error("Describe the image you want (at least a few words).");
+      return;
+    }
+    setCustomImageGenerating(idx);
+    try {
+      const { generateImageFromPrompt } = await import("@/lib/image-generator");
+      const base64 = await generateImageFromPrompt(prompt, selectedPlatform?.name || "Instagram");
+      if (base64) {
+        setCustomImages((prev) => ({ ...prev, [idx]: base64 }));
+        toast.success("Image generated from your prompt!");
+      } else {
+        toast.error("Could not generate that image. Try a different prompt.");
+      }
+    } catch {
+      toast.error("Custom image generation failed.");
+    } finally {
+      setCustomImageGenerating(null);
+    }
   }
 
   async function handleInfraPrompt(idx: number) {
@@ -1639,6 +1677,24 @@ ${buildAntiAiRules(tightness)}`;
                                 <Layers className="w-3 h-3" /> Infographic
                               </Button>
                             )}
+                            {/* Custom image — available for ALL platforms/formats, not gated */}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={cn(
+                                "h-7 text-[11px] gap-1.5 px-2.5",
+                                customImagePanel === idx
+                                  ? "text-primary"
+                                  : customImages[idx]
+                                    ? "text-emerald-400"
+                                    : "text-muted-foreground hover:text-foreground",
+                              )}
+                              onClick={(e) => { e.stopPropagation(); toggleCustomImagePanel(idx); }}
+                              title="Generate an image from your own prompt"
+                            >
+                              <Sparkles className="w-3 h-3" />
+                              {customImages[idx] && customImagePanel !== idx ? "View prompt image" : "Custom image"}
+                            </Button>
                             <Button variant="ghost" size="sm" className="h-7 text-[11px] gap-1.5 px-2.5 text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); setScheduleIdx(idx); setScheduleDate(new Date().toISOString().slice(0, 10)); }}>
                               <CalendarDays className="w-3 h-3" /> Schedule
                             </Button>
@@ -1669,6 +1725,78 @@ ${buildAntiAiRules(tightness)}`;
                                   <p className="text-[10px] text-muted-foreground/50 mt-2 text-center">AI-generated image — adapted to this post's content</p>
                                 </>
                               ) : null}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+
+                      {/* Custom-prompt image panel — visible across every platform */}
+                      <AnimatePresence>
+                        {customImagePanel === idx && isSelected && (
+                          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.15 }}>
+                            <div className="mt-1 p-3 rounded-lg bg-accent/20 border border-border/15 space-y-2.5">
+                              <div className="flex items-center gap-2">
+                                <Sparkles className="w-3 h-3 text-primary" />
+                                <p className="text-[11px] font-medium text-foreground/80">Generate an image from your own prompt</p>
+                              </div>
+                              <textarea
+                                value={customImagePrompts[idx] || ""}
+                                onChange={(e) => setCustomImagePrompts((prev) => ({ ...prev, [idx]: e.target.value }))}
+                                onClick={(e) => e.stopPropagation()}
+                                placeholder="Describe the image you want — e.g. 'A minimalist cup of coffee on a desk with a soft morning light, in editorial illustration style'"
+                                rows={3}
+                                maxLength={500}
+                                disabled={customImageGenerating === idx}
+                                className="w-full bg-background border border-border/30 rounded-md px-2.5 py-2 text-xs resize-none focus:outline-none focus:ring-1 focus:ring-primary/40 placeholder:text-muted-foreground/40 disabled:opacity-50"
+                              />
+                              <div className="flex items-center justify-between gap-2">
+                                <span className={cn(
+                                  "text-[10px] font-mono",
+                                  (customImagePrompts[idx] || "").length < 400
+                                    ? "text-muted-foreground/40"
+                                    : "text-amber-400/70",
+                                )}>
+                                  {(customImagePrompts[idx] || "").length}/500
+                                </span>
+                                <Button
+                                  size="sm"
+                                  className="h-7 text-[11px] gap-1.5 px-3"
+                                  disabled={customImageGenerating === idx || (customImagePrompts[idx] || "").trim().length < 4}
+                                  onClick={(e) => { e.stopPropagation(); handleCustomImageGenerate(idx); }}
+                                >
+                                  {customImageGenerating === idx ? (
+                                    <><Loader2 className="w-3 h-3 animate-spin" /> Generating...</>
+                                  ) : customImages[idx] ? (
+                                    <><RefreshCw className="w-3 h-3" /> Regenerate</>
+                                  ) : (
+                                    <><Sparkles className="w-3 h-3" /> Generate image</>
+                                  )}
+                                </Button>
+                              </div>
+                              {customImages[idx] && (
+                                <div className="relative rounded-xl overflow-hidden mt-2">
+                                  <img src={`data:image/jpeg;base64,${customImages[idx]}`} alt="Custom prompt image" className="w-full rounded-xl" />
+                                  <div className="absolute bottom-2 right-2 flex gap-2">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        const link = document.createElement("a");
+                                        link.href = `data:image/jpeg;base64,${customImages[idx]}`;
+                                        link.download = `supen-custom-${Date.now()}.jpg`;
+                                        link.click();
+                                      }}
+                                      className="bg-black/60 backdrop-blur-sm text-white text-[11px] px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:bg-black/80 transition-all"
+                                    >
+                                      <Download className="w-3 h-3" /> Download
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                              {!customImages[idx] && !customImageGenerating && (
+                                <p className="text-[10px] text-muted-foreground/50 leading-relaxed">
+                                  Tip: describe the subject, the mood, the style. Avoid asking for text inside the image — it rarely renders well.
+                                </p>
+                              )}
                             </div>
                           </motion.div>
                         )}
