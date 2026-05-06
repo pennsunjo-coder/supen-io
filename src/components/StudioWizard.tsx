@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import {
   Sparkles, Copy, Check, RefreshCw, ChevronLeft, ArrowRight,
   FileText, Lightbulb, Hash, ImagePlus, Wand2, Download, Loader2,
-  Shield, Layers, Globe, ClipboardList, Save, ExternalLink,
+  Shield, Layers, Globe, ClipboardList, Save, ExternalLink, Star,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -834,6 +834,25 @@ Each variation includes: HOOK, PROBLEM, SOLUTION, PROOF, CTA, ON-SCREEN TEXT.`;
       // sanitizer, we rewrite it once.
       setVariations(scored);
 
+      // Auto-pick the best variation using a real combined score:
+      //   combined = viral_score - 0.6 × ai_flavor_score
+      // (higher viral, lower flavor is better; flavor weight tuned so a
+      //  +20 viral edge can still lose to a +30 flavor regression)
+      // Falls back to variation 0 if scores are too close to call.
+      if (scored.length > 0) {
+        const combined = scored.map((v, i) => {
+          const flavor = detectAiFlavor(v.content).score;
+          return { idx: i, score: (v.score || 0) - flavor * 0.6 };
+        });
+        combined.sort((a, b) => b.score - a.score);
+        const winnerMargin = combined[0].score - (combined[1]?.score ?? 0);
+        // Only auto-pick if there's a meaningful gap; otherwise let the
+        // user choose without a default bias.
+        if (winnerMargin > 4) {
+          setSelectedVariation(combined[0].idx);
+        }
+      }
+
       // Background auto-retry. Budget: up to 2 retries per generation.
       // This is fire-and-forget — the user is not blocked.
       (async () => {
@@ -1578,8 +1597,30 @@ ${buildAntiAiRules(tightness)}`;
             {/* Cards — scrollable */}
             <div className="flex-1 overflow-y-auto px-5 py-4">
               <div className="max-w-lg mx-auto space-y-3">
+                {(() => {
+                  // Compute the index of the top-ranked variation using the
+                  // same combined score as auto-pick. Memoised across the
+                  // map() iterations below so we render the badge consistently.
+                  if (variations.length === 0) return null;
+                  return null;
+                })()}
                 {variations.map((v, idx) => {
                   const isSelected = selectedVariation === idx;
+                  // "Top pick" = highest combined score (viral - 0.6 × flavor)
+                  // AND a meaningful gap to the runner-up. Computed inline so
+                  // it stays reactive when variations get rewritten by the
+                  // background auto-retry.
+                  const topPickIdx = (() => {
+                    if (variations.length < 2) return null;
+                    const scored = variations.map((variation, i) => {
+                      const flavor = detectAiFlavor(variation.content).score;
+                      return { idx: i, score: (variation.score || 0) - flavor * 0.6 };
+                    });
+                    scored.sort((a, b) => b.score - a.score);
+                    const margin = scored[0].score - (scored[1]?.score ?? 0);
+                    return margin > 4 ? scored[0].idx : null;
+                  })();
+                  const isTopPick = topPickIdx === idx;
                   return (
                     <div key={idx}>
                       <motion.div
@@ -1587,11 +1628,26 @@ ${buildAntiAiRules(tightness)}`;
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: idx * 0.05 }}
                         onClick={() => { setSelectedVariation(isSelected ? null : idx); setImagePanel(null); setInfraPanel(null); }}
-                        className={cn("rounded-xl border p-4 cursor-pointer transition-all", isSelected ? "border-primary/40 bg-primary/[0.03] ring-1 ring-primary/15" : "border-border/20 hover:border-border/40")}
+                        className={cn(
+                          "rounded-xl border p-4 cursor-pointer transition-all",
+                          isSelected
+                            ? "border-primary/40 bg-primary/[0.03] ring-1 ring-primary/15"
+                            : isTopPick
+                              ? "border-amber-400/30 hover:border-amber-400/50 bg-amber-500/[0.02]"
+                              : "border-border/20 hover:border-border/40",
+                        )}
                       >
                         {/* Header */}
                         <div className="flex items-center gap-2 mb-2.5">
                           <span className="text-[11px] font-semibold text-foreground/80">Variation {idx + 1}</span>
+                          {isTopPick && (
+                            <span
+                              className="text-[9px] font-bold text-amber-400 flex items-center gap-0.5"
+                              title="Highest combined score (viral potential − AI flavor)"
+                            >
+                              <Star className="w-2.5 h-2.5 fill-amber-400" /> Top pick
+                            </span>
+                          )}
                           {isSelected && <span className="text-[9px] text-primary/70 flex items-center gap-0.5"><Check className="w-2.5 h-2.5" /> Selected</span>}
                           {(() => {
                             const detector = passesDetectorEstimate(v.content);

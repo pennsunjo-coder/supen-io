@@ -63,7 +63,23 @@ const SOURCES = [
   "Newsletter", "YouTube", "Other",
 ];
 
-const TOTAL_STEPS = 4;
+// Voice profile options. Captured at signup so the style-memory block
+// has signal from generation #1, before the user has copied / liked
+// anything that getUserStyleMemory could draw from.
+const TONES: { id: string; label: string; description: string }[] = [
+  { id: "casual", label: "Casual", description: "Friendly, conversational, contractions everywhere." },
+  { id: "direct", label: "Direct", description: "Punchy, no fluff, strong opinions stated plainly." },
+  { id: "professional", label: "Professional", description: "Clean, credible, balanced. Good for B2B." },
+  { id: "authoritative", label: "Authoritative", description: "Expert voice, data-heavy, no hedging." },
+];
+
+const LENGTHS: { id: string; label: string; description: string }[] = [
+  { id: "short", label: "Short & punchy", description: "Tight hooks, one idea per post." },
+  { id: "medium", label: "Medium", description: "Hook + 3-5 beats + CTA. The default." },
+  { id: "long", label: "Long-form", description: "Stories, frameworks, deep breakdowns." },
+];
+
+const TOTAL_STEPS = 5;
 
 const CONFETTI_COLORS = ["#818cf8", "#34d399", "#f472b6", "#fbbf24", "#60a5fa", "#a78bfa", "#fb923c", "#e879f9"];
 
@@ -91,11 +107,13 @@ const Onboarding = () => {
   const { user } = useAuth();
   const { updateProfile, onboardingCompleted, loading: profileLoading } = useProfile();
 
-  const [step, setStep] = useState(0); // 0=welcome, 1=name, 2=platforms, 3=niche, 4=source, 5=success
+  const [step, setStep] = useState(0); // 0=welcome, 1=name, 2=platforms, 3=niche, 4=voice, 5=source, 6=success
   const [firstName, setFirstName] = useState("");
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [niche, setNiche] = useState("");
   const [customNiche, setCustomNiche] = useState("");
+  const [preferredTone, setPreferredTone] = useState("");
+  const [preferredLength, setPreferredLength] = useState("");
   const [sourcePlatform, setSourcePlatform] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -130,13 +148,17 @@ const Onboarding = () => {
     setSaveError(null);
 
     const finalNiche = niche === "Other" ? customNiche || "Other" : niche;
-    const payload = {
+    const payload: Record<string, unknown> = {
       first_name: firstName.trim(),
       platforms: selectedPlatforms,
       source_platform: sourcePlatform || "Not specified",
       niche: finalNiche,
       onboarding_completed: true,
     };
+    // Voice profile — best-effort, only sent if columns exist on the
+    // server. updateProfile already gracefully handles unknown keys.
+    if (preferredTone) payload.preferred_tone = preferredTone;
+    if (preferredLength) payload.preferred_length = preferredLength;
 
     let result = { success: false, error: "Not connected" as string | null };
     for (let attempt = 0; attempt < 3; attempt++) {
@@ -161,13 +183,13 @@ const Onboarding = () => {
 
     setCompleted(true);
     setDirection(1);
-    setStep(5);
+    setStep(6);
     setTimeout(() => setShowFinalButton(true), 1800);
   }
 
-  // Progress for steps 1-4 (welcome=0 and success=5 don't count)
+  // Progress for steps 1-5 (welcome=0 and success=6 don't count)
   const progressStep = Math.max(0, Math.min(step - 1, TOTAL_STEPS));
-  const progress = step === 0 ? 0 : step >= 5 ? 100 : (progressStep / TOTAL_STEPS) * 100;
+  const progress = step === 0 ? 0 : step >= 6 ? 100 : (progressStep / TOTAL_STEPS) * 100;
 
   const slideVariants = {
     enter: (d: number) => ({ opacity: 0, x: d > 0 ? 60 : -60 }),
@@ -181,7 +203,7 @@ const Onboarding = () => {
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/[0.03] rounded-full blur-3xl pointer-events-none" />
 
       {/* Progress bar */}
-      {step > 0 && step < 5 && (
+      {step > 0 && step < 6 && (
         <div className="fixed top-0 left-0 right-0 z-50">
           <div className="h-1 bg-white/5">
             <motion.div
@@ -459,6 +481,93 @@ const Onboarding = () => {
           {/* ═══ Step 4 — Decouverte (optionnel) ═══ */}
           {step === 4 && (
             <motion.div
+              key="voice"
+              custom={direction}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.3, ease: "easeOut" }}
+            >
+              <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-8 backdrop-blur-sm">
+                <h1 className="text-2xl font-bold text-white mb-2">What does your voice sound like?</h1>
+                <p className="text-sm text-white/40 mb-6">Two quick taps. We use this from your very first generation.</p>
+
+                <div className="space-y-5">
+                  <div>
+                    <p className="text-xs text-white/50 uppercase tracking-wider mb-2.5">Tone</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {TONES.map((t) => {
+                        const active = preferredTone === t.id;
+                        return (
+                          <button
+                            key={t.id}
+                            type="button"
+                            onClick={() => setPreferredTone(t.id)}
+                            className={cn(
+                              "text-left px-4 py-3 rounded-xl border text-sm font-medium transition-all",
+                              active
+                                ? "border-primary/50 bg-primary/10 text-white"
+                                : "border-white/8 bg-white/[0.02] text-white/60 hover:text-white/80 hover:bg-white/[0.04]",
+                            )}
+                          >
+                            <div className="text-sm font-semibold">{t.label}</div>
+                            <div className="text-[11px] text-white/40 mt-0.5 leading-snug">{t.description}</div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-xs text-white/50 uppercase tracking-wider mb-2.5">Length</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      {LENGTHS.map((l) => {
+                        const active = preferredLength === l.id;
+                        return (
+                          <button
+                            key={l.id}
+                            type="button"
+                            onClick={() => setPreferredLength(l.id)}
+                            className={cn(
+                              "text-left px-4 py-3 rounded-xl border text-sm font-medium transition-all",
+                              active
+                                ? "border-primary/50 bg-primary/10 text-white"
+                                : "border-white/8 bg-white/[0.02] text-white/60 hover:text-white/80 hover:bg-white/[0.04]",
+                            )}
+                          >
+                            <div className="text-sm font-semibold">{l.label}</div>
+                            <div className="text-[11px] text-white/40 mt-0.5 leading-snug">{l.description}</div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 mt-7">
+                  <Button
+                    variant="outline"
+                    onClick={goNext}
+                    className="flex-1 h-12 font-medium rounded-xl border-white/10 text-white/60 hover:text-white bg-white/[0.03]"
+                  >
+                    Skip
+                  </Button>
+                  <Button
+                    onClick={goNext}
+                    disabled={!preferredTone || !preferredLength}
+                    className="flex-1 h-12 gap-2 font-semibold rounded-xl"
+                  >
+                    Continue <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ═══ Step 5 — Source ═══ */}
+          {step === 5 && (
+            <motion.div
               key="source"
               custom={direction}
               variants={slideVariants}
@@ -513,8 +622,8 @@ const Onboarding = () => {
             </motion.div>
           )}
 
-          {/* ═══ Step 5 — Succes ═══ */}
-          {step === 5 && (
+          {/* ═══ Step 6 — Succes ═══ */}
+          {step === 6 && (
             <motion.div
               key="success"
               initial={{ opacity: 0, scale: 0.9 }}

@@ -921,7 +921,81 @@ AVOID:
 - Single-column vertical layout — this is a MATRIX, not a list
 - Generic stock icons unrelated to the cell topic
 - Cut-off words, orphan letters, rasterised type
-- Title and body of the same cell repeating the same words`;
+- Title and body of the same cell repeating the same words
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+REFERENCE EXAMPLE — match this density, hierarchy, and module mix
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Here is the type of layout this prompt expects. Imitate the
+DENSITY, the MODULE MIX, and the typography hierarchy. Do NOT copy
+the topic or the words — those come from the CONTENT TO RENDER block
+above. This example exists only to show you what "premium dashboard"
+looks like.
+
+[Cream background. Title at top: "BUILD A 7-FIGURE FACELESS YOUTUBE
+CHANNEL" in big handwritten bold, double-orange underline.
+Subtitle in small italic: "THE COMPLETE PLAYBOOK".]
+
+Cell 1 (top-left, blue) — "BUSINESS MODELS":
+  Mini grid of 4 brand-style logos with names underneath
+  (Cash Cow, Faceless Channel, Stock Footage, AI-Generated).
+  Each has a one-line note: "passive income", "evergreen",
+  "low effort", "fastest growth 2025".
+
+Cell 2 (top-right, red) — "PYRAMID OF VALUE":
+  Pyramid in 4 ascending tiers, color-coded:
+    Top — "Brand deals ($10k+)"
+    Mid-high — "Course / digital product"
+    Mid-low — "Affiliate revenue"
+    Base — "Ad revenue (RPM 2-15$)"
+  Each tier labeled to the right with a short metric.
+
+Cell 3 (mid-left, orange) — "5-STEP STARTING PROCESS":
+  Numbered hand-drawn boxes 1 → 2 → 3 → 4 → 5 connected by
+  arrows. Each box has 1 sentence:
+    1 — Pick a niche with $5+ RPM (use VidIQ).
+    2 — Steal 10 viral titles, spin angles in ChatGPT.
+    3 — Generate B-roll in Pictory or InVideo.
+    4 — Voice-over via ElevenLabs (free up to 10k chars).
+    5 — Upload + thumbnail in TubeBuddy. Repeat 3×/week.
+
+Cell 4 (mid-right, purple) — "TOP 5 NICHES 2025":
+  A short numbered list, each line: niche → estimated RPM.
+    1. Personal finance — $15-30 RPM
+    2. Tech reviews — $10-20 RPM
+    3. Real estate — $8-18 RPM
+    4. Health & supplements — $7-12 RPM
+    5. AI tutorials — $5-10 RPM
+
+Cell 5 (bottom-left, green) — "CHECKLIST: BEFORE YOU UPLOAD":
+  6 checkbox boxes with imperative phrases:
+    ☐ 60-character title that promises a payoff
+    ☐ Thumbnail with one face / one number / one contrast
+    ☐ 3 retention hooks in the first 30 seconds
+    ☐ End-screen with "watch this next" link
+    ☐ Pinned comment with affiliate link
+    ☐ Share to community tab + Reddit + Twitter
+
+Cell 6 (bottom-right, teal) — "PRO TIP":
+  A speech-bubble shape. Bold short headline "THE 1% MOVE":
+    "Re-upload your top-3 thumbnails after 14 days. YouTube
+     re-tests CTR. We've seen 3-5× lift with no other change."
+  Tiny micro-copy at the corner: "← test on Sunday at 9pm".
+
+Hand-drawn connector arrows between Cell 3 and Cell 5
+(annotation: "ship cycle"), and between Cell 4 and Cell 1
+(annotation: "pick yours →").
+
+Yellow highlighter on key words in each cell:
+"$10k+", "VidIQ", "ElevenLabs", "RPM", "retention", "1% MOVE".
+
+Footer: a hand-drawn line + "Follow @awakpenn for more |
+Save & Repost" + a small star.
+
+End of reference. Now generate the image for the user's content
+above, imitating this DENSITY and MODULE MIX, with the user's
+actual topic and cells.`;
   }
 
   // ── PROCESS_STEPS ──
