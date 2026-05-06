@@ -27,7 +27,10 @@ export type LinkedinStructure =
   | "tool_breakdown"    // "Claude Code is 48 tools in one"
   | "install_guide"     // "Claude Code usually costs $100/month. Run it free locally"
   | "founder_story"     // "I (secretly) became a SaaS founder"
-  | "contrarian_hack";  // "You don't need to learn to code anymore"
+  | "contrarian_hack"   // "You don't need to learn to code anymore"
+  | "myth_buster"       // ❌ OLD / ✅ NEW punchy 4-6 line variant
+  | "data_story"        // "[Big number] [audience] [stat]. Here's the N-step plan."
+  | "comparison_table"; // "You're paying for X. Y does it for free: ☑ ☑ ☑"
 
 export interface NicheHint {
   keywords: string[];
@@ -35,11 +38,11 @@ export interface NicheHint {
 }
 
 const NICHE_STRUCTURE_MAP: NicheHint[] = [
-  { keywords: ["ai", "gpt", "claude", "gemini", "tech", "tool", "software", "automation", "code"], preferredStructures: ["tool_tutorial", "level_up", "tool_breakdown", "install_guide", "contrarian_hack"] },
-  { keywords: ["marketing", "growth", "audience", "viral", "content", "creator", "linkedin", "followers"], preferredStructures: ["elements_framework", "process_deep_dive", "myth_busting", "contrarian_hack"] },
-  { keywords: ["business", "entrepreneur", "startup", "founder", "saas", "product"], preferredStructures: ["founder_story", "tool_breakdown", "process_deep_dive", "n_day_plan"] },
-  { keywords: ["career", "job", "skill", "learn", "education"], preferredStructures: ["n_day_plan", "level_up", "tool_tutorial", "contrarian_hack"] },
-  { keywords: ["finance", "invest", "money", "saving"], preferredStructures: ["myth_busting", "contrarian_hack", "install_guide"] },
+  { keywords: ["ai", "gpt", "claude", "gemini", "tech", "tool", "software", "automation", "code"], preferredStructures: ["tool_tutorial", "level_up", "tool_breakdown", "comparison_table", "contrarian_hack"] },
+  { keywords: ["marketing", "growth", "audience", "viral", "content", "creator", "linkedin", "followers"], preferredStructures: ["elements_framework", "data_story", "myth_buster", "process_deep_dive"] },
+  { keywords: ["business", "entrepreneur", "startup", "founder", "saas", "product"], preferredStructures: ["founder_story", "tool_breakdown", "comparison_table", "data_story"] },
+  { keywords: ["career", "job", "skill", "learn", "education"], preferredStructures: ["data_story", "level_up", "tool_tutorial", "contrarian_hack"] },
+  { keywords: ["finance", "invest", "money", "saving"], preferredStructures: ["myth_buster", "comparison_table", "contrarian_hack"] },
   { keywords: ["design", "infographic", "visual", "brand"], preferredStructures: ["process_deep_dive", "elements_framework", "founder_story"] },
 ];
 
@@ -51,7 +54,7 @@ function detectNicheStructures(niche: string, content: string): LinkedinStructur
       matches.push(...hint.preferredStructures);
     }
   }
-  if (matches.length === 0) return ["tool_tutorial", "process_deep_dive", "contrarian_hack", "myth_busting"];
+  if (matches.length === 0) return ["tool_tutorial", "process_deep_dive", "contrarian_hack", "myth_buster", "data_story"];
   return Array.from(new Set(matches)).slice(0, 5);
 }
 
@@ -630,6 +633,111 @@ MANDATORY:
 - One copyable prompt template in quotes
 - Key insight reframe ("The secret is not X, it is Y")
 - Save-this line at the end
+`,
+
+  myth_buster: `
+STRUCTURE: "MYTH BUSTER (PUNCHY)"
+Reference: "Half of what experts say about [topic] is wrong"
+Target: 1,000-1,400 characters (sharper / shorter than myth_busting)
+
+HOOK (one direct line):
+"Half of what 'experts' say about [topic] is wrong."
+OR: "Most '[topic] best practices' are outdated."
+
+REALITY OPENER (one line + cited source):
+"Here's the reality: [data source — real publication / dataset name]"
+
+OLD vs NEW BLOCKS (4-6 pairs, no fluff):
+❌ OLD: [conventional wisdom in one line]
+✅ NEW: [reality in one line + specific stat or year]
+
+❌ OLD: [conventional wisdom]
+✅ NEW: [reality + stat]
+
+❌ OLD: [conventional wisdom]
+✅ NEW: [reality + stat]
+
+[Repeat 4-6 times total. Each pair on its own paragraph.]
+
+ENGAGEMENT QUESTION (final line):
+"Which myth were you still believing?"
+
+MANDATORY:
+- 4-6 OLD/NEW pairs — never fewer than 4, never more than 6
+- Each ✅ NEW line must include a specific stat OR a specific year
+- Cite a real source after the hook (publication, dataset, study)
+- Engagement question MUST be the last line — it drives 15+ word comments
+- Hook under 60 characters
+- No CTA other than the question (this format converts on comments, not links)
+`,
+
+  data_story: `
+STRUCTURE: "DATA STORY / ROADMAP"
+Reference: "[Big number] [audience] [surprising stat]. Here's the [N]-step plan."
+Target: 1,400-2,000 characters
+
+HOOK (shock stat → solution):
+"[Big number] [people / creators / audience] [surprising stat]."
+"Here's the [N]-step plan so you're not one of them:"
+
+DAY / STEP BLOCKS (5-7 days, each one specific tool):
+Day 1: [Specific action with named tool]
+Day 2: [Specific action with named tool]
+Day 3: [Specific action with named tool]
+Day 4: [Specific action with named tool]
+Day 5: [Specific action with named tool]
+
+Each day = ONE concrete action + ONE named tool. No vague verbs.
+Tools must be real: Claude, Gemini, NotebookLM, Notion, Lindy, Vislo.
+
+WHY IT WORKS (3 arrow data lines):
+↳ [Stat 1 with %]
+↳ [Stat 2 with %]
+↳ [Stat 3 with %]
+
+REPOST LINE (last line):
+"♻️ Repost this if your network needs this."
+
+MANDATORY:
+- Hook = real shock stat with specific big number ("87% of creators…")
+- Each day numbered + specific named tool (NEVER "an AI tool")
+- 3 arrow data lines as the proof block
+- Repost line is the final element — no P.S., no CTA after
+- Total 5-7 days (not 3, not 10)
+`,
+
+  comparison_table: `
+STRUCTURE: "COMPARISON / SWAP"
+Reference: "You're still paying for [old tool]. But [new tool] does it for free."
+Target: 800-1,200 characters (intentionally short — high scroll-stop)
+
+HOOK (the swap setup):
+"You're still paying for [old tool]."
+"But [new tool] does it for free:"
+
+CHECKBOX FEATURES (3-5 lines with ☑):
+☑ [Feature 1 — specific capability]
+☑ [Feature 2 — specific capability]
+☑ [Feature 3 — specific capability]
+☑ [Feature 4 — optional]
+☑ [Feature 5 — optional]
+
+PROOF LINE (one line):
+"And it's [free / $0 / $5/month] vs [old tool's price]."
+
+CTA (one line, link or action):
+"[Try it: URL]"
+OR: "Try it free: [link]"
+
+REPOST LINE (optional):
+"♻️ Repost this for someone still paying $[X]/month."
+
+MANDATORY:
+- Hook calls out a SPECIFIC named old tool ("Notion AI", "ChatGPT Plus", "Jasper")
+- New tool also named explicitly with URL
+- 3-5 ☑ feature lines — concise capability per line, no fluff
+- Price contrast on its own line ($X vs $0)
+- Whole post under 1,200 characters — this format works because it's scannable
 `,
 };
 

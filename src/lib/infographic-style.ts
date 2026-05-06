@@ -729,9 +729,25 @@ CRITICAL: Use ONLY the text above. Do NOT invent, paraphrase, or add unrelated g
 
   let formatHint = "Portrait format.";
   if (pl.includes("linkedin")) formatHint = "Portrait (1024x1536). LinkedIn-optimized.";
-  else if (pl.includes("facebook")) formatHint = "Square (1024x1024). Facebook-optimized.";
+  else if (pl.includes("facebook")) formatHint = "Square (1080x1080). Facebook-optimized.";
   else if (pl.includes("instagram")) formatHint = "Portrait (1024x1536). Instagram-optimized.";
   else if (pl.includes("twitter") || pl.includes("x (")) formatHint = "Landscape (1536x1024). X/Twitter-optimized.";
+
+  const isFacebook = pl.includes("facebook");
+  const facebookRules = isFacebook ? `
+
+FACEBOOK SPECIFIC RULES (override defaults — non-negotiable):
+- Square format 1080x1080px (NOT portrait, NOT landscape)
+- Larger text than LinkedIn — Facebook readers scroll faster, type must be bigger
+  (titles 44-56px, body 22-28px — increase by ~30% vs LinkedIn)
+- Maximum 5 sections (NOT 8) — fewer, denser blocks
+- Every word spell-checked — zero typos, zero hallucinated words
+- No repeated words anywhere on the canvas (no "Save Save", no "the the")
+- Complete sentences only — no truncated phrases, no orphan fragments
+- High contrast text on background — dark text on light, or vice-versa
+  (target WCAG AA: contrast ratio ≥ 4.5:1 for body, ≥ 3:1 for titles)
+- Single visual focal point per section — don't compete for attention
+- Square layout: 2x2 or 1+3 grid only (never 3+ rows of small text)` : "";
 
   const n = ext.points.length;
   const AVOID = "\n\nAVOID: blurry, cluttered, messy layout, too many colors, realistic photo, 3D render, low resolution, bad typography, misaligned text, dark background (unless dark template), generic stock photo style.";
@@ -766,11 +782,15 @@ CRITICAL: Use ONLY the text above. Do NOT invent, paraphrase, or add unrelated g
       ? sections.slice(0, 5)
       : ext.points.slice(0, 5).map(p => ({ header: p.split(' ').slice(0, 5).join(' ').toUpperCase(), bullets: [p] }));
 
+    const fbSectionCap = isFacebook ? 5 : 8;
+    const fbBranchSections = isFacebook ? mainSections.slice(0, 5) : mainSections;
     return `ABSOLUTE RULE: Fill 100% of canvas vertically and horizontally. NO white space at any edge. Background reaches ALL 4 edges.
 
 QUALITY — ZERO TOLERANCE:
 - Every word spelled correctly. No repeated phrases. No truncated text.
 - Perfect grammar. Dark text on light background. All sections complete.
+- Maximum ${fbSectionCap} sections.
+${facebookRules}
 
 STYLE — "HANDWRITTEN WHITEBOARD":
 Background: ${bgChoice}. Font: handwritten (Caveat/Patrick Hand).
@@ -797,8 +817,8 @@ CONTENT ANALYSIS — USE ALL OF THIS:
 
 MAIN TITLE: "${ext.title}"
 
-KEY SECTIONS (${mainSections.length}):
-${mainSections.map((s, i) => `Section ${i + 1}: "${s.header}"
+KEY SECTIONS (${fbBranchSections.length}):
+${fbBranchSections.map((s, i) => `Section ${i + 1}: "${s.header}"
 ${s.bullets.slice(0, 5).map(b => `• ${b}`).join('\n')}`).join('\n\n')}
 
 ${ext.stats.length > 0 ? `KEY STATISTICS:\n${ext.stats.map(s => `→ ${s}`).join('\n')}` : ''}

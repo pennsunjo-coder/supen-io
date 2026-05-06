@@ -339,9 +339,7 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
   function canGenerateInfographic(): boolean {
     const pl = selectedPlatform?.id?.toLowerCase() || "";
     const fmt = (selectedFormat || "").toLowerCase();
-    const allowedPlatform = pl.includes("linkedin") || pl.includes("facebook") || pl.includes("x") || pl === "x";
-    const allowedFormat = fmt.includes("post") || fmt.includes("thread") || fmt.includes("caption") || fmt.includes("tweet");
-    return allowedPlatform && allowedFormat;
+    return (pl.includes("linkedin") || pl.includes("facebook")) && fmt.includes("post");
   }
 
   function toggleDocumentId(id: string) {
@@ -1306,11 +1304,8 @@ Each variation includes: HOOK, PROBLEM, SOLUTION, PROOF, CTA, ON-SCREEN TEXT.`;
             {/* Cards — scrollable */}
             <div className="flex-1 overflow-y-auto px-5 py-4">
               <div className="max-w-lg mx-auto space-y-3">
-                {(() => { const bestIdx = variations.reduce((best, v, i) => v.score > variations[best].score ? i : best, 0); return null; })()}
                 {variations.map((v, idx) => {
                   const isSelected = selectedVariation === idx;
-                  const angleColor = ANGLE_COLORS[v.angle] || "bg-accent/40 text-muted-foreground";
-                  const isBestScore = v.score > 0 && v.score === Math.max(...variations.map(x => x.score));
                   return (
                     <div key={idx}>
                       <motion.div
@@ -1322,47 +1317,9 @@ Each variation includes: HOOK, PROBLEM, SOLUTION, PROOF, CTA, ON-SCREEN TEXT.`;
                       >
                         {/* Header */}
                         <div className="flex items-center gap-2 mb-2.5">
-                          <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded-full", angleColor)}>{v.angle}</span>
-                          {isBestScore && <span className="text-[9px] font-semibold text-amber-400">🔥 Top Pick</span>}
+                          <span className="text-[11px] font-semibold text-foreground/80">Variation {idx + 1}</span>
                           {isSelected && <span className="text-[9px] text-primary/70 flex items-center gap-0.5"><Check className="w-2.5 h-2.5" /> Selected</span>}
                           <span className="text-[10px] text-muted-foreground/50 ml-auto">{v.words} words</span>
-                          <div className="flex items-center gap-1.5 group/score relative">
-                            {v.scoring ? (
-                              <span className="text-[9px] text-muted-foreground/50 animate-pulse">Analyzing...</span>
-                            ) : (
-                              <>
-                                <div className="w-12 h-1.5 rounded-full bg-accent/30 overflow-hidden">
-                                  <motion.div
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${v.score}%` }}
-                                    transition={{ duration: 0.8, ease: "easeOut" }}
-                                    className={cn("h-full rounded-full", scoreBarColor(v.score))}
-                                  />
-                                </div>
-                                <span className={cn("text-[10px] font-semibold", scoreColor(v.score))}>{v.score}</span>
-                                {scoreBadge(v.score) && (
-                                  <span className="text-[8px] text-emerald-400/70 font-medium">{scoreBadge(v.score)}</span>
-                                )}
-                                {/* Score tooltip */}
-                                {v.scoreDetails && (
-                                  <div className="absolute right-0 top-full mt-1 z-50 hidden group-hover/score:block">
-                                    <div className="bg-card border border-border/30 rounded-lg shadow-xl p-3 w-52 text-[10px]">
-                                      <div className="space-y-1.5 mb-2">
-                                        <div className="flex justify-between"><span className="text-muted-foreground">Hook</span><span className="font-semibold">{v.scoreDetails.hook}/20</span></div>
-                                        <div className="flex justify-between"><span className="text-muted-foreground">Emotion</span><span className="font-semibold">{v.scoreDetails.emotion}/20</span></div>
-                                        <div className="flex justify-between"><span className="text-muted-foreground">Specificity</span><span className="font-semibold">{v.scoreDetails.specificity}/20</span></div>
-                                        <div className="flex justify-between"><span className="text-muted-foreground">Actionable</span><span className="font-semibold">{v.scoreDetails.actionable}/20</span></div>
-                                        <div className="flex justify-between"><span className="text-muted-foreground">CTA</span><span className="font-semibold">{v.scoreDetails.cta}/20</span></div>
-                                      </div>
-                                      {v.scoreDetails.feedback && (
-                                        <p className="text-muted-foreground/80 text-[9px] border-t border-border/20 pt-1.5">{v.scoreDetails.feedback}</p>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-                              </>
-                            )}
-                          </div>
                         </div>
                         <p className="text-[13px] leading-relaxed whitespace-pre-wrap text-foreground/85">{v.content}</p>
 
@@ -1483,12 +1440,12 @@ Each variation includes: HOOK, PROBLEM, SOLUTION, PROOF, CTA, ON-SCREEN TEXT.`;
                   );
                 })}
                 {/* ═══ INLINE INFOGRAPHIC SECTION ═══ */}
-                {saveStatus === "saved" && canGenerateInfographic() && (
+                {saveStatus === "saved" && canGenerateInfographic() && selectedVariation !== null && (
                   <div className="border-t border-border/20 mt-4 pt-4">
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="text-sm font-semibold flex items-center gap-2">
                         <Sparkles className="w-4 h-4 text-primary" />
-                        Infographic
+                        Infographic — Variation {selectedVariation + 1}
                       </h3>
                       {generatedInfographicBase64 && (
                         <div className="flex gap-1.5">
@@ -1610,15 +1567,16 @@ Each variation includes: HOOK, PROBLEM, SOLUTION, PROOF, CTA, ON-SCREEN TEXT.`;
       )}
 
       <InfographicModal
-        open={showInfographic}
+        open={showInfographic && selectedVariation !== null}
         onClose={() => setShowInfographic(false)}
-        content={variations[selectedVariation ?? 0]?.content || ""}
+        content={selectedVariation !== null ? variations[selectedVariation]?.content || "" : ""}
         platform={selectedPlatform?.name || ""}
-        contentId={variations[selectedVariation ?? 0]?.dbId}
+        contentId={selectedVariation !== null ? variations[selectedVariation]?.dbId : undefined}
         sessionId={currentSessionId || undefined}
-        existingHtml={infographics[selectedVariation ?? 0]}
+        existingHtml={selectedVariation !== null ? infographics[selectedVariation] : undefined}
         onGenerated={(html, base64) => {
-          const idx = selectedVariation ?? 0;
+          if (selectedVariation === null) return;
+          const idx = selectedVariation;
           setInfographics((prev) => ({ ...prev, [idx]: html }));
           if (base64) setGeneratedInfographicBase64(base64);
         }}
