@@ -31,17 +31,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setState({ user: session?.user ?? null, session, loading: false });
-    });
+    let cancelled = false;
+
+    // Safety timeout: never leave the app stuck on the auth-loading spinner.
+    // If getSession() hangs (network, blocked CORS, Supabase outage) we
+    // force loading=false after 6s so the login form becomes interactive.
+    const safetyTimeout = window.setTimeout(() => {
+      if (cancelled) return;
+      setState((prev) => (prev.loading ? { ...prev, loading: false } : prev));
+    }, 6000);
+
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        if (cancelled) return;
+        setState({ user: session?.user ?? null, session, loading: false });
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setState({ user: null, session: null, loading: false });
+      })
+      .finally(() => {
+        window.clearTimeout(safetyTimeout);
+      });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (cancelled) return;
       setState({ user: session?.user ?? null, session, loading: false });
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      cancelled = true;
+      window.clearTimeout(safetyTimeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signUp = async (

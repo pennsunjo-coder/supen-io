@@ -25,6 +25,7 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   if (authLoading) {
     return (
@@ -39,17 +40,37 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password.trim()) return;
+    if (loading) return;
     setLoading(true);
-    const { error } = isSignUp ? await signUp(email, password) : await signIn(email, password);
-    setLoading(false);
-    if (error) { toast.error(error); return; }
-    if (isSignUp) toast.success("Account created! Check your email to confirm.");
-    else navigate("/dashboard");
+    try {
+      const { error } = isSignUp ? await signUp(email, password) : await signIn(email, password);
+      if (error) {
+        toast.error(error);
+        return;
+      }
+      if (isSignUp) toast.success("Account created! Check your email to confirm.");
+      else navigate("/dashboard");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Unexpected error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGoogleLogin = async () => {
-    const { error } = await signInWithGoogle();
-    if (error) toast.error(error);
+    if (googleLoading) return;
+    setGoogleLoading(true);
+    try {
+      const { error } = await signInWithGoogle();
+      if (error) {
+        toast.error(error);
+        setGoogleLoading(false);
+      }
+      // success: browser is redirecting to Google; keep spinner until unload
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Google sign-in failed.");
+      setGoogleLoading(false);
+    }
   };
 
   return (
@@ -90,8 +111,15 @@ const Login = () => {
           variant="outline"
           className="w-full h-11 gap-2.5 text-sm border-border/40 hover:bg-accent/40 mb-5"
           onClick={handleGoogleLogin}
+          disabled={googleLoading || loading}
         >
-          <GoogleIcon /> Continue with Google
+          {googleLoading ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <>
+              <GoogleIcon /> Continue with Google
+            </>
+          )}
         </Button>
 
         <div className="flex items-center gap-3 mb-5">
