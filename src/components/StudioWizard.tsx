@@ -27,7 +27,9 @@ import { buildLinkedinPlaybook } from "@/lib/linkedin-playbook";
 import { buildTiktokPlaybook } from "@/lib/tiktok-playbook";
 import { buildXPlaybook } from "@/lib/x-playbook";
 import { buildFacebookPostPlaybook, buildFacebookThreadPlaybook } from "@/lib/facebook-playbook";
+import { buildInstagramPlaybook } from "@/lib/instagram-playbook";
 import { buildAntiAiRules } from "@/lib/anti-ai-rules";
+import { sanitizeForPlatform } from "@/lib/output-sanitizer";
 import { fetchTrends, type Trend } from "@/lib/trends";
 import type { Source } from "@/types/database";
 import type { UserProfile } from "@/hooks/use-profile";
@@ -514,25 +516,31 @@ Make each post visually clean and easy to read.
       const isFacebook = selectedPlatform?.id === "facebook";
       const isPost = selectedFormat === "Post";
       const isYoutube = selectedPlatform?.id === "youtube";
+      const isInstagram = selectedPlatform?.id === "instagram";
+      const isCaption = selectedFormat === "Caption";
 
       // Get playbook-specific structure
       const playbookSection = isFacebook && isThread
         ? buildFacebookThreadPlaybook(profile?.niche || "", sanitizedInput)
         : isFacebook && isPost
           ? buildFacebookPostPlaybook(profile?.niche || "", sanitizedInput)
-          : isThread
-            ? buildThreadPlaybook(profile?.niche || "", sanitizedInput)
-            : isX && isTweet
-              ? buildXPlaybook(profile?.niche || "", sanitizedInput)
-              : isYoutube && isLongScript
-                ? buildYoutubePlaybook(profile?.niche || "", sanitizedInput)
-                : isScript && isTiktok
-                  ? buildTiktokPlaybook(profile?.niche || "", sanitizedInput)
-                  : isScript
-                    ? buildReelPlaybook(profile?.niche || "", sanitizedInput)
-                    : isLinkedIn
-                      ? buildLinkedinPlaybook(profile?.niche || "", sanitizedInput)
-                      : "";
+          : isInstagram && isPost
+            ? buildInstagramPlaybook(profile?.niche || "", sanitizedInput)
+            : isTiktok && isCaption
+              ? buildInstagramPlaybook(profile?.niche || "", sanitizedInput)
+              : isThread
+                ? buildThreadPlaybook(profile?.niche || "", sanitizedInput)
+                : isX && isTweet
+                  ? buildXPlaybook(profile?.niche || "", sanitizedInput)
+                  : isYoutube && isLongScript
+                    ? buildYoutubePlaybook(profile?.niche || "", sanitizedInput)
+                    : isScript && isTiktok
+                      ? buildTiktokPlaybook(profile?.niche || "", sanitizedInput)
+                      : isScript
+                        ? buildReelPlaybook(profile?.niche || "", sanitizedInput)
+                        : isLinkedIn
+                          ? buildLinkedinPlaybook(profile?.niche || "", sanitizedInput)
+                          : "";
 
       // LinkedIn already injects strict anti-AI rules via the playbook,
       // so the inline rules below are scoped to Thread / Reel / Script
@@ -570,6 +578,8 @@ OUTPUT FORMAT — EXACT:
         if (isLinkedIn) return "You are a top LinkedIn ghostwriter. Your posts consistently get 50,000+ impressions. You write like a real person — specific, human, direct.";
         if (isFacebook && isPost) return "You are a top Facebook content writer. Your posts consistently drive long, high-quality comments because they read like real conversation, not marketing.";
         if (isFacebook && isThread) return "You are a top Facebook content writer. You write sequential wall posts that bring readers back across the day.";
+        if (isInstagram && isPost) return "You are a top Instagram caption writer. Your captions earn the 'more' tap on a truncated mobile feed because line 1 lands hard, and they convert into saves and shares.";
+        if (isTiktok && isCaption) return "You are a top TikTok caption writer. Your captions are short, sharp, and tied to the video — they don't repeat the script, they hook the next swipe.";
         if (isX && isTweet) return "You are a top X/Twitter writer. Your single tweets get reposted because each one is specific, sharp, and stands alone.";
         if (isThread) return "You are a viral X/Twitter thread writer. Your threads consistently get 500K+ impressions.";
         if (isYoutube && isLongScript) return "You are a top YouTube script writer in the Awa K. Penn signature style. Your scripts hold viewers from the first second, walk through real workflows, and convert subscribers.";
@@ -741,8 +751,22 @@ Each variation includes: HOOK, PROBLEM, SOLUTION, PROOF, CTA, ON-SCREEN TEXT.`;
       const parsed = parseVariations(text);
       if (IS_DEV) console.log("Parsed variations:", parsed.length);
 
+      // Sanitize each variation: strip curly quotes, decorative emoji,
+      // markdown leakage, Title Case headings, em-dash overuse.
+      // This is a safety net — the system prompt tells the model not to
+      // produce these, but the sanitizer guarantees the user never sees them.
+      const platformName = selectedPlatform?.name || "";
+      const sanitized = parsed.map((v) => {
+        const cleanContent = sanitizeForPlatform(v.content, platformName, selectedFormat || "");
+        return {
+          ...v,
+          content: cleanContent,
+          words: wordCount(cleanContent),
+        };
+      });
+
       // Instant scoring (no extra API calls) — save immediately
-      const scored = parsed.map((v) => ({
+      const scored = sanitized.map((v) => ({
         ...v,
         score: Math.floor(Math.random() * 25) + 65, // 65-90 placeholder
         scoring: false,
@@ -906,13 +930,44 @@ Each variation includes: HOOK, PROBLEM, SOLUTION, PROOF, CTA, ON-SCREEN TEXT.`;
     setIsHumanizing(true);
     setError(null);
     try {
+      const platformName = selectedPlatform.name;
+      const formatName = selectedFormat || "post";
+      const isLongFormat = /linkedin|youtube|long/i.test(`${platformName} ${formatName}`);
+      const tightness = isLongFormat ? "strict" : "standard";
+
+      const humanizeSystem = `You are a senior editor whose only job is to remove AI tells from a draft while keeping the message and structure intact.
+
+PLATFORM: ${platformName}
+FORMAT: ${formatName}
+
+TASK:
+Rewrite the user's draft so it reads as if a sharp human creator wrote it.
+- Keep the same core message, hook, and structural beats.
+- Keep the same approximate length (do NOT shrink to 30% — readers asked for content, not a tweet).
+- Replace any banned word or phrase with normal English.
+- Cut em-dashes down to one per post maximum.
+- Break any negative parallelism ("not just X, it's Y") if it fires more than once.
+- Drop any "in conclusion" / "overall" / "in summary" closer.
+- Drop didactic disclaimers ("it's important to note", "it's worth noting").
+- Replace decorative emoji with functional emoji (☑ ✦ ↳ ❌ ✅ ♻️) or nothing.
+- Replace curly quotes / apostrophes with straight ones.
+- Keep contractions (you're, don't, it's). If the draft has none, add some.
+- Vary sentence length: mostly short, one longer for rhythm, occasional fragment.
+- Preserve real names, numbers, URLs, prompts, button paths verbatim.
+
+OUTPUT:
+Return ONLY the rewritten draft. No preamble, no "here's your humanized version", no explanation, no markdown code fences. Just the text.
+
+${buildAntiAiRules(tightness)}`;
+
       const raw = await callClaude(
-        `You are an expert in content rewriting. Make this text undetectable by AI detectors while keeping the same message.\nRules: English only. Natural, imperfect, human phrasing. Vary sentence length. Keep the format adapted to ${selectedPlatform.name}. Respond only with the rewritten text.`,
-        [{ role: "user", content: `Humanize this content:\n\n${original.content}` }],
+        humanizeSystem,
+        [{ role: "user", content: `Rewrite this draft:\n\n${original.content}` }],
       );
-      const text = stripMarkdown(raw);
+      const stripped = stripMarkdown(raw).trim();
+      const text = sanitizeForPlatform(stripped, platformName, formatName);
       setVariations((prev) => prev.map((v, i) => i === idx ? { ...v, content: text, words: wordCount(text) } : v));
-      toast.success("Humanized! Undetectable by AI detectors ✓");
+      toast.success("Rewritten without the AI tells");
     } catch (err: unknown) {
       setError(`Humanization error: ${err instanceof Error ? err.message : "Unknown error"}`);
     } finally {

@@ -8,6 +8,7 @@ import { assertOnline, friendlyError } from "@/lib/resilience";
 import { getUserStyleMemory } from "@/lib/user-memory";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { buildAntiAiRules } from "@/lib/anti-ai-rules";
 import type { Source } from "@/types/database";
 import type { ConversationMessage } from "@/types/database";
 import type { UserProfile } from "@/hooks/use-profile";
@@ -125,14 +126,15 @@ What you NEVER do:
 - Give the same generic advice everyone else gives
 - Use asterisks or markdown formatting
 - Be repetitive or pad your answers
-- Use these words: delve, pivotal, tapestry, leverage, holistic, game-changer, synergy, optimize, actionable, elevate, empower, transformative, streamline, cutting-edge, groundbreaking, unlock, robust, seamless, furthermore, consequently, navigate
 
 User's niche: ${userNiche || 'content creation and digital entrepreneurship'}
 User's platforms: ${userPlatforms || 'LinkedIn, Instagram'}
 
 When the user asks for content ideas, give 3 specific, creative ideas in conversational prose — not a bulleted list.
 
-Keep responses under 150 words. If they ask for strategy, give a concrete 30-day plan. If they ask for feedback, be brutally honest. If they want to generate content, direct them to the Studio.`;
+Keep responses under 150 words. If they ask for strategy, give a concrete 30-day plan. If they ask for feedback, be brutally honest. If they want to generate content, direct them to the Studio.
+
+${buildAntiAiRules("standard")}`;
 
   if (sources.length > 0) {
     prompt += `\n\nSOURCES AVAILABLE (${sources.length}):`;
