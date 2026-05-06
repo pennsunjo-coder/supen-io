@@ -210,18 +210,24 @@ const Dashboard = () => {
             "flex-1 flex flex-col overflow-hidden min-w-0 md:pl-6 lg:pl-8 lg:pr-3",
             mobileTab !== "content" ? "hidden md:flex" : "flex",
           )}>
-            {/* Header */}
+            {/* Header — aligned on the title baseline (items-start),
+                so the Create button sits next to the title rather than
+                drifting halfway down the title+subline block. */}
             <div className="px-5 py-4 border-b border-border/10 shrink-0">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h1 className="text-base font-bold">{hasContent ? "My Content" : greeting}</h1>
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <h1 className="text-base font-bold leading-tight">{hasContent ? "My Content" : greeting}</h1>
                   {hasContent && (
-                    <p className="text-xs text-muted-foreground/60 mt-0.5">
+                    <p className="text-xs text-muted-foreground/60 mt-1">
                       {sessions.length} session{sessions.length !== 1 ? "s" : ""}
                     </p>
                   )}
                 </div>
-                <Button data-tour="create-btn" onClick={() => navigate("/dashboard/studio")} className="gap-2 h-9 text-sm font-bold px-4 shrink-0">
+                <Button
+                  data-tour="create-btn"
+                  onClick={() => navigate("/dashboard/studio")}
+                  className="gap-2 h-9 text-sm font-bold px-4 shrink-0 -mt-1"
+                >
                   <Plus className="w-4 h-4" /> Create Content
                 </Button>
               </div>
@@ -335,8 +341,18 @@ const Dashboard = () => {
                                   alt=""
                                 />
                               ) : (
-                                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-accent/10 to-accent/5">
-                                  <FileText className="w-8 h-8 text-muted-foreground/15" />
+                                /* Empty-state card: warm gradient + soft
+                                   geometric shapes. Reads as "draft in
+                                   progress" instead of "missing thumbnail". */
+                                <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-primary/[0.08] via-primary/[0.04] to-amber-500/[0.06] relative overflow-hidden">
+                                  <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-primary/10 blur-2xl" />
+                                  <div className="absolute -bottom-12 -left-8 w-32 h-32 rounded-full bg-amber-500/10 blur-2xl" />
+                                  <div className="relative z-10 w-12 h-12 rounded-2xl bg-card/80 backdrop-blur-sm flex items-center justify-center shadow-sm border border-border/30 mb-2">
+                                    <Sparkles className="w-5 h-5 text-primary/70" />
+                                  </div>
+                                  <span className="relative z-10 text-[10px] font-medium text-foreground/50 px-3 py-0.5 rounded-full bg-card/60 backdrop-blur-sm">
+                                    Draft ready
+                                  </span>
                                 </div>
                               )}
 

@@ -380,14 +380,19 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
             {sources.length > 0 && (
               <p className="text-[10px] text-primary/70 mb-3">{sources.length} source{sources.length > 1 ? "s" : ""} loaded</p>
             )}
-            <div className="grid grid-cols-1 gap-1.5 w-full">
+            {/* Suggestions as interactive pills, not flat text. Pills
+                show their action affordance (sparkle icon on hover,
+                primary border on hover) so they read as clickable
+                instead of paragraph filler. */}
+            <div className="flex flex-col gap-1.5 w-full">
               {suggestions.map((prompt) => (
                 <button
                   key={prompt}
                   onClick={() => sendMessage(prompt)}
-                  className="px-3 py-2 rounded-lg border border-border/30 text-[11px] text-muted-foreground hover:text-foreground hover:bg-accent/40 hover:border-border/50 transition-all text-left"
+                  className="group flex items-center gap-2 px-3 py-2 rounded-lg border border-border/40 bg-card text-[11px] text-foreground/85 hover:text-foreground hover:border-primary/40 hover:bg-primary/[0.04] transition-all text-left shadow-sm"
                 >
-                  {prompt}
+                  <Sparkles className="w-3 h-3 text-primary/40 group-hover:text-primary shrink-0 transition-colors" />
+                  <span className="truncate">{prompt}</span>
                 </button>
               ))}
             </div>
