@@ -15,6 +15,8 @@
  * - Closing formula: Like → Subscribe → Comment → See you
  */
 
+import { buildAntiAiRules } from "@/lib/anti-ai-rules";
+
 export type YoutubeStructure =
   | "tutorial"           // "In this video I'll walk you through the full workflow"
   | "listicle"           // "10 AI tools you won't believe are free"
@@ -494,5 +496,98 @@ AVOID:
 - Summary/conclusion sections that rehash everything (wastes watch time)
 - Rule-of-three clichés (three adjectives, three short phrases)
 - Em dashes as universal connectors (use commas, periods, parens)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+REFERENCE OPENINGS — match this cadence
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[tutorial] —
+"What if you could create content without having to sit down and record
+every single time? Just imagine having a version of you that can speak
+your ideas, explain things clearly, and keep posting consistently…
+Even when you're not filming anything.
+
+This is exactly what AI clones have made possible.
+And in this video, I'll walk you through the full workflow so you can
+set this up for yourself using just a photo and a script."
+
+[contrarian_truth] —
+"Most people still use ChatGPT like a simple chat box. That is a
+mistake. ChatGPT is now a full software with several types of features
+you can use to make life better and I bet you won't even need to pay
+for other AI tools. In this video, I will show you the new ChatGPT in
+one clear walkthrough."
+
+[listicle] —
+"Right now, most creators are paying $20… $40… even $100 every month
+for AI tools. For voiceovers, video editing, landing pages, music,
+research and more. But what if I told you you can replace most of
+those paid tools with completely free ones? In this video, I'm going
+to show you 10 AI tools you won't believe are free."
+
+[business_cases] —
+"What's the most lucrative business use case for Nano Banana Pro in
+2026 if you're starting from zero? With no followers, no budget, and
+no plan. I'm someone who has used Nano Banana Pro extensively across
+real projects, and if I were starting again today, this is precisely
+how I would approach learning and applying it from day one in business."
+
+[skills_framework] —
+"AI is booming in 2026. And right now, there's a global gold rush
+happening. Some people are already cashing in, and many don't even
+realise they're standing next to it. And here's what nobody really
+tells you. The gold isn't going to the people who know the most tools.
+It's not going to the people who spend all day watching tutorials.
+It's going to the people who have learned a small set of high-leverage
+AI skills."
+
+[disruption_breakdown] —
+"Most people mess up NotebookLM before they even type a single prompt.
+They add a few sources, click generate, and then they wonder why the
+output feels generic or even unreliable. But here is the key.
+NotebookLM is not a typical chatbot like Gemini, ChatGPT, or Claude.
+It is more like a research system, and the quality of what you get
+depends on what you feed it and how you set it up."
+
+[ecosystem_guide] —
+"While so many people are still paying for ChatGPT, Claude, and even
+Perplexity every single month, Google Gemini is a completely different
+beast on its own. Most of what it offers is free, and the ecosystem
+behind it is much bigger than people realise. If you only open the
+chat box, you're barely using ten percent of what Gemini can do."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SIGNATURE MOVES (the cadence Awa Penn uses repeatedly)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. "What if you could…" / "What if I told you…" opener
+   Curiosity gap that doesn't sound like clickbait when followed by
+   a specific, almost-unbelievable claim.
+
+2. Quick disclaimer block (2 sentences max) for any income/business topic
+   "Quick disclaimer before we start. This video is for education only.
+   I am not giving financial advice." Builds trust without killing pace.
+
+3. "Stay with me because…" mid-script cliffhanger
+   "Stay with me because skill number four is the reason I stopped
+   paying freelancers $300 every month."
+
+4. Real URL + real button path inside the script
+   "Go to gemini.google.com. Click the model selector and select
+   Thinking. Then click Create image." Specificity is the moat.
+
+5. "Just look at this" / "This is wild" / "This is insane" interjection
+   Used sparingly, at moments of genuine reveal. Keeps the script
+   alive without becoming hype.
+
+6. Closing formula — use it verbatim
+   "If this helped you, hit Like so YouTube shows this to more
+   creators trying to [outcome]. Subscribe for more [topic] like
+   this. And comment below [specific question]. I'll see you in
+   the next one."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${buildAntiAiRules("loose")}
 `;
 }

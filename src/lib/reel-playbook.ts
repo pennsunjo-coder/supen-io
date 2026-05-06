@@ -5,6 +5,8 @@
  * Adapts the structure template based on user's niche.
  */
 
+import { buildAntiAiRules } from "@/lib/anti-ai-rules";
+
 export type ReelStructure =
   | "ai_showcase"       // "Visit [AI tool], do X, done. Comment [kw] for link"
   | "secret_feature"    // "This secret feature will 4x your views"
@@ -322,5 +324,75 @@ TONE:
 - Like texting a friend who asked for a tip
 - Confident. No hedging. No "maybe" or "could."
 - Specific. Always specific.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+REFERENCE EXAMPLES — real reels. Match the cadence, not the words.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[ai_showcase] —
+"This AI is going to scare you.
+Visit Collov AI — it can renovate your room and give you insane
+suggestions. Lets say your room is empty like this one. If I just
+upload a picture, in a couple seconds it gives me multiple before-
+and-afters. You can even get inspired from their community.
+To try this AI, comment Collov and I'll send the link in DM."
+
+[walkthrough] —
+"These Etsy stores make $10K a month using only AI. Here is how.
+First, visit Ideogram. In this box, describe how you want your
+design to look. In a couple seconds, you have something like this.
+Now take your design and visit Printify. Here, pick a product and
+slap your design on it. Connect it to an Etsy or Shopify store and
+you have an online store live without spending a single penny.
+Comment 'print' to get started."
+
+[secret_feature] —
+"This secret Instagram feature will 4x your views.
+And literally a 5 year old could do this in a couple seconds.
+Head over to Canva, add a picture of you, your video hook, and a
+little frame with the topic. Make sure all the text fits in the
+safe zone. A large portion of your viewers find your content
+through the Explore page. As always, follow for more value."
+
+[three_mistakes] —
+"You are stuck at 200 views because you don't do these 3 things
+after posting.
+Number 1 — reply and engage with old comments and DMs.
+Number 2 — put up a story. Stop using your Reel as the story.
+Number 3 — be early on a big creator's post and leave a thoughtful,
+semi-controversial comment that creates reactions. That drives
+traffic to YOUR video.
+Follow for more value."
+
+[lessons_learned] —
+"I grew 50K followers in 90 days. Here are the key lessons.
+Not giving a f about the views. Post daily.
+Watching and analysing your content is useless. Quickly see what
+performs best and make more of it.
+Views are fun, but followers come from valuable content.
+$10k a month is not a goal, it's an outcome — focus on inputs."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SIGNATURE MOVES (proven short-form patterns)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Hook within 1-2 seconds. No setup. No greeting. No "let me show you".
+   "This AI is going to scare you." — that's the whole hook.
+
+2. Comment-to-unlock CTA — drives BOTH comments AND follows
+   "Comment '[keyword]' and I'll DM you the link."
+
+3. "As always, follow for more value" closer
+   Almost throwaway, but the cadence is what locks the loop.
+
+4. Time / price asymmetry inside Value
+   "Used to take 2 hours. Now 30 seconds." "Used to cost $50/month. Now free."
+
+5. Number tease in the hook ("the third one is wild")
+   Buys you 5 more seconds of watch time.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${buildAntiAiRules("loose")}
 `;
 }

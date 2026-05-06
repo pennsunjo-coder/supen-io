@@ -12,6 +12,8 @@
  * Used when user generates a "TikTok script" / "TikTok video" format.
  */
 
+import { buildAntiAiRules } from "@/lib/anti-ai-rules";
+
 export type TiktokStructure =
   | "tool_tutorial"   // "Here's how to [do X] in [N] seconds"
   | "secret_reveal"   // "This [tool/hack] will [outcome]"
@@ -265,5 +267,94 @@ WINNERS (use these levers):
 - Save-this CTA → boosts reach via save signal
 - Time asymmetry ("2 hours → 30 seconds") → high share rate
 - Specific tool names → builds you as the niche authority
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+REFERENCE EXAMPLES — real viral TikTok scripts. Imitate the cadence.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[secret_reveal] —
+"Hook: This secret Instagram feature will 4x your views.
+Build-Up: And literally a 5 year old could do this in a couple seconds.
+Value: Head over to Canva. Add a picture of you, your video hook, and a
+little frame with the topic. Make sure all the text fits in this safe
+zone. It did not take a genius to figure out we made a thumbnail for
+our Reel — but you most likely think this is only for MrBeast on
+YouTube. Well not really. A large portion of your viewers find your
+content through the Explore page, and when scrolling I think it's safe
+to say which one you would have clicked on.
+CTA: As always, follow for more value."
+
+[number_list] —
+"Hook: I gained 40,000 followers in the last 3 months. Here are the
+3 secrets so you can do the same. The best is last.
+Build-Up: Number 1 is obvious. The third one nobody does.
+Value: Number 1 — just post more. I used to analyse my content. Now I
+post daily and get surprised when stuff pops off. Consistency does it.
+Number 2 — give value. Memes attract no one. Educate.
+Number 3 — what has gone viral will go viral. Don't steal. Steal like
+an artist and make it your own.
+CTA: As always, follow for more value."
+
+[cheatcode] —
+"Hook: These accounts make $10k a month through TikTok Shop affiliates.
+Build-Up: And this guy? Yeah, he is an AI. Here's how to do it.
+Value: Visit this AI, and paste the link to the product you want to
+sell. It analyses the product and gives you 4 different video scripts.
+Press next, pick your template, character, and music. In seconds you
+have a complete ad ready to post.
+CTA: As always, follow for more AI tips."
+
+[before_after] —
+"Hook: You are stuck at 200 views because you don't do these 3 things
+after posting.
+Build-Up: Number 3 is my real secret.
+Value: Number 1 — reply and engage with old comments and DMs the
+moment you post. Number 2 — put up a story. And no, stop using your
+Reel as the story. Use polls or stories people can engage with.
+Number 3 — if you're early to a big creator's new post, leave a
+thoughtful or semi-controversial comment that gets reactions. That
+drives traffic to YOUR video.
+CTA: As always, follow for more value."
+
+[tool_tutorial] —
+"Hook: This AI is going to scare you.
+Build-Up: Visit Collov AI — it can renovate any room and give you
+insane suggestions.
+Value: Let's say your room is empty like this one. If I just upload a
+picture, in a couple seconds it gives me multiple before-and-afters.
+You can even get inspired from their community to see other rooms and
+not have yours look like crap.
+CTA: To try this AI, comment Collov and I will send the link in DM."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SIGNATURE MOVES (use these — they're what TikTok readers respond to)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Number tease in the hook
+   "3 secrets — the best is last." / "Number 3 is wild."
+   This buys you the next 5 seconds of watch time.
+
+2. Specific tool by name in the hook OR build-up
+   "Collov AI", "InVideo", "HeyGen", "ManyChat", "Notion", "Gumroad".
+   Never "this AI tool", never "a website".
+
+3. Comment-to-unlock CTA
+   "Comment '[keyword]' and I'll DM you the link."
+   Highest-converting CTA on TikTok — drives BOTH comments AND follows.
+
+4. Save-this CTA (alternative)
+   "Save this so you don't forget."
+   Saves boost reach more than likes do.
+
+5. "As always, follow for more value" closer
+   Short, almost throwaway — the cadence locks in the loop.
+
+6. Time asymmetry inside Value
+   "Used to take 2 hours. Now takes 30 seconds."
+   "Used to cost $50/month. Now it's free."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${buildAntiAiRules("loose")}
 `;
 }

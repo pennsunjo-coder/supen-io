@@ -4,6 +4,8 @@
  * Adapts the structure template based on user's niche.
  */
 
+import { buildAntiAiRules } from "@/lib/anti-ai-rules";
+
 export type ThreadStructure =
   | "cheatcode"       // "BREAKING: X is a cheatcode for Y. Here are N ways + prompts"
   | "disruption"      // "In 2007, iPhone killed Nokia. In 2026, X will kill Y"
@@ -252,5 +254,136 @@ THREAD FORMATTING RULES
 - Bullet points allowed ONLY inside a post when listing tool features or steps
 - Mention specific tools/companies by name (not "a popular tool")
 - End the hook post with a colon ":" teasing the next post
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+REFERENCE EXAMPLES — real viral threads. Match the cadence, not the words.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[disruption] —
+"Post 1 (hook):
+In 2007, iPhone killed Nokia.
+In 2012, Netflix killed Blockbuster.
+In 2026, Macrohard will kill Microsoft.
+And Elon Musk is behind it.
+Here's what Macrohard really is (and why it's dangerous): 👇
+
+Post 2 (the real plan):
+Microsoft sells software.
+Elon wants to sell digital workers.
+Not 'chatbots.' Not 'assistants.'
+Actual agents that can:
+- open apps
+- click buttons
+- type fast
+- follow steps
+- finish tasks
+- repeat the work 1,000 times without stopping
+
+Post 3 (scary part):
+If Macrohard works…
+You will not need to learn new tools.
+The AI agent will use the tools FOR you.
+The future is not 'New app replaces Excel.'
+The future is 'AI agent uses Excel better than you.'
+
+Post 4 (domino effect):
+Excel — AI handles it
+PowerPoint — AI builds it
+Word — AI writes it
+SharePoint — AI organizes it
+
+Post 5 (proof):
+This is NOT theory. An xAI engineer did a podcast interview where
+he spoke openly about what they were building. A few days later,
+he was no longer at xAI. People took that as a leak."
+
+[cheatcode] —
+"Post 1 (hook):
+BREAKING: NotebookLM + Gemini is literally a Cheatcode for exploding on YouTube.
+Here are 6 ways + Prompts to reverse engineer any successful YouTube channel
+(step by step guide)
+
+Post 2 (setup):
+First, Connect NotebookLM to Gemini. Here is how 👇
+- Open Gemini App
+- From the dropdown, select NotebookLM
+- Choose the Notebook (up to 50 YT links)
+- Paste the prompts below 👇
+
+Post 3 (method 1):
+1. Extract High-Performing Hooks
+Take the same video sources already inside NotebookLM. Focus only
+on the first 15-30 seconds of each video.
+Prompt:
+'I have uploaded multiple high-performing videos. Analyze only the
+opening sections. Extract the hook patterns used across these videos.
+Group them into clear categories and explain why each type works.
+Then generate 10 original hooks I can use in the same niche, following
+the same patterns.'
+
+[Repeat for methods 2-6, each with its full copyable prompt.]"
+
+[rip_tool] —
+"Post 1 (hook):
+BREAKING: RIP Canva.
+Google's new tool Pomelli is impressive.
+It functions like a full marketing department in one dashboard.
+- Creates Photoshoots from any photo
+- Learns your brand's tone
+- Generates complete social campaigns in seconds
+And the best part: it is completely FREE.
+Here's what it can do and how to use it:
+
+Post 2 (step 1):
+Step 1:
+- Go to labs.google.com
+- Click 'let's get started'
+- Click on Photoshoot
+- Upload any product image
+- Select aspect ratio, then generate
+
+Post 3 (step 2):
+Step 2:
+- Wait 2 minutes, then preview your photoshoots.
+- If anything looks off, you can always edit."
+
+[prompt_library] —
+"Post 1 (hook):
+BREAKING: CLAUDE CAN NOW WRITE 30 DAYS OF VIRAL CONTENT IN 1 HOUR.
+I grew 15,000+ new followers in one month.
+Here are the 5 prompts I used:
+
+Post 2 (prompt 1 — FACEBOOK POST: STORY + ENGAGEMENT):
+[Full copyable prompt with file references like [audience.md],
+[offer.md], [voice.md], success brief structure, etc.]
+
+[Repeat for prompts 2-5, each post = one full prompt.]"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SIGNATURE MOVES (use these — they're what thread readers respond to)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Three historical parallels in the hook (disruption only)
+   "In 2007, iPhone killed Nokia. In 2012, Netflix killed Blockbuster."
+   Pattern recognition fires before logic does.
+
+2. "BREAKING:" opener
+   Cheap but it works. Pair with a real, specific claim — not hype.
+
+3. One copyable artifact per post
+   Every post past the hook should have ONE thing the reader can
+   screenshot or copy: a prompt, a step, a price, a URL, a stat.
+   Posts without artifacts get scrolled.
+
+4. "And the best part:" line
+   Used to land the kicker before pivoting to the how-to.
+   "And the best part: it is completely FREE."
+
+5. Cliffhanger close on the hook post
+   End with a colon and "👇" or "Here's how:" — never a period.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${buildAntiAiRules("standard")}
 `;
 }

@@ -24,6 +24,9 @@ import { buildThreadPlaybook } from "@/lib/thread-playbook";
 import { buildReelPlaybook } from "@/lib/reel-playbook";
 import { buildYoutubePlaybook } from "@/lib/youtube-playbook";
 import { buildLinkedinPlaybook } from "@/lib/linkedin-playbook";
+import { buildTiktokPlaybook } from "@/lib/tiktok-playbook";
+import { buildXPlaybook } from "@/lib/x-playbook";
+import { buildFacebookPostPlaybook, buildFacebookThreadPlaybook } from "@/lib/facebook-playbook";
 import { buildAntiAiRules } from "@/lib/anti-ai-rules";
 import { fetchTrends, type Trend } from "@/lib/trends";
 import type { Source } from "@/types/database";
@@ -503,16 +506,33 @@ Make each post visually clean and easy to read.
       // === PLAYBOOK-POWERED SYSTEM PROMPT ===
       const isThread = selectedFormat === "Thread";
       const isScript = /script|reel|video/i.test(selectedFormat || "");
+      const isLongScript = /script\s*long|long.*script/i.test(selectedFormat || "");
       const isLinkedIn = selectedPlatform?.name === "LinkedIn";
+      const isTiktok = selectedPlatform?.id === "tiktok";
+      const isX = selectedPlatform?.id === "x";
+      const isTweet = selectedFormat === "Tweet";
+      const isFacebook = selectedPlatform?.id === "facebook";
+      const isPost = selectedFormat === "Post";
+      const isYoutube = selectedPlatform?.id === "youtube";
 
       // Get playbook-specific structure
-      const playbookSection = isThread
-        ? buildThreadPlaybook(profile?.niche || "", sanitizedInput)
-        : isScript
-          ? buildReelPlaybook(profile?.niche || "", sanitizedInput)
-          : isLinkedIn
-            ? buildLinkedinPlaybook(profile?.niche || "", sanitizedInput)
-            : "";
+      const playbookSection = isFacebook && isThread
+        ? buildFacebookThreadPlaybook(profile?.niche || "", sanitizedInput)
+        : isFacebook && isPost
+          ? buildFacebookPostPlaybook(profile?.niche || "", sanitizedInput)
+          : isThread
+            ? buildThreadPlaybook(profile?.niche || "", sanitizedInput)
+            : isX && isTweet
+              ? buildXPlaybook(profile?.niche || "", sanitizedInput)
+              : isYoutube && isLongScript
+                ? buildYoutubePlaybook(profile?.niche || "", sanitizedInput)
+                : isScript && isTiktok
+                  ? buildTiktokPlaybook(profile?.niche || "", sanitizedInput)
+                  : isScript
+                    ? buildReelPlaybook(profile?.niche || "", sanitizedInput)
+                    : isLinkedIn
+                      ? buildLinkedinPlaybook(profile?.niche || "", sanitizedInput)
+                      : "";
 
       // LinkedIn already injects strict anti-AI rules via the playbook,
       // so the inline rules below are scoped to Thread / Reel / Script
@@ -543,17 +563,56 @@ OUTPUT FORMAT — EXACT:
 (complete ${selectedFormat})
 [VARIATION_5_END]`;
 
+      // Persona line — adapts to platform/format so the model has the
+      // right voice from the first token. The playbook injected above
+      // already carries the platform-specific structural rules.
+      const personaLine = (() => {
+        if (isLinkedIn) return "You are a top LinkedIn ghostwriter. Your posts consistently get 50,000+ impressions. You write like a real person — specific, human, direct.";
+        if (isFacebook && isPost) return "You are a top Facebook content writer. Your posts consistently drive long, high-quality comments because they read like real conversation, not marketing.";
+        if (isFacebook && isThread) return "You are a top Facebook content writer. You write sequential wall posts that bring readers back across the day.";
+        if (isX && isTweet) return "You are a top X/Twitter writer. Your single tweets get reposted because each one is specific, sharp, and stands alone.";
+        if (isThread) return "You are a viral X/Twitter thread writer. Your threads consistently get 500K+ impressions.";
+        if (isYoutube && isLongScript) return "You are a top YouTube script writer in the Awa K. Penn signature style. Your scripts hold viewers from the first second, walk through real workflows, and convert subscribers.";
+        if (isTiktok) return "You are a viral TikTok scriptwriter. Your scripts hit 1M+ views because the hook lands in 1-2 seconds, the value is dense, and the CTA drives DMs and follows.";
+        if (isScript) return "You are a viral Reel/Short scriptwriter. Your scripts consistently get 1M+ views.";
+        return "You are a top social media content writer. You write like a real person — specific, human, direct.";
+      })();
+
       let systemPrompt: string;
 
-      if (isLinkedIn || (!isThread && !isScript)) {
-        // ── LinkedIn / Post prompt ──
-        systemPrompt = `You are a top LinkedIn ghostwriter. Your posts consistently get 50,000+ impressions. You write like a real person — specific, human, direct.
+      if (isYoutube && isLongScript) {
+        // ── YouTube long-form (1500-3000 words spoken) ──
+        systemPrompt = `${personaLine}
 
 PLATFORM: ${selectedPlatform?.name}
 FORMAT: ${selectedFormat}
 
 ${playbookSection ? `═══ PLAYBOOK (follow this structure) ═══\n${playbookSection}\n═══ END PLAYBOOK ═══\n` : ''}
-LINKEDIN-SPECIFIC RULES:
+SCRIPT REQUIREMENTS:
+- 1500-3000 words for a 7-12 minute video
+- Written as SPOKEN words, not text to be read silently
+- Numbered steps where applicable (Step 1 — [Action title])
+- Real URLs and tool names throughout (no "a tool", no "their website")
+- Real prompts inside quotes (verbatim, copyable)
+- Mid-script cliffhangers ("Stay with me because step 4...")
+- Closing formula: Like → Subscribe → Comment → "I'll see you in the next one"
+
+${OUTPUT_FORMAT}
+
+Each variation = a COMPLETE script ready to record. No placeholders.`;
+
+      } else if (isLinkedIn || (!isThread && !isScript)) {
+        // ── Post prompt (LinkedIn / Facebook / X Tweet / IG Post / TikTok Caption) ──
+        // The platform-specific rules live inside the injected playbook.
+        // The static "LINKEDIN-SPECIFIC RULES" block now only fires when
+        // we actually are on LinkedIn — otherwise we'd contradict the FB / X
+        // playbook (different length targets, different CTAs).
+        systemPrompt = `${personaLine}
+
+PLATFORM: ${selectedPlatform?.name}
+FORMAT: ${selectedFormat}
+
+${playbookSection ? `═══ PLAYBOOK (follow this structure) ═══\n${playbookSection}\n═══ END PLAYBOOK ═══\n` : ''}${isLinkedIn ? `LINKEDIN-SPECIFIC RULES:
 1. Hook: MAX 60 characters — must create curiosity or shock
 2. Length: 1,200-1,800 characters total
 3. One idea per line, blank line between sections
@@ -571,20 +630,24 @@ LINKEDIN-SPECIFIC RULES:
 3. Data/proof angle: "From 0 to 47K in 90 days. Here's exactly how:"
 4. Framework angle: "The 5-step system I use every week:"
 5. Question angle: "Why do 97% of creators give up in month 3?"
-
+` : ''}
 ${OUTPUT_FORMAT}
 
-Each = COMPLETE, READY TO POST. Min 150 words. Generous line breaks.`;
+Each = COMPLETE, READY TO POST. Min 100 words. Generous line breaks.`;
 
       } else if (isThread) {
-        // ── Thread prompt ──
-        systemPrompt = `You are a viral X/Twitter thread writer. Your threads consistently get 500K+ impressions.
+        // ── Thread prompt (X / Facebook) ──
+        systemPrompt = `${personaLine}
 
 PLATFORM: ${selectedPlatform?.name}
 FORMAT: Thread
 
-${playbookSection ? `═══ PLAYBOOK (follow this structure) ═══\n${playbookSection}\n═══ END PLAYBOOK ═══\n` : ''}
-THREAD RULES:
+${playbookSection ? `═══ PLAYBOOK (follow this structure) ═══\n${playbookSection}\n═══ END PLAYBOOK ═══\n` : ''}${isFacebook ? `FACEBOOK THREAD RULES:
+1. 4-6 separate posts, not tweets — each 80-120 words.
+2. Separate posts with "---" on its own line.
+3. Each post stands alone but references "earlier" / "yesterday" to acknowledge the series.
+4. Last post: question that invites a 15+ word reply.
+` : `X THREAD RULES:
 1. Tweet 1 (HOOK): Max 280 chars. Stops the scroll. Creates MASSIVE curiosity.
 2. Tweets 2-8: Each = ONE idea. Numbered (2/, 3/ etc.). Max 280 chars each.
 3. Last tweet: Strong CTA + "Follow @[creator] for more"
@@ -598,23 +661,17 @@ HOOK FORMULAS (use the most powerful):
 - "[Number] things most people don't know about [topic]:"
 - "Unpopular opinion: [contrarian statement]"
 - "I spent [time/money] on [thing]. Here's what I learned:"
+`}
 
 ${ANTI_AI_RULES_THREAD}
-
-5 ANGLES for 5 thread variations:
-1. Cheatcode: "BREAKING: [Tool] is a cheatcode for [outcome]. Here are N ways:"
-2. Disruption: "In 2007, iPhone killed Nokia. In 2026, [X] will kill [Y]."
-3. Prompt library: "I grew 15K followers. Here are the N prompts I used:"
-4. Story arc: Personal story unfolding across 5-7 tweets
-5. Educational: Step-by-step teaching series
 
 ${OUTPUT_FORMAT}
 
 Each variation = DIFFERENT hook + DIFFERENT structure.`;
 
       } else {
-        // ── Reel / Script prompt ──
-        systemPrompt = `You are a viral Reel/TikTok scriptwriter. Your scripts consistently get 1M+ views.
+        // ── Reel / Short script prompt (TikTok video, IG Reel, FB Reel, YouTube Shorts) ──
+        systemPrompt = `${personaLine}
 
 PLATFORM: ${selectedPlatform?.name}
 FORMAT: ${selectedFormat}
