@@ -196,7 +196,7 @@ const SourcePanel = ({
   };
 
   return (
-    <div className="w-full md:w-[250px] flex flex-col h-full">
+    <div className="w-full flex flex-col h-full">
       {/* Header */}
       <div className="px-5 pt-5 pb-3 border-b border-border/20 shrink-0">
         <h2 className="text-base font-semibold text-foreground">Sources</h2>
@@ -208,8 +208,8 @@ const SourcePanel = ({
         </p>
       </div>
 
-      {/* 3 action buttons */}
-      <div className="px-4 pb-3 grid grid-cols-3 gap-1.5 shrink-0">
+      {/* 3 action buttons — pr keeps the Web button away from the right border */}
+      <div className="pl-4 pr-5 pb-3 grid grid-cols-3 gap-2 shrink-0">
         {actions.map(({ mode, icon: Icon, label }) => {
           const isActive = showForm && formMode === mode;
           const isPdf = mode === "pdf";

@@ -177,9 +177,9 @@ const Dashboard = () => {
         {/* 3 COLUMNS */}
         <div className="flex-1 flex overflow-hidden min-h-0">
 
-          {/* LEFT — SOURCES (200px) */}
+          {/* LEFT — SOURCES (240px to fit PDF/Note/Web row + breathing room) */}
           <div data-tour="sources" className={cn(
-            "shrink-0 border-r border-border/20 bg-accent/[0.02] md:w-[200px] md:flex md:flex-col",
+            "shrink-0 border-r border-border/20 bg-accent/[0.02] md:w-[240px] md:flex md:flex-col",
             mobileTab === "sources" ? "flex flex-col w-full" : "hidden md:flex",
           )}>
             <SourcePanel
@@ -207,7 +207,7 @@ const Dashboard = () => {
 
           {/* CENTER — MY CONTENT */}
           <div className={cn(
-            "flex-1 flex flex-col overflow-hidden min-w-0 md:pl-3 lg:pl-4 lg:pr-3",
+            "flex-1 flex flex-col overflow-hidden min-w-0 md:pl-6 lg:pl-8 lg:pr-3",
             mobileTab !== "content" ? "hidden md:flex" : "flex",
           )}>
             {/* Header */}
