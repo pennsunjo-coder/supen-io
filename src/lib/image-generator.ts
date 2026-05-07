@@ -1,13 +1,13 @@
 /**
  * Generate an editorial illustration image for a social media post via Gemini.
  * Called from StudioWizard when user clicks the "Image" button on a variation.
- * Uses VITE_GEMINI_API_KEY + gemini-2.5-flash-image.
+ * Uses a secure Supabase Edge Function to protect the Gemini API Key.
  *
  * Returns base64-encoded image data (no "data:" prefix) or null on failure.
  */
 
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const GEMINI_MODEL = "gemini-2.5-flash-image";
+import { supabase } from "@/lib/supabase";
+
 const IS_DEV = import.meta.env.DEV;
 
 // ─── Public API ───
@@ -17,49 +17,25 @@ export async function generateContentImage(
   platform: string,
   niche?: string,
 ): Promise<string | null> {
-  if (!GEMINI_API_KEY) return null;
-
   const prompt = buildIllustrationPrompt(content, platform, niche);
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 120_000); // 2 min
-
   try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            responseModalities: ["IMAGE", "TEXT"],
-          },
-        }),
-        signal: controller.signal,
-      },
-    );
-    clearTimeout(timeoutId);
+    const { data, error } = await supabase.functions.invoke("generate-gemini-image", {
+      body: { prompt },
+    });
 
-    if (!response.ok) {
-      if (IS_DEV) {
-        const errText = await response.text().catch(() => "");
-        console.warn("[image-generator] Gemini HTTP", response.status, errText);
-      }
+    if (error) {
+      if (IS_DEV) console.warn("[image-generator] Edge Function error:", error);
       return null;
     }
 
+    if (data?.error) {
+      if (IS_DEV) console.warn("[image-generator] API error:", data.error);
+      return null;
+    }
 
-    const data = await response.json();
-    // Pick the part whose inlineData is an image — ignore text parts.
-    const imagePart = data.candidates?.[0]?.content?.parts
-      ?.find((p: { inlineData?: { mimeType?: string; data?: string } }) =>
-        p.inlineData?.mimeType?.startsWith("image/"));
-    const base64 = imagePart?.inlineData?.data;
-
-    return base64 || null;
+    return data?.image || null;
   } catch (err) {
-    clearTimeout(timeoutId);
     if (IS_DEV) console.warn("[image-generator] Error:", err);
     return null;
   }
@@ -69,56 +45,24 @@ export async function generateContentImage(
 export const generateIllustration = generateContentImage;
 
 // ─── Custom-prompt image generation ───
-//
-// Lets the user write their OWN prompt instead of having one auto-built
-// from the post content. We still wrap their prompt in light style and
-// safety guardrails so the output stays consistent with the rest of the
-// app (no text in the image, square aspect, clean illustration look),
-// but the creative direction comes from the user.
 
 export async function generateImageFromPrompt(
   userPrompt: string,
   platform?: string,
 ): Promise<string | null> {
-  if (!GEMINI_API_KEY) return null;
   const cleaned = userPrompt.trim();
   if (cleaned.length < 4) return null;
 
   const wrappedPrompt = buildCustomPromptWrapper(cleaned, platform);
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 120_000);
-
   try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: wrappedPrompt }] }],
-          generationConfig: {
-            responseModalities: ["IMAGE", "TEXT"],
-          },
-        }),
-        signal: controller.signal,
-      },
-    );
-    clearTimeout(timeoutId);
-    if (!response.ok) {
-      if (IS_DEV) {
-        const errText = await response.text().catch(() => "");
-        console.warn("[image-generator] custom prompt HTTP", response.status, errText);
-      }
-      return null;
-    }
-    const data = await response.json();
-    const imagePart = data.candidates?.[0]?.content?.parts
-      ?.find((p: { inlineData?: { mimeType?: string; data?: string } }) =>
-        p.inlineData?.mimeType?.startsWith("image/"));
-    return imagePart?.inlineData?.data || null;
+    const { data, error } = await supabase.functions.invoke("generate-gemini-image", {
+      body: { prompt: wrappedPrompt },
+    });
+
+    if (error || data?.error) return null;
+    return data?.image || null;
   } catch (err) {
-    clearTimeout(timeoutId);
     if (IS_DEV) console.warn("[image-generator] custom prompt error:", err);
     return null;
   }
@@ -161,16 +105,6 @@ Generate the image now.`;
 
 // ─── Prompt builder ───
 
-/**
- * Build an illustration prompt from the actual post content.
- *
- * Key design decisions:
- * - Written in English (Gemini image model is English-first)
- * - Passes the FULL post excerpt (300 chars) as subject context, not just keywords
- * - Explicitly forbids text, infographic format, and busy layouts
- * - Asks for ONE clear visual metaphor tied to the post's main idea
- * - Lets Gemini choose the style within clean aesthetic guardrails
- */
 function buildIllustrationPrompt(content: string, platform: string, niche?: string): string {
   const excerpt = content.slice(0, 400).trim();
   const platformHint = platform === "LinkedIn"

@@ -970,7 +970,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
                         width: `${100 / iframeScale}%`,
                         height: `${100 / iframeScale}%`,
                       }}
-                      sandbox="allow-same-origin allow-scripts"
+                      sandbox="allow-popups"
                       title="Infographic preview"
                     />
                   </div>
@@ -1152,7 +1152,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
                 <iframe
                   srcDoc={injectFontsInHtml(htmlCode)}
                   style={{ width: dims.width, height: dims.height, border: "none", background: "#FDFDF9" }}
-                  sandbox="allow-same-origin"
+                  sandbox="allow-popups"
                   title="Infographic full view"
                 />
               </motion.div>

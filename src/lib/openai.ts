@@ -1,21 +1,50 @@
-import OpenAI from "openai";
+import { supabase } from "@/lib/supabase";
 
-const apiKey = import.meta.env.VITE_OPENAI_API_KEY ?? "";
+/**
+ * Secure OpenAI API proxy — all calls go through the "openai" Edge Function.
+ * The API key lives server-side only (OPENAI_API_KEY secret in Supabase).
+ */
 
-if (!apiKey && import.meta.env.DEV) {
-  console.warn("VITE_OPENAI_API_KEY is not set in .env — AI features will not work");
+export interface OpenAIMessage {
+  role: "user" | "assistant" | "system";
+  content: string;
 }
 
-export const openai = new OpenAI({
-  apiKey: apiKey || "placeholder-key-not-configured",
-  dangerouslyAllowBrowser: true,
-});
+export async function callOpenAI(
+  messages: OpenAIMessage[],
+  options?: { 
+    system?: string; 
+    maxTokens?: number; 
+    model?: string;
+    temperature?: number;
+  },
+): Promise<string> {
+  const { data, error } = await supabase.functions.invoke("openai", {
+    body: {
+      system: options?.system,
+      messages,
+      max_tokens: options?.maxTokens || 2048,
+      model: options?.model || "gpt-4o",
+      temperature: options?.temperature ?? 0.7,
+    },
+  });
+
+  if (error) {
+    throw new Error(error.message || "OpenAI API call failed");
+  }
+
+  if (data?.error) {
+    throw new Error(data.error);
+  }
+
+  return data?.text || "";
+}
 
 export const OPENAI_MODEL = "gpt-4o";
 
-/** Check if the OpenAI API key is configured. Call before making requests. */
+/** Check if the OpenAI API is available (always true now as it's proxied) */
 export function isOpenAIConfigured(): boolean {
-  return !!import.meta.env.VITE_OPENAI_API_KEY;
+  return true;
 }
 
 export const SYSTEM_PROMPT = `You are a social media content creation assistant, integrated into Supenli.ai.
