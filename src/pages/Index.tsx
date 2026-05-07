@@ -198,9 +198,9 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col bg-background selection:bg-primary selection:text-primary-foreground font-sans relative overflow-x-hidden">
+    <div className="min-h-screen flex flex-col bg-background selection:bg-primary/30 selection:text-primary font-sans relative overflow-x-hidden">
       {/* Texture Overlay */}
-      <div className="fixed inset-0 pointer-events-none z-[9999] noise opacity-[0.03]" />
+      <div className="fixed inset-0 pointer-events-none z-[9999] noise opacity-[0.02]" />
 
       {/* ═══════════ NAVBAR (sticky) ═══════════ */}
       <nav className="sticky top-0 z-50 transition-all duration-300">
@@ -210,7 +210,7 @@ const Index = () => {
             <LogoFull size="sm" />
           </Link>
           
-          <div className="hidden md:flex items-center gap-1 p-1 bg-white/[0.03] border border-white/[0.08] rounded-full backdrop-blur-md">
+          <div className="hidden md:flex items-center gap-1 p-1 bg-white/[0.02] border border-white/[0.05] rounded-full backdrop-blur-md">
             {[
               { label: "Features", href: "#features" },
               { label: "Results", href: "#results" },
@@ -220,7 +220,7 @@ const Index = () => {
               <a 
                 key={item.label} 
                 href={item.href} 
-                className="px-5 py-2 rounded-full text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-white/[0.05] transition-all duration-200"
+                className="px-5 py-2 rounded-full text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-white/[0.05] transition-all duration-200"
               >
                 {item.label}
               </a>
@@ -230,14 +230,14 @@ const Index = () => {
           <div className="flex items-center gap-4">
             <button 
               onClick={toggleTheme} 
-              className="flex w-10 h-10 rounded-full items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white/[0.05] border border-transparent hover:border-white/[0.08] transition-all"
+              className="flex w-10 h-10 rounded-full items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white/[0.05] border border-transparent hover:border-white/[0.05] transition-all"
             >
               {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
             <Button 
               size="sm" 
               onClick={() => navigate("/login")} 
-              className="bg-primary text-primary-foreground hover:brightness-110 active:scale-95 rounded-full px-6 h-10 text-sm font-bold shadow-lg shadow-primary/20 transition-all"
+              className="bg-primary text-primary-foreground hover:brightness-110 active:scale-95 rounded-full px-6 h-10 text-sm font-bold shadow-lg shadow-primary/25 transition-all"
             >
               Get started free
             </Button>
@@ -246,86 +246,85 @@ const Index = () => {
       </nav>
 
       {/* ═══════════ HERO ═══════════ */}
-      <section className="relative pt-24 pb-32 md:pt-32 md:pb-48 px-6 overflow-hidden">
+      <section className="relative pt-24 pb-32 md:pt-32 md:pb-40 px-6 overflow-hidden">
         {/* Background Decorative Elements */}
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/20 blur-[120px] rounded-full pointer-events-none opacity-50" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-500/10 blur-[120px] rounded-full pointer-events-none opacity-50" />
+        <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-primary/15 blur-[120px] rounded-full pointer-events-none opacity-40" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-primary/10 blur-[100px] rounded-full pointer-events-none opacity-30" />
         
         <motion.div
           className="relative z-10 max-w-5xl mx-auto text-center"
           initial="hidden"
           animate="visible"
-          variants={{ visible: { transition: { staggerChildren: 0.15 } } }}
+          variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
         >
           {/* Badge pill */}
           <motion.div variants={fadeUp} custom={0}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.03] border border-white/[0.08] backdrop-blur-md mb-12"
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.08] backdrop-blur-md mb-10"
           >
-            <span className="flex h-2 w-2 rounded-full bg-primary animate-pulse" />
-            <span className="text-xs font-bold tracking-wider uppercase text-foreground/80">
+            <span className="flex h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+            <span className="text-[10px] font-black tracking-[0.2em] uppercase text-foreground/70">
               <span className="text-primary mr-1">New:</span> AI-powered infographics
             </span>
           </motion.div>
 
           <motion.h1 variants={fadeUp} custom={1}
-            className="font-display text-6xl md:text-8xl lg:text-9xl leading-[0.9] mb-10 tracking-display font-black"
+            className="font-display text-5xl md:text-7xl lg:text-8xl leading-[1.1] mb-8 tracking-display font-extrabold"
           >
-            <span className="block opacity-90">Your Content</span>
+            <span className="block text-foreground/90">Your Content</span>
             <span className="block">Deserves to Go</span>
-            <span className="relative inline-block mt-4 md:mt-6">
+            <span className="relative inline-block mt-2">
               <AnimatePresence mode="wait">
                 <motion.span
                   key={ROTATING_WORDS[wordIdx]}
-                  initial={{ y: "40%", opacity: 0, filter: "blur(10px)" }}
+                  initial={{ y: "30%", opacity: 0, filter: "blur(8px)" }}
                   animate={{ y: 0, opacity: 1, filter: "blur(0px)" }}
-                  exit={{ y: "-40%", opacity: 0, filter: "blur(10px)" }}
-                  transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
-                  className="text-gradient inline-block italic"
+                  exit={{ y: "-30%", opacity: 0, filter: "blur(8px)" }}
+                  transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+                  className="text-primary inline-block italic"
                 >
                   {ROTATING_WORDS[wordIdx]}
                 </motion.span>
               </AnimatePresence>
-              <div className="absolute -bottom-2 left-0 w-full h-[4px] bg-primary/20 blur-sm rounded-full" />
             </span>
           </motion.h1>
 
           <motion.p variants={fadeUp} custom={2}
-            className="text-lg md:text-xl text-muted-foreground mb-12 max-w-2xl mx-auto leading-relaxed font-medium opacity-80"
+            className="text-base md:text-lg text-muted-foreground mb-12 max-w-xl mx-auto leading-relaxed font-medium opacity-70"
           >
             Stop spending 2 hours on a single post. Generate 5 viral variations in 30 seconds — for LinkedIn, Instagram, TikTok, X, YouTube & Facebook.
           </motion.p>
 
           <motion.div variants={fadeUp} custom={3} className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button size="lg" onClick={() => navigate("/login")} className="bg-foreground text-background hover:scale-[1.02] active:scale-95 h-14 px-10 text-base font-bold rounded-full group transition-all shadow-2xl shadow-white/5">
+            <Button size="lg" onClick={() => navigate("/login")} className="bg-foreground text-background hover:scale-[1.02] active:scale-95 h-14 px-10 text-base font-bold rounded-full group transition-all shadow-xl">
               Start Creating Free
               <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
             </Button>
-            <div className="flex -space-x-3 items-center">
+            <div className="flex -space-x-2.5 items-center">
               {[23, 32, 68, 44].map((i) => (
-                <img key={i} src={`https://randomuser.me/api/portraits/men/${i}.jpg`} className="w-10 h-10 rounded-full border-2 border-background object-cover" alt="User" />
+                <img key={i} src={`https://randomuser.me/api/portraits/men/${i}.jpg`} className="w-9 h-9 rounded-full border-2 border-background object-cover" alt="User" />
               ))}
               <div className="flex flex-col items-start ml-4 text-left">
                 <div className="flex items-center">
-                  {[...Array(5)].map((_, i) => <Star key={i} className="w-3 h-3 text-yellow-500 fill-yellow-500" />)}
+                  {[...Array(5)].map((_, i) => <Star key={i} className="w-2.5 h-2.5 text-primary fill-primary" />)}
                 </div>
-                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">2,400+ creators</span>
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">2,400+ creators</span>
               </div>
             </div>
           </motion.div>
 
           {/* Marquee */}
-          <motion.div variants={fadeUp} custom={4} className="mt-32 relative group">
+          <motion.div variants={fadeUp} custom={4} className="mt-32 relative group opacity-60">
             <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-background z-10 pointer-events-none" />
-            <div className="overflow-hidden py-4 border-y border-white/[0.05]">
-              <div className="animate-marquee flex gap-12 w-max text-foreground/20 text-sm font-black tracking-[0.3em] uppercase items-center">
+            <div className="overflow-hidden py-4 border-y border-white/[0.03]">
+              <div className="animate-marquee flex gap-12 w-max text-foreground/20 text-[10px] font-black tracking-[0.4em] uppercase items-center">
                 {[...Array(3)].map((_, k) => (
                   <div key={k} className="flex gap-12 items-center">
-                    <span className="hover:text-primary transition-colors cursor-default">Viral Content</span><span className="text-primary/40">•</span>
-                    <span className="hover:text-primary transition-colors cursor-default">Anti-AI Protocol</span><span className="text-primary/40">•</span>
-                    <span className="hover:text-primary transition-colors cursor-default">6 Platforms</span><span className="text-primary/40">•</span>
-                    <span className="hover:text-primary transition-colors cursor-default">RAG Powered</span><span className="text-primary/40">•</span>
-                    <span className="hover:text-primary transition-colors cursor-default">Human Voice</span><span className="text-primary/40">•</span>
-                    <span className="hover:text-primary transition-colors cursor-default">5 Variations</span><span className="text-primary/40">•</span>
+                    <span>Viral Content</span><span className="text-primary/30">•</span>
+                    <span>Anti-AI Protocol</span><span className="text-primary/30">•</span>
+                    <span>6 Platforms</span><span className="text-primary/30">•</span>
+                    <span>RAG Powered</span><span className="text-primary/30">•</span>
+                    <span>Human Voice</span><span className="text-primary/30">•</span>
+                    <span>5 Variations</span><span className="text-primary/30">•</span>
                   </div>
                 ))}
               </div>
@@ -335,16 +334,16 @@ const Index = () => {
       </section>
 
       {/* ═══════════ PLATFORMS ═══════════ */}
-      <section className="py-20 relative bg-white/[0.01] border-y border-white/[0.05]">
+      <section className="py-16 relative bg-white/[0.005] border-y border-white/[0.03]">
         <div className="max-w-7xl mx-auto px-6">
-          <p className="text-center text-[11px] font-black text-primary uppercase tracking-[0.4em] mb-12">Universal Compatibility</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-8 items-center justify-items-center opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
+          <p className="text-center text-[10px] font-black text-primary/60 uppercase tracking-[0.4em] mb-10">Universal Compatibility</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-8 items-center justify-items-center opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500">
             {platforms.map((p) => (
-              <div key={p.name} className="flex flex-col items-center gap-3 group cursor-default">
-                <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white/[0.03] border border-white/[0.08] group-hover:scale-110 group-hover:bg-primary/10 group-hover:border-primary/20 transition-all duration-300">
-                  {p.icon ? <p.icon /> : <Mail className="w-5 h-5" />}
+              <div key={p.name} className="flex flex-col items-center gap-2.5 group cursor-default">
+                <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.02] border border-white/[0.05] group-hover:bg-primary/10 group-hover:border-primary/20 transition-all duration-300 text-muted-foreground group-hover:text-primary">
+                  {p.icon ? <p.icon /> : <Mail className="w-4 h-4" />}
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-foreground transition-colors">{p.name}</span>
+                <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-foreground transition-colors">{p.name}</span>
               </div>
             ))}
           </div>
@@ -354,7 +353,7 @@ const Index = () => {
       {/* ═══════════ STATS ═══════════ */}
       <section className="py-24 px-6 relative">
         <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               { end: 50000, suffix: "+", label: "Content generated" },
               { end: 2500, suffix: "+", label: "Active creators" },
@@ -366,13 +365,13 @@ const Index = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1, duration: 0.5 }}
-                className="relative p-10 glass-card text-center group overflow-hidden"
+                className="relative p-8 glass-card text-center group overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                <p className="font-display text-7xl font-black text-gradient tracking-tighter mb-4">
+                <p className="font-display text-6xl font-black text-primary tracking-tighter mb-3">
                   <AnimatedCounter end={stat.end} suffix={stat.suffix} />
                 </p>
-                <p className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground group-hover:text-foreground/80 transition-colors">{stat.label}</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground group-hover:text-foreground/80 transition-colors">{stat.label}</p>
               </motion.div>
             ))}
           </div>
@@ -381,16 +380,14 @@ const Index = () => {
 
       {/* ═══════════ FEATURES ═══════════ */}
       <section id="features" className="py-32 px-6 relative">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 blur-[150px] rounded-full pointer-events-none" />
-        
         <div className="max-w-7xl mx-auto">
           <motion.div className="text-center mb-20"
             initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }} transition={{ duration: 0.5 }}
           >
-            <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-[0.3em] mb-6">Capabilities</span>
-            <h2 className="font-display text-5xl md:text-7xl font-black mb-6 tracking-display">Everything you need to <span className="italic text-gradient">go viral</span></h2>
-            <p className="text-muted-foreground max-w-xl mx-auto text-lg font-medium opacity-70">From research to publishing, Supenli.ai handles the entire content creation workflow.</p>
+            <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-[9px] font-black uppercase tracking-[0.3em] mb-6">Capabilities</span>
+            <h2 className="font-display text-4xl md:text-6xl font-black mb-6 tracking-display">Everything you need to <span className="italic text-primary">go viral</span></h2>
+            <p className="text-muted-foreground max-w-lg mx-auto text-base font-medium opacity-60">From research to publishing, Supenli.ai handles the entire content creation workflow.</p>
           </motion.div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -399,15 +396,12 @@ const Index = () => {
                 key={f.title}
                 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }} transition={{ delay: i * 0.05, duration: 0.4 }}
-                className="group relative p-8 glass-card hover:bg-white/[0.05] transition-all duration-500 overflow-hidden"
+                className="group relative p-8 glass-card hover:bg-white/[0.04] transition-all duration-500 overflow-hidden"
               >
-                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                  <f.icon className="w-16 h-16" />
+                <div className="w-12 h-12 rounded-xl bg-primary/5 flex items-center justify-center mb-8 border border-primary/10 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300">
+                  <f.icon className="w-5 h-5" />
                 </div>
-                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-8 border border-primary/20 group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300">
-                  <f.icon className="w-6 h-6" />
-                </div>
-                <h3 className="font-display text-xl font-bold mb-3 group-hover:text-primary transition-colors">{f.title}</h3>
+                <h3 className="font-display text-lg font-bold mb-3 group-hover:text-primary transition-colors">{f.title}</h3>
                 <p className="text-muted-foreground leading-relaxed font-medium text-sm group-hover:text-foreground/80 transition-colors">{f.desc}</p>
               </motion.div>
             ))}
@@ -422,21 +416,21 @@ const Index = () => {
             initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }} transition={{ duration: 0.5 }}
           >
-            <span className="text-xs font-black text-primary uppercase tracking-[0.3em] mb-4 block">Market Standard</span>
-            <h2 className="font-display text-5xl md:text-6xl font-black mb-6">Why <span className="text-gradient">Supenli.ai</span>?</h2>
-            <p className="text-muted-foreground text-lg font-medium opacity-70">Compare with other AI content creation tools.</p>
+            <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-4 block">Market Standard</span>
+            <h2 className="font-display text-4xl md:text-5xl font-black mb-6 tracking-display">Why <span className="text-primary">Supenli.ai</span>?</h2>
+            <p className="text-muted-foreground text-base font-medium opacity-60">Compare with other AI content creation tools.</p>
           </motion.div>
 
           <motion.div
             initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }} transition={{ duration: 0.6 }}
-            className="glass-card overflow-hidden shadow-2xl shadow-black/40"
+            className="glass-card overflow-hidden"
           >
-            <div className="grid grid-cols-5 border-b border-white/[0.08] bg-white/[0.02]">
-              <div className="px-6 py-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Feature</div>
+            <div className="grid grid-cols-5 border-b border-white/[0.05] bg-white/[0.01]">
+              <div className="px-6 py-6 text-[9px] font-black uppercase tracking-widest text-muted-foreground">Feature</div>
               {["Supenli.ai", "ChatGPT", "Jasper", "Claude"].map((name, i) => (
                 <div key={name} className="px-6 py-6 text-center">
-                  <span className={`text-xs font-black uppercase tracking-widest ${i === 0 ? "text-primary" : "text-muted-foreground/60"}`}>{name}</span>
+                  <span className={`text-[10px] font-black uppercase tracking-widest ${i === 0 ? "text-primary" : "text-muted-foreground/50"}`}>{name}</span>
                 </div>
               ))}
             </div>
@@ -450,65 +444,59 @@ const Index = () => {
               { feature: "5 variations per topic", supen: true, chatgpt: false, jasper: true, claude: false },
               { feature: "Anti-AI detector", supen: true, chatgpt: false, jasper: false, claude: false },
             ].map((row, i) => (
-              <div key={i} className={cn("grid grid-cols-5 border-b border-white/[0.05] last:border-b-0", i % 2 === 0 ? "bg-transparent" : "bg-white/[0.01]")}>
-                <div className="px-6 py-4 text-xs font-bold text-foreground/80">{row.feature}</div>
+              <div key={i} className={cn("grid grid-cols-5 border-b border-white/[0.03] last:border-b-0", i % 2 === 0 ? "bg-transparent" : "bg-white/[0.005]")}>
+                <div className="px-6 py-4 text-[11px] font-bold text-foreground/70">{row.feature}</div>
                 <div className="px-6 py-4 flex items-center justify-center">
-                  {row.supen ? <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center"><Check className="w-3.5 h-3.5 text-primary" /></div> : <XIcon className="w-4 h-4 text-white/10" />}
+                  {row.supen ? <div className="w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center"><Check className="w-3 h-3 text-primary" /></div> : <XIcon className="w-3 h-3 text-white/5" />}
                 </div>
                 <div className="px-6 py-4 flex items-center justify-center">
-                  {row.chatgpt ? <Check className="w-4 h-4 text-emerald-500/60" /> : <XIcon className="w-4 h-4 text-white/10" />}
+                  {row.chatgpt ? <Check className="w-3.5 h-3.5 text-emerald-500/50" /> : <XIcon className="w-3 h-3 text-white/5" />}
                 </div>
                 <div className="px-6 py-4 flex items-center justify-center">
-                  {row.jasper ? <Check className="w-4 h-4 text-emerald-500/60" /> : <XIcon className="w-4 h-4 text-white/10" />}
+                  {row.jasper ? <Check className="w-3.5 h-3.5 text-emerald-500/50" /> : <XIcon className="w-3 h-3 text-white/5" />}
                 </div>
                 <div className="px-6 py-4 flex items-center justify-center">
-                  {row.claude ? <Check className="w-4 h-4 text-emerald-500/60" /> : <XIcon className="w-4 h-4 text-white/10" />}
+                  {row.claude ? <Check className="w-3.5 h-3.5 text-emerald-500/50" /> : <XIcon className="w-3 h-3 text-white/5" />}
                 </div>
               </div>
             ))}
-            <div className="grid grid-cols-5 bg-primary/5 border-t border-primary/20">
-              <div className="px-6 py-6 text-xs font-black uppercase tracking-widest">Monthly price</div>
-              <div className="px-6 py-6 text-center text-lg font-black text-primary">$11</div>
-              <div className="px-6 py-6 text-center text-sm font-bold text-muted-foreground/60">$20</div>
-              <div className="px-6 py-6 text-center text-sm font-bold text-muted-foreground/60">$49</div>
-              <div className="px-6 py-6 text-center text-sm font-bold text-muted-foreground/60">$20</div>
+            <div className="grid grid-cols-5 bg-primary/5 border-t border-primary/10">
+              <div className="px-6 py-6 text-[10px] font-black uppercase tracking-widest">Monthly price</div>
+              <div className="px-6 py-6 text-center text-base font-black text-primary">$11</div>
+              <div className="px-6 py-6 text-center text-xs font-bold text-muted-foreground/40">$20</div>
+              <div className="px-6 py-6 text-center text-xs font-bold text-muted-foreground/40">$49</div>
+              <div className="px-6 py-6 text-center text-xs font-bold text-muted-foreground/40">$20</div>
             </div>
           </motion.div>
         </div>
       </section>
 
       {/* ═══════════ TESTIMONIALS ═══════════ */}
-      <section className="py-32 px-6 bg-white/[0.01]">
+      <section className="py-32 px-6 relative">
         <div className="max-w-7xl mx-auto">
           <motion.div className="text-center mb-20"
             initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }} transition={{ duration: 0.5 }}
           >
-            <span className="text-xs font-black text-primary uppercase tracking-[0.3em] mb-4 block">Success Stories</span>
-            <h2 className="font-display text-5xl md:text-6xl font-black mb-6">What our <span className="text-gradient">creators</span> say</h2>
-            <p className="text-muted-foreground text-lg font-medium opacity-70">Thousands of content creators trust Supenli.ai to create viral content every day.</p>
+            <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-4 block">Success Stories</span>
+            <h2 className="font-display text-4xl md:text-5xl font-black mb-6 tracking-display">What our <span className="text-primary">creators</span> say</h2>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {testimonials.map((t, i) => (
               <motion.div
                 key={t.name}
                 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5 }}
-                className="p-10 glass-card relative group hover:scale-[1.02] transition-all duration-500"
+                className="p-8 glass-card relative group hover:bg-white/[0.04] transition-all duration-500"
               >
-                <MessageSquare className="absolute top-6 right-6 w-8 h-8 text-primary/10" />
-                <p className="text-lg text-foreground/80 leading-relaxed font-medium mb-8">"{t.text}"</p>
-                <div className="flex items-center gap-4 border-t border-white/[0.08] pt-6">
-                  <div className="relative">
-                    <img src={t.image} alt={t.name} className="w-12 h-12 rounded-full object-cover border-2 border-primary/20" />
-                    <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center border-2 border-background">
-                      <Check className="w-3 h-3 text-primary-foreground" />
-                    </div>
-                  </div>
+                <MessageSquare className="absolute top-6 right-6 w-6 h-6 text-primary/5" />
+                <p className="text-base text-foreground/70 leading-relaxed font-medium mb-8">"{t.text}"</p>
+                <div className="flex items-center gap-3.5 border-t border-white/[0.05] pt-6">
+                  <img src={t.image} alt={t.name} className="w-10 h-10 rounded-full object-cover border border-primary/20" />
                   <div>
-                    <p className="font-bold text-foreground">{t.name}</p>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{t.role}</p>
+                    <p className="text-sm font-bold text-foreground">{t.name}</p>
+                    <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">{t.role}</p>
                   </div>
                 </div>
               </motion.div>
@@ -524,9 +512,8 @@ const Index = () => {
             initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }} transition={{ duration: 0.5 }}
           >
-            <div className="inline-block px-4 py-1.5 rounded-full bg-white/[0.05] border border-white/[0.08] text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-6">Battle Tested</div>
-            <h2 className="font-display text-5xl md:text-8xl font-black mb-6 tracking-display">The numbers speak <span className="italic text-gradient">for themselves.</span></h2>
-            <p className="text-muted-foreground text-lg font-medium opacity-70">Real engagement from real posts. Created by @AwakPenn.</p>
+            <div className="inline-block px-4 py-1 rounded-full bg-primary/10 text-[9px] font-black uppercase tracking-[0.3em] text-primary mb-6">Battle Tested</div>
+            <h2 className="font-display text-4xl md:text-7xl font-black mb-6 tracking-display">The numbers speak <span className="italic text-primary">for themselves.</span></h2>
           </motion.div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-20">
@@ -536,34 +523,34 @@ const Index = () => {
               { num: "50K", label: "Shares", icon: Globe },
               { num: "8,810", label: "Reactions", icon: Sparkles },
             ].map((s, i) => (
-              <motion.div key={i} initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }}
-                className="glass-card p-8 flex flex-col items-center text-center group hover:bg-primary/10 transition-all duration-500"
+              <motion.div key={i} initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }}
+                className="glass-card p-6 flex flex-col items-center text-center group hover:bg-primary/10 transition-all duration-500"
               >
-                <div className="w-10 h-10 rounded-full bg-white/[0.03] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <s.icon className="w-4 h-4 text-primary" />
+                <div className="w-9 h-9 rounded-lg bg-white/[0.02] flex items-center justify-center mb-4 text-muted-foreground group-hover:text-primary transition-colors">
+                  <s.icon className="w-4 h-4" />
                 </div>
-                <p className="font-display text-4xl font-black text-foreground mb-1 tracking-tighter">{s.num}</p>
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">{s.label}</p>
+                <p className="font-display text-3xl font-black text-foreground mb-1 tracking-tighter">{s.num}</p>
+                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground">{s.label}</p>
               </motion.div>
             ))}
           </div>
 
-          <div className="h-[900px] overflow-hidden relative rounded-3xl border border-white/[0.05]">
+          <div className="h-[800px] overflow-hidden relative rounded-3xl border border-white/[0.05]">
             <div className="absolute inset-0 bg-gradient-to-b from-background via-transparent to-background z-10 pointer-events-none" />
             <div className="grid grid-cols-2 md:grid-cols-3 gap-6 p-6">
               {[0, 1, 2].map((col) => (
                 <motion.div 
                   key={col}
                   animate={{ y: col % 2 === 0 ? ["0%", "-50%"] : ["-50%", "0%"] }} 
-                  transition={{ duration: 40 + col * 5, repeat: Infinity, ease: "linear" }} 
+                  transition={{ duration: 45 + col * 5, repeat: Infinity, ease: "linear" }} 
                   className="flex flex-col gap-6"
                 >
                   {[...resultsData, ...resultsData].map((r, i) => (
-                    <div key={i} className="rounded-2xl overflow-hidden border border-white/[0.1] hover:border-primary/50 transition-all duration-500 bg-black/40 group shadow-2xl">
-                      <img src={r.src} alt={`${r.platform} result`} className="w-full h-auto block group-hover:scale-[1.02] transition-transform duration-700" style={{ objectFit: "contain" }} onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = "none"; }} />
-                      <div className="p-4 bg-white/[0.03] flex items-center justify-between">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{r.platform}</span>
-                        <span className="text-[10px] font-bold text-primary">{r.stat}</span>
+                    <div key={i} className="rounded-2xl overflow-hidden border border-white/[0.08] hover:border-primary/40 transition-all duration-500 bg-black/20 group">
+                      <img src={r.src} alt={`${r.platform} result`} className="w-full h-auto block opacity-80 group-hover:opacity-100 transition-opacity" style={{ objectFit: "contain" }} onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = "none"; }} />
+                      <div className="p-4 bg-white/[0.02] flex items-center justify-between">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">{r.platform}</span>
+                        <span className="text-[9px] font-bold text-primary">{r.stat}</span>
                       </div>
                     </div>
                   ))}
@@ -575,80 +562,66 @@ const Index = () => {
       </section>
 
       {/* ═══════════ PRICING ═══════════ */}
-      <section id="pricing" className="py-32 px-6 relative bg-white/[0.01]">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent pointer-events-none" />
+      <section id="pricing" className="py-32 px-6 relative">
         <div className="max-w-7xl mx-auto relative">
           <motion.div className="text-center mb-24"
             initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }} transition={{ duration: 0.5 }}
           >
-            <span className="text-xs font-black text-primary uppercase tracking-[0.4em] mb-4 block">Fair Pricing</span>
-            <h2 className="font-display text-6xl md:text-8xl font-black mb-8 tracking-display">Start free. <span className="text-gradient">Scale fast.</span></h2>
-            <p className="text-muted-foreground text-xl font-medium opacity-70">No hidden fees. Cancel anytime.</p>
+            <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-4 block">Fair Pricing</span>
+            <h2 className="font-display text-5xl md:text-6xl font-black mb-6 tracking-display">Start free. <span className="text-primary">Scale fast.</span></h2>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-10 items-start">
+          <div className="grid md:grid-cols-3 gap-8 items-start">
             {plans.map((plan, i) => {
               const PlanIcon = plan.icon;
               return (
               <motion.div
                 key={plan.name}
-                initial={{ opacity: 0, y: 40 }}
+                initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: i * 0.15, duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
-                className={`relative ${plan.highlighted ? "md:-mt-8" : ""}`}
-              >
-                {plan.highlighted && (
-                  <div className="absolute -top-5 left-1/2 -translate-x-1/2 z-20 px-6 py-2 rounded-full bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-primary/40 border border-white/20">
-                    Most Popular
-                  </div>
+                transition={{ delay: i * 0.1, duration: 0.5 }}
+                className={cn(
+                  "p-10 glass-card transition-all duration-500 flex flex-col",
+                  plan.highlighted ? "border-primary bg-white/[0.04] scale-105 shadow-2xl shadow-primary/10" : "border-white/[0.08]"
                 )}
+              >
                 <div className={cn(
-                  "p-10 glass-card transition-all duration-500 border-t-4",
-                  plan.highlighted ? "border-primary bg-white/[0.04] scale-105 shadow-2xl shadow-primary/10" : "border-white/[0.1] hover:border-white/20"
+                  "w-14 h-14 rounded-2xl flex items-center justify-center mb-10 transition-all",
+                  plan.highlighted ? "bg-primary text-primary-foreground" : "bg-white/[0.03] text-muted-foreground"
                 )}>
-                  <div className={cn(
-                    "w-16 h-16 rounded-2xl flex items-center justify-center mb-10 transition-all duration-500",
-                    plan.highlighted ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30" : "bg-white/[0.05] text-muted-foreground"
-                  )}>
-                    <PlanIcon className="w-8 h-8" />
-                  </div>
-
-                  <h3 className="font-display text-2xl font-black mb-2">{plan.name}</h3>
-                  <p className="text-sm font-medium text-muted-foreground mb-10 leading-relaxed">{plan.desc}</p>
-
-                  <div className="flex items-baseline gap-2 mb-10">
-                    <span className="font-display text-6xl font-black tracking-tighter">{plan.price}</span>
-                    <span className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{plan.period}</span>
-                  </div>
-
-                  <div className="space-y-5 mb-12">
-                    {plan.features.map((feat) => (
-                      <div key={feat} className="flex items-start gap-4">
-                        <div className={cn(
-                          "w-6 h-6 rounded-full flex items-center justify-center shrink-0 border mt-0.5",
-                          plan.highlighted ? "bg-primary/20 border-primary/40" : "bg-white/[0.05] border-white/[0.1]"
-                        )}>
-                          <Check className={cn("w-3.5 h-3.5", plan.highlighted ? "text-primary" : "text-muted-foreground")} />
-                        </div>
-                        <span className="text-sm font-bold text-foreground/80 leading-snug">{feat}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  <Button
-                    onClick={() => navigate("/login")}
-                    className={cn(
-                      "w-full h-14 rounded-2xl font-black text-sm uppercase tracking-widest transition-all duration-500",
-                      plan.highlighted 
-                        ? "bg-primary text-primary-foreground hover:brightness-110 shadow-xl shadow-primary/20" 
-                        : "bg-white/[0.05] text-foreground hover:bg-white/[0.1] border border-white/[0.08]"
-                    )}
-                  >
-                    {plan.cta}
-                  </Button>
+                  <PlanIcon className="w-7 h-7" />
                 </div>
+
+                <h3 className="font-display text-2xl font-black mb-2">{plan.name}</h3>
+                <p className="text-sm font-medium text-muted-foreground mb-8">{plan.desc}</p>
+
+                <div className="flex items-baseline gap-2 mb-10">
+                  <span className="font-display text-5xl font-black tracking-tighter">{plan.price}</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{plan.period}</span>
+                </div>
+
+                <div className="space-y-4 mb-12 flex-1">
+                  {plan.features.map((feat) => (
+                    <div key={feat} className="flex items-start gap-3">
+                      <Check className={cn("w-4 h-4 mt-0.5 shrink-0", plan.highlighted ? "text-primary" : "text-muted-foreground/50")} />
+                      <span className="text-sm font-bold text-foreground/70 leading-snug">{feat}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <Button
+                  onClick={() => navigate("/login")}
+                  className={cn(
+                    "w-full h-14 rounded-xl font-black text-xs uppercase tracking-widest transition-all",
+                    plan.highlighted 
+                      ? "bg-primary text-primary-foreground hover:brightness-110 shadow-lg shadow-primary/20" 
+                      : "bg-white/[0.03] text-foreground hover:bg-white/[0.08] border border-white/[0.05]"
+                  )}
+                >
+                  {plan.cta}
+                </Button>
               </motion.div>
               );
             })}
@@ -663,28 +636,28 @@ const Index = () => {
             initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }} transition={{ duration: 0.5 }}
           >
-            <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-4 block">Knowledge Base</span>
-            <h2 className="font-display text-5xl md:text-7xl font-black mb-6 tracking-display">Questions? <span className="italic text-gradient">Answers.</span></h2>
+            <span className="text-[9px] font-black text-primary uppercase tracking-[0.4em] mb-4 block">Knowledge Base</span>
+            <h2 className="font-display text-4xl md:text-6xl font-black mb-6 tracking-display">Questions? <span className="italic text-primary">Answers.</span></h2>
           </motion.div>
 
-          <div className="grid gap-4">
+          <div className="grid gap-3">
             {faqs.map((faq, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }} transition={{ delay: i * 0.05, duration: 0.3 }}
-                className="glass-card overflow-hidden group"
+                className="glass-card overflow-hidden group border-white/[0.04]"
               >
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full flex items-center justify-between p-8 text-left group-hover:bg-white/[0.02] transition-all"
+                  className="w-full flex items-center justify-between p-7 text-left group-hover:bg-white/[0.01] transition-all"
                 >
-                  <span className="text-base font-bold tracking-tight text-foreground/90">{faq.q}</span>
+                  <span className="text-base font-bold tracking-tight text-foreground/80">{faq.q}</span>
                   <div className={cn(
-                    "w-8 h-8 rounded-full border border-white/[0.1] flex items-center justify-center transition-all duration-500",
-                    openFaq === i ? "bg-primary border-primary rotate-180" : "bg-white/[0.03]"
+                    "w-7 h-7 rounded-full flex items-center justify-center transition-all duration-500",
+                    openFaq === i ? "bg-primary rotate-180" : "bg-white/[0.03] border border-white/[0.05]"
                   )}>
-                    <ChevronDown className={cn("w-4 h-4 transition-colors", openFaq === i ? "text-primary-foreground" : "text-muted-foreground")} />
+                    <ChevronDown className={cn("w-3.5 h-3.5", openFaq === i ? "text-primary-foreground" : "text-muted-foreground")} />
                   </div>
                 </button>
                 <AnimatePresence>
@@ -695,7 +668,7 @@ const Index = () => {
                       exit={{ height: 0, opacity: 0 }}
                       className="overflow-hidden"
                     >
-                      <div className="px-8 pb-8 text-muted-foreground text-sm font-medium leading-relaxed max-w-2xl">
+                      <div className="px-7 pb-7 text-muted-foreground text-sm font-medium leading-relaxed max-w-2xl">
                         {faq.a}
                       </div>
                     </motion.div>
@@ -708,40 +681,32 @@ const Index = () => {
       </section>
 
       {/* ═══════════ FINAL CTA ═══════════ */}
-      <section className="py-40 px-6 relative overflow-hidden">
-        <div className="absolute inset-0 mesh-gradient opacity-20" />
-        <div className="absolute inset-0 bg-background/40 backdrop-blur-[100px]" />
-        
+      <section className="py-40 px-6 relative overflow-hidden bg-white/[0.01]">
+        <div className="absolute inset-0 bg-primary/[0.02] pointer-events-none" />
         <motion.div
           className="relative z-10 max-w-4xl mx-auto text-center"
-          initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }} transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
         >
-          <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-primary/10 border border-primary/20 mb-12 backdrop-blur-md">
+          <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-primary/10 border border-primary/20 mb-10">
             <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-xs font-black text-primary uppercase tracking-[0.3em]">Ready to dominate?</span>
+            <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Ready to dominate?</span>
           </div>
-          <h2 className="font-display text-6xl md:text-9xl font-black mb-10 tracking-display leading-[0.85]">
-            Create your first <span className="text-gradient italic">viral content</span>
+          <h2 className="font-display text-5xl md:text-8xl font-black mb-8 tracking-display leading-[1.1]">
+            Create your first <br /><span className="text-primary italic">viral content</span>
           </h2>
-          <p className="text-xl md:text-2xl text-muted-foreground mb-16 max-w-2xl mx-auto font-medium opacity-80">
+          <p className="text-lg md:text-xl text-muted-foreground mb-16 max-w-xl mx-auto font-medium opacity-60">
             Join 2,500+ creators using Supenli.ai to create content that converts.
           </p>
-          <Button size="lg" onClick={() => navigate("/login")} className="bg-foreground text-background hover:scale-105 active:scale-95 font-black uppercase tracking-[0.2em] group h-20 px-16 text-lg rounded-full transition-all shadow-2xl shadow-white/5">
+          <Button size="lg" onClick={() => navigate("/login")} className="bg-foreground text-background hover:scale-105 active:scale-95 font-black uppercase tracking-[0.2em] h-16 px-14 text-base rounded-full transition-all shadow-2xl shadow-white/5">
             Get started free
-            <ArrowRight className="w-6 h-6 ml-3 group-hover:translate-x-2 transition-transform duration-500" />
+            <ArrowRight className="w-5 h-5 ml-2" />
           </Button>
-          
-          <div className="flex flex-wrap items-center justify-center gap-10 mt-20 opacity-40 grayscale group-hover:grayscale-0 transition-all">
-            <span className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest"><Check className="w-4 h-4 text-primary" /> Free forever</span>
-            <span className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest"><Check className="w-4 h-4 text-primary" /> No credit card</span>
-            <span className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest"><Check className="w-4 h-4 text-primary" /> Instant setup</span>
-          </div>
         </motion.div>
       </section>
 
       {/* ═══════════ FOOTER ═══════════ */}
-      <footer className="border-t border-white/[0.05] py-20 px-6 relative bg-white/[0.01]">
+      <footer className="border-t border-white/[0.05] py-20 px-6 relative bg-white/[0.005]">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-12 mb-20">
             <div className="col-span-2">
@@ -750,13 +715,13 @@ const Index = () => {
                   <LogoFull size="md" />
                 </Link>
               </div>
-              <p className="text-sm text-muted-foreground font-medium leading-relaxed max-w-xs mb-8 opacity-70">
+              <p className="text-sm text-muted-foreground font-medium leading-relaxed max-w-xs mb-8 opacity-60">
                 AI-powered content creation platform for creators who want to sound human. Build your legacy, one viral post at a time.
               </p>
               <div className="flex gap-4">
                 {[Twitter, Linkedin, Instagram].map((Icon, idx) => (
-                  <a key={idx} href="#" className="w-10 h-10 rounded-full border border-white/[0.1] flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary transition-all duration-300">
-                    <Icon className="w-4 h-4" />
+                  <a key={idx} href="#" className="w-9 h-9 rounded-full border border-white/[0.05] flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary transition-all duration-300">
+                    <Icon className="w-3.5 h-3.5" />
                   </a>
                 ))}
               </div>
@@ -764,7 +729,7 @@ const Index = () => {
 
             {["Product", "Resources", "Legal"].map((title) => (
               <div key={title}>
-                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-foreground mb-8">{title}</h4>
+                <h4 className="text-[9px] font-black uppercase tracking-[0.4em] text-foreground mb-8 opacity-40">{title}</h4>
                 <ul className="space-y-4">
                   {(title === "Product" ? ["Features", "Pricing", "FAQ"] : title === "Resources" ? ["Contact", "Support"] : ["Privacy", "Terms"]).map((link) => (
                     <li key={link}>
@@ -776,11 +741,10 @@ const Index = () => {
             ))}
           </div>
 
-          <div className="flex flex-col md:flex-row items-center justify-between pt-12 border-t border-white/[0.05] gap-8">
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/50">© 2026 Supenli.ai. Built for virality.</p>
+          <div className="flex flex-col md:flex-row items-center justify-between pt-12 border-t border-white/[0.03] gap-8">
+            <p className="text-[9px] font-black uppercase tracking-[0.4em] text-muted-foreground/30">© 2026 Supenli.ai. Built for virality.</p>
             <div className="flex gap-8">
-              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/30">French Tech</span>
-              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/30">Secure Data</span>
+              <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/20">Secure Platform</span>
             </div>
           </div>
         </div>

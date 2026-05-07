@@ -750,7 +750,10 @@ export function buildDallEPrompt(
   template?: string,
   userName?: string,
 ): string {
-  const selectedTemplate = template || detectTemplate(content);
+  // template parameter is preserved for back-compat with call sites but no
+  // longer drives branching — the layout is auto-picked from the content.
+  void template;
+
   const rawExt = extractForDallE(content);
   const ext = {
     title: rawExt?.title || "Key Insights",
@@ -761,28 +764,6 @@ export function buildDallEPrompt(
     contentType: rawExt?.contentType || "general",
   };
   const pl = platform?.toLowerCase() || "";
-
-  const baseRules = `CRITICAL RULES — NO EXCEPTIONS:
-1. ALL TEXT IN ENGLISH ONLY — no other language
-2. NO footer, NO signature, NO watermark, NO "follow for more", NO branding
-3. Every word FULLY READABLE — never cut off, never truncated, never blurry
-4. 50px safe margin on ALL sides — text NEVER touches edges
-5. Minimum 18px body text, 32px titles — HIGH CONTRAST always
-6. NO text overlapping other elements — clean visual hierarchy
-7. Fill 88% of canvas with information — DENSE but organized
-8. Use ONLY the exact content below — do NOT invent or add anything`;
-
-  const contentBlock = `CONTENT TYPE: ${ext.contentType}
-This is a ${ext.contentType} infographic — the visual must match this type.
-
-MANDATORY CONTENT — USE WORD FOR WORD:
-
-TITLE (display prominently): "${ext.title}"
-${ext.points.length > 0 ? `\nKEY POINTS (display ALL ${ext.points.length} points):\n${ext.points.map((p, i) => `${i + 1}. "${p}"`).join('\n')}` : ''}
-${ext.stats.length > 0 ? `\nKEY NUMBERS (highlight visually):\n${ext.stats.map(s => `• ${s}`).join('\n')}` : ''}
-${ext.quotes.length > 0 ? `\nPULL QUOTE (display in quote box):\n"${ext.quotes[0]}"` : ''}
-
-CRITICAL: Use ONLY the text above. Do NOT invent, paraphrase, or add unrelated graphics. Every point must be FULLY READABLE with no text cut off.`;
 
   let formatHint = "Portrait format.";
   if (pl.includes("linkedin")) formatHint = "Portrait (1024x1536). LinkedIn-optimized.";
@@ -914,521 +895,438 @@ DENSITY TARGET (LinkedIn specifically):
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━` : "";
 
-  const n = ext.points.length;
-  const AVOID = "\n\nAVOID: blurry, cluttered, messy layout, too many colors, realistic photo, 3D render, low resolution, bad typography, misaligned text, dark background (unless dark template), generic stock photo style.";
+  const AVOID = "blurry, cluttered, messy layout, more than 4 accent colors, realistic photo, 3D render, low resolution, bad typography, misaligned text, dark background, pastel SaaS rounded cards, generic stock photo, emojis (🤖💡📚 etc.), gradients, lorem ipsum, repeated bullets, truncated words.";
 
-  // ── MATRIX DASHBOARD (high-density multi-viz layout) ──
+  // ─────────────────────────────────────────────────────────────────
+  // AWA K. PENN PROMPT BUILDER FOR GEMINI 2.5 FLASH IMAGE (Nano Banana)
+  // ─────────────────────────────────────────────────────────────────
+  // Auto-picks one of 3 layout families based on the user's content,
+  // then injects pixel-precise spec + verbatim text + a worked
+  // reference example. Specs sourced from infographic-reference-specs.ts
+  // (12 references analyzed at pixel level).
+  // ─────────────────────────────────────────────────────────────────
   {
-    const backgrounds = ["creamy paper #FAF9F6", "pure white #FFFFFF", "warm white #FDFCFA", "light cream #FFF8F0"];
+    type AwaLayout = "DENSE_WHITEBOARD" | "HIGHLIGHT_BOX" | "CHEAT_SHEET";
+
+    // ── Layout family auto-selection ──
+    const sectionsCount = ext.points.length;
+    const hasComparison = /\bvs\.?\b|\bversus\b|compared\s+to|column\s+\d|table/i.test(content);
+    const hasFramework = /\b(framework|formula|blueprint|matrix|cheat\s*sheet|templates?|playbook|method)\b/i.test(content);
+    const hasPlaceholders = /\[[A-Z][^\]]{1,40}\]/.test(content); // [FOLDER NAME] style
+    const verbLed = /^[\s\-•*\d.)]*\s*(create|build|connect|use|find|setup|configure|enable|learn|browse|search|access|design|launch|automate|master|generate|repurpose)\b/im.test(content);
+
+    let awaLayout: AwaLayout;
+    if (hasFramework || hasComparison || hasPlaceholders || sectionsCount >= 8) awaLayout = "CHEAT_SHEET";
+    else if (verbLed && sectionsCount >= 3 && sectionsCount <= 5) awaLayout = "HIGHLIGHT_BOX";
+    else awaLayout = "DENSE_WHITEBOARD";
+
+    // ── Background variation ──
+    const backgrounds = ["warm cream #f8f9f7", "off-white #fffef8", "paper white #f5f5f0", "light cream #fefcf6"];
     const bgChoice = backgrounds[Math.floor(Math.random() * backgrounds.length)];
 
-    // Build rich content analysis
-    const kp = extractKeyPoints(content);
-    const sectionsRaw = kp?.sections || [];
-    const hasSections = sectionsRaw.length >= 2 && sectionsRaw.some(s => s.bullets.length > 0);
-    const mainSections = hasSections
-      ? sectionsRaw.slice(0, 6)
-      : ext.points.slice(0, 6).map(p => ({ header: p.split(' ').slice(0, 5).join(' ').toUpperCase(), bullets: [p] }));
+    // ── Verbatim content block (used by all 3 layouts) ──
+    const sourceTextBlock = `MAIN TITLE (display verbatim, no rephrasing): "${ext.title}"
+${ext.points.length > 0 ? `\nSECTIONS / BULLETS (use VERBATIM — do not paraphrase, do not invent extras):\n${ext.points.map((p, i) => `  ${i + 1}. "${p}"`).join("\n")}` : ""}
+${ext.stats.length > 0 ? `\nKEY NUMBERS (display as oversized callouts inside their cell):\n${ext.stats.map((s) => `  → ${s}`).join("\n")}` : ""}
+${ext.keywords.length > 0 ? `\nKEY TERMS (paint flat yellow #FFEF5A highlighter under each):\n  ${ext.keywords.slice(0, 6).join(", ")}` : ""}
+${ext.quotes.length > 0 ? `\nPULL QUOTE (give its own card with oversized opening quote mark):\n  "${ext.quotes[0]}"` : ""}`;
 
-    const fbSectionCap = isFacebook ? 5 : 6;
-    const fbBranchSections = isFacebook ? mainSections.slice(0, 5) : mainSections.slice(0, fbSectionCap);
+    const handle = userName ? userName.replace(/^@/, "").replace(/\s+/g, "").toLowerCase() : "awakpenn";
 
-    // Extract extra signal from the content for richer modules
-    const contentLower = content.toLowerCase();
-    const hasLevels = /\b(beginner|intermediate|advanced|level\s*\d|tier\s*\d|day\s*\d|step\s*\d|stage\s*\d)\b/i.test(content);
-    const hasComparison = /\bvs\b|\bversus\b|\bbefore\b.*\bafter\b|\bold\b.*\bnew\b/i.test(contentLower);
-    const hasChecklist = /(checklist|to-?do|tips|mistakes|rules|do['' ]?s and don['' ]?ts)/i.test(contentLower);
-    const hasFramework = /(framework|formula|blueprint|model|method|process)/i.test(contentLower);
-    const hasNumbers = ext.stats.length >= 2 || /\d+%|\$\d|\d+x|\d+ ?k\b/i.test(content);
+    // ── SHARED STYLE BIBLE — Awa K. Penn whiteboard DNA ──
+    const styleBible = `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+AWA K. PENN VISUAL DNA — every rule is non-negotiable
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-    // Build a recommended viz mix (≥3 distinct types) tailored to the content
-    const vizMix: string[] = [];
-    if (hasLevels) vizMix.push("Pyramid / hierarchy module — ascending tiers stacked, each tier labeled");
-    if (hasComparison) vizMix.push("Two-column comparison — ❌ left vs ✅ right, contrasting tones");
-    if (hasChecklist) vizMix.push("Checklist module — boxes ☐ + short imperative phrases");
-    if (hasFramework) vizMix.push("Process / flow module — boxes connected by hand-drawn arrows");
-    if (hasNumbers) vizMix.push("Stat callout — oversized number with one-line caption");
-    // Always-on modules to guarantee diversity even on plain content
-    vizMix.push("Annotated grid of 4-6 numbered cells, each with its OWN micro-icon");
-    vizMix.push("Pro-tip / Watch-out callout box — distinct accent color, bordered, takes ~10% of canvas");
-    const recommendedViz = Array.from(new Set(vizMix)).slice(0, 6);
+CANVAS:
+- Background: ${bgChoice}, with a subtle paper grain at 3-5% opacity (visible texture, not noisy).
+- 4 metallic corner clips (12px wide × 18px tall, dark gray #555555, slight 3D bevel) inset 6px from each corner. They look like real whiteboard mounting clips.
+- Hand-drawn imperfections everywhere — wobbly lines, slightly irregular strokes, NEVER perfectly geometric.
 
-    return `ABSOLUTE RULES — fill 100% of canvas top-to-bottom and edge-to-edge.
-Background reaches ALL 4 edges. No empty corners. No white margin band.
+TYPOGRAPHY (TWO fonts only — no third):
+- Title: extremely heavy hand-drawn sans-serif, like a thick black permanent marker.
+  Size 48-56px. Weight 900+. Stroke width 8-12% of letter height. Slight stroke-weight variation.
+- Body: handwritten casual (Caveat / Patrick Hand feel). Size 14-18px. Weight 400-500. Slightly irregular letter spacing — like a real Sharpie marker on paper.
+- Section headers: same heavy sans-serif but smaller (18-22px), with 2px slightly wavy colored underline matching the section accent.
+- All text in ENGLISH. ZERO truncation. ZERO invented words. PRESERVE accents and punctuation EXACTLY.
+
+PALETTE (5 colors max — never more):
+- Red    #C0392B  warm brownish red — headers, ✓ checkmarks, warnings, underlines
+- Blue   #2563EB  medium confident blue — headers, names, links, creator handle
+- Green  #4A8B35  natural forest green — positive items, headers
+- Orange #F5922A  warm tangerine — tertiary accent, ★ stars
+- Yellow #FFEF5A  HIGHLIGHTER ONLY — flat rectangular background behind specific words OR full-width section bands
+
+YELLOW HIGHLIGHTER — exactly two valid uses:
+  1. Inline word highlight: flat yellow rectangle behind a key noun (NO rounded corners, looks like a Stabilo Boss marker stroke). 3-5 instances total.
+  2. Section bands: full-width yellow strip ~36-42px tall with bold black centered ALL-CAPS text inside. Use 2-4 of these to group sections.
+NEVER use yellow as a card background, border color, or decorative fill.
+
+SKETCH ICONS (NOT emojis):
+- Hand-drawn black line-art icons (single weight ~2px stroke), like a quick whiteboard marker drawing.
+- Topics: graduation cap, books stacked, gears, lightbulb, calendar, magnifying glass, megaphone, file folder, mailbox, person silhouette, t-shirt, sofa/room, coin/dollar, smartphone, clock, receipt, globe, etc.
+- Each section gets ONE small thematic illustration (60-100px) on the right side OR above the section text. Match the section topic — not a generic icon.
+- ZERO emojis (🤖, 💡, 📚 etc.). ZERO 3D / photo-realistic icons.
+
+DECORATIVE ELEMENTS (used sparingly, premium feel):
+- Hand-drawn arrows (curved or straight) connecting related sections, with tiny micro-copy near them ("then →", "leads to").
+- Small ★ stars in #F5922A near important callouts.
+- ✓ red checkmarks for positive items.
+- Hand-drawn rectangular borders around sections — wobbly, NOT perfectly straight.
+- [SQUARE BRACKETS] sometimes wrap the main title.
+
+DENSITY TARGET (THE most important metric):
+- 85-95% of canvas filled with ink. Less than 5% empty space at the bottom.
+- 7-10 distinct content units (sections + sub-modules).
+- 200-400 words of actual content total.
+- Every cm² rewards a 2-second pause: a real number, a real tool name, a real action, a concrete example.
+
+FOOTER (bottom 6-8% of canvas):
+- Hand-drawn horizontal divider line spanning the canvas.
+- "Follow @${handle} for more amazing AI content | Repost ↻" — handwritten bold 22px.
+- The handle (@${handle}) in blue #2563EB, bold, underlined.
+- Small curved hand-drawn arrow doodle (↗ or ↙) flanking the text on one side.
+
+INSTANT REJECTION (do not produce):
+- Pure white #ffffff backgrounds
+- Dark backgrounds or dark cards
+- Gradients on text or backgrounds
+- Emojis anywhere
+- Pastel SaaS-dashboard rounded cards with drop shadows
+- Photography or 3D-rendered icons
+- More than 4 accent colors
+- Thin/light font weights for titles
+- Lorem ipsum, vague filler ("this is important", "this is essential")
+- Repeated section headers, duplicate bullets
+- Cut-off / truncated / orphan letters
 ${typographyQualityControl}
-QUALITY — ZERO TOLERANCE:
-- Every word spelled correctly. No repeated phrases. No truncated text.
-- Perfect grammar. Dark text on light background. Every section complete.
-- Maximum ${fbSectionCap} sections / cells. Minimum 4.
 ${facebookRules}
-${linkedinPremiumBlock}
+${linkedinPremiumBlock}`;
+
+    // ──────────────────────────────────────────────────────────────
+    // LAYOUT 1 — DENSE WHITEBOARD (numbered sections + yellow bands)
+    // Matches: "Make Money With Nano Banana 2026", "Master Claude in 2 Minutes",
+    //          most Awa K. Penn whiteboard cheat-sheets
+    // ──────────────────────────────────────────────────────────────
+    if (awaLayout === "DENSE_WHITEBOARD") {
+      return `Generate ONE high-quality infographic image. Fill the canvas top-to-bottom and edge-to-edge.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-LAYOUT — "MATRIX DASHBOARD" (this is non-negotiable)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-This is NOT a vertical list. This is a strategic dashboard.
-
-GRID: split the canvas into a 2-column × 3-row grid (or 2×2 + a wide
-header row). Each cell is its own self-contained module with its own
-visual logic. Cells are SEPARATED by hand-drawn lines or subtle color
-washes — never just whitespace.
-
-The 6 cells must use AT LEAST 3 DIFFERENT visualization types from
-this inventory:
-${recommendedViz.map((v, i) => `  ${i + 1}. ${v}`).join("\n")}
-
-Pick the 3-4 viz types that best match the content. NEVER use the
-same module type more than twice. Visual diversity is the hallmark
-of a premium dashboard — copy-paste of the same block is what makes
-infographics look cheap.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-ANTI-REDUNDANCY (the #1 cheap-infographic killer)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-- The TITLE of a section and the BODY of that same section MUST NEVER
-  share more than 2 words. The title sets the topic; the body adds
-  HOW, WHY, HOW MUCH — never re-states the title.
-- Each section delivers a NEW kind of detail: a real platform name,
-  a real number, a real strategy, a real micro-action. Empty filler
-  ("this is important", "this is essential") is forbidden.
-- Each cell must answer at least ONE of: how → process steps;
-  how much → numbers; what to avoid → pitfall; example → named brand.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-TYPOGRAPHY HIERARCHY
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Five levels of weight, used consistently across all cells:
-1. MAIN TITLE: large bold handwritten, double-underline accent (orange).
-2. CELL HEADER: medium bold, all-caps optional, with cell number badge.
-3. CELL SUB-LABEL: italic medium-weight, color-coded.
-4. BODY BULLETS: regular weight, dark on light.
-5. MICRO-ANNOTATIONS: tiny handwritten notes (~12px), slightly tilted,
-   placed near arrows or transitions. Examples: "← do this first",
-   "+27% engagement", "free tier only".
-
-Body text is JUSTIFIED inside its cell — never floating, never
-ragged on both sides. Use cell borders as the justification frame.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-STYLE — "PREMIUM HANDWRITTEN DASHBOARD"
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Background: ${bgChoice}.
-Font: handwritten primary (Caveat / Patrick Hand). Sans-serif accent
-(Inter) only for numbers and short labels.
-
-CELL TREATMENT:
-- Wobbly hand-drawn rectangular borders for each cell (NOT perfect).
-- Cell number badge top-left of each cell (hand-drawn circle, color).
-- Color rotation: Blue → Red → Orange → Purple → Green → Teal.
-- Yellow highlighter on 2-3 KEY words per cell (the noun that matters).
-- One contextual doodle icon per cell — must MATCH the cell's topic
-  (not generic). Examples: 💰 finance, 📈 growth, 🧠 learning,
-  ⚡ speed, 🎯 goals, 💡 ideas, ✅ wins, ❌ mistakes, 🛠 tools.
-
-INTER-CELL CONNECTIONS:
-- Hand-drawn arrows between cells where there is a logical flow.
-- Tiny handwritten micro-copy near the arrows
-  ("then →", "leads to", "so that").
-- Subtle color gradients across the grid to suggest progression.
-
-DENSITY TARGET:
-- Every cm² brings new information.
-- 50% visuals / 50% text by area, but visuals must SUPPORT the text,
-  not replace it.
-- Each cell: 3-5 bullets OR one big stat OR a small pyramid OR a
-  comparison pair — not just a one-liner.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-CONTENT TO RENDER (use this verbatim — do not invent)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-MAIN TITLE: "${ext.title}"
-
-CELLS (${fbBranchSections.length} total):
-${fbBranchSections.map((s, i) => {
-  const bullets = s.bullets.slice(0, 5);
-  return `Cell ${i + 1}: "${s.header}"
-${bullets.map(b => `  - ${b}`).join("\n")}`;
-}).join("\n\n")}
-
-${ext.stats.length > 0 ? `KEY STATISTICS (use AT LEAST 2 inside cells, oversized):
-${ext.stats.map(s => `  → ${s}`).join("\n")}` : ""}
-
-${ext.keywords.length > 0 ? `KEYWORDS to highlight (yellow marker):
-  ${ext.keywords.slice(0, 6).join(", ")}` : ""}
-
-${ext.quotes.length > 0 ? `PULL QUOTE (place in a dedicated speech-bubble cell):
-  "${ext.quotes[0]}"` : ""}
-
-ACTION ITEMS (these become a checklist module if useful):
-${ext.points.slice(0, 6).map((p, i) => `  ${i + 1}. ${p}`).join("\n")}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-FOOTER
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Hand-drawn separator line across the bottom.
-"Follow @${userName || "supenli.ai"} for more | Save & Repost".
-Small decorative star element.
-
-CREATIVITY: vary cell shapes (rectangles, speech bubbles, banners,
-sticky notes). The dashboard must read like a designer's strategic
-poster, not a school worksheet. Premium magazine quality.
-
-AVOID:
-- Dark background (unless explicitly dark template)
-- 3D, perspective, table-on-desk surface
-- Lorem ipsum, empty cells, vague filler ("this is important")
-- Repeated section content — every cell is unique
-- Single-column vertical layout — this is a MATRIX, not a list
-- Generic stock icons unrelated to the cell topic
-- Cut-off words, orphan letters, rasterised type
-- Title and body of the same cell repeating the same words
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-REFERENCE EXAMPLE — match this density, hierarchy, and module mix
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Here is the type of layout this prompt expects. Imitate the
-DENSITY, the MODULE MIX, and the typography hierarchy. Do NOT copy
-the topic or the words — those come from the CONTENT TO RENDER block
-above. This example exists only to show you what "premium dashboard"
-looks like.
-
-[Cream background. Title at top: "BUILD A 7-FIGURE FACELESS YOUTUBE
-CHANNEL" in big handwritten bold, double-orange underline.
-Subtitle in small italic: "THE COMPLETE PLAYBOOK".]
-
-Cell 1 (top-left, blue) — "BUSINESS MODELS":
-  Mini grid of 4 brand-style logos with names underneath
-  (Cash Cow, Faceless Channel, Stock Footage, AI-Generated).
-  Each has a one-line note: "passive income", "evergreen",
-  "low effort", "fastest growth 2025".
-
-Cell 2 (top-right, red) — "PYRAMID OF VALUE":
-  Pyramid in 4 ascending tiers, color-coded:
-    Top — "Brand deals ($10k+)"
-    Mid-high — "Course / digital product"
-    Mid-low — "Affiliate revenue"
-    Base — "Ad revenue (RPM 2-15$)"
-  Each tier labeled to the right with a short metric.
-
-Cell 3 (mid-left, orange) — "5-STEP STARTING PROCESS":
-  Numbered hand-drawn boxes 1 → 2 → 3 → 4 → 5 connected by
-  arrows. Each box has 1 sentence:
-    1 — Pick a niche with $5+ RPM (use VidIQ).
-    2 — Steal 10 viral titles, spin angles in ChatGPT.
-    3 — Generate B-roll in Pictory or InVideo.
-    4 — Voice-over via ElevenLabs (free up to 10k chars).
-    5 — Upload + thumbnail in TubeBuddy. Repeat 3×/week.
-
-Cell 4 (mid-right, purple) — "TOP 5 NICHES 2025":
-  A short numbered list, each line: niche → estimated RPM.
-    1. Personal finance — $15-30 RPM
-    2. Tech reviews — $10-20 RPM
-    3. Real estate — $8-18 RPM
-    4. Health & supplements — $7-12 RPM
-    5. AI tutorials — $5-10 RPM
-
-Cell 5 (bottom-left, green) — "CHECKLIST: BEFORE YOU UPLOAD":
-  6 checkbox boxes with imperative phrases:
-    ☐ 60-character title that promises a payoff
-    ☐ Thumbnail with one face / one number / one contrast
-    ☐ 3 retention hooks in the first 30 seconds
-    ☐ End-screen with "watch this next" link
-    ☐ Pinned comment with affiliate link
-    ☐ Share to community tab + Reddit + Twitter
-
-Cell 6 (bottom-right, teal) — "PRO TIP":
-  A speech-bubble shape. Bold short headline "THE 1% MOVE":
-    "Re-upload your top-3 thumbnails after 14 days. YouTube
-     re-tests CTR. We've seen 3-5× lift with no other change."
-  Tiny micro-copy at the corner: "← test on Sunday at 9pm".
-
-Hand-drawn connector arrows between Cell 3 and Cell 5
-(annotation: "ship cycle"), and between Cell 4 and Cell 1
-(annotation: "pick yours →").
-
-Yellow highlighter on key words in each cell:
-"$10k+", "VidIQ", "ElevenLabs", "RPM", "retention", "1% MOVE".
-
-Footer: a hand-drawn line + "Follow @awakpenn for more |
-Save & Repost" + a small star.
-
-End of reference. Now generate the image for the user's content
-above, imitating this DENSITY and MODULE MIX, with the user's
-actual topic and cells.`;
-  }
-
-  // ── PROCESS_STEPS ──
-  if (selectedTemplate === "PROCESS_STEPS") {
-    return `Generate a single image of a clean, professional step-by-step process infographic.
-
-${baseRules}
-
-${contentBlock}
-
-CRUCIAL STYLE INSTRUCTIONS:
-- MEDIUM: Clean printed poster aesthetic — looks like a high-quality design agency output
-- Clean minimal design, cream background #FAF8F5 with subtle dot grid pattern
-- Bold sans-serif typography (Inter/Helvetica style)
-- Numbered steps with gradient colored circle badges
-- Connecting dashed arrows between steps with gradient color progression
-- Soft drop shadows on step cards
-- Simple flat icons next to each step (gear, rocket, chart, target)
-- ${formatHint}
-- No photos, no 3D, no realistic elements
-- Make it easy to scan in less than 10 seconds
-
-LAYOUT (top to bottom):
-
-━━━ HEADER (top 15%) ━━━
-Small orange category pill badge above title.
-Large bold title: "${ext.title}" (48px, charcoal #1A1A1B)
-
-━━━ STEPS (70%) ━━━
-${ext.points.map((point, i) => `STEP ${i + 1}:
-- Large numbered circle badge (gradient blue #1A73E8 → purple #7B2FBE, white number inside)
-- Bold step title: "${point.split(' ').slice(0, 5).join(' ')}"
-- Description in gray: "${point}"
-- Simple flat icon on the right side
-- Dashed gradient connecting line to next step`).join('\n\n')}
-
-━━━ FOOTER (15%) ━━━
-Green result box with key outcome text.
-"Follow @${userName || 'supenli.ai'} for more | Repost ♻️" in small text.
-
-QUALITY: Magazine editorial meets Apple product page. Premium SaaS aesthetic. Information-dense but scannable.${AVOID}`;
-  }
-
-  // ── EDITORIAL_LIST ──
-  if (selectedTemplate === "EDITORIAL_LIST") {
-    return `Generate a single image of a bold editorial magazine-style list infographic.
-
-${baseRules}
-
-${contentBlock}
-
-CRUCIAL STYLE INSTRUCTIONS:
-- MEDIUM: Premium design magazine page aesthetic — like a spread from The Economist or Monocle
-- Warm cream background #FDFAF6 with thin black border frame (3px, inset 8px)
-- Corner registration marks like a print proof
-- Large bold orange numbers #FF6B35 as list markers (80px size)
-- Clean sans-serif typography — tight letter-spacing on titles
-- Horizontal thin divider lines between items
-- ${formatHint}
-- No photos, no 3D
-- Make it easy to scan in less than 10 seconds
-- Use consistent structure across all items
-
-LAYOUT (top to bottom):
-
-━━━ HEADER (12%) ━━━
-"INSIGHTS" small caps label in orange #FF6B35.
-Title: "${ext.title}" ultra-bold black 44px.
-Full-width black divider line (2px).
-
-━━━ LIST ITEMS (76%) ━━━
-${ext.points.map((point, i) => `ITEM ${i + 1}:
-- Giant number "${i + 1}" in orange #FF6B35 (80px, left-aligned)
-- Bold title: "${point.split(' ').slice(0, 5).join(' ')}" (22px, black #0F0F0F)
-- Body: "${point}" (15px, dark gray #333)
-- Full-width thin separator line below`).join('\n\n')}
-
-━━━ FOOTER (12%) ━━━
-Pull quote box with most impactful insight (large quotation marks).
-"Follow @${userName || 'supenli.ai'} for more | Repost ♻️" in small text.
-
-QUALITY: Sophisticated, scroll-stopping, The Economist meets Instagram carousel.${AVOID}`;
-  }
-
-  // ── COMMAND_CENTER ──
-  if (selectedTemplate === "COMMAND_CENTER") {
-    return `Create a terminal/command-center dark UI infographic.
-
-${baseRules}
-
-${contentBlock}
-
-STYLE:
-- Near-black background #0A0E1A
-- Terminal window with chrome bar (traffic lights red/yellow/green top-left)
-- Monospace font (JetBrains Mono style)
-- Green prompt $ symbol #00FF41
-- Cyan output text #00D4FF
-- Orange accent #FF8B00
-- ${formatHint}
-
-LAYOUT:
-Terminal window title bar with red/yellow/green dots.
-Window path: "~/strategy"
-
-COMMAND LINES:
-${ext.points.map((point, i) => `$ ${point.split(' ').slice(0, 3).join('_').toLowerCase()}
-▸ "${point}"`).join('\n\n')}
-
-AVOID: light background, photos, blur, 3D, cluttered.`;
-  }
-
-  // ── ICON_GRID ──
-  if (selectedTemplate === "ICON_GRID") {
-    return `Create a modern bento grid icon infographic.
-
-${baseRules}
-
-${contentBlock}
-
-STYLE:
-- Pure white background #FFFFFF
-- 3-column bento grid layout
-- Rounded cards (12px radius, thin #F0F0F0 border)
-- Orange circled numbers #FF6B35
-- Flat bicolor icons (orange + black)
-- ${formatHint}
-- No photos, no 3D
-
-LAYOUT:
-Header: "${ext.title}" centered 32px bold. Category badge above.
-
-GRID CELLS:
-${ext.points.map((point, i) => `Cell ${i + 1}: Orange circled number ${i + 1}, bold title, text: "${point.slice(0, 40)}"`).join('\n')}${AVOID}`;
-  }
-
-  // ── COMPARISON / DATA_GRID ──
-  if (selectedTemplate === "COMPARISON" || selectedTemplate === "DATA_GRID") {
-    return `Create a dark luxury comparison table infographic.
-
-${baseRules}
-
-${contentBlock}
-
-STYLE:
-- Dark background #0D1117
-- Neon accent colors: blue #00B4FF, green #00D4AA, orange #FF8B00
-- White text, high contrast
-- Rounded card columns with subtle glow effects
-- ${formatHint}
-- No photos, no realistic elements
-
-LAYOUT:
-Header: White bold title "${ext.title}" on dark background. Small colored badge.
-
-${Math.min(n, 3)} COLUMNS side by side:
-${ext.points.slice(0, 3).map((point, i) => {
-  const colors = ['#00B4FF', '#00D4AA', '#FF8B00'];
-  return `Column ${i + 1}:
-- Header badge color: ${colors[i]}
-- Dark card background #161B22
-- Content: "${point}"`;
-}).join('\n\n')}
-
-Bottom: Gradient bar (blue → green → orange).
-
-AVOID: light background, photos, blur, cluttered.`;
-  }
-
-  // ── NOTEBOOK ──
-  if (selectedTemplate === "NOTEBOOK") {
-    return `Generate a single image of a physical spiral notebook page with hand-drawn colorful notes.
-
-${baseRules}
-
-${contentBlock}
-
-CRUCIAL STYLE INSTRUCTIONS:
-- MEDIUM: Must look like a photograph of a REAL spiral notebook page lying on a desk
-- TEXTURE: All text written by hand with colored marker pens and highlighters
-- Lines slightly imperfect and wobbly — real handwriting feel
-- NO digital fonts — everything handwritten or hand-printed
-- Metallic spiral binding at top (18 silver coils, 3D realistic)
-- Faint blue ruled lines on warm white paper #FFFEF8
-- Red vertical margin line on the left
-- ${formatHint}
-
-LAYOUT (top to bottom):
-
-━━━ SPIRAL BINDING (top edge) ━━━
-18 realistic metallic spiral coils across full width.
-
-━━━ TITLE (top 15%) ━━━
-Title "${ext.title}" in large colorful handwriting.
-Each word in a different marker color (green, blue, orange, red).
-Bouncy, energetic lettering.
-
-━━━ CONTENT (70%) ━━━
-${ext.points.map((point, i) => {
-  const colors = ['blue marker', 'orange marker', 'green marker', 'purple marker'];
-  return `Item ${i + 1}:
-- Hand-drawn ${colors[i % colors.length]} oval number badge: "${i + 1}"
-- Handwritten text: "${point}"
-- Yellow highlighter on key words
-- Small hand-drawn doodle icon (star, arrow, heart) in margin`;
-}).join('\n\n')}
-
-━━━ BOTTOM (15%) ━━━
-Yellow sticky note (tilted -3 degrees, drop shadow) with key insight.
-Handwritten: "Follow @${userName || 'supenli.ai'} for more | Repost ♻️"
-
-QUALITY: Must look like a real photograph of handwritten study notes. Warm, personal, creative, dense with information.${AVOID}`;
-  }
-
-  // ── FUNNEL ──
-  if (selectedTemplate === "FUNNEL") {
-    return `Create a conversion funnel flow infographic.
-
-${baseRules}
-
-${contentBlock}
-
-STYLE:
-- Warm off-white background #FFFEF5
-- Large trapezoid funnel shape
-- Hand-drawn irregular outlines
-- ${formatHint}
-- No photos, no 3D
-
-LAYOUT:
-Top: Title "${ext.title}" very large bold centered, thick underline.
-
-FUNNEL (wide top → narrow bottom, ${Math.min(n, 5)} stages):
-${ext.points.slice(0, 5).map((point, i) => {
-  const colors = ['Red #D93025', 'Orange #FF6B35', 'Gold #F59E0B', 'Green #188038', 'Blue #1A73E8'];
-  return `Stage ${i + 1} (${colors[i]}): White label box — "${point}"`;
-}).join('\n')}
-
-Side: Two red curved arrows flanking funnel. Gold sparkle stars.${AVOID}`;
-  }
-
-  // ── CTA_VISUAL ──
-  if (selectedTemplate === "CTA_VISUAL") {
-    return `Create a clean promotional infographic.
-
-${baseRules}
-
-${contentBlock}
-
-STYLE:
-- Light gray background #F5F5F5 with dot grid
-- Orange accent #FF6B35
-- Clean structured layout, rounded corners 8px
-- ${formatHint}
-- No photos, no 3D
-
-LAYOUT:
-Top: Large text "${ext.title}" with yellow highlight on key word.
-Center: Minimalist icon (orange).
-${Math.min(n, 4)} floating rounded folder cards (blue #4A90D9) connected by dotted lines.
-${ext.points.slice(0, 4).map((point, i) => `Folder ${i + 1}: "${point.slice(0, 30)}"`).join('\n')}${AVOID}`;
-  }
-
-  // Default
-  return `${baseRules}\n\n${contentBlock}\n\nVISUAL STYLE: Professional educational infographic.
 ${formatHint}
-Dense information layout. High contrast. Scroll-stopping design. Viral social media quality.`;
+${styleBible}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+LAYOUT — DENSE WHITEBOARD (Awa K. Penn signature)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Build the canvas top → bottom in this exact order:
+
+[1] 4 corner clips (mandatory).
+
+[2] TITLE BLOCK (top 12% of canvas):
+    - Heavy black marker title centered, ALL CAPS. Often inside [SQUARE BRACKETS].
+    - 1-2 key words wrapped in flat yellow #FFEF5A highlighter strokes.
+    - Subtitle below in italic handwritten 14-16px, dark gray #555.
+    - 2-3px slightly wavy red underline #C0392B below the subtitle, full-width minus 60px margins.
+
+[3] CONTENT GRID (12% to 88% of canvas height):
+    - 5-7 numbered sections, stacked vertically (or 2 columns if many short sections).
+    - INSERT 2-3 full-width YELLOW BANDS (#FFEF5A, ~38-42px tall) between sections to label thematic groups (e.g., "TOP MODELS", "WORKFLOW", "GET CLIENTS"). Bold black centered ALL-CAPS text inside each band. These bands are visual oxygen — DO NOT skip them.
+    - Each section module:
+        a. Hand-drawn oval/circle badge top-left (~40px), with the section number 01/02/03... in handwritten style, badge color rotates Red→Blue→Green→Orange→Purple→Teal.
+        b. Section header (Nunito 800, 22px) with a 2px slightly wavy underline in the section color.
+        c. 2-4 bullet sub-points in handwritten body 16-18px, dark text. Each bullet starts with a small colored • dot in the section color.
+        d. 3-5 inline yellow highlights on key nouns inside the bullets (across the whole canvas).
+        e. ONE small thematic SKETCH ICON (60-90px black line-art) on the RIGHT side of the section. The icon MUST match the section topic — graduation cap for "learn", gears for "automate", magnifying glass for "research", megaphone for "marketing", t-shirt for "print on demand", room with sofa for "real estate staging", folder for "organize", calendar for "schedule".
+
+[4] FOOTER (bottom 6-8%):
+    - Hand-drawn horizontal divider line.
+    - "Follow @${handle} for more amazing AI content | Repost ↻" — handwritten bold 22px.
+    - @${handle} in blue #2563EB bold underlined. Small curved arrow doodle flanking it.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CONTENT TO RENDER (verbatim — do not paraphrase, do not invent)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${sourceTextBlock}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WORKED REFERENCE EXAMPLE — match this density and module mix
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Below is the kind of layout we expect. Copy the DENSITY, the YELLOW BANDS, the NUMBERED BADGES, and the SKETCH ICONS. Use YOUR content from above — do NOT reuse these words.
+
+[Cream paper #f8f9f7, 4 metal clips at corners.]
+[Title centered: "[THE ULTIMATE GUIDE TO MAKING MONEY WITH NANO BANANA (2026)]" in heavy black marker. The words "NANO BANANA" wrapped in a yellow highlighter stroke. Subtitle below in italic 14px: "From AI Image Generator to Scalable Business Engine".]
+
+[Yellow band #FFEF5A ~40px tall, full-width: "TOP BUSINESS MODELS FOR 2026"]
+
+  Section 01 (red badge + red header) — "Print-on-Demand (Passive Route)"
+    • Strategy: Market Research (Etsy/Amazon)
+    • Recreate Style (Avoid Copyright)
+    • Nano Banana Lifestyle Mockups (e.g., hoodie in coffee shop)
+    Sketch icon on the right: hand-drawn t-shirt with a small label tag.
+
+  Section 02 (blue badge + blue header) — "High-End Real Estate Virtual Staging"
+    • Service: Empty Room Photo → Nano Banana Adds Furniture
+    • Neutral colors, soft natural light
+    Sketch icon: line-drawn living room with a sofa and a lamp.
+
+  Section 03 (green badge + green header) — "Digital Products & Ed Resources"
+    • Kids' Books / Coloring Pages (Zoo theme, 10 pages, Canva PDF on Etsy)
+    • Prompt Engineering Packs (Restaurant Marketing Prompts)
+    Sketch icon: a stack of small books and a folder.
+
+[Yellow band: "ADVANCED WORKFLOW LEVELS"]
+
+  Section 04 (orange) — "Level 1: Beginner — One-off prompting in Gemini/AI Studio"
+  Section 05 (purple) — "Level 2: Expert — Custom Gems / Style Reference for consistency"
+  Section 06 (teal)   — "Level 3: Builder — Connect Nano Banana to APIs (Zapier, Replit) for automation"
+  Sketch icon for this group: a small 3-tier pyramid sketch.
+
+[Yellow band: "GET YOUR FIRST CLIENTS"]
+
+  Section 07 (red) — "Local SEO + Sample Edits + Content Arbitrage"
+    • Offer free sample edit to a local business
+    • Reach out to bakeries, gyms — they need daily content
+    • Record screen while editing → post on TikTok/Reels for authority
+    Sketch icon: pin on a map + tiny phone screen.
+
+[Hand-drawn divider. Footer: "Follow @awakpenn for more amazing AI content | Repost ↻", handle in blue and underlined, curved arrow doodle next to it.]
+
+End of reference. Now generate ONE image for the user's content above, imitating this DENSITY, YELLOW BANDS, NUMBERED BADGES, and SKETCH ICONS. Use the user's actual title, sections, and bullets — do NOT keep the example's topic.
+
+QUALITY GUARANTEES:
+- Every word in the image comes from the CONTENT TO RENDER block above. ZERO invented words.
+- 5-7 numbered sections, each fully populated.
+- 2-3 yellow bands as section dividers.
+- Each section has its own thematic sketch icon — no two icons identical.
+- Footer includes the creator handle in blue, underlined.
+
+AVOID: ${AVOID}`;
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // LAYOUT 2 — HIGHLIGHT BOX (3-5 colored category boxes + arrows)
+    // Matches: "Three Ways to Master Any Skill/Subject With Claude"
+    // ──────────────────────────────────────────────────────────────
+    if (awaLayout === "HIGHLIGHT_BOX") {
+      return `Generate ONE high-quality infographic image. Fill the canvas top-to-bottom and edge-to-edge.
+
+${formatHint}
+${styleBible}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+LAYOUT — HIGHLIGHT-BOX CARD STACK ("Three Ways" template)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Build the canvas top → bottom in this exact order:
+
+[1] 4 corner clips. Cream/off-white background.
+
+[2] TITLE BLOCK (top 14%):
+    - Heavy black marker title centered, ALL CAPS, 2-3 lines max.
+    - 1-2 key words wrapped in flat yellow highlighter strokes.
+    - Optional red wavy underline below.
+
+[3] STACK OF ${Math.min(Math.max(sectionsCount, 3), 5)} HIGHLIGHT-BOX ROWS (15% → 75%):
+    Each row is a horizontal module spanning ~88% canvas width. Each row consists of THREE elements arranged left → right:
+
+    a. CATEGORY BOX (LEFT 25-30% of row width)
+       - Big rounded-corner rectangle (corners slightly hand-drawn, ~12px radius).
+       - Pastel fill rotating per row: light blue #E3F2FD, light green #E6F4DD, light pink #FCE4EC, light yellow #FFF7C2, light orange #FFE3CC.
+       - Inside the box: the category label in heavy black marker, ALL CAPS, 24-32px, possibly multi-line.
+       - Tiny sketch decoration below the label (gears, book, graduation cap, etc.) matching the topic.
+
+    b. HAND-DRAWN ARROW (MIDDLE)
+       - Big colored hand-drawn arrow → pointing from the category box to the bullets.
+       - Arrow color = the row's accent (blue, green, pink, yellow, orange — match the box).
+       - Arrow length 120-180px, with a wobbly hand-drawn shaft and chunky arrowhead.
+
+    c. BULLETS + SKETCH ICON (RIGHT 60-65% of row width)
+       - 2-4 bullets in dark handwritten body 16-18px.
+       - Each bullet starts with a small colored • dot.
+       - Inline yellow highlights on key nouns (1-2 per bullet).
+       - At the FAR right of the row: a small THEMATIC SKETCH ICON (60-100px black line-art) matching the topic (e.g., chat bubble + skill badge for "create skill", open book for "learning style", stacked books + connector for "Udemy").
+
+[4] OPTIONAL "PROMPT TEMPLATES" SUB-GRID (75% → 90%):
+    - If the user's content includes example prompts or sub-templates, render a 2×3 grid of small bordered boxes here.
+    - Each small box: a heavily-highlighted title (rotate yellow / green / pink / orange highlights) + 1-3 short italic prompts in 12-14px.
+    - Above the grid: a thin hand-drawn divider line + the meta-label "LEARN FROM CLAUDE" or similar (use the user's own meta-label if present).
+
+[5] FOOTER (bottom 6-8%):
+    - Hand-drawn divider + "Follow @${handle} for more amazing AI content | Repost ↻".
+    - @${handle} in blue #2563EB bold underlined.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CONTENT TO RENDER (verbatim — do not paraphrase, do not invent)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${sourceTextBlock}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WORKED REFERENCE EXAMPLE — match the highlight-box stack
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Below is the kind of layout we expect. Copy the STACK STRUCTURE, the BOX COLORS, the ARROWS, and the SKETCH ICONS. Use YOUR content above — do NOT reuse these words.
+
+[Cream paper, 4 metal clips. Title: "THREE WAYS TO MASTER ANY SKILL/SUBJECT WITH CLAUDE", with "CLAUDE" highlighted in flat yellow.]
+
+Row 1:
+  [Light blue rounded box — "CREATE CLAUDE SKILLS" — bold marker, 3 lines. Tiny gears icon below the label.]
+  → Hand-drawn blue arrow →
+  [Bullets:
+    • You can create Claude skills about a certain topic that teach you a skill step by step.
+    • Go to Settings → Capabilities → toggle on Skill Creator. Then type "I want to create a skill on [topic]" and follow the instructions.]
+  [Far right: line-art chat bubble with a small "skill" badge inside.]
+
+Row 2:
+  [Light green rounded box — "USE CLAUDE'S LEARNING STYLE". Open-book icon below.]
+  → Hand-drawn green arrow →
+  [Bullets:
+    • Topic: Use the built-in learning mode.
+    • Log in → open the drop-down "Use Style" → select "Learning". Then start prompting.
+    • Claude will respond as a learning guide and structure answers to help you understand and practice.]
+  [Far right: line-art open book with a graduation cap on top.]
+
+Row 3:
+  [Light pink rounded box — "CONNECT UDEMY BUSINESS". Tiny stacked-books icon below.]
+  → Hand-drawn pink arrow →
+  [Bullets:
+    • Access courses directly inside Claude.
+    • Settings → Connectors → search "Udemy Business" → Connect.
+    • Pull lessons, topics, and skills into your prompts.]
+  [Far right: line-art stack of books with a small Udemy-style mark.]
+
+[Hand-drawn divider line. Sub-section label centered: "LEARN FROM CLAUDE".]
+[2×3 grid of small bordered prompt boxes:
+  - "EXPLAIN" (highlighted blue): "I want to understand [topic] so that I can explain it to others. Break it down like I am 10 years old. Use one clear example."
+  - "CREATE A COURSE" (highlighted green): "I want to build a crash study plan for [subject] so that I can use it in real projects..."
+  - "INSTRUCTIONAL GUIDES" (highlighted green): "I want to learn how to [topic] so that I can do it myself..."
+  - "LEARN + DEVELOP A SKILL" (highlighted green): "I want to learn [desired skill]..."
+  - "ENHANCE PROBLEM-SOLVING" (highlighted orange): "I want to solve [specific problem]..."
+  - "80/20 LEARN FASTER" (highlighted pink): "I want to learn about [topic] fast. Identify the most important 20%..."]
+
+[Footer: "Follow @awakpenn for more amazing AI content | Repost ↻", handle in blue underlined, curved arrow doodle.]
+
+End of reference. Now generate ONE image for the user's content above, using the highlight-box stack with their actual category labels and bullets.
+
+QUALITY GUARANTEES:
+- Every word from CONTENT TO RENDER above. ZERO invented words.
+- ${Math.min(Math.max(sectionsCount, 3), 5)} highlight-box rows minimum, each fully populated.
+- Each row has: pastel category box (LEFT) + colored hand-drawn arrow (MIDDLE) + bullets + sketch icon (RIGHT).
+- The arrow color matches the box color.
+- No two sketch icons identical.
+
+AVOID: ${AVOID}`;
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // LAYOUT 3 — CHEAT SHEET (2×3 framework grid / template grid)
+    // Matches: "Claude Cowork Templates", framework references with
+    //          [PLACEHOLDERS], comparisons, tables, 8+ sections
+    // ──────────────────────────────────────────────────────────────
+    return `Generate ONE high-quality infographic image. Fill the canvas top-to-bottom and edge-to-edge.
+
+${formatHint}
+${styleBible}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+LAYOUT — CHEAT-SHEET DENSE GRID (frameworks / templates)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Build the canvas top → bottom in this exact order:
+
+[1] 4 corner clips. Cream/off-white background.
+
+[2] TITLE BLOCK (top 10-12%):
+    - Heavy black/red/blue marker title centered, 1-2 lines.
+    - First half of title in one color (e.g., red), second half in another (e.g., blue) — like a 2-color marker title. OR all black with 1 word in yellow highlight.
+    - Subtitle in italic handwritten 14-16px below, dark gray.
+
+[3] DENSE 2-COLUMN MODULE GRID (12% to 92%):
+    - 2 columns × 3 rows = 6 modules MINIMUM (8 if content is rich enough, 4 if it's lean).
+    - Each cell is a self-contained module:
+        a. Numbered title in heavy marker style at the top of the cell — e.g., "1. The 'Digital Cleanup' (File Management)". Number in red #C0392B, rest in black.
+        b. Below the title: small thematic SKETCH ICON (40-60px black line-art) related to the cell topic — folder, calendar, mailbox, megaphone, magnifying glass, receipt, globe, clock.
+        c. Below the icon: a bordered TEMPLATE BOX (~60-65% of cell height). Border 2-3px in a rotating color: green #4A8B35, orange #F5922A, red #C0392B, blue #2563EB. Inside the box: the prompt or template text in italic handwritten 12-14px. ALL [PLACEHOLDERS] inside the prompt have a flat yellow #FFEF5A highlight behind them.
+        d. Below the bordered box: a small "What happens:" line in red #C0392B bold underlined, followed by a 1-2 sentence explanation in handwritten body 13-15px.
+    - Cells separated by hand-drawn vertical line in the middle of the canvas + horizontal lines between rows. The lines are wobbly, not perfectly straight.
+
+[4] OPTIONAL FULL-WIDTH YELLOW BAND between row 1 and row 2 (or above row 3) if the content has a clear meta-grouping label (e.g., "RULES", "CHECKLIST", "PRO TIPS").
+
+[5] FOOTER (bottom 6-8%):
+    - Hand-drawn divider + "Follow @${handle} for more amazing AI content | Repost ↻".
+    - @${handle} in blue #2563EB bold underlined. Curved arrow doodle.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CONTENT TO RENDER (verbatim — do not paraphrase, do not invent)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${sourceTextBlock}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WORKED REFERENCE EXAMPLE — match the cheat-sheet 2×3 grid
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Below is the kind of layout we expect. Copy the GRID STRUCTURE, the BORDERED TEMPLATE BOXES, the YELLOW [PLACEHOLDERS], and the "What happens" lines. Use YOUR content above — do NOT reuse these words.
+
+[Cream paper, 4 metal clips. Title: "CLAUDE COWORK TEMPLATES" (in red marker) "TO AUTOMATE YOUR LIFE" (in blue marker). Subtitle below italic: "Six set-and-forget routines for your AI co-worker."]
+
+[2 columns × 3 rows = 6 modules:]
+
+Module 1 (top-left):
+  Title: "1. The 'Digital Cleanup' (File Management)" — number in red.
+  Folder sketch icon.
+  Green-bordered box, italic prompt:
+    "Scan my [FOLDER NAME]. Create a new folder named [NEW FOLDER NAME]. Find every file related to [TOPIC/PROJECT], move them there, and rename them all to [NAME FORMAT, e.g., Date_Filename]. Finally, write a Summary.txt listing exactly what you moved."
+  (All bracketed placeholders highlighted yellow.)
+  "What happens:" — "Claude acts as a digital intern, physically organizing your messy desktop or downloads folder."
+
+Module 2 (top-right):
+  Title: "2. The 'Receipt-to-Spreadsheet' (Accounting)"
+  Receipt sketch icon.
+  Orange-bordered box: "Go through every file in [FOLDER WITH RECEIPTS]. Extract the [DATA POINTS, e.g., Vendor, Date, Total]. Create a new Excel file named [FILENAME.xlsx] with these columns and add a total sum formula at the bottom."
+  "What happens:" — "Claude uses Vision to 'read' your receipts and Python to build a functional, formula-ready spreadsheet on your drive."
+
+Module 3 (mid-left):
+  Title: "3. The 'Meeting Recap' (Project Management)"
+  Clock sketch icon.
+  Green-bordered box: "Read all transcripts and notes in [MEETING FOLDER]. Synthesize them into a Word doc called [FILENAME.docx]. Use three headings: [SECTION 1, e.g., Decisions], [SECTION 2, e.g., Blockers], [SECTION 3, e.g., Action Items]."
+  "What happens:" — "It analyzes multiple text files simultaneously, identifies patterns, and writes a professional summary for your team."
+
+Module 4 (mid-right):
+  Title: "4. The 'Competitor Intelligence' (Market Research)"
+  Globe sketch icon.
+  Green-bordered box: "Search the web for the top [NUMBER] competitors in the [INDUSTRY] space. Find their [KEY METRIC, e.g., Pricing or Top Product]. Use this data to create a [NUMBER]-slide PowerPoint with a consistent layout."
+  "What happens:" — "Claude spawns sub-agents: one to browse the web for data, another to generate the actual .pptx file."
+
+Module 5 (bottom-left):
+  Title: "5. The 'Inbox Watchdog' (Email Routine)"
+  Mailbox sketch icon.
+  Yellow-bordered box: "/schedule every *[TIME/DAY]** Search my Gmail for unread emails from [NAME/COMPANY]. Summarise them in a bulleted list. If an email is about *[SPECIFIC TOPIC]*, draft a polite reply and move it to my drafts folder."
+  "What happens:" — "This is a 'set and forget' routine. Claude checks your mail on a timer and has the work waiting for you when you log in."
+
+Module 6 (bottom-right):
+  Title: "6. The 'Content Repurposer' (Social Media)"
+  Megaphone sketch icon.
+  Blue-bordered box: "In [FOLDER], find the video [FILENAME.mp4]. Find the most [VIBE, e.g., energetic/insightful] 60-second segment and save it as a new clip. Then, write a [PLATFORM, e.g., LinkedIn/X] post based on that clip."
+  "What happens:" — "Claude analyzes the video/audio stream, uses a sub-agent to 'clip' the file, and generates the copy to match."
+
+[Hand-drawn divider. Footer: "Follow @awakpenn for more amazing AI content | Repost ↻", handle blue underlined, curved arrow doodle.]
+
+End of reference. Now generate ONE image for the user's content above, in this 2×N cheat-sheet grid format. Use the user's actual modules.
+
+QUALITY GUARANTEES:
+- Every word from CONTENT TO RENDER above. ZERO invented words.
+- 2×3 (or 2×2 / 2×4) module grid filling the canvas.
+- Every module has: numbered title + sketch icon + colored bordered template box + "What happens:" line.
+- Bordered box colors rotate (green, orange, red, blue, yellow) — never two adjacent cells the same color.
+- All [PLACEHOLDERS] inside template prompts have flat yellow highlight behind them.
+- Footer with creator handle in blue underlined.
+
+AVOID: ${AVOID}`;
+  }
 }
 
 // ─── Post-process generated HTML ───

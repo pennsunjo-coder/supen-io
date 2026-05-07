@@ -28,10 +28,17 @@ Deno.serve(async (req) => {
     if (!allowed) return new Response(JSON.stringify({ error: "Image generation limit reached." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const { prompt } = await req.json();
-    if (!prompt) return new Response(JSON.stringify({ error: "prompt is required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!prompt || typeof prompt !== "string" || prompt.trim().length < 10) {
+      return new Response(JSON.stringify({ error: "Prompt must be at least 10 characters" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (prompt.length > 16000) {
+      return new Response(JSON.stringify({ error: "Prompt too long (max 16000 characters)" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY not configured");
+
+    console.log("[generate-gemini-image] User:", user.id, "prompt length:", prompt.length);
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${GEMINI_API_KEY}`,
@@ -47,13 +54,23 @@ Deno.serve(async (req) => {
 
     if (!response.ok) {
       const errText = await response.text();
-      return new Response(JSON.stringify({ error: `Gemini error: ${errText}` }), { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      console.error("[generate-gemini-image] Gemini error:", response.status, errText.slice(0, 300));
+      return new Response(JSON.stringify({ error: `Gemini error (${response.status}): ${errText.slice(0, 300)}` }), { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const data = await response.json();
-    const imagePart = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData?.mimeType?.startsWith("image/"));
-    
-    return new Response(JSON.stringify({ image: imagePart?.inlineData?.data }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const imagePart = data.candidates?.[0]?.content?.parts?.find((p: { inlineData?: { mimeType?: string; data?: string } }) => p.inlineData?.mimeType?.startsWith("image/"));
+    const base64 = imagePart?.inlineData?.data;
+
+    if (!base64) {
+      const finishReason = data.candidates?.[0]?.finishReason;
+      const safetyMsg = finishReason === "SAFETY" ? "Content blocked by Gemini safety filters." : "No image returned by Gemini.";
+      console.error("[generate-gemini-image] Empty image response. finishReason:", finishReason);
+      return new Response(JSON.stringify({ error: safetyMsg }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    console.log("[generate-gemini-image] Success for user:", user.id);
+    return new Response(JSON.stringify({ image: base64 }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (err) {
     return new Response(JSON.stringify({ error: err instanceof Error ? err.message : "Server error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
