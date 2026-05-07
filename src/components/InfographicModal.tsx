@@ -13,7 +13,6 @@ import {
   buildDallEPrompt,
   analyzeContent,
   getFormatDimensions,
-  selectBestTemplate,
   resetRegenerationCounter,
 } from "@/lib/infographic-style";
 import { sanitizeForPlatform } from "@/lib/output-sanitizer";
@@ -55,10 +54,10 @@ function getImageSize(platform: string): ImageSizeConfig {
 // ─── Image Generation via Edge Function ───
 
 async function generateInfographic(prompt: string): Promise<string> {
-  if (IS_DEV) console.log("[Infographic] Calling Edge Function...");
+  if (IS_DEV) console.log("[Infographic] Calling Gemini Nano Banana Edge Function...");
   if (IS_DEV) console.log("[Infographic] Prompt length:", prompt.length);
 
-  const { data, error } = await supabase.functions.invoke("generate-image", {
+  const { data, error } = await supabase.functions.invoke("generate-gemini-image", {
     body: { prompt },
   });
 
@@ -110,7 +109,7 @@ interface Props {
 
 type ResultMode = "claude" | "openai" | null;
 type Step = "ready" | "generating" | "result";
-type StyleChoice = "auto" | "AWA_CLASSIC" | "UI_CARDS" | "WHITEBOARD" | "FUNNEL" | "DATA_GRID" | "PROCESS_STEPS" | "COMMAND_CENTER" | "ICON_GRID" | "EDITORIAL_LIST" | "CTA_VISUAL";
+type StyleChoice = "auto" | "AWA_CLASSIC" | "UI_CARDS" | "WHITEBOARD" | "FUNNEL" | "DATA_GRID" | "PROCESS_STEPS" | "COMMAND_CENTER" | "ICON_GRID" | "EDITORIAL_LIST" | "CTA_VISUAL" | "NOTEBOOK" | "COMPARISON";
 
 // Tiny inline SVG previews — schematic mini-mockups (60×40 viewBox).
 const STYLE_PREVIEWS: Record<StyleChoice, JSX.Element> = {
@@ -268,6 +267,52 @@ const STYLE_PREVIEWS: Record<StyleChoice, JSX.Element> = {
       <line x1="40" y1="29.5" x2="35" y2="22" stroke="#999" strokeWidth="0.3" strokeDasharray="1" />
     </svg>
   ),
+  NOTEBOOK: (
+    <svg viewBox="0 0 60 40" className="w-full h-full">
+      <rect x="0" y="0" width="60" height="40" fill="#FFFEF8" />
+      {[...Array(11)].map((_, i) => (
+        <circle key={i} cx={5 + i * 5} cy="3" r="1.4" fill="#a39581" />
+      ))}
+      <line x1="9" y1="6" x2="9" y2="40" stroke="#E63946" strokeWidth="0.4" />
+      <line x1="0" y1="11" x2="60" y2="11" stroke="#dde8f0" strokeWidth="0.2" />
+      <line x1="0" y1="17" x2="60" y2="17" stroke="#dde8f0" strokeWidth="0.2" />
+      <line x1="0" y1="23" x2="60" y2="23" stroke="#dde8f0" strokeWidth="0.2" />
+      <line x1="0" y1="29" x2="60" y2="29" stroke="#dde8f0" strokeWidth="0.2" />
+      <line x1="0" y1="35" x2="60" y2="35" stroke="#dde8f0" strokeWidth="0.2" />
+      <text x="12" y="14" fontSize="3.2" fontWeight="700" fill="#4A8B35">9</text>
+      <text x="17" y="14" fontSize="3.2" fontWeight="700" fill="#C0392B">FREE</text>
+      <text x="29" y="14" fontSize="3.2" fontWeight="700" fill="#1a3d7c">COURSES</text>
+      <rect x="11" y="20" width="44" height="2" rx="0.4" fill="#2563EB" opacity="0.7" />
+      <rect x="11" y="26" width="44" height="2" rx="0.4" fill="#4A8B35" opacity="0.7" />
+      <rect x="11" y="32" width="44" height="2" rx="0.4" fill="#C0392B" opacity="0.7" />
+    </svg>
+  ),
+  COMPARISON: (
+    <svg viewBox="0 0 60 40" className="w-full h-full">
+      <rect x="0" y="0" width="60" height="40" fill="#F5F5F0" />
+      <rect x="3" y="2" width="54" height="3.5" rx="0.4" fill="#1A1A1B" />
+      <line x1="22" y1="7" x2="22" y2="38" stroke="#cccccc" strokeWidth="0.3" />
+      <line x1="40" y1="7" x2="40" y2="38" stroke="#cccccc" strokeWidth="0.3" />
+      <rect x="5" y="9" width="15" height="2" rx="0.3" fill="#2563EB" />
+      <rect x="24" y="9" width="14" height="2" rx="0.3" fill="#4A8B35" />
+      <rect x="42" y="9" width="14" height="2" rx="0.3" fill="#C0392B" />
+      <rect x="5" y="13" width="15" height="1.4" rx="0.2" fill="#1A1A1B" opacity="0.4" />
+      <rect x="5" y="16" width="15" height="1.4" rx="0.2" fill="#1A1A1B" opacity="0.4" />
+      <rect x="5" y="19" width="13" height="1.4" rx="0.2" fill="#1A1A1B" opacity="0.4" />
+      <rect x="5" y="24" width="15" height="1.4" rx="0.2" fill="#1A1A1B" opacity="0.4" />
+      <rect x="5" y="27" width="14" height="1.4" rx="0.2" fill="#1A1A1B" opacity="0.4" />
+      <rect x="24" y="13" width="14" height="1.4" rx="0.2" fill="#1A1A1B" opacity="0.4" />
+      <rect x="24" y="16" width="14" height="1.4" rx="0.2" fill="#1A1A1B" opacity="0.4" />
+      <rect x="24" y="19" width="12" height="1.4" rx="0.2" fill="#1A1A1B" opacity="0.4" />
+      <rect x="24" y="24" width="14" height="1.4" rx="0.2" fill="#1A1A1B" opacity="0.4" />
+      <rect x="24" y="27" width="13" height="1.4" rx="0.2" fill="#1A1A1B" opacity="0.4" />
+      <rect x="42" y="13" width="14" height="1.4" rx="0.2" fill="#1A1A1B" opacity="0.4" />
+      <rect x="42" y="16" width="14" height="1.4" rx="0.2" fill="#1A1A1B" opacity="0.4" />
+      <rect x="42" y="19" width="12" height="1.4" rx="0.2" fill="#1A1A1B" opacity="0.4" />
+      <rect x="42" y="24" width="14" height="1.4" rx="0.2" fill="#1A1A1B" opacity="0.4" />
+      <rect x="42" y="27" width="13" height="1.4" rx="0.2" fill="#1A1A1B" opacity="0.4" />
+    </svg>
+  ),
 };
 
 const STYLE_OPTIONS: { id: StyleChoice; label: string; desc: string }[] = [
@@ -387,9 +432,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
   const iframeScale = previewWidth / dims.width;
 
   // ─── Generation (Edge Function — with retry) ───
-
-  // Key is server-side (Edge Function secret), no client-side check needed
-  const hasOpenAIKey = true;
+  // Key is server-side (Gemini Nano Banana secret), no client-side check needed.
 
   async function handleGenerate() {
     setStep("generating");
@@ -609,7 +652,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
     if (!customGenPrompt.trim()) return;
     setCustomGenLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-image", {
+      const { data, error } = await supabase.functions.invoke("generate-gemini-image", {
         body: { prompt: customGenPrompt.trim() },
       });
       if (error) throw new Error(error.message);

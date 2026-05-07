@@ -1,125 +1,135 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  /* ═══ DARK THEME (default) ═══ */
+  /* ═══ PREMIUM DARK THEME ═══ */
   :root,
   .dark {
-    --background: 220 20% 7%;
-    --foreground: 210 20% 92%;
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
 
-    --card: 220 18% 10%;
-    --card-foreground: 210 20% 92%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 220 18% 10%;
-    --popover-foreground: 210 20% 92%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 174 64% 40%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 263.4 70% 50.4%; /* Deep Purple/Indigo */
+    --primary-foreground: 210 40% 98%;
 
-    --secondary: 220 16% 14%;
-    --secondary-foreground: 210 15% 75%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 220 14% 16%;
-    --muted-foreground: 215 12% 50%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
 
-    --accent: 220 16% 18%;
-    --accent-foreground: 210 20% 92%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
 
-    --destructive: 0 72% 55%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 220 14% 18%;
-    --input: 220 14% 18%;
-    --ring: 174 64% 40%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 263.4 70% 50.4%;
 
-    --radius: 0.5rem;
+    --radius: 1rem;
 
-    --sidebar-background: 220 20% 8%;
-    --sidebar-foreground: 210 15% 75%;
-    --sidebar-primary: 174 64% 40%;
+    --sidebar-background: 240 10% 4.9%;
+    --sidebar-foreground: 240 5% 64.9%;
+    --sidebar-primary: 263.4 70% 50.4%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 16% 14%;
-    --sidebar-accent-foreground: 210 20% 92%;
-    --sidebar-border: 220 14% 15%;
-    --sidebar-ring: 174 64% 40%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 263.4 70% 50.4%;
 
-    --glow: 174 64% 40%;
-    --surface: 220 18% 11%;
-    --surface-hover: 220 16% 14%;
+    --glow: 263.4 70% 50.4%;
+    --surface: 240 10% 5.9%;
+    --surface-hover: 240 10% 8.9%;
   }
 
-  /* ═══ LIGHT THEME ═══
-     "Three-greys rule" applied so cards and the sidebar physically
-     detach from the canvas:
-       - background: soft cool grey (~#F8F9FA) — the page itself
-       - card / popover / sidebar: pure white (#FFFFFF) — surfaces
-       - border: subtle grey (~#E9ECEF) at 1px — quiet delimiters
-     In light mode the previous values were 98% bg vs 100% card,
-     which read as a single white wash. */
+  /* ═══ PREMIUM LIGHT THEME ═══ */
   .light {
-    --background: 220 14% 97%;       /* #F4F6F8 — soft cool grey */
-    --foreground: 220 22% 12%;       /* darker — body text contrast */
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
 
-    --card: 0 0% 100%;               /* pure white surfaces */
-    --card-foreground: 220 22% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 22% 12%;
+    --popover-foreground: 240 10% 3.9%;
 
-    --primary: 174 64% 36%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 262.1 83.3% 57.8%;
+    --primary-foreground: 210 40% 98%;
 
-    --secondary: 220 14% 95%;
-    --secondary-foreground: 220 18% 30%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
 
-    --muted: 220 14% 95%;
-    --muted-foreground: 220 12% 38%;  /* +contrast for secondary text */
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
 
-    --accent: 220 14% 95%;
-    --accent-foreground: 220 22% 12%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
 
-    --destructive: 0 72% 50%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 220 13% 91%;            /* #E5E8EC — subtle 1px lines */
-    --input: 220 13% 91%;
-    --ring: 174 64% 36%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 262.1 83.3% 57.8%;
 
-    --radius: 0.5rem;
+    --radius: 1rem;
 
-    /* Sidebar = white surface (was a slight grey, which made it blend
-       with the canvas). White makes the whole left column read as a
-       distinct surface vs the new grey background. */
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 220 18% 25%;
-    --sidebar-primary: 174 64% 36%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 14% 96%;
-    --sidebar-accent-foreground: 220 22% 12%;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 263.4 70% 50.4%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 174 64% 36%;
+    --sidebar-ring: 262.1 83.3% 57.8%;
 
-    --glow: 174 64% 36%;
-    --surface: 220 15% 96%;
-    --surface-hover: 220 15% 92%;
+    --glow: 262.1 83.3% 57.8%;
+    --surface: 0 0% 98%;
+    --surface-hover: 0 0% 96%;
   }
 }
 
 @layer base {
   html {
-    font-size: 15px;
+    font-size: 16px;
+    scroll-behavior: smooth;
   }
 
   * {
-    @apply border-border;
+    @apply border-border selection:bg-primary/20 selection:text-primary;
   }
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "ss01", "ss02", "cv01", "cv02", "cv03";
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display tracking-tight;
+  }
+}
+
+@layer components {
+  .font-display {
+    font-family: 'Outfit', sans-serif;
+  }
+  
+  .glass {
+    @apply bg-background/40 backdrop-blur-md border border-white/10;
+  }
+  
+  .glass-card {
+    @apply bg-white/[0.03] backdrop-blur-sm border border-white/[0.08] rounded-2xl;
   }
 }
 
@@ -127,27 +137,36 @@
   .glow-sm {
     box-shadow: 0 0 15px -3px hsl(var(--glow) / 0.15);
   }
-  .light .glow-sm {
-    box-shadow: 0 0 12px -3px hsl(var(--glow) / 0.1);
-  }
   .glow-md {
     box-shadow: 0 0 30px -5px hsl(var(--glow) / 0.2);
   }
-  .light .glow-md {
-    box-shadow: 0 0 20px -5px hsl(var(--glow) / 0.12);
-  }
-  .glass {
-    @apply bg-surface/80 backdrop-blur-xl border border-border/50;
-  }
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-cyan-300;
-  }
-  .light .text-gradient {
-    @apply bg-gradient-to-r from-primary to-cyan-600;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500;
   }
   .tracking-display {
-    letter-spacing: -0.03em;
+    letter-spacing: -0.04em;
   }
+  
+  .mesh-gradient {
+    background-image: 
+      radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+      radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+      radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+  }
+
+  .noise {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    opacity: 0.05;
+    pointer-events: none;
+  }
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 30s linear infinite;
 }
 
 @keyframes marquee {
