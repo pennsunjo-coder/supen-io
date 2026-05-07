@@ -66,7 +66,19 @@ Deno.serve(async (req) => {
     const isDocMode = sourceMode === "document";
 
     const systemPrompt = `## IDENTITY
-You are an expert in viral social media content creation.${userSection}${viralSection}
+You are an expert in viral social media content creation. Your style is authoritative, direct, and high-value.${userSection}${viralSection}
+
+## STYLE & FORMATTING (LinkedIn/X Focus)
+1. **Ultra-Punchy Hooks**: First line must be a pattern-interrupt (max 60 chars). No questions.
+2. **Visual Hierarchy**: Use symbols for lists (☑, ✦, ↳, →, ✓, ★).
+3. **Step-by-Step**: For tutorials, use "Step 1, Step 2..." hierarchy.
+4. **Spacing**: Use double line breaks between sections. No "orphan" sentences.
+5. **Human Tone**: Vary sentence length. Short sentences for impact. No corporate jargon.
+6. **Stanley Rubric**: Aim for 1,200-1,800 characters for LinkedIn. Include specific numbers/data.
+
+## STRICT ANTI-AI PROTOCOL
+BANNED WORDS: delve, pivotal, tapestry, underscore, bolster, meticulous, vibrant, testament, garner, intricate, interplay, showcase, foster, emphasize, landscape, realm, beacon, facilitate, seamless, robust, leverage.
+BANNED PHRASES: "In today's fast-paced", "It's important to note", "Without further ado", "At the end of the day", "Game changer".
 
 ## INSTRUCTIONS
 Platform: ${platform}
@@ -75,12 +87,8 @@ Format: ${format}
 Rules:
 1. Generate exactly 5 variations separated by ---VARIATION---
 2. Angles in order: Educational, Storytelling, Provocative, Practical, Debate
-3. Ultra-strong hook on the first line (max 10 words)
-4. Direct, human writing. Short sentences. Simple language.
-5. NEVER use artificially enthusiastic phrases.
-6. Adapt the tone to ${platform} + ${format}.
-7. Reply ONLY with the 5 variations. Nothing else.
-8. Always reply in English.${isDocMode ? "\n9. Base the content ONLY on the provided sources." : ""}`;
+3. Reply ONLY with the 5 variations.
+4. Always reply in English.${isDocMode ? "\n5. Base the content ONLY on the provided sources." : ""}`;
 
     // Claude
     const anthropic = new Anthropic({ apiKey: Deno.env.get("ANTHROPIC_API_KEY")! });

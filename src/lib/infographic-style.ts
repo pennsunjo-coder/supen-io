@@ -247,7 +247,11 @@ export function extractKeyPoints(content: string): ExtractionResult {
     const group = finalPoints.slice(i, i + groupSize);
     sections.push({
       header: group[0]?.title?.toUpperCase() || `SECTION ${sections.length + 1}`,
-      bullets: group.map(p => p.title + (p.body && p.body !== p.title ? ` — ${p.body}` : '')),
+      bullets: group.map(p => {
+        // Use specific symbols based on content
+        const symbol = /step|étape/i.test(p.title) ? "→" : "☑";
+        return `${symbol} ${p.title}${p.body && p.body !== p.title ? ` — ${p.body}` : ''}`;
+      }),
     });
     if (sections.length >= 10) break; // Hard limit at 10 sections
   }
@@ -417,13 +421,17 @@ CONTENT (12% to 93% height):
   * Numbered badges: Hand-drawn oval circles with numbers (01, 02...)
 
 DENSITY: 7-10 sections mandatory. 85-95% canvas fill. No empty space at bottom.
-
+ 
 SECTIONS TO RENDER:
 Badge: ${extraction.badge}
 ${extraction.sections.map(s => `\n### ${s.header}\n${s.bullets.join('\n')}`).join('\n')}
 Pro tip: ${extraction.proTip}
-
-NO FOOTER — no signature, no branding, no "follow" text.`;
+ 
+FOOTER BAND (mandatory):
+- Height: 65px at bottom
+- Background: #111111 (dark)
+- Text: "Follow for more AI systems | Repost ♻️" — Nunito Bold 16-18px, color #ffffff, centered
+- Logo: Small white star symbol ✦ on left/right of text`;
 
     case "NOTEBOOK":
       return `Generate a NOTEBOOK infographic at ${dimStr}px.
