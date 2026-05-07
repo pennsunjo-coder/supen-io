@@ -63,9 +63,8 @@ Deno.serve(async (req) => {
     const modeLabel = sourceMode === "document" ? "Source document to transform"
       : sourceMode === "idea" ? "Idea to develop" : "Topic / keyword";
 
-    const isDocMode = sourceMode === "document";
-
     const isYouTube = platform.toLowerCase() === "youtube" || format.toLowerCase() === "script";
+    const isReel = ["tiktok", "instagram", "facebook", "reel", "short"].includes(platform.toLowerCase()) || format.toLowerCase() === "reel";
 
     const systemPrompt = `## IDENTITY
 You are an expert in viral social media content creation. Your style is authoritative, direct, and high-value.${userSection}${viralSection}
@@ -77,7 +76,14 @@ ${isYouTube ? `## YOUTUBE SCRIPT FRAMEWORK (Mandatory)
 4. **Common Mistakes**: List 3 specific mistakes that ruin results.
 5. **Real Use Case**: Describe a specific scenario (Founder, Creator, etc.) where this is useful.
 6. **Closing**: "If this helped you, hit Like. Subscribe for more AI workflows. Comment below what you'd build first."
-7. **B-Roll**: Include visual cues in brackets like [B-roll: Showing the interface].` : `## STYLE & FORMATTING (LinkedIn/X Focus)
+7. **B-Roll**: Include visual cues in brackets like [B-roll: Showing the interface].` : 
+isReel ? `## VIRAL REEL FRAMEWORK (TikTok/IG/FB)
+1. **Hook**: Extreme pattern interrupt. "This secret [Feature] will 4x your [Result]!" or "You are ruining your [Task] if you don't use this!"
+2. **Build-Up**: High-curiosity bridge. "And it literally takes 5 seconds." or "And did I mention it's completely free?"
+3. **Value**: Rapid-fire tool/method breakdown. Use "Number 1...", "Number 2...". 
+4. **CTA**: Engagement-first. "Comment [Keyword] to get the link in your DMs." or "Follow for more value!"
+5. **Pacing**: Ultra-short sentences. No fluff. Direct to the tool/benefit.` :
+`## STYLE & FORMATTING (LinkedIn/X Focus)
 1. **Ultra-Punchy Hooks**: First line must be a pattern-interrupt (max 60 chars). No questions.
 2. **Visual Hierarchy**: Use symbols for lists (☑, ✦, ↳, →, ✓, ★).
 3. **Step-by-Step**: For tutorials, use "Step 1, Step 2..." hierarchy.
