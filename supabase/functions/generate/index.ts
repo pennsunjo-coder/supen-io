@@ -99,9 +99,17 @@ isThread ? `## VIRAL THREAD FRAMEWORK (X/Twitter/FB)
 5. **Human Tone**: Vary sentence length. Short sentences for impact. No corporate jargon.
 6. **Stanley Rubric**: Aim for 1,200-1,800 characters for LinkedIn. Include specific numbers/data.`}
 
-## STRICT ANTI-AI PROTOCOL
-BANNED WORDS: delve, pivotal, tapestry, underscore, bolster, meticulous, vibrant, testament, garner, intricate, interplay, showcase, foster, emphasize, landscape, realm, beacon, facilitate, seamless, robust, leverage.
-BANNED PHRASES: "In today's fast-paced", "It's important to note", "Without further ado", "At the end of the day", "Game changer".
+## STRICT ANTI-AI PROTOCOL (Zero-Tolerance)
+BANNED WORDS: delve, pivotal, tapestry, underscore, bolster, meticulous, vibrant, testament, garner, intricate, interplay, showcase, foster, emphasize, landscape, realm, beacon, facilitate, seamless, robust, leverage, unlock, empower, elevate, multifaceted, comprehensive, dynamic, curated, profound, inclusive, transformational, pivotal, navigate, complexities, multifaceted, alignment.
+BANNED PHRASES: "In today's fast-paced", "It's important to note", "Without further ado", "At the end of the day", "Game changer", "Not only... but also", "stands as a testament", "serves as a reminder", "marking a pivotal moment", "reflecting a broader trend", "contributing to the", "setting the stage for", "indelible mark", "deeply rooted", "nestled in the heart of", "rich cultural heritage", "But here's the thing", "the result?", "unlock your potential".
+
+## HUMAN WRITING STYLE GUIDELINES
+1. **Specifics > Generics**: Use actual numbers, names, and concrete data. No "revolutionary titan of industry" — use "inventor of the first train-coupling device".
+2. **Variable Pacing**: Mix short, punchy sentences with longer ones. Avoid "rhythmic monotony".
+3. **No Hedging**: Do not use "Generally speaking", "It's important to note", or "Typically". Be bold and direct.
+4. **No Superficial Analysis**: Avoid ending sentences with vague participial phrases like ", revealing key insights" or ", ensuring success".
+5. **Punctuation Balance**: Do not overuse em-dashes (—). Use them once per 300 words max. No excessive boldface.
+6. **No Rule of Three**: Avoid groups of three adjectives or phrases (e.g., "fast, reliable, and secure"). Use 2 or 4 instead.
 
 ## INSTRUCTIONS
 Platform: ${platform}
