@@ -133,9 +133,9 @@ export function selectBestTemplate(content: string, platform: string, forcedTemp
   let templateId: string;
   let reason: string;
 
-  // Priority 1: 3-entity comparison → COMPARISON (3-column layout)
+  // Priority 1: 3-entity comparison → COMPARISON3 (3-column layout)
   if (has3Entities || hasMultiVs) {
-    templateId = "COMPARISON";
+    templateId = "COMPARISON3";
     reason = "Comparaison à 3 entités — colonnes côte à côte";
   }
   // Priority 2: Resource/course lists → NOTEBOOK (spiral binding)
@@ -148,9 +148,9 @@ export function selectBestTemplate(content: string, platform: string, forcedTemp
     templateId = "FUNNEL";
     reason = "Processus/parcours — entonnoir progressif";
   }
-  // Priority 4: 2-entity comparison or tiers → COMPARISON
+  // Priority 4: 2-entity comparison or tiers → COMPARISON_VS
   else if (p.hasComparison) {
-    templateId = "COMPARISON";
+    templateId = "COMPARISON_VS";
     reason = "Comparaison détectée — colonnes côte à côte";
   }
   // Priority 5: Framework/data grid
@@ -200,55 +200,56 @@ export function extractKeyPoints(content: string): ExtractionResult {
 
   const points: Point[] = [];
 
-  // Pass 1: numbered/bulleted lines
+  // Pass 1: numbered/bulleted lines (look for many points)
   for (const line of lines) {
     const trimmed = line.trim();
-    if (/^[\d\.\-•→\*▸]\s*/.test(trimmed)) {
-      const text = trimmed.replace(/^[\d\.\-•→\*▸\s]+/, "").trim();
-      if (text.length > 10 && points.length < 9) {
+    if (/^[\d\.\-•→\*▸☑✦↳]\s*/.test(trimmed)) {
+      const text = trimmed.replace(/^[\d\.\-•→\*▸☑✦↳\s]+/, "").trim();
+      if (text.length > 10 && points.length < 20) {
         const colonSplit = text.split(/[:—–]/);
         if (colonSplit.length >= 2) {
-          points.push({ title: colonSplit[0].trim().slice(0, 50), body: colonSplit.slice(1).join(":").trim().slice(0, 200) });
+          points.push({ title: colonSplit[0].trim().slice(0, 60), body: colonSplit.slice(1).join(":").trim().slice(0, 250) });
         } else {
-          points.push({ title: text.slice(0, 45), body: text.slice(45, 200).trim() });
+          // If no colon, try to split by first few words as title
+          const words = text.split(/\s+/);
+          if (words.length > 10) {
+            points.push({ title: words.slice(0, 5).join(" ").slice(0, 50), body: words.slice(5).join(" ").slice(0, 250) });
+          } else {
+            points.push({ title: text.slice(0, 45), body: text.slice(0, 250).trim() });
+          }
         }
       }
     }
   }
 
-  // Pass 2: sentences
-  if (points.length < 5) {
+  // Pass 2: sentences (if we don't have enough points)
+  if (points.length < 10) {
     const sentences = content.match(/[^.!?\n]+[.!?]+/g) || [];
     for (const s of sentences) {
       const trimmed = s.trim();
-      if (trimmed.length > 20 && points.length < 8) {
-        points.push({ title: trimmed.slice(0, 45), body: trimmed.slice(45, 200).trim() });
-      }
-    }
-  }
-
-  // Pass 3: paragraphs
-  if (points.length < 5) {
-    const chunks = content.split(/\n\n+/).filter(c => c.trim().length > 20);
-    for (const chunk of chunks) {
-      if (points.length < 8) {
-        const t = chunk.trim();
-        points.push({ title: t.slice(0, 45), body: t.slice(45, 200).trim() });
+      if (trimmed.length > 30 && points.length < 20) {
+        const words = trimmed.split(/\s+/);
+        points.push({ title: words.slice(0, 5).join(" ").slice(0, 50), body: trimmed.slice(0, 250).trim() });
       }
     }
   }
 
   const proTip = generateProTip(content);
 
-  // Build sections from points (group by 2-3 bullets per section)
+  // Build sections from points (aiming for 7-10 sections)
   const sections: Section[] = [];
-  const finalPoints = points.slice(0, 8);
-  for (let i = 0; i < finalPoints.length; i += 3) {
-    const group = finalPoints.slice(i, i + 3);
+  const finalPoints = points.slice(0, 20); // Extract up to 20 for density
+  
+  // Adaptive grouping: if we have many points, group by 2. If few, group by 1.
+  const groupSize = finalPoints.length > 12 ? 2 : 1;
+  
+  for (let i = 0; i < finalPoints.length; i += groupSize) {
+    const group = finalPoints.slice(i, i + groupSize);
     sections.push({
       header: group[0]?.title?.toUpperCase() || `SECTION ${sections.length + 1}`,
-      bullets: group.map(p => p.title + (p.body ? ` — ${p.body}` : '')),
+      bullets: group.map(p => p.title + (p.body && p.body !== p.title ? ` — ${p.body}` : '')),
     });
+    if (sections.length >= 10) break; // Hard limit at 10 sections
   }
 
   return { title, badge, subtitle, points: finalPoints, sections, proTip };
@@ -395,29 +396,75 @@ function getTemplatePrompt(
 
 CANVAS:
 - Background: #f8f9f7 with ultra-subtle paper grain (2-3% opacity)
-- 4 metallic corner clips (12x20px, gray #aaaaaa) at each corner
+- 4 metallic corner clips (12x20px, dark gray #555555) at each corner
 - 1px border #dddddd around canvas, border-radius 6px
 - Soft shadow: box-shadow 0 4px 24px rgba(0,0,0,0.08)
 
 TITLE BLOCK (top 12% of canvas):
 - Title: "${extraction.title}" — Nunito Black 900, 52-56px, #111111, centered
+- [SQUARE BRACKETS] around title are mandatory
 - Colored underline below title: 2-3px, color #C0392B, full width minus 40px margins
 
 CONTENT (12% to 93% height):
 - Left/right padding: 40px
 - Each SECTION has:
-  * Section header: Nunito Bold 20-24px, colored (#C0392B or #2B4DAF or #2E7D32)
-  * Colored underline 2px under header, same color
-  * Bullets: colored • symbols, Caveat 400 18-20px, #111111
-  * Key terms: yellow #E8F044 background highlight (inline, flat)
-  * Tool/platform names: blue #2B4DAF bold underlined
+  * SECTION BANDS: Full-width yellow #FFEF5A background strip with bold black text for major section labels
+  * Section header: Nunito Bold 22-26px, colored (#C0392B or #2563EB or #4A8B35)
+  * Colored underline 2.5px under header, same color
+  * Bullets: colored • symbols, Caveat 500 18-20px, #111111
+  * Key terms: yellow #FFEF5A background highlight (inline, flat, no rounded corners)
+  * Tool/platform names: blue #2563EB bold underlined
+  * Numbered badges: Hand-drawn oval circles with numbers (01, 02...)
+
+DENSITY: 7-10 sections mandatory. 85-95% canvas fill. No empty space at bottom.
 
 SECTIONS TO RENDER:
 Badge: ${extraction.badge}
-${pointsList}
+${extraction.sections.map(s => `\n### ${s.header}\n${s.bullets.join('\n')}`).join('\n')}
 Pro tip: ${extraction.proTip}
 
 NO FOOTER — no signature, no branding, no "follow" text.`;
+
+    case "NOTEBOOK":
+      return `Generate a NOTEBOOK infographic at ${dimStr}px.
+
+CANVAS:
+- Background: #fffef8 (warm cream)
+- SPIRAL BINDING: 20-22 metallic coils at top edge, 70px tall
+- RULED LINES: horizontal #dde8f0, 0.5px, every 34px
+- RED MARGIN: vertical #E63946, 1.5px, at x=72px
+
+CONTENT:
+- Title: "${extraction.title}" — Caveat Bold 52-56px, each word in different color (#C0392B, #2563EB, #4A8B35)
+- Sections: 7-10 sections
+- Point numbers: Blue #2563EB Nunito Bold, 01, 02...
+- Bullet text: Caveat 500, 16-18px
+- Key terms: yellow #FFEF5A inline highlight
+
+SECTIONS:
+${extraction.sections.map(s => `\n### ${s.header}\n${s.bullets.join('\n')}`).join('\n')}
+Pro tip: ${extraction.proTip}
+
+NO footer. End with "Follow for more | Repost ↺" in center.`;
+
+    case "COMPARISON3":
+      return `Generate a 3-COLUMN COMPARISON infographic at ${dimStr}px.
+
+CANVAS: Background #f5f5f0, dot grid bg.
+
+LAYOUT:
+- 3 equal vertical columns with thin #cccccc separators
+- Column 1 (Blue #2563EB), Column 2 (Green #4A8B35), Column 3 (Red #C0392B)
+- Each column header: Bold ALL CAPS in matching color, underlined
+
+CONTENT:
+- Title: "${extraction.title}" in [SQUARE BRACKETS]
+- Body: Caveat 500, 14-16px
+- Use yellow #FFEF5A highlights on key metrics/numbers
+
+SECTIONS:
+${extraction.sections.map(s => `\n### ${s.header}\n${s.bullets.join('\n')}`).join('\n')}
+Pro tip: ${extraction.proTip}`;
 
     case "UI_CARDS":
       return `Generate a 3-TIER COMPARISON infographic at ${dimStr}px.
@@ -642,23 +689,25 @@ ORDER RULES — MANDATORY:
 - Every flex child needs: min-width:0 OR min-height:0
 
 DENSITY RULES — MANDATORY:
-- Minimum 5 distinct points per infographic (never less)
-- Each point must have a title (3-6 words) AND a body (15-25 words)
-- An infographic with less than 5 points will be REJECTED
-- Content must fill 75-85% of the canvas visually
-- NO empty sections, NO placeholder text like "lorem ipsum"
+- Minimum 7-10 distinct sections per infographic (never less)
+- Each section must have a title AND 2-4 sub-bullets
+- An infographic with less than 7 sections will be REJECTED
+- Content must fill 85-95% of the canvas visually
+- NO empty zones at the bottom — content must stretch top to bottom
+- NO emojis anywhere in the text ( forbidden in this style)
+- NO placeholder text like "lorem ipsum"
 - Every point must be specific and actionable
 
 RAPPEL FINAL :
-- Nunito 900 pour TOUS les titres
-- Caveat pour TOUT le corps de texte
-- Styles INLINE uniquement (jamais de classes CSS)
-- Background #f8f9f7 (jamais #ffffff pur)
-- Couleurs saturées et confiantes (pas de pastels trop pâles)
+- Nunito 900 pour TOUS les titres (Bold Marker style)
+- Caveat pour TOUT le corps de texte (Handwritten style)
+- ZERO EMOJI — use symbols like • → ✓ ★ instead
+- Styles INLINE uniquement (style="...")
+- Background off-white (#f8f9f7 or #fffef8)
 - Generate ONLY the complete HTML code
 - Commence par <!DOCTYPE html> et termine par </html>
-- No text before or after the HTML
-- All visible text must be in ENGLISH`;
+- All visible text must be in ENGLISH
+- Fill the entire canvas! Density is key.`;
 }
 
 

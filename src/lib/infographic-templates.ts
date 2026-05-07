@@ -645,6 +645,110 @@ export function dataGrid(w: number, h: number): string {
 </body></html>`;
 }
 
+// ─── TEMPLATE 13: NOTEBOOK ───
+export function notebook(w: number, h: number): string {
+  const t = typography(w);
+  const s = w / 1080;
+  const coilCount = 22;
+  const coilWidth = Math.round(w / coilCount);
+  const coilHeight = Math.round(70 * s);
+  
+  return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body style="width:${w}px;height:${h}px;overflow:hidden;margin:0;padding:0;box-sizing:border-box;background-color:#fffef8;display:flex;flex-direction:column;position:relative;">
+
+<!-- Spiral Binding -->
+<div style="height:${coilHeight}px;width:100%;display:flex;justify-content:space-between;padding:0 ${Math.round(10*s)}px;box-sizing:border-box;z-index:10;background:transparent;">
+  ${Array.from({length: coilCount}).map(() => `
+    <div style="width:${Math.round(36*s)}px;height:${Math.round(26*s)}px;border-radius:50%;background:#a39581;border:1px solid #7a7060;box-shadow:inset 2px 2px 4px rgba(255,255,255,0.3), 1px 1px 2px rgba(0,0,0,0.2);margin-top:${Math.round(10*s)}px;"></div>
+  `).join('')}
+</div>
+
+<!-- Ruled Lines -->
+<div style="position:absolute;top:0;left:0;right:0;bottom:0;background-image:linear-gradient(#dde8f0 1px, transparent 1px);background-size:100% 34px;z-index:1;pointer-events:none;opacity:0.6;"></div>
+
+<!-- Red Margin -->
+<div style="position:absolute;top:0;left:${Math.round(72*s)}px;bottom:0;width:1.5px;background:#E63946;z-index:2;opacity:0.8;"></div>
+
+<div style="flex:1;position:relative;z-index:3;display:flex;flex-direction:column;padding:${Math.round(10*s)}px ${Math.round(40*s)}px ${Math.round(20*s)}px ${Math.round(90*s)}px;overflow:hidden;">
+  
+  <div style="margin-bottom:${Math.round(20*s)}px;padding-top:${Math.round(10*s)}px;">
+    <div style="display:inline-block;background:#C0392B;color:#fff;font-family:'Nunito',sans-serif;font-weight:800;font-size:${t.badge}px;letter-spacing:2px;text-transform:uppercase;padding:${Math.round(4*s)}px ${Math.round(16*s)}px;border-radius:4px;margin-bottom:${Math.round(8*s)}px;">{{BADGE}}</div>
+    <div style="font-family:'Caveat',cursive;font-weight:700;font-size:${t.titleL}px;color:#111111;line-height:1.1;">{{TITLE}}</div>
+  </div>
+
+  <div style="flex:1;display:flex;flex-direction:column;gap:${Math.round(8*s)}px;min-height:0;overflow:hidden;">
+    ${[1,2,3,4,5,6,7,8].map((n, i) => `
+    <div style="display:flex;gap:${Math.round(12*s)}px;align-items:flex-start;min-height:0;overflow:hidden;">
+      <div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:${t.bodyL}px;color:#2563EB;flex-shrink:0;width:${Math.round(30*s)}px;">0${n}</div>
+      <div style="flex:1;min-width:0;overflow:hidden;">
+        <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:${t.bodyM}px;color:#4A8B35;margin-bottom:2px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;">{{P${n}_TITLE}}</div>
+        <div style="font-family:'Caveat',cursive;font-size:${t.bodyS}px;color:#333333;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{P${n}_BODY}}</div>
+      </div>
+    </div>`).join('')}
+  </div>
+
+  <div style="margin-top:${Math.round(15*s)}px;padding:${Math.round(10*s)}px;border:1px solid #2563EB;border-radius:8px;background:rgba(37,99,235,0.05);flex-shrink:0;">
+    <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:${t.badge}px;color:#2563EB;text-transform:uppercase;margin-bottom:4px;">💡 PRO TIP</div>
+    <div style="font-family:'Caveat',cursive;font-size:${t.bodyM}px;color:#111111;">{{PRO_TIP}}</div>
+  </div>
+
+  <div style="text-align:center;padding-top:${Math.round(15*s)}px;font-family:'Caveat',cursive;font-weight:700;font-size:${t.footer}px;color:#2563EB;">
+    Follow for more | Repost ↺
+  </div>
+</div>
+
+</body></html>`;
+}
+
+// ─── TEMPLATE 14: COMPARISON3 ───
+export function comparison3(w: number, h: number): string {
+  const t = typography(w);
+  const s = w / 1080;
+  const colColors = ['#2563EB', '#4A8B35', '#C0392B'];
+  const colBgs = ['rgba(37,99,235,0.03)', 'rgba(74,139,53,0.03)', 'rgba(192,57,43,0.03)'];
+
+  return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body style="width:${w}px;height:${h}px;overflow:hidden;margin:0;padding:0;box-sizing:border-box;background-color:#f5f5f0;background-image:${inlineDotGrid(32, 0.05)};font-family:'Caveat',cursive;display:flex;flex-direction:column;">
+
+<div style="padding:${Math.round(20*s)}px ${t.pad}px;text-align:center;border-bottom:1.5px solid #cccccc;flex-shrink:0;">
+  <div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:${t.titleM}px;color:#111111;line-height:1.1;">[{{TITLE}}]</div>
+</div>
+
+<div style="flex:1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;min-height:0;overflow:hidden;">
+  ${[0,1,2].map(i => `
+  <div style="border-right:${i < 2 ? '1px solid #cccccc' : 'none'};display:flex;flex-direction:column;background:${colBgs[i]};min-height:0;overflow:hidden;">
+    <div style="padding:${Math.round(12*s)}px;text-align:center;background:#fff;border-bottom:2px solid ${colColors[i]};">
+      <div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:${t.bodyL}px;color:${colColors[i]};text-transform:uppercase;">Item ${i+1}</div>
+    </div>
+    <div style="flex:1;padding:${Math.round(10*s)}px;display:flex;flex-direction:column;gap:${Math.round(10*s)}px;min-height:0;overflow:hidden;">
+      ${[1,2,3,4,5].map(n => `
+      <div style="min-height:0;overflow:hidden;">
+        <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:${t.bodyXS}px;color:${colColors[i]};text-transform:uppercase;margin-bottom:2px;">Feature ${n}</div>
+        <div style="font-family:'Caveat',cursive;font-size:${t.bodyS}px;color:#333333;line-height:1.2;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">{{P${(i*5)+n}_BODY}}</div>
+      </div>`).join('')}
+    </div>
+  </div>`).join('')}
+</div>
+
+<div style="padding:${Math.round(12*s)}px ${t.pad}px;background:#fff;border-top:1.5px solid #cccccc;flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:${Math.round(10*s)}px;">
+  <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:${t.badge}px;color:#111111;">PRO TIP:</div>
+  <div style="font-family:'Caveat',cursive;font-size:${t.bodyM}px;color:#444444;font-style:italic;">{{PRO_TIP}}</div>
+</div>
+
+<div style="height:${Math.round(40*s)}px;background:#f5f5f0;display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-weight:700;font-size:${t.footer}px;color:#666666;flex-shrink:0;">
+  {{FOOTER}} | Repost ↺
+</div>
+
+</body></html>`;
+}
+
+
 // ─── Template registry ───
 
 export const TEMPLATE_REGISTRY: Record<string, (w: number, h: number) => string> = {
@@ -660,6 +764,8 @@ export const TEMPLATE_REGISTRY: Record<string, (w: number, h: number) => string>
   WHITEBOARD: whiteboard,
   FUNNEL: funnel,
   DATA_GRID: dataGrid,
+  NOTEBOOK: notebook,
+  COMPARISON3: comparison3,
 };
 
 export const TEMPLATE_IDS = Object.keys(TEMPLATE_REGISTRY) as string[];
