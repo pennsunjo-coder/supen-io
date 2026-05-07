@@ -196,20 +196,24 @@ const SourcePanel = ({
   };
 
   return (
-    <div className="w-full flex flex-col h-full">
+    <div className="w-full flex flex-col h-full bg-sidebar-background">
       {/* Header */}
-      <div className="px-5 pt-5 pb-3 border-b border-border/20 shrink-0">
-        <h2 className="text-base font-semibold text-foreground">Sources</h2>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          {groupedSources.length} source{groupedSources.length !== 1 ? "s" : ""}
+      <div className="px-6 py-6 border-b border-border/40 shrink-0 bg-sidebar-background/80 backdrop-blur-md sticky top-0 z-10">
+        <h2 className="text-sm font-display font-black tracking-widest uppercase text-foreground/80">Sources</h2>
+        <div className="flex items-center gap-2 mt-1">
+          <p className="text-[11px] font-bold text-muted-foreground/50">
+            {groupedSources.length} library items
+          </p>
           {activeCount > 0 && (
-            <span className="text-primary"> · {activeCount} active{activeCount > 1 ? "s" : ""}</span>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-black uppercase tracking-tighter">
+              {activeCount} Active
+            </span>
           )}
-        </p>
+        </div>
       </div>
 
-      {/* 3 action buttons — pr keeps the Web button away from the right border */}
-      <div className="pl-4 pr-5 pb-3 grid grid-cols-3 gap-2 shrink-0">
+      {/* Action buttons */}
+      <div className="p-4 grid grid-cols-3 gap-2.5 shrink-0 bg-sidebar-background/40">
         {actions.map(({ mode, icon: Icon, label }) => {
           const isActive = showForm && formMode === mode;
           const isPdf = mode === "pdf";
@@ -228,15 +232,13 @@ const SourcePanel = ({
               }}
               disabled={saving || pdfLoading}
               className={cn(
-                "flex flex-col items-center gap-1 px-1 py-3 md:py-2 rounded-lg border text-[11px] font-medium transition-all disabled:opacity-50 active:scale-95",
-                isPdfBusy
-                  ? "border-primary/40 bg-primary/10 text-primary"
-                  : isActive
-                    ? "border-primary/40 bg-primary/10 text-primary"
-                    : "border-border/40 text-muted-foreground hover:text-foreground hover:bg-accent/50 hover:border-border/60"
+                "flex flex-col items-center gap-1.5 px-1 py-3 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all duration-300 disabled:opacity-50 active:scale-95 shadow-sm hover:shadow-md",
+                isPdfBusy || isActive
+                  ? "border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-[1.02]"
+                  : "bg-card border-border/40 text-muted-foreground hover:text-foreground hover:border-primary/40 hover:bg-background"
               )}
             >
-              {isPdfBusy ? <Loader2 className="w-5 h-5 md:w-4 md:h-4 animate-spin" /> : <Icon className="w-5 h-5 md:w-4 md:h-4" />}
+              {isPdfBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Icon className="w-4 h-4" />}
               {isPdfBusy ? "Import..." : label}
             </button>
           );
@@ -246,43 +248,62 @@ const SourcePanel = ({
       <input ref={fileRef} type="file" accept="application/pdf" className="hidden" onChange={handleFile} />
 
       {/* Form */}
-      <div className={cn("mx-4 mb-3 p-3 rounded-lg border border-border/40 bg-card shrink-0", showForm ? "block" : "hidden")}>
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-medium text-foreground">{formLabels[formMode]}</span>
-          <button type="button" onClick={closeForm} className="text-muted-foreground hover:text-foreground transition-colors">
+      <div className={cn("mx-4 mb-4 p-4 rounded-2xl border border-primary/20 bg-card shadow-2xl shadow-primary/5 shrink-0 animate-in fade-in slide-in-from-top-2", showForm ? "block" : "hidden")}>
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-[11px] font-black uppercase tracking-widest text-primary">{formLabels[formMode]}</span>
+          <button type="button" onClick={closeForm} className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-muted transition-colors">
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
 
         <div className={formMode === "note" ? "block" : "hidden"}>
-          <input ref={noteTitleRef} value={noteTitle} onChange={(e) => setNoteTitle(e.target.value)} placeholder="Note title" maxLength={200} className="w-full bg-accent/30 border border-border/30 rounded-md px-2.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary/30 mb-2" />
-          <textarea value={noteContent} onChange={(e) => setNoteContent(e.target.value)} placeholder="Content..." rows={3} maxLength={10000} className="w-full bg-accent/30 border border-border/30 rounded-md px-2.5 py-2 text-xs resize-none focus:outline-none focus:ring-1 focus:ring-primary/30 mb-2" />
+          <input 
+            ref={noteTitleRef} 
+            value={noteTitle} 
+            onChange={(e) => setNoteTitle(e.target.value)} 
+            placeholder="Note title" 
+            maxLength={200} 
+            className="w-full bg-muted/40 border border-border/40 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary/40 focus:bg-background transition-all mb-3" 
+          />
+          <textarea 
+            value={noteContent} 
+            onChange={(e) => setNoteContent(e.target.value)} 
+            placeholder="Content..." 
+            rows={4} 
+            maxLength={10000} 
+            className="w-full bg-muted/40 border border-border/40 rounded-xl px-3 py-2.5 text-xs resize-none focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary/40 focus:bg-background transition-all mb-3" 
+          />
         </div>
 
         <div className={formMode === "search" ? "block" : "hidden"}>
-          <input ref={searchRef} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSubmit()} placeholder="Search the web..." className="w-full bg-accent/30 border border-border/30 rounded-md px-2.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary/30 mb-2" />
+          <input 
+            ref={searchRef} 
+            value={searchQuery} 
+            onChange={(e) => setSearchQuery(e.target.value)} 
+            onKeyDown={(e) => e.key === "Enter" && handleSubmit()} 
+            placeholder="What are we looking for?" 
+            className="w-full bg-muted/40 border border-border/40 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary/40 focus:bg-background transition-all mb-3" 
+          />
         </div>
 
-        {error && <p className="text-[11px] text-destructive mb-2">{error}</p>}
+        {error && <p className="text-[10px] font-bold text-destructive mb-3 px-1">{error}</p>}
 
-        <Button type="button" size="sm" className="w-full h-7 text-xs" disabled={saving} onClick={handleSubmit}>
-          {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : formMode === "search" ? "Search" : "Add"}
+        <Button type="button" size="sm" className="w-full h-9 rounded-xl font-bold shadow-lg shadow-primary/10" disabled={saving} onClick={handleSubmit}>
+          {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : formMode === "search" ? "Start Search" : "Add to Library"}
         </Button>
       </div>
 
       {saving && !showForm && (
-        <div className="mx-4 mb-3 flex items-center gap-2 text-xs text-muted-foreground shrink-0">
-          <Loader2 className="w-3 h-3 animate-spin" /> Uploading...
+        <div className="mx-4 mb-4 flex items-center gap-2.5 px-3 py-2 rounded-xl bg-primary/5 border border-primary/10 text-[10px] font-bold text-primary shrink-0 animate-pulse">
+          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading to memory...
         </div>
       )}
-
-      <div className="mx-4 h-px bg-border/30 shrink-0" />
 
       {/* Source list */}
       <div
         className={cn(
-          "flex-1 overflow-y-auto min-h-0 px-3 py-3 space-y-0.5 transition-all",
-          dragOver && groupedSources.length > 0 && "border-2 border-dashed border-primary/40",
+          "flex-1 overflow-y-auto min-h-0 px-4 pb-10 space-y-2 transition-all no-scrollbar",
+          dragOver && groupedSources.length > 0 && "border-2 border-dashed border-primary/40 rounded-3xl mx-2 my-2",
         )}
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
@@ -290,25 +311,26 @@ const SourcePanel = ({
       >
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+            <Loader2 className="w-6 h-6 animate-spin text-primary/30" />
           </div>
         ) : groupedSources.length === 0 ? (
           <div
             className={cn(
-              "flex flex-col items-center justify-center py-12 px-4 text-center mx-3 my-3 rounded-xl border-2 border-dashed transition-colors cursor-pointer hover:border-primary/50 hover:bg-primary/[0.02]",
-              dragOver ? "border-primary bg-primary/5" : "border-border/30",
+              "flex flex-col items-center justify-center py-12 px-6 text-center rounded-3xl border-2 border-dashed transition-all duration-300 group cursor-pointer hover:bg-primary/[0.02]",
+              dragOver ? "border-primary bg-primary/5 scale-[0.98]" : "border-border/60 bg-muted/20 hover:border-primary/40",
             )}
             onClick={() => fileRef.current?.click()}
             onDrop={handleDrop}
             onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
           >
-            <div className="w-12 h-12 rounded-xl bg-accent/50 flex items-center justify-center mb-3">
-              <Upload className="w-5 h-5 text-muted-foreground" />
+            <div className="w-14 h-14 rounded-2xl bg-card flex items-center justify-center mb-4 shadow-sm border border-border/40 group-hover:scale-110 transition-transform">
+              <Upload className="w-6 h-6 text-muted-foreground/60" />
             </div>
-            <p className="text-sm font-medium text-muted-foreground">No sources</p>
-            <p className="text-xs text-muted-foreground/60 mt-1 leading-relaxed">Click or drag a PDF here</p>
-            <p className="text-[10px] text-muted-foreground/40 mt-2">Max 10 MB</p>
+            <p className="text-sm font-bold text-foreground/80">No sources yet</p>
+            <p className="text-[11px] text-muted-foreground/50 mt-1 leading-relaxed">
+              Drag & drop a PDF here or use the buttons above to add knowledge.
+            </p>
           </div>
         ) : (
           groupedSources.map((group) => {
@@ -319,61 +341,69 @@ const SourcePanel = ({
               <div
                 key={group.id}
                 className={cn(
-                  "group flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-all",
+                  "group relative flex items-center gap-3 px-3 py-3 rounded-2xl transition-all duration-300 border",
                   isActive
-                    ? "bg-primary/5 border border-primary/20"
-                    : "hover:bg-accent/40 border border-transparent",
+                    ? "bg-card border-primary/30 shadow-lg shadow-primary/5 scale-[1.02] ring-1 ring-primary/5"
+                    : "bg-card/40 border-border/40 hover:bg-card hover:border-border/80 hover:shadow-md hover:scale-[1.01]",
                 )}
               >
-                <button
-                  type="button"
-                  onClick={() => onToggleGroup(group.ids)}
-                  className={cn(
-                    "w-8 h-4.5 rounded-full p-0.5 transition-colors shrink-0 flex items-center",
-                    isActive ? "bg-primary" : "bg-accent/60",
-                  )}
-                  title={isActive ? "Deactivate" : "Activate"}
-                >
+                <div className="flex flex-col items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => onToggleGroup(group.ids)}
+                    className={cn(
+                      "w-8 h-4.5 rounded-full p-0.5 transition-all shrink-0 flex items-center",
+                      isActive ? "bg-primary shadow-inner" : "bg-muted border border-border/40",
+                    )}
+                    title={isActive ? "Deactivate source" : "Activate source"}
+                  >
+                    <div className={cn(
+                      "w-3.5 h-3.5 rounded-full bg-white transition-transform shadow-sm",
+                      isActive ? "translate-x-3.5" : "translate-x-0",
+                    )} />
+                  </button>
                   <div className={cn(
-                    "w-3.5 h-3.5 rounded-full bg-white transition-transform",
-                    isActive ? "translate-x-3.5" : "translate-x-0",
-                  )} />
-                </button>
-
-                <div className={cn(
-                  "w-6 h-6 rounded-md flex items-center justify-center shrink-0 transition-colors",
-                  isActive ? "bg-primary/15 text-primary" : "bg-accent/60 text-muted-foreground",
-                )}>
-                  <Icon className="w-3 h-3" />
+                    "w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-all",
+                    isActive ? "bg-primary/10 text-primary shadow-sm" : "bg-muted text-muted-foreground/40",
+                  )}>
+                    <Icon className="w-3.5 h-3.5" />
+                  </div>
                 </div>
+
                 <div className="flex-1 min-w-0">
-                  <span className={cn("block truncate text-[13px]", isActive ? "text-foreground" : "text-muted-foreground")}>
+                  <span className={cn("block truncate text-xs font-bold tracking-tight mb-0.5", isActive ? "text-foreground" : "text-muted-foreground/70")}>
                     {group.title}
                   </span>
-                  <span className="block text-[11px] text-muted-foreground/50">
-                    {typeLabels[group.type] || "Note"}
-                    {group.chunkCount > 1 && <span> · {group.chunkCount} parts</span>}
-                    {group.wordCount > 0 && <span> · {group.wordCount} words</span>}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">
+                      {typeLabels[group.type] || "Note"}
+                    </span>
+                    {(group.chunkCount > 1 || group.wordCount > 0) && (
+                      <span className="text-[9px] font-bold text-muted-foreground/30 flex items-center gap-1">
+                        · {group.wordCount > 0 ? `${group.wordCount} words` : `${group.chunkCount} parts`}
+                      </span>
+                    )}
+                  </div>
                   {isActive && group.directive ? (
-                    <button onClick={() => { setEditingDirective(group.id); setDirectiveText(group.directive || ""); }} className="flex items-center gap-1 mt-0.5 text-[10px] text-amber-400/80 hover:text-amber-400 transition-colors truncate">
+                    <button onClick={() => { setEditingDirective(group.id); setDirectiveText(group.directive || ""); }} className="flex items-center gap-1.5 mt-2 px-2 py-1 rounded-lg bg-primary/5 text-[9px] font-bold text-primary hover:bg-primary/10 transition-all truncate group/directive">
                       <Lightbulb className="w-2.5 h-2.5 shrink-0" />
                       <span className="truncate">{group.directive}</span>
                     </button>
                   ) : isActive ? (
-                    <button onClick={() => { setEditingDirective(group.id); setDirectiveText(""); }} className="text-[10px] text-muted-foreground/40 hover:text-primary transition-colors mt-0.5">
+                    <button onClick={() => { setEditingDirective(group.id); setDirectiveText(""); }} className="text-[9px] font-bold text-muted-foreground/30 hover:text-primary transition-all mt-2 flex items-center gap-1">
                       + Add focus instruction
                     </button>
                   ) : null}
                 </div>
+                
                 <button
                   type="button"
                   onClick={() => { setDeletingId(group.id); onRemoveGroup(group).finally(() => setDeletingId(null)); }}
                   disabled={isDeleting}
-                  className="opacity-0 group-hover:opacity-100 shrink-0 p-1 rounded text-muted-foreground/50 hover:text-destructive transition-all"
-                  title="Delete"
+                  className="opacity-0 group-hover:opacity-100 shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-all"
+                  title="Remove from library"
                 >
-                  {isDeleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                  {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                 </button>
               </div>
             );
