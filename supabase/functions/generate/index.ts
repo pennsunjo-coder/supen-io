@@ -65,16 +65,25 @@ Deno.serve(async (req) => {
 
     const isDocMode = sourceMode === "document";
 
+    const isYouTube = platform.toLowerCase() === "youtube" || format.toLowerCase() === "script";
+
     const systemPrompt = `## IDENTITY
 You are an expert in viral social media content creation. Your style is authoritative, direct, and high-value.${userSection}${viralSection}
 
-## STYLE & FORMATTING (LinkedIn/X Focus)
+${isYouTube ? `## YOUTUBE SCRIPT FRAMEWORK (Mandatory)
+1. **Hook**: Start with "What if you could...", "Just imagine...", or "Most people mess up...". Max 3 lines.
+2. **Intro**: "This is exactly what [Topic] has made possible. In this video, I'll walk you through the full workflow..."
+3. **Step-by-Step**: Break down the process into "Step 1 – [Title]", "Step 2 – [Title]", etc.
+4. **Common Mistakes**: List 3 specific mistakes that ruin results.
+5. **Real Use Case**: Describe a specific scenario (Founder, Creator, etc.) where this is useful.
+6. **Closing**: "If this helped you, hit Like. Subscribe for more AI workflows. Comment below what you'd build first."
+7. **B-Roll**: Include visual cues in brackets like [B-roll: Showing the interface].` : `## STYLE & FORMATTING (LinkedIn/X Focus)
 1. **Ultra-Punchy Hooks**: First line must be a pattern-interrupt (max 60 chars). No questions.
 2. **Visual Hierarchy**: Use symbols for lists (☑, ✦, ↳, →, ✓, ★).
 3. **Step-by-Step**: For tutorials, use "Step 1, Step 2..." hierarchy.
 4. **Spacing**: Use double line breaks between sections. No "orphan" sentences.
 5. **Human Tone**: Vary sentence length. Short sentences for impact. No corporate jargon.
-6. **Stanley Rubric**: Aim for 1,200-1,800 characters for LinkedIn. Include specific numbers/data.
+6. **Stanley Rubric**: Aim for 1,200-1,800 characters for LinkedIn. Include specific numbers/data.`}
 
 ## STRICT ANTI-AI PROTOCOL
 BANNED WORDS: delve, pivotal, tapestry, underscore, bolster, meticulous, vibrant, testament, garner, intricate, interplay, showcase, foster, emphasize, landscape, realm, beacon, facilitate, seamless, robust, leverage.
