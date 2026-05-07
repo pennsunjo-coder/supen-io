@@ -43,118 +43,128 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
     .join("") || "U";
 
   return (
-    <div className="h-screen flex flex-col bg-background">
+    <div className="h-screen flex flex-col bg-background font-sans">
+      {/* Texture Overlay */}
+      <div className="fixed inset-0 pointer-events-none z-[9999] noise opacity-[0.015] dark:opacity-[0.02]" />
+
       {/* Top bar */}
-      <header className="h-12 border-b border-border/20 flex items-center px-4 shrink-0">
-        <Link to="/dashboard" className="hover:opacity-80 transition-opacity">
+      <header className="h-16 glass border-b border-border/40 flex items-center px-6 shrink-0 z-50">
+        <Link to="/dashboard" className="hover:opacity-80 transition-all active:scale-95 shrink-0">
           <LogoFull size="sm" />
         </Link>
 
-        <div className="ml-auto flex items-center gap-1">
-          {/* Plan badge — kept visible (drives upgrades) */}
+        <div className="ml-auto flex items-center gap-2">
+          {/* Plan badge */}
           {planIsActive && currentPlan === "plus" && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 font-medium mr-1">
+            <span className="hidden sm:inline-flex text-[10px] px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 font-bold tracking-tight mr-1 uppercase">
               Plus
             </span>
           )}
           {planIsActive && currentPlan === "pro" && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-medium mr-1">
+            <span className="hidden sm:inline-flex text-[10px] px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20 font-bold tracking-tight mr-1 uppercase">
               Pro
             </span>
           )}
 
-          {/* Primary nav — always visible */}
-          <Link
-            to="/dashboard/studio"
-            className={cn(
-              "w-8 h-8 rounded-lg flex items-center justify-center transition-all",
-              location.pathname === "/dashboard/studio"
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
-            )}
-            title="Create"
-          >
-            <Sparkles className="w-4 h-4" />
-          </Link>
-          <Link
-            to="/stats"
-            className={cn(
-              "w-8 h-8 rounded-lg flex items-center justify-center transition-all",
-              location.pathname === "/stats"
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
-            )}
-            title="Stats"
-          >
-            <BarChart3 className="w-4 h-4" />
-          </Link>
-          <Link
-            to="/dashboard"
-            className={cn(
-              "w-8 h-8 rounded-lg flex items-center justify-center transition-all",
-              location.pathname === "/dashboard"
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
-            )}
-            title="My Content"
-          >
-            <LayoutGrid className="w-4 h-4" />
-          </Link>
+          {/* Primary nav */}
+          <div className="flex items-center gap-1.5 p-1 bg-muted/40 rounded-xl border border-border/20">
+            <Link
+              to="/dashboard/studio"
+              className={cn(
+                "w-9 h-9 rounded-lg flex items-center justify-center transition-all",
+                location.pathname === "/dashboard/studio"
+                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                  : "text-muted-foreground hover:text-foreground hover:bg-background",
+              )}
+              title="Create"
+            >
+              <Sparkles className="w-4 h-4" />
+            </Link>
+            <Link
+              to="/stats"
+              className={cn(
+                "w-9 h-9 rounded-lg flex items-center justify-center transition-all",
+                location.pathname === "/stats"
+                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                  : "text-muted-foreground hover:text-foreground hover:bg-background",
+              )}
+              title="Stats"
+            >
+              <BarChart3 className="w-4 h-4" />
+            </Link>
+            <Link
+              to="/dashboard"
+              className={cn(
+                "w-9 h-9 rounded-lg flex items-center justify-center transition-all",
+                location.pathname === "/dashboard"
+                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                  : "text-muted-foreground hover:text-foreground hover:bg-background",
+              )}
+              title="My Content"
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </Link>
+          </div>
 
-          {/* Profile dropdown — collects everything system-level */}
+          <div className="w-[1px] h-6 bg-border/40 mx-1 hidden sm:block" />
+
+          {/* Theme Toggle */}
+          <button 
+            onClick={toggleTheme} 
+            className="w-9 h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-all"
+          >
+            {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
+
+          {/* Profile dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger
-              className="ml-1 flex items-center gap-1 h-8 pl-1 pr-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all"
+              className="flex items-center gap-1.5 h-10 pl-1 pr-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-all border border-transparent hover:border-border/40"
               aria-label="Profile menu"
             >
-              <div className="w-6 h-6 rounded-md bg-primary/15 text-primary text-[10px] font-bold flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary text-xs font-black flex items-center justify-center border border-primary/20">
                 {initials}
               </div>
-              <ChevronDown className="w-3 h-3 opacity-60" />
+              <ChevronDown className="w-3.5 h-3.5 opacity-40" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground/70 font-medium">
-                {profile?.first_name || "Account"}
-                {planIsActive && (currentPlan === "plus" || currentPlan === "pro") && (
-                  <span className="ml-2 text-[9px] font-bold text-primary normal-case tracking-normal">{currentPlan.toUpperCase()}</span>
-                )}
+            <DropdownMenuContent align="end" className="w-56 p-1.5 rounded-2xl glass shadow-2xl border-border/40">
+              <DropdownMenuLabel className="px-3 py-2">
+                <div className="flex flex-col">
+                  <span className="text-xs font-bold truncate">{profile?.first_name || "Account"}</span>
+                  <span className="text-[10px] text-muted-foreground truncate opacity-70">{profile?.email}</span>
+                </div>
               </DropdownMenuLabel>
-              <DropdownMenuSeparator />
+              <DropdownMenuSeparator className="bg-border/40" />
               {!planIsActive && currentPlan === "free" && (
                 <>
                   <DropdownMenuItem
                     onClick={() => navigate("/settings")}
-                    className="cursor-pointer text-primary focus:text-primary"
+                    className="rounded-lg px-3 py-2 cursor-pointer text-primary focus:text-primary focus:bg-primary/10 font-bold text-xs"
                   >
                     <Sparkles className="w-3.5 h-3.5 mr-2" />
-                    Upgrade plan
+                    Upgrade to Premium
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator />
+                  <DropdownMenuSeparator className="bg-border/40" />
                 </>
               )}
-              <DropdownMenuItem onClick={() => navigate("/settings")} className="cursor-pointer">
-                <Settings className="w-3.5 h-3.5 mr-2" />
+              <DropdownMenuItem onClick={() => navigate("/settings")} className="rounded-lg px-3 py-2 cursor-pointer text-xs font-medium">
+                <Settings className="w-3.5 h-3.5 mr-2 opacity-60" />
                 Settings
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={toggleTheme} className="cursor-pointer">
-                {theme === "dark" ? <Sun className="w-3.5 h-3.5 mr-2" /> : <Moon className="w-3.5 h-3.5 mr-2" />}
-                {theme === "dark" ? "Light mode" : "Dark mode"}
               </DropdownMenuItem>
               {isAdmin && (
                 <>
-                  <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={() => navigate("/admin")}
-                    className="cursor-pointer text-red-400 focus:text-red-400"
+                    className="rounded-lg px-3 py-2 cursor-pointer text-red-500 focus:text-red-500 focus:bg-red-500/10 text-xs font-medium"
                   >
-                    <Shield className="w-3.5 h-3.5 mr-2" />
-                    Admin
+                    <Shield className="w-3.5 h-3.5 mr-2 opacity-60" />
+                    Admin Panel
                   </DropdownMenuItem>
                 </>
               )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
-                <LogOut className="w-3.5 h-3.5 mr-2" />
+              <DropdownMenuSeparator className="bg-border/40" />
+              <DropdownMenuItem onClick={handleLogout} className="rounded-lg px-3 py-2 cursor-pointer text-xs font-medium text-destructive focus:bg-destructive/10">
+                <LogOut className="w-3.5 h-3.5 mr-2 opacity-60" />
                 Sign out
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -163,7 +173,9 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
       </header>
 
       {/* Content area */}
-      <main className="flex-1 flex overflow-hidden">{children}</main>
+      <main className="flex-1 flex overflow-hidden relative z-10 bg-background">
+        {children}
+      </main>
     </div>
   );
 };

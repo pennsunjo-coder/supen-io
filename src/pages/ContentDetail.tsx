@@ -187,7 +187,7 @@ const ContentDetail = () => {
 
             {/* LEFT — Variations */}
             <div className={cn(
-              "flex-1 min-w-0 space-y-3",
+              "flex-1 min-w-0 space-y-4",
               mobileTab !== "posts" && "hidden md:block",
             )}>
               {variations.map((v, idx) => {
@@ -196,52 +196,64 @@ const ContentDetail = () => {
                   <div
                     key={v.id}
                     className={cn(
-                      "rounded-xl border p-4 transition-all",
-                      isBest ? "border-amber-500/30 bg-amber-500/[0.03]" : "border-border/20",
+                      "glass-card p-6 transition-all duration-300 group",
+                      isBest ? "border-primary/40 ring-1 ring-primary/10" : "border-border/40",
                     )}
                   >
                     {/* Header */}
-                    <div className="flex items-center gap-2 mb-2.5">
-                      <span className="text-[10px] font-medium text-muted-foreground">
-                        Variation {idx + 1}
-                      </span>
-                      {isBest && (
-                        <span className="text-[9px] font-semibold text-amber-400 flex items-center gap-0.5">
-                          <Flame className="w-2.5 h-2.5" /> Top Pick
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
+                          Variation {idx + 1}
                         </span>
-                      )}
-                      <div className="ml-auto flex items-center gap-1.5">
-                        {(v.viral_score ?? 0) > 0 && (
-                          <span className={cn(
-                            "text-[10px] font-semibold px-1.5 py-0.5 rounded-full",
-                            scoreBgColor(v.viral_score), scoreColor(v.viral_score),
-                          )}>
-                            {v.viral_score}%
-                          </span>
+                        {isBest && (
+                          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20">
+                            <Sparkles className="w-3 h-3 text-primary" />
+                            <span className="text-[10px] font-black uppercase tracking-tight text-primary">Top Pick</span>
+                          </div>
                         )}
-                        <span className="text-[10px] text-muted-foreground/40">
+                      </div>
+                      <div className="ml-auto flex items-center gap-3">
+                        {(v.viral_score ?? 0) > 0 && (
+                          <div className={cn(
+                            "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-black tracking-tight border",
+                            v.viral_score >= 80 ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : 
+                            v.viral_score >= 50 ? "bg-primary/10 text-primary border-primary/20" : 
+                            "bg-red-500/10 text-red-600 border-red-500/20"
+                          )}>
+                            <Flame className="w-3 h-3" />
+                            {v.viral_score}% Viral
+                          </div>
+                        )}
+                        <span className="text-[10px] font-bold text-muted-foreground/40 hidden sm:block">
                           {v.content.split(/\s+/).length} words
                         </span>
                       </div>
                     </div>
 
                     {/* Content */}
-                    <p className="text-[13px] leading-relaxed whitespace-pre-wrap text-foreground/85 mb-3">
-                      {v.content}
-                    </p>
+                    <div className="relative">
+                      <p className="text-sm md:text-[15px] leading-relaxed whitespace-pre-wrap text-foreground/90 font-medium mb-6">
+                        {v.content}
+                      </p>
+                    </div>
 
                     {/* Actions */}
-                    <div className="flex items-center gap-2 pt-2 border-t border-border/10">
+                    <div className="flex items-center justify-between pt-5 border-t border-border/40">
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-7 text-[11px] gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
+                        className="h-9 text-[11px] font-bold gap-2 px-4 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all"
                         onClick={() => handleCopy(idx)}
                       >
                         {copiedIdx === idx
-                          ? <><Check className="w-3 h-3 text-emerald-400" /> Copied</>
-                          : <><Copy className="w-3 h-3" /> Copy</>}
+                          ? <><Check className="w-3.5 h-3.5 text-emerald-500" /> Copied!</>
+                          : <><Copy className="w-3.5 h-3.5" /> Copy Text</>}
                       </Button>
+                      
+                      <div className="flex items-center gap-2">
+                         {/* Optional: Add share or edit buttons here */}
+                      </div>
                     </div>
                   </div>
                 );
