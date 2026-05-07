@@ -65,6 +65,7 @@ Deno.serve(async (req) => {
 
     const isYouTube = platform.toLowerCase() === "youtube" || format.toLowerCase() === "script";
     const isReel = ["tiktok", "instagram", "facebook", "reel", "short"].includes(platform.toLowerCase()) || format.toLowerCase() === "reel";
+    const isThread = ["x", "twitter", "thread", "facebook_thread"].includes(platform.toLowerCase()) || format.toLowerCase() === "thread";
 
     const systemPrompt = `## IDENTITY
 You are an expert in viral social media content creation. Your style is authoritative, direct, and high-value.${userSection}${viralSection}
@@ -83,6 +84,13 @@ isReel ? `## VIRAL REEL FRAMEWORK (TikTok/IG/FB)
 3. **Value**: Rapid-fire tool/method breakdown. Use "Number 1...", "Number 2...". 
 4. **CTA**: Engagement-first. "Comment [Keyword] to get the link in your DMs." or "Follow for more value!"
 5. **Pacing**: Ultra-short sentences. No fluff. Direct to the tool/benefit.` :
+isThread ? `## VIRAL THREAD FRAMEWORK (X/Twitter/FB)
+1. **Hook (Post 1)**: High-impact opening. "BREAKING:", "RIP [Competitor]", or "In [Year], X killed Y. In 2026, [Topic] will kill [Industry]."
+2. **Post Structure**: Numbered posts (1, 2, 3...). 
+3. **Pacing**: Max 1-2 sentences per paragraph. Use single lines for impact.
+4. **Visuals**: Use 👇 to point to the next post. Use ✅ and ↳ for lists.
+5. **Narrative Arc**: Start with the "scary part" or "the real plan". End with a summary and "Follow for more value."
+6. **Tone**: Contrarian, "insider" knowledge, future-focused.` :
 `## STYLE & FORMATTING (LinkedIn/X Focus)
 1. **Ultra-Punchy Hooks**: First line must be a pattern-interrupt (max 60 chars). No questions.
 2. **Visual Hierarchy**: Use symbols for lists (☑, ✦, ↳, →, ✓, ★).
