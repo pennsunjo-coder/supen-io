@@ -55,18 +55,66 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { prompt, size } = body;
+    const { prompt, size, isRawContent } = body;
     
     if (!prompt || typeof prompt !== "string" || prompt.trim().length < 5) {
       return new Response(JSON.stringify({ error: "Invalid prompt. Please provide a descriptive prompt for the infographic." }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const generationSize = size || "1024x1024";
+    let finalPrompt = prompt;
+
+    // --- INFOGRAPHIC ARCHITECT: Content Expansion Step ---
+    if (isRawContent) {
+      console.log("[generate-gemini-image] Architect: Expanding content into expert script...");
+      try {
+        const architectResponse = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: `
+                You are the INFOGRAPHIC ARCHITECT (Awa K. Penn style).
+                GOAL: Transform the raw post below into a DENSE, HIGH-VALUE infographic script.
+                
+                RULES:
+                1. DO NOT summarize. EXPAND with concrete examples, tools, and technical details.
+                2. Structure into 7-9 distinct vertical sections.
+                3. Include a "POWER GRID" section with 6 specific actionable items (e.g., prompt formulas, keyboard shortcuts, or cheat codes).
+                4. Add a "PRO TIP" that sounds like expert-level insider knowledge.
+                5. Use authoritative, direct language. No fluff. No AI jargon (delve, tapestry, etc.).
+                
+                FORMAT:
+                [TITLE]: <Catchy Heavy Title>
+                [SECTION_X]: <Actionable header>: <Detailed expansion with examples>
+                [GRID_ITEM_X]: <Label>: <Specific tip/prompt>
+                [PRO_TIP]: <Actionable advice>
+                
+                RAW CONTENT:
+                ${prompt}
+              ` }] }],
+            }),
+          }
+        );
+        
+        if (architectResponse.ok) {
+          const architectData = await architectResponse.json();
+          const expandedText = architectData.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (expandedText) {
+            finalPrompt = expandedText;
+            console.log("[generate-gemini-image] Architect Success. Script size:", finalPrompt.length);
+          }
+        }
+      } catch (archErr) {
+        console.warn("[generate-gemini-image] Architect failed, proceeding with raw prompt:", archErr);
+      }
+    }
 
     console.log("[generate-gemini-image] Attempting Gemini generation...");
 
     const requestBody = {
-      contents: [{ parts: [{ text: prompt }] }],
+      contents: [{ parts: [{ text: finalPrompt }] }],
       safetySettings: [
         { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
         { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
@@ -125,7 +173,7 @@ Deno.serve(async (req) => {
         },
         body: JSON.stringify({
           model: "dall-e-3",
-          prompt: prompt,
+          prompt: finalPrompt,
           n: 1,
           size: generationSize,
           response_format: "b64_json",

@@ -58,7 +58,7 @@ async function generateInfographic(prompt: string, size: string = "1024x1024"): 
   if (IS_DEV) console.log("[Infographic] Prompt length:", prompt.length);
 
   const { data, error } = await supabase.functions.invoke("generate-gemini-image", {
-    body: { prompt, size },
+    body: { prompt, size, isRawContent: true },
   });
 
   if (error) {
@@ -657,7 +657,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
     setCustomGenLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-gemini-image", {
-        body: { prompt: customGenPrompt.trim() },
+        body: { prompt: customGenPrompt.trim(), size: "1024x1024", isRawContent: false },
       });
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
@@ -959,7 +959,10 @@ export default function InfographicModal({ open, onClose, content, platform, con
                       <div className="w-14 h-14 rounded-full border-3 border-primary/20 border-t-primary animate-spin" />
                       <Sparkles className="w-5 h-5 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                     </div>
-                    <div className="w-full max-w-xs">
+                    <div className="w-full max-w-xs text-center">
+                      <p className="text-[10px] uppercase tracking-widest text-primary/60 font-bold mb-4 animate-pulse">
+                        Architect: Pushing the thinking...
+                      </p>
                       <GenerationProgress isActive={step === "generating"} steps={INFOGRAPHIC_STEPS} estimatedSeconds={100} />
                     </div>
                   </div>
