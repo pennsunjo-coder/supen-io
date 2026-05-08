@@ -50,7 +50,7 @@ export interface ContentAnalysis {
 
 const FORMAT_DIMS = {
   square: { width: 1024, height: 1024 },
-  portrait: { width: 1024, height: 1792 },
+  portrait: { width: 1080, height: 1350 },
 } as const;
 
 export function getFormatDimensions(format: "square" | "portrait") {

@@ -53,12 +53,12 @@ function getImageSize(platform: string): ImageSizeConfig {
 
 // ─── Image Generation via Edge Function ───
 
-async function generateInfographic(prompt: string): Promise<string> {
-  if (IS_DEV) console.log("[Infographic] Calling Gemini Nano Banana Edge Function...");
+async function generateInfographic(prompt: string, size: string = "1024x1024"): Promise<string> {
+  if (IS_DEV) console.log("[Infographic] Calling Gemini Nano Banana Edge Function with size:", size);
   if (IS_DEV) console.log("[Infographic] Prompt length:", prompt.length);
 
   const { data, error } = await supabase.functions.invoke("generate-gemini-image", {
-    body: { prompt },
+    body: { prompt, size },
   });
 
   if (error) {
@@ -475,18 +475,22 @@ export default function InfographicModal({ open, onClose, content, platform, con
         console.log("=== END PROMPT ===");
       }
 
+      // Determine generation size for DALL-E
+      const pl = platform?.toLowerCase() || "";
+      const genSize = (pl.includes("twitter") || pl.includes("x (")) ? "1792x1024" : "1024x1024";
+
       // Attempt 1
       if (IS_DEV) console.log("[InfographicModal] Attempt 1 — generating infographic...");
       let base64: string | null = null;
       try {
-        base64 = await generateInfographic(dallePrompt);
+        base64 = await generateInfographic(dallePrompt, genSize);
       } catch (firstErr) {
         if (IS_DEV) console.warn("[InfographicModal] Attempt 1 failed:", firstErr);
 
         // Attempt 2: retry with simplified prompt
         if (IS_DEV) console.log("[InfographicModal] Attempt 2 — retrying...");
         try {
-          base64 = await generateInfographic(dallePrompt + "\n\nIMPORTANT: Use EXACT strings from the SACRED TEXT table. Zero typos. Clean professional layout.");
+          base64 = await generateInfographic(dallePrompt + "\n\nIMPORTANT: Use EXACT strings from the SACRED TEXT table. Zero typos. Clean professional layout.", genSize);
         } catch (secondErr) {
           if (IS_DEV) console.error("[InfographicModal] Attempt 2 also failed:", secondErr);
           throw secondErr;
@@ -548,7 +552,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
     const pl = platform?.toLowerCase() || "";
     if (pl.includes("facebook")) return { w: 1024, h: 1024, label: "facebook-square" };
     if (pl.includes("twitter") || pl.includes("x (")) return { w: 1792, h: 1024, label: "x-landscape" };
-    return { w: 1024, h: 1792, label: "linkedin-portrait" };
+    return { w: 1080, h: 1350, label: "linkedin-portrait" };
   }
 
   async function handleDownload(format: "png" | "jpeg") {

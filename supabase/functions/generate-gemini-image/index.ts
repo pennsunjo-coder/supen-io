@@ -55,11 +55,13 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { prompt } = body;
+    const { prompt, size } = body;
     
     if (!prompt || typeof prompt !== "string" || prompt.trim().length < 5) {
       return new Response(JSON.stringify({ error: "Invalid prompt. Please provide a descriptive prompt for the infographic." }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+
+    const generationSize = size || "1024x1024";
 
     console.log("[generate-gemini-image] Attempting Gemini generation...");
 
@@ -125,7 +127,7 @@ Deno.serve(async (req) => {
           model: "dall-e-3",
           prompt: prompt,
           n: 1,
-          size: "1024x1024", // Standard fallback size
+          size: generationSize,
           response_format: "b64_json",
         }),
       });
