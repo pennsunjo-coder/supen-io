@@ -708,6 +708,8 @@ DENSITY RULES — MANDATORY:
 
 RAPPEL FINAL :
 - Caveat pour TOUT le corps
+`;
+}
 
 export function buildDallEPrompt(
   content: string,
