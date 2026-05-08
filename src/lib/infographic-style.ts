@@ -305,13 +305,13 @@ export function extractForDallE(content: string): EnhancedExtraction & { quotes:
       .trim()
     )
     .filter(l => l.length > 15)
-    .map(l => l.length > 55 ? l.slice(0, 52).trim() + "..." : l)
-    .slice(0, 5);
+    .map(l => l.length > 65 ? l.slice(0, 62).trim() + "..." : l)
+    .slice(0, 9); // Increased from 5 to 9 for 85-95% density
 
   // Stats/numbers
   const stats = (content.match(
     /\d+[\.,]?\d*\s*(%|€|\$|K|M|x|×|fois|days?|jours?|months?|mois|years?|ans?|hours?|heures?|minutes?|followers?|impressions?|views?)/gi,
-  ) || []).slice(0, 3);
+  ) || []).slice(0, 5); // Increased from 3 to 5
 
   // Quoted text
   const quotes = (content.match(/["«»"]([^"«»"]{10,80})["«»"]/g) || [])
@@ -720,49 +720,52 @@ export function buildDallEPrompt(
   void template;
 
   const rawExt = extractForDallE(content);
-  const ext = {
-    title: rawExt?.title || "Key Insights",
-    points: rawExt?.points || [],
-    handle: userName ? userName.replace(/^@/, "").replace(/\s+/g, "").toLowerCase() : "gamaliettankeu",
-  };
-
+  const handle = userName ? userName.replace(/^@/, "").replace(/\s+/g, "").toLowerCase() : "gamaliettankeu";
+  
   const pl = platform?.toLowerCase() || "";
-  let formatHint = "Portrait (1024x1536).";
+  let formatHint = "Portrait (1024x1792). Full vertical length.";
   if (pl.includes("facebook")) formatHint = "Square (1024x1024).";
-  else if (pl.includes("twitter") || pl.includes("x (")) formatHint = "Landscape (1536x1024).";
+  else if (pl.includes("twitter") || pl.includes("x (")) formatHint = "Landscape (1792x1024).";
+
+  const isResourceList = /free|course|book|resource|tool|site|app|platform/i.test(content);
+  const styleType = isResourceList ? "NOTEBOOK" : "WHITEBOARD";
 
   return `
-IMAGE SPECIFICATION: High-quality educational infographic.
-STYLE: Premium Whiteboard / Marker Sketch (Awa K. Penn style).
+IMAGE SPECIFICATION: Professional viral educational infographic.
+STYLE: Hand-crafted ${styleType} / Marker Sketch (Awa K. Penn forensic style).
 FORMAT: ${formatHint}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-TEXT QUALITY CONTROL — SACRED VERBATIM
+DNA VISUAL SPECS (FORENSIC ACCURACY)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Every word in the image MUST be copied character-for-character from the list below.
-- ZERO typos. ZERO invented words. ZERO gibberish.
-- If a word doesn't fit, reduce font size. NEVER truncate.
-- Language: English.
-
-SACRED TEXT TO RENDER:
-[TITLE]  : "${ext.title.toUpperCase()}"
-${ext.points.map((p, i) => `[POINT_${i + 1}] : "${p}"`).join("\n")}
-[FOOTER] : "Follow @${ext.handle} for more amazing AI content | Repost ♻️"
+1. BACKGROUND: Warm off-white #f8f9f7 with visible paper grain texture (4% opacity).
+2. HARDWARE: 
+   ${styleType === 'WHITEBOARD' 
+     ? '- Corner Clips: 4 metallic dark gray rectangular clips at the very corners.' 
+     : '- Spiral Binding: 22 metallic silver-gray coils at the top edge, catching light.'}
+3. TYPOGRAPHY: 
+   - TITLES: Extremely heavy hand-drawn marker font (weight 900+). Strokes are thick.
+   - BODY: Handwritten Caveat-style (weight 500). Looks like a thin Sharpie marker.
+4. HIGHLIGHTS: Yellow #FFEF5A used for full-width section bands and 3-5 inline keywords.
+5. NO EMOJIS: Use hand-drawn simple black line-art sketches ONLY (gear, bulb, book, rocket).
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-VISUAL LAYOUT: THE PREMIUM MATRIX
+SACRED TEXT TO RENDER (VERBATIM ONLY)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1. BACKGROUND: Off-white #f8f9f7 with a subtle paper texture.
-2. CORNERS: 4 dark metal clips (small rectangles) at each corner.
-3. TITLE: Huge, bold black marker style at the top. Wrap [TITLE] in [SQUARE BRACKETS].
-4. BODY: 5 distinct cells arranged vertically.
-   - Each cell has a hand-drawn colored border (Red, Blue, Green, Orange, or Teal).
-   - Each cell contains one [POINT_X] text in handwritten style.
-   - One key word per cell has a flat yellow #FFEF5A highlight behind it.
-   - One simple black line-art sketch icon per cell (e.g., gears, bulb, book).
-5. FOOTER: Hand-drawn divider line at bottom. Render [FOOTER] text in blue #2563EB.
+[TITLE]: "[${rawExt.title.toUpperCase()}]"
+${rawExt.points.map((p, i) => `[POINT_${i + 1}]: "${p}"`).join("\n")}
+[FOOTER]: "Follow @${handle} for more AI systems | Repost ♻️"
 
-GO! Create the most readable and professional infographic using ONLY the text provided.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+LAYOUT DENSITY (85-95% FILL)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- Zero empty space at the bottom. Content must fill the entire canvas top-to-bottom.
+- Whiteboard: Include 2-3 full-width yellow #FFEF5A background bands for major sections.
+- Notebook: Include light blue ruled lines every 34px and a red vertical margin line at x=72px.
+- Use 3 levels of hierarchy: Bold Section Headers → Sub-headers → Detailed Bullet Points.
+- Use circled numbers ①②③④⑤ and checkmarks ✓ in red #C0392B.
+
+GO! Create a high-density, professional infographic that looks hand-written on a real surface.
 `;
 }
 
