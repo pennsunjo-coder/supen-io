@@ -373,6 +373,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
     }).catch(() => {});
   }, []);
   const [retryCountdown, setRetryCountdown] = useState(0);
+  const [generationCount, setGenerationCount] = useState(0);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const retryIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -454,6 +455,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
     setSaved(false);
     setGenerationError(null);
     setRetryCountdown(0);
+    setGenerationCount(prev => prev + 1);
     if (retryIntervalRef.current) { clearInterval(retryIntervalRef.current); retryIntervalRef.current = null; }
     savedRef.current = false;
 
@@ -1194,9 +1196,16 @@ export default function InfographicModal({ open, onClose, content, platform, con
 
                 {/* Secondary actions */}
                 <div className="flex flex-wrap items-center gap-2 mb-3">
-                  <Button variant="outline" size="sm" className="h-9 gap-2 text-xs" onClick={handleGenerate} disabled={downloading}>
-                    <RefreshCw className="w-3.5 h-3.5" /> Regenerate
-                  </Button>
+                  {generationCount < 2 ? (
+                    <Button variant="outline" size="sm" className="h-9 gap-2 text-xs" onClick={handleGenerate} disabled={downloading}>
+                      <RefreshCw className="w-3.5 h-3.5" /> Regenerate ({2 - generationCount} left)
+                    </Button>
+                  ) : (
+                    <div className="text-[10px] font-bold text-amber-600 bg-amber-50 px-3 py-2 rounded-lg border border-amber-200 flex items-center gap-2">
+                      <Sparkles className="w-3 h-3" />
+                      Automatic credits exhausted. Use custom prompt below.
+                    </div>
+                  )}
 
                   <Button variant="outline" size="sm" className="h-9 gap-2 text-xs" onClick={handleCopyImage} disabled={downloading}>
                     <Copy className="w-3.5 h-3.5" /> Copy
@@ -1216,20 +1225,27 @@ export default function InfographicModal({ open, onClose, content, platform, con
                   </motion.div>
                 )}
 
-                {/* Custom prompt (collapsed) */}
-                <button onClick={() => setShowPrompt(!showPrompt)} className="text-xs text-muted-foreground hover:text-foreground transition-colors mb-2">
+                {/* Custom prompt (collapsed or forced open) */}
+                <button 
+                  onClick={() => setShowPrompt(!showPrompt)} 
+                  className={cn(
+                    "text-xs transition-colors mb-2",
+                    generationCount >= 2 ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
                   {showPrompt ? "Hide custom instructions" : "Custom instructions"}
+                  {generationCount >= 2 && !showPrompt && " (Required for further changes)"}
                 </button>
-                {showPrompt && (
+                {(showPrompt || generationCount >= 2) && (
                   <div className="space-y-2">
                     <Textarea
                       value={customPrompt}
                       onChange={(e) => setCustomPrompt(e.target.value)}
                       placeholder="E.g. use dark theme, change the title, add more sections..."
-                      className="text-xs min-h-[60px] resize-none"
+                      className="text-xs min-h-[60px] resize-none border-primary/20"
                     />
-                    <Button size="sm" className="h-8 text-xs gap-1.5" onClick={handleGenerate}>
-                      <Sparkles className="w-3 h-3" /> Regenerate
+                    <Button size="sm" className="h-8 text-xs gap-1.5 w-full md:w-auto" onClick={handleGenerate}>
+                      <Sparkles className="w-3 h-3" /> Generate with custom instructions
                     </Button>
                   </div>
                 )}
