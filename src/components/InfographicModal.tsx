@@ -546,9 +546,9 @@ export default function InfographicModal({ open, onClose, content, platform, con
 
   function getDownloadDims(): { w: number; h: number; label: string } {
     const pl = platform?.toLowerCase() || "";
-    if (pl.includes("facebook")) return { w: 1080, h: 1080, label: "facebook-1080x1080" };
-    if (pl.includes("twitter") || pl.includes("x (")) return { w: 1200, h: 675, label: "twitter-1200x675" };
-    return { w: 1080, h: 1350, label: "linkedin-1080x1350" };
+    if (pl.includes("facebook")) return { w: 1024, h: 1024, label: "facebook-square" };
+    if (pl.includes("twitter") || pl.includes("x (")) return { w: 1792, h: 1024, label: "x-landscape" };
+    return { w: 1024, h: 1792, label: "linkedin-portrait" };
   }
 
   async function handleDownload(format: "png" | "jpeg") {
