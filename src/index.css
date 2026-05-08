@@ -5,51 +5,51 @@
 @tailwind utilities;
 
 @layer base {
-  /* ═══ SUPENLI BRAND THEME (DARK) ═══ */
+  /* ═══ SUPENLI BRAND THEME (DARK - OBSIDIAN PREMIUM) ═══ */
   :root,
   .dark {
-    --background: 220 20% 7%;
-    --foreground: 0 0% 100%;
+    --background: 240 10% 3.9%; /* Deep Obsidian */
+    --foreground: 0 0% 98%;
 
-    --card: 220 20% 10%;
-    --card-foreground: 0 0% 100%;
+    --card: 240 10% 6%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 220 20% 10%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 240 10% 5%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 174 65% 40%; /* Brand Teal #24A89B */
+    --primary: 174 65% 45%; /* Slightly more vibrant Teal */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 16% 14%;
-    --secondary-foreground: 210 15% 75%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 220 14% 16%;
-    --muted-foreground: 215 12% 50%;
+    --muted: 240 3.7% 12%;
+    --muted-foreground: 240 5% 64.9%;
 
-    --accent: 174 65% 40%;
+    --accent: 174 65% 45%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 72% 55%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 220 14% 18%;
-    --input: 220 14% 18%;
-    --ring: 174 65% 40%;
+    --border: 240 3.7% 12%;
+    --input: 240 3.7% 12%;
+    --ring: 174 65% 45%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
 
-    --sidebar-background: 220 20% 8%;
-    --sidebar-foreground: 210 15% 75%;
-    --sidebar-primary: 174 65% 40%;
+    --sidebar-background: 240 10% 4.5%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 174 65% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 16% 14%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 220 14% 15%;
-    --sidebar-ring: 174 65% 40%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 12%;
+    --sidebar-ring: 174 65% 45%;
 
-    --glow: 174 65% 40%;
-    --surface: 220 18% 11%;
-    --surface-hover: 220 16% 14%;
+    --glow: 174 65% 50%;
+    --surface: 240 10% 6%;
+    --surface-hover: 240 10% 9%;
   }
 
   /* ═══ SUPENLI BRAND THEME (LIGHT - PREMIUM RE-ENGINEERED) ═══ */
@@ -125,19 +125,19 @@
   }
   
   .glass {
-    @apply bg-background/60 backdrop-blur-xl border border-white/20 dark:border-white/10;
+    @apply bg-background/70 backdrop-blur-2xl border border-white/10 dark:border-white/5;
   }
   
   .glass-card {
-    @apply bg-white/60 dark:bg-white/[0.02] backdrop-blur-md border border-white/40 dark:border-white/[0.06] rounded-3xl shadow-xl shadow-black/[0.03] dark:shadow-none transition-all duration-300;
+    @apply bg-white/70 dark:bg-zinc-900/40 backdrop-blur-xl border border-white/40 dark:border-white/[0.08] rounded-3xl shadow-2xl shadow-black/[0.05] dark:shadow-none transition-all duration-500 hover:border-primary/30;
   }
 
   .premium-shadow {
-    @apply shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none;
+    @apply shadow-[0_20px_50px_rgba(0,0,0,0.1)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)];
   }
 
-  .noise {
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  .premium-glow {
+    @apply relative before:absolute before:inset-0 before:-z-10 before:bg-primary/20 before:blur-[100px] before:rounded-full;
   }
 }
 
@@ -156,16 +156,15 @@
   }
   
   .mesh-gradient {
-    background-image: 
-      radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
-      radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
-      radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+    background: 
+      radial-gradient(at 0% 0%, hsla(174,65%,15%,0.15) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, hsla(240,10%,10%,0.2) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(174,65%,10%,0.1) 0px, transparent 50%);
   }
 
   .noise {
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-    opacity: 0.05;
-    pointer-events: none;
+    /* Removed the grainy texture for a cleaner obsidian look */
+    display: none;
   }
 }
 
@@ -238,4 +237,12 @@
   color: #1565C0;
   text-decoration: underline;
   font-weight: 700;
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.05); }
+}
+.animate-pulse-slow {
+  animation: pulse-slow 12s ease-in-out infinite;
 }

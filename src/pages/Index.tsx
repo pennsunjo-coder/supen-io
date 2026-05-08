@@ -199,8 +199,12 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background selection:bg-primary/30 selection:text-primary font-sans relative overflow-x-hidden">
-      {/* Texture Overlay */}
-      <div className="fixed inset-0 pointer-events-none z-[9999] noise opacity-[0.02]" />
+      {/* Premium Atmospheric Background */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(36,168,155,0.08),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_70%,rgba(99,102,241,0.05),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(36,168,155,0.02),transparent_70%)]" />
+      </div>
 
       {/* ═══════════ NAVBAR (sticky) ═══════════ */}
       <nav className="sticky top-0 z-50 transition-all duration-300">
@@ -247,9 +251,9 @@ const Index = () => {
 
       {/* ═══════════ HERO ═══════════ */}
       <section className="relative pt-24 pb-32 md:pt-32 md:pb-40 px-6 overflow-hidden">
-        {/* Background Decorative Elements */}
-        <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-primary/15 blur-[120px] rounded-full pointer-events-none opacity-40" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-primary/10 blur-[100px] rounded-full pointer-events-none opacity-30" />
+        {/* Refined Decorative Glows */}
+        <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-primary/20 blur-[150px] rounded-full pointer-events-none opacity-40 animate-pulse-slow" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-indigo-500/10 blur-[120px] rounded-full pointer-events-none opacity-30" />
         
         <motion.div
           className="relative z-10 max-w-5xl mx-auto text-center"

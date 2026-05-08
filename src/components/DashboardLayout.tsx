@@ -43,9 +43,10 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
     .join("") || "U";
 
   return (
-    <div className="h-screen flex flex-col bg-background font-sans">
-      {/* Texture Overlay */}
-      <div className="fixed inset-0 pointer-events-none z-[9999] noise opacity-[0.015] dark:opacity-[0.02]" />
+    <div className="h-screen flex flex-col bg-background font-sans overflow-hidden">
+      {/* Premium Background Mesh */}
+      <div className="fixed inset-0 pointer-events-none z-0 mesh-gradient opacity-60 dark:opacity-100" />
+      <div className="fixed inset-0 pointer-events-none z-0 bg-[radial-gradient(circle_at_50%_-20%,rgba(36,168,155,0.15),transparent_50%)]" />
 
       {/* Top bar */}
       <header className="h-16 glass border-b border-border/40 flex items-center px-6 shrink-0 z-50">
@@ -173,7 +174,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
       </header>
 
       {/* Content area */}
-      <main className="flex-1 flex overflow-hidden relative z-10 bg-background">
+      <main className="flex-1 flex overflow-hidden relative z-10 bg-transparent">
         {children}
       </main>
     </div>

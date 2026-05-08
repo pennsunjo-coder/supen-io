@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
   X, RefreshCw, Download, Sparkles, Check,
-  Loader2, Copy, Maximize2,
+  Loader2, Copy, Maximize2, ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -62,12 +62,24 @@ async function generateInfographic(prompt: string): Promise<string> {
   });
 
   if (error) {
-    console.error("[Infographic] Edge Function error:", error);
-    throw new Error(error.message || "Image generation failed. Please try again.");
+    console.error("[Infographic] Edge Function error object:", error);
+    
+    // Supabase error objects often contain the response body in the message
+    let msg = "Image generation failed. Please try again.";
+    try {
+      // If it's a stringified JSON error from our function
+      if (typeof error.message === 'string' && (error.message.includes('{') || error.message.includes('code'))) {
+        msg = error.message;
+      }
+    } catch {
+      msg = error.message || msg;
+    }
+    
+    throw new Error(msg);
   }
 
   if (data?.error) {
-    console.error("[Infographic] API error:", data.error);
+    console.error("[Infographic] API error in data:", data.error);
     throw new Error(data.error);
   }
 
@@ -452,20 +464,8 @@ export default function InfographicModal({ open, onClose, content, platform, con
       if (IS_DEV) console.log("[Infographic] Template:", templateSelection.templateId);
 
       // Platform-specific format hint prepended to prompt
-      const pl = platform?.toLowerCase() || "";
-      const formatHint = pl.includes("facebook")
-        ? "FORMAT: Square 1080x1080px. Facebook optimized.\n\n"
-        : pl.includes("twitter") || pl.includes("x (")
-          ? "FORMAT: Landscape 1200x675px. X/Twitter optimized.\n\n"
-          : "FORMAT: Portrait 1080x1350px. LinkedIn optimized.\n\n";
-
-      // Pre-sanitize the source content before it reaches the image
-      // prompt — strips curly quotes, decorative emoji, Title Case
-      // headings, em-dash overuse, markdown leakage. The image model
-      // copies what we give it character-for-character, so any cruft
-      // we leave in propagates onto the canvas.
       const cleanContent = sanitizeForPlatform(content, platform || "", "Post");
-      const dallePrompt = formatHint + buildDallEPrompt(cleanContent, platform, templateSelection.templateId, userName);
+      const dallePrompt = buildDallEPrompt(cleanContent, platform, templateSelection.templateId, userName);
 
       if (IS_DEV) {
         console.log("=== INFOGRAPHIC PROMPT ===");
@@ -486,7 +486,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
         // Attempt 2: retry with simplified prompt
         if (IS_DEV) console.log("[InfographicModal] Attempt 2 — retrying...");
         try {
-          base64 = await generateInfographic(dallePrompt + "\n\nIMPORTANT: Clean infographic. All text in English. No table background.");
+          base64 = await generateInfographic(dallePrompt + "\n\nIMPORTANT: Use EXACT strings from the SACRED TEXT table. Zero typos. Clean professional layout.");
         } catch (secondErr) {
           if (IS_DEV) console.error("[InfographicModal] Attempt 2 also failed:", secondErr);
           throw secondErr;
@@ -1028,6 +1028,112 @@ export default function InfographicModal({ open, onClose, content, platform, con
                   </button>
                 </motion.div>
 
+                {/* ═══ Custom Image Generator (Repositioned for high visibility) ═══ */}
+                {!showCustomGen ? (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-4 rounded-2xl bg-primary/[0.03] border border-primary/10 backdrop-blur-md mb-4 group hover:bg-primary/[0.06] transition-all cursor-pointer"
+                    onClick={() => setShowCustomGen(true)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <Sparkles className="w-5 h-5 text-primary animate-pulse" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold">Not satisfied with the result?</p>
+                          <p className="text-[11px] text-muted-foreground">Describe your own vision and regenerate in seconds.</p>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="space-y-4 p-5 rounded-2xl bg-accent/20 border border-primary/20 mb-4 shadow-xl"
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-primary" />
+                        <p className="text-sm font-bold">Custom Magic Prompt</p>
+                      </div>
+                      <button 
+                        onClick={() => setShowCustomGen(false)}
+                        className="text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-4"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                    
+                    <div className="relative">
+                      <textarea
+                        value={customGenPrompt}
+                        onChange={(e) => setCustomGenPrompt(e.target.value)}
+                        placeholder="E.g., A minimalist black and white version with bold typography and technical diagrams..."
+                        className="w-full h-24 p-4 text-sm bg-background/50 border border-border/30 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 placeholder:text-muted-foreground/30 transition-all"
+                      />
+                      <div className="absolute bottom-3 right-3 text-[10px] text-muted-foreground/50">
+                        {customGenPrompt.length} chars
+                      </div>
+                    </div>
+
+                    <Button 
+                      className="w-full h-11 text-sm font-bold gap-2 shadow-lg shadow-primary/10" 
+                      onClick={generateCustomImage} 
+                      disabled={customGenLoading || !customGenPrompt.trim()}
+                    >
+                      {customGenLoading ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" /> Transmuting your vision...</>
+                      ) : (
+                        <><Sparkles className="w-4 h-4" /> Generate Custom Visual</>
+                      )}
+                    </Button>
+
+                    {customGenImage && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="space-y-3 pt-2 border-t border-border/20"
+                      >
+                        <div className="relative group rounded-xl overflow-hidden border border-border/30">
+                          <img src={`data:image/png;base64,${customGenImage}`} alt="Custom" className="w-full h-auto" />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                             <p className="text-white text-xs font-bold">Custom Result ✨</p>
+                          </div>
+                        </div>
+                        <Button 
+                          variant="secondary" 
+                          size="sm" 
+                          className="w-full h-10 text-xs gap-2 font-bold bg-white/10 hover:bg-white/20 border-white/5" 
+                          onClick={async () => {
+                            const { w, h, label } = getDownloadDims();
+                            const img = new Image();
+                            img.src = `data:image/png;base64,${customGenImage}`;
+                            await new Promise<void>((resolve) => { img.onload = () => resolve(); });
+                            const canvas = document.createElement("canvas");
+                            canvas.width = w;
+                            canvas.height = h;
+                            const ctx = canvas.getContext("2d");
+                            if (ctx) {
+                              ctx.drawImage(img, 0, 0, w, h);
+                              const link = document.createElement("a");
+                              link.download = `supenli-custom-${label}-${Date.now()}.png`;
+                              link.href = canvas.toDataURL("image/png", 1.0);
+                              link.click();
+                            }
+                            toast.success("Custom design downloaded!");
+                          }}
+                        >
+                          <Download className="w-4 h-4" /> Download This Custom Version
+                        </Button>
+                      </motion.div>
+                    )}
+                  </motion.div>
+                )}
+
                 {/* Saved status banner */}
                 {saved && (
                   <motion.div
@@ -1090,55 +1196,6 @@ export default function InfographicModal({ open, onClose, content, platform, con
                   </Button>
                 </div>
 
-                {/* Custom Image Generator — prominent position */}
-                {(imageBase64 || htmlCode) && !showCustomGen && (
-                  <div className="p-3 rounded-xl bg-primary/5 border border-primary/10 text-center mb-3">
-                    <p className="text-xs text-muted-foreground mb-2">Want a completely different visual?</p>
-                    <Button variant="default" className="w-full h-12 text-sm font-bold gap-2 bg-gradient-to-r from-primary to-primary/80 shadow-lg" onClick={() => setShowCustomGen(true)}>
-                      <Sparkles className="w-4 h-4" /> ✨ Generate a Custom Visual
-                    </Button>
-                  </div>
-                )}
-
-                {showCustomGen && (
-                  <div className="space-y-3 p-3 rounded-xl bg-primary/5 border border-primary/10 mb-3">
-                    <p className="text-xs font-semibold">Describe the image you want:</p>
-                    <textarea
-                      value={customGenPrompt}
-                      onChange={(e) => setCustomGenPrompt(e.target.value)}
-                      placeholder="A clean infographic about productivity tips with blue and orange colors, hand-drawn style..."
-                      className="w-full h-20 p-3 text-xs bg-background border border-border/20 rounded-xl resize-none focus:outline-none focus:border-primary/40 placeholder:text-muted-foreground/40"
-                    />
-                    <Button className="w-full h-9 text-xs font-bold gap-2" onClick={generateCustomImage} disabled={customGenLoading || !customGenPrompt.trim()}>
-                      {customGenLoading ? <><Loader2 className="w-3 h-3 animate-spin" /> Generating...</> : <><Sparkles className="w-3 h-3" /> Generate Image</>}
-                    </Button>
-                    {customGenImage && (
-                      <div className="space-y-2">
-                        <img src={`data:image/png;base64,${customGenImage}`} alt="Custom" className="w-full rounded-xl border border-border/20" />
-                        <Button variant="outline" size="sm" className="w-full text-xs gap-2" onClick={async () => {
-                          const { w, h, label } = getDownloadDims();
-                          const img = new Image();
-                          img.src = `data:image/png;base64,${customGenImage}`;
-                          await new Promise<void>((resolve) => { img.onload = () => resolve(); });
-                          const canvas = document.createElement("canvas");
-                          canvas.width = w;
-                          canvas.height = h;
-                          const ctx = canvas.getContext("2d");
-                          if (ctx) {
-                            ctx.drawImage(img, 0, 0, w, h);
-                            const link = document.createElement("a");
-                            link.download = `supenli-custom-${label}-${Date.now()}.png`;
-                            link.href = canvas.toDataURL("image/png", 1.0);
-                            link.click();
-                          }
-                          toast.success("Downloaded!");
-                        }}>
-                          <Download className="w-3 h-3" /> Download Custom Image
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                )}
 
                 {/* History link */}
                 {saved && (
