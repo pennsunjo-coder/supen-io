@@ -191,7 +191,13 @@ export function useHistory() {
           infographic,
         };
       })
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      .sort((a, b) => {
+        // Prioritize items with infographics
+        if (!!a.infographic && !b.infographic) return -1;
+        if (!a.infographic && !!b.infographic) return 1;
+        // Then sort by date
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
   })();
 
   return { items, grouped, sessions, loading, refetch: fetchFromSupabase };
