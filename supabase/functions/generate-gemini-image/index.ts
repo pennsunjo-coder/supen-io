@@ -78,18 +78,32 @@ Deno.serve(async (req) => {
                 You are the INFOGRAPHIC ARCHITECT (Awa K. Penn style).
                 GOAL: Transform the raw post below into a DENSE, HIGH-VALUE infographic script.
                 
-                RULES:
-                1. DO NOT summarize. EXPAND with concrete examples, tools, and technical details.
-                2. Structure into 7-9 distinct vertical sections.
-                3. Include a "POWER GRID" section with 6 specific actionable items (e.g., prompt formulas, keyboard shortcuts, or cheat codes).
-                4. Add a "PRO TIP" that sounds like expert-level insider knowledge.
-                5. Use authoritative, direct language. No fluff. No AI jargon (delve, tapestry, etc.).
+                STRICT QUALITY RULES:
+                1. SYMBIOSIS: Every point must expand the source content with logical depth.
+                2. OCR OPTIMIZATION: Use high-impact, simple words. Avoid long words (>12 chars) that AI models often misspell.
+                3. NO NONSENSE: Zero placeholder text. Zero incomplete sentences.
+                4. STRUCTURE: 1 Title, 7-9 numbered Sections, 6 Grid Items, 1 Pro Tip.
+                
+                PHASE 1: CONTENT EXPANSION
+                - Add concrete examples (actual tool names, step-by-step instructions).
+                - Add prompt formulas (e.g., [Role] + [Task] + [Constraint]).
+                
+                PHASE 2: TEXT PLACEMENT MAP (For the Visual Engine)
+                - Assign a clear zone for each piece of text.
                 
                 FORMAT:
-                [TITLE]: <Catchy Heavy Title>
-                [SECTION_X]: <Actionable header>: <Detailed expansion with examples>
-                [GRID_ITEM_X]: <Label>: <Specific tip/prompt>
-                [PRO_TIP]: <Actionable advice>
+                [TITLE]: <Catchy Heavy Title in Square Brackets>
+                [ZONE_HEADER]: <Badge Label>
+                [ZONE_BODY]:
+                S1: <Header>: <Simple actionable instruction>
+                S2: <Header>: <Simple actionable instruction>
+                ...
+                [ZONE_POWER_GRID]:
+                G1: <Label>: <Short prompt/tip>
+                G2: <Label>: <Short prompt/tip>
+                ...
+                [ZONE_FOOTER]:
+                PRO_TIP: <One clear expert sentence>
                 
                 RAW CONTENT:
                 ${prompt}
@@ -114,7 +128,25 @@ Deno.serve(async (req) => {
     console.log("[generate-gemini-image] Attempting Gemini generation...");
 
     const requestBody = {
-      contents: [{ parts: [{ text: finalPrompt }] }],
+      contents: [{ parts: [{ text: `
+        PROMPT FOR THE VISUAL ENGINE:
+        Create a high-density educational infographic at ${generationSize} resolution.
+        STYLE: Premium Whiteboard / Marker Sketch (Awa K. Penn Forensic Style).
+        
+        STRICT TEXT RULES (SACRED VERBATIM):
+        - Render EVERY word from the script below. 
+        - ZERO invented words. ZERO typos. ZERO cut-off sentences.
+        - If text is too long for a box, use a smaller font. NEVER truncate.
+        
+        VISUAL ARCHITECTURE:
+        1. [ZONE_HEADER]: Render [TITLE] in huge, ultra-bold black marker font inside [SQUARE BRACKETS].
+        2. [ZONE_BODY]: Render sections S1-S9 vertically. Each has a colored hand-drawn border and a simple sketch icon.
+        3. [ZONE_POWER_GRID]: Create a 3x2 grid of boxes. Render G1-G6 inside these boxes with a yellow #FFEF5A highlight on labels.
+        4. [ZONE_FOOTER]: Render PRO_TIP in a distinct box at the bottom with a red ✓ symbol.
+        
+        SCRIPT TO RENDER:
+        ${finalPrompt}
+      ` }] }],
       safetySettings: [
         { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
         { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
@@ -173,7 +205,24 @@ Deno.serve(async (req) => {
         },
         body: JSON.stringify({
           model: "dall-e-3",
-          prompt: finalPrompt,
+          prompt: `
+            Create a high-density educational infographic at ${generationSize} resolution.
+            STYLE: Premium Whiteboard / Marker Sketch (Awa K. Penn Forensic Style).
+            
+            STRICT TEXT RULES:
+            - Render EVERY word from the script below. 
+            - ZERO invented words. ZERO typos.
+            - If text is too long, use a smaller font. NEVER truncate.
+            
+            ARCHITECTURE:
+            - TOP: [TITLE] in huge bold black marker font in [SQUARE BRACKETS].
+            - MIDDLE: Sections S1-S9 vertically with colored hand-drawn borders.
+            - GRID: 3x2 grid of boxes for G1-G6 with yellow highlights.
+            - BOTTOM: PRO_TIP in a box with a red checkmark symbol.
+            
+            SCRIPT:
+            ${finalPrompt}
+          `,
           n: 1,
           size: generationSize,
           response_format: "b64_json",
