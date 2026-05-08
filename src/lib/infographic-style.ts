@@ -707,8 +707,9 @@ DENSITY RULES — MANDATORY:
 - Every point must be specific and actionable
 
 RAPPEL FINAL :
-- Nunito 900 pour TOUS les titres (Bold Marker style)
-- Caveat pour TOUT le corpsexport function buildDallEPrompt(
+- Caveat pour TOUT le corps
+
+export function buildDallEPrompt(
   content: string,
   platform: string,
   template?: string,
