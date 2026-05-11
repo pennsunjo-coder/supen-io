@@ -350,8 +350,10 @@ const Calendar = () => {
                 ))
             )}
           </div>
-        </div>
+        )}
       </div>
+    </div>
+  </div>
 
       {/* ═══ SCHEDULE MODAL ═══ */}
       <AnimatePresence>
