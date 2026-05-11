@@ -134,93 +134,79 @@ const Dashboard = () => {
     <DashboardLayout>
       <div className="flex-1 flex overflow-hidden bg-background relative">
         
-        {/* LEFT PANEL — Sources (Floating Drawer style) */}
-        <AnimatePresence>
-          {activePanel === "sources" && (
-            <>
-              <motion.div 
-                initial={{ opacity: 0 }} 
-                animate={{ opacity: 1 }} 
-                exit={{ opacity: 0 }} 
-                onClick={() => setActivePanel(null)}
-                className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm lg:hidden"
-              />
-              <motion.div 
-                initial={{ x: -320, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: -320, opacity: 0 }}
-                transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                className="absolute left-0 top-0 bottom-0 z-40 w-80 glass border-r border-white/5 flex flex-col shadow-2xl"
-              >
-                <div className="p-5 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
-                  <span className="text-sm font-bold flex items-center gap-2"><BookOpen className="w-4 h-4 text-primary" /> Sources</span>
-                  <Button variant="ghost" size="icon" onClick={() => setActivePanel(null)} className="h-8 w-8 rounded-lg hover:bg-white/5"><X className="w-4 h-4" /></Button>
-                </div>
-                <div className="flex-1 overflow-hidden">
-                  <SourcePanel
-                    groupedSources={groupedSources}
-                    loading={sourcesLoading}
-                    activeSourceIds={activeSourceIds}
-                    onToggleGroup={handleToggleGroup}
-                    onAddUrl={addUrl}
-                    onAddNote={addNote}
-                    onAddPdf={addPdf}
-                    onSearchWeb={searchWeb}
-                    onRemoveGroup={removeGrouped}
-                  />
-                </div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
+        {/* LEFT SIDEBAR — Sources (Permanent on desktop) */}
+        <div className={cn(
+          "w-72 border-r border-border/40 flex flex-col transition-all duration-500 bg-card/10 backdrop-blur-xl shrink-0 z-20",
+          activePanel !== "sources" && "hidden lg:flex"
+        )}>
+          <div className="p-4 border-b border-border/40 flex items-center justify-between bg-card/20">
+            <span className="text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2"><BookOpen className="w-3.5 h-3.5 text-primary" /> Sources</span>
+            {activePanel === "sources" && (
+              <Button variant="ghost" size="icon" onClick={() => setActivePanel(null)} className="h-8 w-8 lg:hidden"><X className="w-4 h-4" /></Button>
+            )}
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <SourcePanel
+              groupedSources={groupedSources}
+              loading={sourcesLoading}
+              activeSourceIds={activeSourceIds}
+              onToggleGroup={handleToggleGroup}
+              onAddUrl={addUrl}
+              onAddNote={addNote}
+              onAddPdf={addPdf}
+              onSearchWeb={searchWeb}
+              onRemoveGroup={removeGrouped}
+            />
+          </div>
+        </div>
 
         {/* MAIN CONTENT AREA — The Focus */}
-        <div className="flex-1 flex flex-col min-w-0 overflow-y-auto no-scrollbar pt-12 px-6 lg:px-20 xl:px-32">
+        <div className="flex-1 flex flex-col min-w-0 overflow-y-auto no-scrollbar pt-8 px-6 lg:px-12 xl:px-20">
           
           {/* Dashboard Header */}
-          <header className="mb-16">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+          <header className="mb-12">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
               <div>
-                <h1 className="text-5xl font-black tracking-tight mb-3 text-gradient">{hasContent ? "Creative Library" : greeting}</h1>
-                <p className="text-base font-medium text-muted-foreground/70 max-w-lg">
-                  {hasContent ? `Your hub for high-performing content. Manage and refine your ${sessions.length} assets.` : "The ultimate studio to transform your knowledge into viral content."}
+                <h1 className="text-4xl font-black tracking-tight mb-2 text-gradient">{hasContent ? "Creative Library" : greeting}</h1>
+                <p className="text-sm font-medium text-muted-foreground/60 max-w-lg">
+                  {hasContent ? `Manage and refine your ${sessions.length} assets.` : "The ultimate studio to transform your knowledge into viral content."}
                 </p>
               </div>
               <Button
                 size="lg"
                 onClick={() => navigate("/dashboard/studio")}
-                className="h-14 px-8 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-lg gap-3 shadow-[0_10px_40px_-10px_rgba(20,184,166,0.5)] transition-all active:scale-95 group"
+                className="h-12 px-6 rounded-xl bg-primary hover:bg-primary/90 text-white font-black text-sm gap-2 shadow-xl shadow-primary/20 transition-all active:scale-95 group"
               >
-                <Plus className="w-6 h-6 transition-transform group-hover:rotate-90" /> Create Content
+                <Plus className="w-5 h-5 transition-transform group-hover:rotate-90" /> Create Content
               </Button>
             </div>
 
             {/* Quick Actions & Filters */}
-            <div className="flex flex-col sm:flex-row items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-center gap-3">
               <div className="relative flex-1 group w-full">
-                <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                 <Input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search your library..."
-                  className="pl-14 h-14 glass border-white/5 rounded-2xl text-base focus:ring-primary/20 focus:bg-white/[0.05] transition-all"
+                  placeholder="Search library..."
+                  className="pl-12 h-12 glass border-border/40 rounded-xl text-sm focus:ring-primary/10 transition-all"
                 />
               </div>
               <div className="flex gap-2 w-full sm:w-auto">
                 <Button 
                   variant="outline" 
                   onClick={() => setActivePanel(activePanel === "sources" ? null : "sources")}
-                  className={cn("h-14 px-6 flex-1 sm:flex-none rounded-2xl gap-2 font-bold border-white/5 hover:bg-white/5 transition-all", activePanel === "sources" && "bg-primary/10 border-primary/20 text-primary")}
+                  className={cn("h-12 px-5 flex-1 sm:flex-none lg:hidden rounded-xl gap-2 text-xs font-black uppercase tracking-widest border-border/40 hover:bg-card transition-all", activePanel === "sources" && "bg-primary/10 border-primary/20 text-primary")}
                 >
-                  <BookOpen className="w-5 h-5" />
+                  <BookOpen className="w-4 h-4" />
                   Sources
                 </Button>
                 <Button 
                   variant="outline" 
                   onClick={() => setActivePanel(activePanel === "coach" ? null : "coach")}
-                  className={cn("h-14 px-6 flex-1 sm:flex-none rounded-2xl gap-2 font-bold border-white/5 hover:bg-white/5 transition-all", activePanel === "coach" && "bg-primary/10 border-primary/20 text-primary")}
+                  className={cn("h-12 px-5 flex-1 sm:flex-none rounded-xl gap-2 text-xs font-black uppercase tracking-widest border-border/40 hover:bg-card transition-all", activePanel === "coach" && "bg-primary/10 border-primary/20 text-primary")}
                 >
-                  <Bot className="w-5 h-5" />
+                  <Bot className="w-4 h-4" />
                   Coach
                 </Button>
               </div>
@@ -228,12 +214,12 @@ const Dashboard = () => {
 
             {/* Platform Filter Chips */}
             {availablePlatforms.length > 1 && (
-              <div className="flex gap-2 mt-8 overflow-x-auto no-scrollbar pb-2">
+              <div className="flex gap-2 mt-6 overflow-x-auto no-scrollbar pb-1">
                 <button
                   onClick={() => setPlatformFilter(null)}
                   className={cn(
-                    "px-6 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all border",
-                    !platformFilter ? "bg-primary border-primary text-white shadow-lg shadow-primary/20" : "bg-white/5 border-white/5 text-muted-foreground hover:bg-white/10"
+                    "px-5 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all border",
+                    !platformFilter ? "bg-primary border-primary text-white shadow-lg shadow-primary/20" : "bg-card/50 border-border/40 text-muted-foreground hover:bg-card"
                   )}
                 >
                   All
@@ -243,8 +229,8 @@ const Dashboard = () => {
                     key={p}
                     onClick={() => setPlatformFilter(platformFilter === p ? null : p)}
                     className={cn(
-                      "px-6 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all border",
-                      platformFilter === p ? "bg-primary border-primary text-white shadow-lg shadow-primary/20" : "bg-white/5 border-white/5 text-muted-foreground hover:bg-white/10"
+                      "px-5 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all border",
+                      platformFilter === p ? "bg-primary border-primary text-white shadow-lg shadow-primary/20" : "bg-card/50 border-border/40 text-muted-foreground hover:bg-card"
                     )}
                   >
                     {p}
@@ -255,72 +241,72 @@ const Dashboard = () => {
           </header>
 
           {/* GRID AREA */}
-          <div className="pb-40">
+          <div className="pb-32">
             {historyLoading ? (
-              <div className="flex flex-col items-center justify-center py-32 gap-6">
+              <div className="flex flex-col items-center justify-center py-24 gap-4">
                 <div className="relative">
-                  <div className="w-16 h-16 rounded-full border-t-2 border-primary animate-spin" />
-                  <Sparkles className="absolute inset-0 m-auto w-6 h-6 text-primary animate-pulse" />
+                  <div className="w-12 h-12 rounded-full border-t-2 border-primary animate-spin" />
+                  <Sparkles className="absolute inset-0 m-auto w-4 h-4 text-primary animate-pulse" />
                 </div>
-                <p className="text-sm font-semibold text-muted-foreground animate-pulse">Organizing your creative space...</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 animate-pulse">Organizing Space...</p>
               </div>
             ) : !hasContent ? (
-              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center py-24 text-center glass rounded-[3.5rem] p-16 border-dashed border-white/10">
-                <div className="w-28 h-28 rounded-[2.5rem] bg-gradient-to-br from-primary/20 to-transparent flex items-center justify-center mb-8 shadow-inner">
-                  <Sparkles className="w-12 h-12 text-primary" />
+              <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center py-20 text-center glass-card p-12 border-dashed border-border/40">
+                <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mb-6 shadow-inner">
+                  <Sparkles className="w-8 h-8 text-primary" />
                 </div>
-                <h2 className="text-3xl font-black mb-4">Your studio is ready</h2>
-                <p className="text-lg text-muted-foreground max-w-sm mx-auto mb-10 font-medium leading-relaxed">Let's create something extraordinary. Add a source to start.</p>
-                <Button size="lg" onClick={() => navigate("/dashboard/studio")} className="h-16 px-14 rounded-2xl bg-primary font-black text-xl shadow-2xl shadow-primary/20 transition-all hover:scale-105 active:scale-95">Get Started</Button>
+                <h2 className="text-2xl font-black mb-3">Your studio is ready</h2>
+                <p className="text-sm text-muted-foreground/60 max-w-xs mx-auto mb-8 font-medium">Add a source to start creating viral content.</p>
+                <Button size="lg" onClick={() => navigate("/dashboard/studio")} className="h-14 px-10 rounded-xl bg-primary font-black text-base shadow-xl shadow-primary/20 transition-all active:scale-95">Get Started</Button>
               </motion.div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-12">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8">
                 {filtered.map((s, i) => (
                   <motion.div
                     key={s.sessionId}
-                    initial={{ opacity: 0, y: 40 }}
+                    initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.05, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                    transition={{ delay: i * 0.05, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
                     className="group relative"
                     onClick={() => navigate(`/editor/${s.sessionId}`)}
                   >
-                    <div className="glass-card overflow-hidden h-full flex flex-col group cursor-pointer">
-                      <div className="aspect-[4/5] relative overflow-hidden bg-black/20">
+                    <div className="glass-card overflow-hidden h-full flex flex-col group cursor-pointer border-border/30 hover:border-primary/40">
+                      <div className="aspect-[4/5] relative overflow-hidden bg-card/50">
                         {s.infographic ? (
-                          <img src={`data:image/png;base64,${s.infographic}`} className="w-full h-full object-cover transition-transform duration-[1.5s] ease-out group-hover:scale-110" alt="" />
+                          <img src={`data:image/png;base64,${s.infographic}`} className="w-full h-full object-cover transition-transform duration-[1500ms] ease-out group-hover:scale-110" alt="" />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/5 via-transparent to-white/[0.02]">
-                            <div className="w-20 h-20 rounded-full bg-white/[0.03] flex items-center justify-center backdrop-blur-md border border-white/5">
-                              <Sparkles className="w-10 h-10 text-primary/40" />
+                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/5 via-transparent to-primary/5">
+                            <div className="w-16 h-16 rounded-full glass border-border/40 flex items-center justify-center">
+                              <Sparkles className="w-8 h-8 text-primary/30" />
                             </div>
                           </div>
                         )}
                         
                         {/* Overlay Status Badges */}
-                        <div className="absolute top-5 left-5 z-10 flex flex-wrap gap-2">
-                          <span className="px-4 py-1.5 rounded-full glass text-[10px] font-black uppercase tracking-widest text-white">{s.platform}</span>
+                        <div className="absolute top-4 left-4 z-10 flex flex-wrap gap-1.5">
+                          <span className="px-3 py-1 rounded-lg glass text-[9px] font-black uppercase tracking-widest text-foreground/80">{s.platform}</span>
                           {s.infographic && (
-                            <span className="px-4 py-1.5 rounded-full bg-primary/20 backdrop-blur-md border border-primary/30 text-[10px] font-black uppercase tracking-widest text-primary">Visual Ready</span>
+                            <span className="px-3 py-1 rounded-lg bg-primary/10 backdrop-blur-md border border-primary/20 text-[9px] font-black uppercase tracking-widest text-primary">Visual Ready</span>
                           )}
                         </div>
 
                         {/* Hover Quick Actions */}
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all duration-500 flex items-center justify-center gap-3 px-8">
-                           <Button className="flex-1 h-12 rounded-xl font-black bg-white text-black hover:bg-white/90 shadow-2xl transition-all translate-y-4 group-hover:translate-y-0 duration-500">View Asset</Button>
-                           <Button size="icon" variant="destructive" className="h-12 w-12 rounded-xl shadow-2xl transition-all translate-y-4 group-hover:translate-y-0 duration-500 delay-75" onClick={(e) => { e.stopPropagation(); setDeletingId(s.sessionId); }}>
-                             <Trash2 className="w-5 h-5" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all duration-500 flex items-center justify-center gap-2 px-6">
+                           <Button className="flex-1 h-10 rounded-lg font-black text-xs bg-white text-black hover:bg-white/90 shadow-2xl transition-all translate-y-2 group-hover:translate-y-0 duration-500">Open Studio</Button>
+                           <Button size="icon" variant="destructive" className="h-10 w-10 rounded-lg shadow-2xl transition-all translate-y-2 group-hover:translate-y-0 duration-500 delay-75" onClick={(e) => { e.stopPropagation(); setDeletingId(s.sessionId); }}>
+                             <Trash2 className="w-4 h-4" />
                            </Button>
                         </div>
                       </div>
 
-                      <div className="p-8 flex-1 flex flex-col">
-                        <h3 className="text-xl font-black leading-tight line-clamp-2 mb-4 group-hover:text-primary transition-colors duration-300">{s.topic || "Untitled Session"}</h3>
-                        <div className="mt-auto pt-6 border-t border-white/5 flex items-center justify-between">
+                      <div className="p-6 flex-1 flex flex-col">
+                        <h3 className="text-base font-black leading-tight line-clamp-2 mb-3 group-hover:text-primary transition-colors duration-300">{s.topic || "Untitled Session"}</h3>
+                        <div className="mt-auto pt-4 border-t border-border/20 flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(20,184,166,0.8)]" />
-                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{timeAgo(s.createdAt)}</span>
+                            <div className="w-1.5 h-1.5 rounded-full bg-primary glow-sm" />
+                            <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">{timeAgo(s.createdAt)}</span>
                           </div>
-                          <ChevronRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/20 group-hover:text-primary group-hover:translate-x-1 transition-all" />
                         </div>
                       </div>
                     </div>

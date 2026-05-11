@@ -49,103 +49,89 @@ export default function Studio() {
 
   return (
     <DashboardLayout>
-      <div className="flex-1 flex flex-col min-h-0 bg-background relative overflow-hidden">
+      <div className="flex-1 flex overflow-hidden bg-background relative">
         
-        {/* Floating Controls Header */}
-        <div className="absolute top-8 left-8 right-8 z-30 flex items-center justify-between pointer-events-none">
-          <Button 
-            variant="outline" 
-            onClick={() => navigate("/dashboard")} 
-            className="h-12 gap-2 px-6 rounded-2xl glass border-white/5 font-bold shadow-xl pointer-events-auto active:scale-95 transition-all"
-          >
-            <ArrowLeft className="w-4 h-4" /> Back to Library
-          </Button>
-
-          <Button 
-            variant="outline" 
-            onClick={() => setShowSources(!showSources)} 
-            className={cn(
-              "h-12 gap-2 px-6 rounded-2xl glass border-white/5 font-bold shadow-xl pointer-events-auto active:scale-95 transition-all",
-              showSources && "bg-primary/10 border-primary/20 text-primary"
-            )}
-          >
-            <BookOpen className="w-4 h-4" /> 
-            {showSources ? "Close Sources" : "Select Sources"}
-            {activeSourceIds.size > 0 && <span className="ml-1 w-5 h-5 rounded-full bg-primary text-white text-[10px] flex items-center justify-center shadow-lg">{activeSourceIds.size}</span>}
-          </Button>
+        {/* LEFT SIDEBAR — Sources (Permanent on desktop) */}
+        <div className={cn(
+          "w-72 border-r border-border/40 flex flex-col transition-all duration-500 bg-card/10 backdrop-blur-xl shrink-0 z-20",
+          !showSources && "hidden lg:flex"
+        )}>
+          <div className="p-4 border-b border-border/40 flex items-center justify-between bg-card/20">
+            <span className="text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2"><BookOpen className="w-3.5 h-3.5 text-primary" /> Sources</span>
+            <Button variant="ghost" size="icon" onClick={() => setShowSources(false)} className="h-8 w-8 lg:hidden"><X className="w-4 h-4" /></Button>
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <SourcePanel
+              groupedSources={grouped}
+              loading={sourcesLoading}
+              activeSourceIds={activeSourceIds}
+              onToggleGroup={handleToggleGroup}
+              onAddUrl={addUrl}
+              onAddNote={addNote}
+              onAddPdf={addPdf}
+              onSearchWeb={searchWeb}
+              onRemoveGroup={removeGrouped}
+            />
+          </div>
         </div>
 
-        {/* Immersive Studio Environment */}
-        <div className="flex-1 flex items-center justify-center p-6 pt-24">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="w-full max-w-5xl h-full flex flex-col"
-          >
-            <ErrorBoundary
-              fallback={
-                <div className="flex-1 flex items-center justify-center glass rounded-[3rem] p-12 border-dashed border-white/10 text-center">
-                  <div className="max-w-xs">
-                    <p className="text-lg font-black mb-2 text-white">Studio temporary offline</p>
-                    <p className="text-sm text-muted-foreground mb-8 font-medium leading-relaxed">The engine encountered a friction. Your data is perfectly safe.</p>
-                    <Button onClick={() => window.location.reload()} size="lg" className="rounded-2xl px-10 font-black h-14 bg-primary shadow-2xl shadow-primary/20">Reload Studio</Button>
-                  </div>
-                </div>
-              }
+        {/* MAIN STUDIO AREA */}
+        <div className="flex-1 flex flex-col min-h-0 relative overflow-hidden">
+          
+          {/* Controls Header */}
+          <div className="absolute top-6 left-6 right-6 z-30 flex items-center justify-between pointer-events-none">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate("/dashboard")} 
+              className="h-10 gap-2 px-4 rounded-xl glass border-border/40 text-[10px] font-black uppercase tracking-widest shadow-xl pointer-events-auto active:scale-95 transition-all"
             >
-              <StudioWizard
-                activeSourceIds={Array.from(activeSourceIds)}
-                sources={sources}
-                profile={profile}
-                sessions={dashboard.sessions}
-                onUpdateImagePrompt={dashboard.updateImagePrompt}
-                activityData={activity}
-                onGenerationComplete={handleGenerationComplete}
-              />
-            </ErrorBoundary>
-          </motion.div>
-        </div>
+              <ArrowLeft className="w-3.5 h-3.5" /> Library
+            </Button>
 
-        {/* Floating Sources Drawer */}
-        <AnimatePresence>
-          {showSources && (
-            <>
-              <motion.div 
-                initial={{ opacity: 0 }} 
-                animate={{ opacity: 1 }} 
-                exit={{ opacity: 0 }} 
-                onClick={() => setShowSources(false)}
-                className="fixed inset-0 z-40 bg-black/60 backdrop-blur-md"
-              />
-              <motion.div 
-                initial={{ x: 400, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: 400, opacity: 0 }}
-                transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                className="fixed right-0 top-0 bottom-0 z-50 w-80 glass border-l border-white/10 flex flex-col shadow-[0_0_100px_rgba(0,0,0,0.5)]"
+            <Button 
+              variant="outline" 
+              onClick={() => setShowSources(!showSources)} 
+              className={cn(
+                "h-10 gap-2 px-4 rounded-xl glass border-border/40 text-[10px] font-black uppercase tracking-widest shadow-xl pointer-events-auto lg:hidden active:scale-95 transition-all",
+                showSources && "bg-primary/10 border-primary/20 text-primary"
+              )}
+            >
+              <BookOpen className="w-3.5 h-3.5" /> 
+              Sources
+            </Button>
+          </div>
+
+          {/* Immersive Workspace */}
+          <div className="flex-1 flex items-center justify-center p-6 pt-20">
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="w-full max-w-4xl h-full flex flex-col"
+            >
+              <ErrorBoundary
+                fallback={
+                  <div className="flex-1 flex items-center justify-center glass-card p-10 border-dashed border-border/40 text-center">
+                    <div className="max-w-xs">
+                      <p className="text-base font-black mb-2">Studio temporary offline</p>
+                      <p className="text-xs text-muted-foreground/60 mb-6 font-medium leading-relaxed">The engine encountered a friction. Your data is safe.</p>
+                      <Button onClick={() => window.location.reload()} size="sm" className="rounded-xl px-8 font-black h-12 bg-primary">Reload Studio</Button>
+                    </div>
+                  </div>
+                }
               >
-                <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
-                  <span className="text-sm font-bold flex items-center gap-2"><BookOpen className="w-4 h-4 text-primary" /> Content Sources</span>
-                  <Button variant="ghost" size="icon" onClick={() => setShowSources(false)} className="h-8 w-8 rounded-lg"><X className="w-4 h-4" /></Button>
-                </div>
-                <div className="flex-1 overflow-hidden">
-                  <SourcePanel
-                    groupedSources={grouped}
-                    loading={sourcesLoading}
-                    activeSourceIds={activeSourceIds}
-                    onToggleGroup={handleToggleGroup}
-                    onAddUrl={addUrl}
-                    onAddNote={addNote}
-                    onAddPdf={addPdf}
-                    onSearchWeb={searchWeb}
-                    onRemoveGroup={removeGrouped}
-                  />
-                </div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
-
+                <StudioWizard
+                  activeSourceIds={Array.from(activeSourceIds)}
+                  sources={sources}
+                  profile={profile}
+                  sessions={dashboard.sessions}
+                  onUpdateImagePrompt={dashboard.updateImagePrompt}
+                  activityData={activity}
+                  onGenerationComplete={handleGenerationComplete}
+                />
+              </ErrorBoundary>
+            </motion.div>
+          </div>
+        </div>
       </div>
     </DashboardLayout>
   );

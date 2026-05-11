@@ -1325,32 +1325,32 @@ ${buildAntiAiRules(tightness)}`;
           <motion.div key="wizard" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }} className="flex-1 flex flex-col overflow-hidden">
             
             {/* Header / Stepper — Minimalist Apple Style */}
-            <div className="flex flex-col gap-6 px-8 py-6 shrink-0 border-b border-white/5">
+            <div className="flex flex-col gap-4 px-6 py-4 shrink-0 border-b border-border/40">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <button onClick={goBack} className="w-10 h-10 rounded-xl glass border-white/5 flex items-center justify-center text-muted-foreground hover:text-white transition-all active:scale-90">
-                    <ChevronLeft className="w-5 h-5" />
+                <div className="flex items-center gap-3">
+                  <button onClick={goBack} className="w-8 h-8 rounded-lg glass border-border/40 flex items-center justify-center text-muted-foreground hover:text-foreground transition-all active:scale-90">
+                    <ChevronLeft className="w-4 h-4" />
                   </button>
-                  <h1 className="text-2xl font-black tracking-tight text-white">Create Content</h1>
+                  <h1 className="text-lg font-black tracking-tight text-foreground">Studio</h1>
                 </div>
                 <div className="flex items-center gap-1">
                   {[0, 1, 2].map((i) => (
-                    <div key={i} className={cn("h-1.5 rounded-full transition-all duration-500", i === step ? "bg-primary w-8 shadow-[0_0_12px_rgba(20,184,166,0.6)]" : i < step ? "bg-primary/40 w-4" : "bg-white/10 w-4")} />
+                    <div key={i} className={cn("h-1 rounded-full transition-all duration-500", i === step ? "bg-primary w-6 shadow-[0_0_12px_rgba(20,184,166,0.6)]" : i < step ? "bg-primary/40 w-3" : "bg-muted w-3")} />
                   ))}
                 </div>
               </div>
-              <p className="text-sm font-medium text-muted-foreground/60 max-w-md">
-                {step === 0 && "Choose where your message will resonate. Each platform has its own DNA."}
-                {step === 1 && `Select the perfect format for your ${selectedPlatform?.name} audience.`}
-                {step === 2 && "The raw material of your genius. Feed the AI with facts, ideas, or research."}
+              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">
+                {step === 0 && "Select Platform"}
+                {step === 1 && `Select Format — ${selectedPlatform?.name}`}
+                {step === 2 && "Feed your Genius"}
               </p>
             </div>
             <div className="flex-1 overflow-y-auto no-scrollbar">
               <div className="max-w-4xl mx-auto px-8 py-10">
                 <AnimatePresence mode="wait">
                   {step === 0 && (
-                    <motion.div key="s0" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }} transition={{ duration: 0.4 }}>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
+                    <motion.div key="s0" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.02 }} transition={{ duration: 0.4 }}>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                         {sortedPlatforms.map((p) => {
                           const isFav = favPlatformNames.includes(p.name);
                           const isSelected = selectedPlatform?.id === p.id;
@@ -1359,18 +1359,18 @@ ${buildAntiAiRules(tightness)}`;
                               key={p.id} 
                               onClick={() => { setSelectedPlatform(p); setStep(1); supabase.auth.getUser().then(({ data: { user: u } }) => { if (u) hasStyleMemory(u.id, p.name).then(setStyleMemoryActive); }); }} 
                               className={cn(
-                                "group flex flex-col items-center gap-4 py-8 px-6 rounded-3xl border transition-all duration-500 active:scale-95",
+                                "group flex flex-col items-center gap-3 py-6 px-4 rounded-2xl border transition-all duration-500 active:scale-95",
                                 isSelected 
-                                  ? "bg-primary/10 border-primary shadow-[0_0_40px_-10px_rgba(20,184,166,0.3)]" 
-                                  : "glass-card border-white/5"
+                                  ? "bg-primary/10 border-primary shadow-[0_0_30px_-10px_rgba(20,184,166,0.3)]" 
+                                  : "bg-card/20 border-border/40"
                               )}
                             >
-                              <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-500", isSelected ? "bg-primary text-white" : "bg-white/5 text-muted-foreground group-hover:scale-110 group-hover:text-white group-hover:bg-white/10")}>
-                                <p.icon className="w-8 h-8" />
+                              <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-500", isSelected ? "bg-primary text-white" : "bg-muted text-muted-foreground group-hover:scale-110 group-hover:text-foreground group-hover:bg-muted/80")}>
+                                <p.icon className="w-6 h-6" />
                               </div>
                               <div className="text-center">
-                                <span className="block text-sm font-black text-white mb-1">{p.name}</span>
-                                {isFav && <span className="text-[10px] font-black uppercase tracking-widest text-primary opacity-60">Favorite</span>}
+                                <span className="block text-xs font-black text-foreground mb-0.5">{p.name}</span>
+                                {isFav && <span className="text-[8px] font-black uppercase tracking-widest text-primary opacity-60">Favorite</span>}
                               </div>
                             </button>
                           );
@@ -1379,27 +1379,27 @@ ${buildAntiAiRules(tightness)}`;
                     </motion.div>
                   )}
                   {step === 1 && selectedPlatform && (
-                    <motion.div key="s1" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }} transition={{ duration: 0.4 }}>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <motion.div key="s1" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.02 }} transition={{ duration: 0.4 }}>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {selectedPlatform.formats.map((f) => (
                           <button 
                             key={f} 
                             onClick={() => { setSelectedFormat(f); setStep(2); }} 
                             className={cn(
-                              "group flex items-center gap-5 p-6 rounded-3xl border transition-all duration-500 active:scale-95",
+                              "group flex items-center gap-4 p-4 rounded-2xl border transition-all duration-500 active:scale-95",
                               selectedFormat === f 
-                                ? "bg-primary/10 border-primary shadow-[0_0_40px_-10px_rgba(20,184,166,0.3)]" 
-                                : "glass-card border-white/5"
+                                ? "bg-primary/10 border-primary shadow-[0_0_30px_-10px_rgba(20,184,166,0.3)]" 
+                                : "bg-card/20 border-border/40"
                             )}
                           >
-                            <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-all duration-500", selectedFormat === f ? "bg-primary text-white" : "bg-white/5 text-muted-foreground group-hover:bg-white/10 group-hover:text-white")}>
-                              <FileText className="w-6 h-6" />
+                            <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-all duration-500", selectedFormat === f ? "bg-primary text-white" : "bg-muted text-muted-foreground group-hover:bg-muted/80 group-hover:text-foreground")}>
+                              <FileText className="w-5 h-5" />
                             </div>
                             <div className="flex-1 text-left">
-                              <span className="block text-base font-black text-white mb-0.5">{f}</span>
-                              <span className="text-[11px] font-medium text-muted-foreground/50 tracking-wide uppercase">Optimal for {selectedPlatform.name}</span>
+                              <span className="block text-sm font-black text-foreground mb-0.5">{f}</span>
+                              <span className="text-[9px] font-medium text-muted-foreground/40 tracking-wide uppercase">For {selectedPlatform.name}</span>
                             </div>
-                            <ArrowRight className="w-5 h-5 text-muted-foreground/30 group-hover:text-primary transition-all group-hover:translate-x-1" />
+                            <ArrowRight className="w-4 h-4 text-muted-foreground/20 group-hover:text-primary transition-all group-hover:translate-x-1" />
                           </button>
                         ))}
                       </div>
@@ -1409,17 +1409,17 @@ ${buildAntiAiRules(tightness)}`;
                     <motion.div key="s2" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }} transition={{ duration: 0.4 }}>
                       
                       {/* Premium Source Mode Switcher */}
-                      <div className="flex gap-2 mb-8 p-1.5 rounded-2xl bg-white/[0.03] border border-white/5">
+                      <div className="flex gap-1.5 mb-6 p-1 rounded-xl bg-card/10 border border-border/40">
                         {sourceModes.map((m) => (
                           <button 
                             key={m.id} 
                             onClick={() => { setSourceMode(m.id); setSourceText(""); setSelectedDocumentIds([]); }} 
                             className={cn(
-                              "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300", 
-                              sourceMode === m.id ? "bg-white/10 text-white shadow-lg" : "text-muted-foreground hover:text-white hover:bg-white/5"
+                              "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[9px] font-black uppercase tracking-[0.2em] transition-all duration-300", 
+                              sourceMode === m.id ? "bg-foreground text-background shadow-lg" : "text-muted-foreground hover:text-foreground hover:bg-muted"
                             )}
                           >
-                            <m.icon className="w-4 h-4" />
+                            <m.icon className="w-3.5 h-3.5" />
                             <span className="hidden sm:inline">{m.label}</span>
                           </button>
                         ))}
@@ -1469,14 +1469,14 @@ ${buildAntiAiRules(tightness)}`;
 
                       {/* IDEA / KEYWORD / WEB SEARCH MODE */}
                       {sourceMode !== "document" && (
-                        <div className="space-y-4">
+                        <div className="space-y-3">
                           <div className="relative group">
                             {sourceMode === "idea" ? (
                               <Textarea 
                                 value={sourceText} 
                                 onChange={(e) => setSourceText(e.target.value)} 
                                 placeholder={sourceModes.find((m) => m.id === sourceMode)?.placeholder} 
-                                className="w-full bg-white/[0.03] border-white/10 rounded-3xl p-6 text-base min-h-[180px] resize-none focus:border-primary/40 focus:bg-white/[0.05] transition-all outline-none shadow-inner" 
+                                className="w-full bg-card/20 border-border/40 rounded-2xl p-4 text-sm min-h-[140px] resize-none focus:border-primary/40 transition-all outline-none" 
                               />
                             ) : (
                               <div className="flex gap-2">
@@ -1484,12 +1484,12 @@ ${buildAntiAiRules(tightness)}`;
                                   value={sourceText} 
                                   onChange={(e) => setSourceText(e.target.value)} 
                                   placeholder={sourceModes.find((m) => m.id === sourceMode)?.placeholder} 
-                                  className="flex-1 h-16 bg-white/[0.03] border-white/10 rounded-2xl px-6 text-base focus:border-primary/40 focus:bg-white/[0.05] transition-all outline-none" 
+                                  className="flex-1 h-12 bg-card/20 border-border/40 rounded-xl px-4 text-sm focus:border-primary/40 transition-all outline-none" 
                                   onKeyDown={(e) => e.key === "Enter" && (sourceMode === "websearch" ? handleWebSearch() : handleGenerate())}
                                 />
                                 {sourceMode === "websearch" && (
-                                  <Button onClick={handleWebSearch} disabled={!sourceText.trim() || webSearching} className="h-16 px-8 rounded-2xl bg-primary font-black gap-2 shrink-0">
-                                    {webSearching ? <Loader2 className="w-5 h-5 animate-spin" /> : <GlobeIcon className="w-5 h-5" />}
+                                  <Button onClick={handleWebSearch} disabled={!sourceText.trim() || webSearching} className="h-12 px-6 rounded-xl bg-primary font-black text-xs gap-2 shrink-0">
+                                    {webSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <GlobeIcon className="w-4 h-4" />}
                                     Search
                                   </Button>
                                 )}
@@ -1499,9 +1499,9 @@ ${buildAntiAiRules(tightness)}`;
 
                           {/* Suggested Hooks */}
                           {(sourceMode === "idea" || sourceMode === "keyword") && sourceText.trim().length > 3 && suggestedHooks.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mt-4">
+                            <div className="flex flex-wrap gap-1.5 mt-2">
                               {suggestedHooks.map((hook, i) => (
-                                <button key={i} onClick={() => setSourceText(hook.text)} className="px-4 py-2 rounded-xl bg-white/5 border border-white/5 text-[11px] font-bold text-muted-foreground hover:text-white hover:border-primary/40 transition-all">
+                                <button key={i} onClick={() => setSourceText(hook.text)} className="px-3 py-1.5 rounded-lg bg-card/30 border border-border/40 text-[9px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all">
                                   {hook.text}
                                 </button>
                               ))}
@@ -1510,19 +1510,19 @@ ${buildAntiAiRules(tightness)}`;
                         </div>
                       )}
 
-                      <div className="mt-12 flex flex-col items-center">
+                      <div className="mt-8 flex flex-col items-center">
                         <Button
                           onClick={handleGenerate}
                           disabled={
                             (sourceMode === "document" ? selectedDocumentIds.length === 0 : sourceMode === "websearch" ? !webSearchResults : !sourceText.trim()) || isGenerating
                           }
-                          className="h-16 px-16 rounded-[2rem] bg-primary hover:bg-primary/90 text-white font-black text-xl gap-4 shadow-[0_20px_50px_-10px_rgba(20,184,166,0.5)] transition-all active:scale-95 disabled:opacity-20"
+                          className="h-12 px-10 rounded-xl bg-primary hover:bg-primary/90 text-white font-black text-sm gap-3 shadow-xl shadow-primary/20 transition-all active:scale-95 disabled:opacity-20"
                         >
-                          {isGenerating ? (<><RefreshCw className="w-6 h-6 animate-spin" /> Distilling Magic...</>) : (<><Sparkles className="w-6 h-6" /> Generate Variations</>)}
+                          {isGenerating ? (<><RefreshCw className="w-4 h-4 animate-spin" /> Distilling...</>) : (<><Sparkles className="w-4 h-4" /> Generate Variations</>)}
                         </Button>
                         
                         {isGenerating && (
-                          <div className="w-full max-w-sm mt-10">
+                          <div className="w-full max-w-xs mt-8">
                             <GenerationProgress isActive={isGenerating} steps={CONTENT_STEPS} estimatedSeconds={25} />
                           </div>
                         )}
@@ -1566,8 +1566,8 @@ ${buildAntiAiRules(tightness)}`;
             </div>
 
             {/* Cards Gallery */}
-            <div className="flex-1 overflow-y-auto no-scrollbar px-8 py-10">
-              <div className="max-w-4xl mx-auto grid grid-cols-1 gap-8 pb-32">
+            <div className="flex-1 overflow-y-auto no-scrollbar px-6 py-8">
+              <div className="max-w-4xl mx-auto grid grid-cols-1 gap-6 pb-32">
                 {variations.map((v, idx) => {
                   const isSelected = selectedVariation === idx;
                   const detector = passesDetectorEstimate(v.content);
@@ -1575,38 +1575,38 @@ ${buildAntiAiRules(tightness)}`;
                   return (
                     <motion.div
                       key={idx}
-                      initial={{ opacity: 0, y: 30 }}
+                      initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: idx * 0.1, duration: 0.5 }}
                       onClick={() => { setSelectedVariation(isSelected ? null : idx); setImagePanel(null); setInfraPanel(null); }}
                       className={cn(
-                        "group relative rounded-[2rem] border transition-all duration-500 cursor-pointer p-8",
+                        "group relative rounded-2xl border transition-all duration-500 cursor-pointer p-6",
                         isSelected 
-                          ? "bg-white/[0.05] border-primary shadow-[0_20px_60px_-20px_rgba(20,184,166,0.3)]" 
-                          : "glass-card border-white/5 hover:border-white/20 hover:bg-white/[0.03]"
+                          ? "bg-primary/5 border-primary shadow-xl shadow-primary/5" 
+                          : "bg-card/20 border-border/40 hover:border-primary/20 hover:bg-card/30"
                       )}
                     >
                       {/* Variation Badge */}
-                      <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
-                          <span className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/40">Variation 0{idx + 1}</span>
+                          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40">Variation 0{idx + 1}</span>
                           {detector.verdict === 'likely_passes' && (
-                            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-                              <Shield className="w-3 h-3 text-emerald-400" />
-                              <span className="text-[10px] font-black uppercase tracking-tighter text-emerald-400">Human Style</span>
+                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                              <Shield className="w-2.5 h-2.5 text-emerald-400" />
+                              <span className="text-[9px] font-black uppercase tracking-tighter text-emerald-400">Human</span>
                             </div>
                           )}
                         </div>
                         <div className="flex items-center gap-4">
-                           <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/30">{v.words} words</span>
-                           <div className={cn("w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all", isSelected ? "bg-primary border-primary" : "border-white/10")}>
-                             {isSelected && <Check className="w-4 h-4 text-white" />}
+                           <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/30">{v.words} words</span>
+                           <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all", isSelected ? "bg-primary border-primary" : "border-border/40")}>
+                             {isSelected && <Check className="w-3 h-3 text-white" />}
                            </div>
                         </div>
                       </div>
 
                       <div className="relative">
-                        <p className="text-lg leading-[1.7] font-medium text-white/90 whitespace-pre-wrap mb-10">{v.content}</p>
+                        <p className="text-sm leading-relaxed font-medium text-foreground/90 whitespace-pre-wrap mb-6">{v.content}</p>
                       </div>
 
                       {/* Tooling for selected variation */}
@@ -1667,17 +1667,17 @@ ${buildAntiAiRules(tightness)}`;
             </div>
 
             {/* Floating Navigation Bar */}
-            <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50">
-              <div className="glass px-8 py-4 rounded-[2rem] border-white/10 shadow-2xl flex items-center gap-6">
-                <div className="flex items-center gap-3 pr-6 border-r border-white/10">
-                   <div className={cn("w-2.5 h-2.5 rounded-full", saveStatus === 'saved' ? 'bg-primary shadow-[0_0_8px_rgba(20,184,166,0.6)]' : 'bg-amber-400 animate-pulse')} />
-                   <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">
+            <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-6">
+              <div className="glass px-6 py-3 rounded-2xl border-border/40 shadow-2xl flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2.5">
+                   <div className={cn("w-2 h-2 rounded-full", saveStatus === 'saved' ? 'bg-primary shadow-[0_0_8px_rgba(20,184,166,0.6)]' : 'bg-amber-400 animate-pulse')} />
+                   <span className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">
                      {saveStatus === 'saved' ? 'Synced' : 'Syncing...'}
                    </span>
                 </div>
                 <div className="flex items-center gap-2">
-                   <Button variant="ghost" onClick={reset} className="h-10 px-6 rounded-xl hover:bg-white/5 text-xs font-black uppercase tracking-widest text-muted-foreground hover:text-white">Start Over</Button>
-                   <Button onClick={handleGoToDashboard} className="h-11 px-10 rounded-xl bg-white text-black font-black uppercase tracking-widest text-xs hover:bg-white/90 shadow-xl active:scale-95 transition-all">Finish Studio</Button>
+                   <Button variant="ghost" onClick={reset} className="h-9 px-4 rounded-xl hover:bg-card text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground">Reset</Button>
+                   <Button onClick={handleGoToDashboard} className="h-9 px-6 rounded-xl bg-foreground text-background font-black uppercase tracking-widest text-[10px] hover:bg-foreground/90 shadow-xl active:scale-95 transition-all">Finish</Button>
                 </div>
               </div>
             </div>

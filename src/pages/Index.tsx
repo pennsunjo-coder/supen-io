@@ -14,6 +14,8 @@ import { cn } from "@/lib/utils";
 import { useTheme } from "@/contexts/ThemeContext";
 import { LogoFull } from "@/components/Logo";
 import { WaitlistPopup } from "@/components/WaitlistPopup";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const ROTATING_WORDS = ["Viral", "Compelling", "Human", "Irresistible"];
 
@@ -185,10 +187,17 @@ function AnimatedCounter({ end, suffix = "", duration = 2000 }: { end: number; s
 
 const Index = () => {
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [wordIdx, setWordIdx] = useState(0);
   const [showWaitlist, setShowWaitlist] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [user, authLoading, navigate]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -196,6 +205,14 @@ const Index = () => {
     }, 2000);
     return () => clearInterval(interval);
   }, []);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background selection:bg-primary/30 selection:text-primary font-sans relative overflow-x-hidden">
@@ -272,7 +289,7 @@ const Index = () => {
           </motion.div>
 
           <motion.h1 variants={fadeUp} custom={1}
-            className="font-display text-5xl md:text-7xl lg:text-8xl leading-[1.1] mb-8 tracking-display font-extrabold"
+            className="font-display text-4xl md:text-6xl lg:text-7xl leading-[1.1] mb-6 tracking-display font-extrabold"
           >
             <span className="block text-foreground/90">Your Content</span>
             <span className="block">Deserves to Go</span>
@@ -293,15 +310,15 @@ const Index = () => {
           </motion.h1>
 
           <motion.p variants={fadeUp} custom={2}
-            className="text-base md:text-lg text-muted-foreground mb-12 max-w-xl mx-auto leading-relaxed font-medium opacity-70"
+            className="text-sm md:text-base text-muted-foreground mb-10 max-w-lg mx-auto leading-relaxed font-medium opacity-60"
           >
             Stop spending 2 hours on a single post. Generate 5 viral variations in 30 seconds — for LinkedIn, Instagram, TikTok, X, YouTube & Facebook.
           </motion.p>
 
           <motion.div variants={fadeUp} custom={3} className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button size="lg" onClick={() => navigate("/login")} className="bg-foreground text-background hover:scale-[1.02] active:scale-95 h-14 px-10 text-base font-bold rounded-full group transition-all shadow-xl">
+            <Button size="lg" onClick={() => navigate("/login")} className="bg-foreground text-background hover:scale-[1.02] active:scale-95 h-12 px-8 text-sm font-bold rounded-full group transition-all shadow-xl">
               Start Creating Free
-              <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+              <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
             </Button>
             <div className="flex -space-x-2.5 items-center">
               {[23, 32, 68, 44].map((i) => (
@@ -385,13 +402,13 @@ const Index = () => {
       {/* ═══════════ FEATURES ═══════════ */}
       <section id="features" className="py-32 px-6 relative">
         <div className="max-w-7xl mx-auto">
-          <motion.div className="text-center mb-20"
+          <motion.div className="text-center mb-16"
             initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }} transition={{ duration: 0.5 }}
           >
-            <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-[9px] font-black uppercase tracking-[0.3em] mb-6">Capabilities</span>
-            <h2 className="font-display text-4xl md:text-6xl font-black mb-6 tracking-display">Everything you need to <span className="italic text-primary">go viral</span></h2>
-            <p className="text-muted-foreground max-w-lg mx-auto text-base font-medium opacity-60">From research to publishing, Supenli.ai handles the entire content creation workflow.</p>
+            <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-[9px] font-black uppercase tracking-[0.3em] mb-4">Capabilities</span>
+            <h2 className="font-display text-3xl md:text-5xl font-black mb-4 tracking-display">Everything you need to <span className="italic text-primary">go viral</span></h2>
+            <p className="text-muted-foreground max-w-md mx-auto text-sm font-medium opacity-60">From research to publishing, Supenli.ai handles the entire content creation workflow.</p>
           </motion.div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -400,13 +417,13 @@ const Index = () => {
                 key={f.title}
                 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }} transition={{ delay: i * 0.05, duration: 0.4 }}
-                className="group relative p-8 glass-card hover:bg-white/[0.04] transition-all duration-500 overflow-hidden"
+                className="group relative p-6 rounded-2xl bg-card/20 border border-border/40 hover:bg-card/40 transition-all duration-500 overflow-hidden"
               >
-                <div className="w-12 h-12 rounded-xl bg-primary/5 flex items-center justify-center mb-8 border border-primary/10 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300">
-                  <f.icon className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-6 border border-primary/20 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300">
+                  <f.icon className="w-4 h-4" />
                 </div>
-                <h3 className="font-display text-lg font-bold mb-3 group-hover:text-primary transition-colors">{f.title}</h3>
-                <p className="text-muted-foreground leading-relaxed font-medium text-sm group-hover:text-foreground/80 transition-colors">{f.desc}</p>
+                <h3 className="font-display text-base font-bold mb-2 group-hover:text-primary transition-colors">{f.title}</h3>
+                <p className="text-muted-foreground leading-relaxed font-medium text-xs group-hover:text-foreground/80 transition-colors">{f.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -428,13 +445,13 @@ const Index = () => {
           <motion.div
             initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }} transition={{ duration: 0.6 }}
-            className="glass-card overflow-hidden"
+            className="rounded-3xl border border-border/40 bg-card/10 backdrop-blur-xl overflow-hidden shadow-2xl"
           >
-            <div className="grid grid-cols-5 border-b border-white/[0.05] bg-white/[0.01]">
-              <div className="px-6 py-6 text-[9px] font-black uppercase tracking-widest text-muted-foreground">Feature</div>
+            <div className="grid grid-cols-5 border-b border-border/40 bg-card/40">
+              <div className="px-6 py-4 text-[8px] font-black uppercase tracking-widest text-muted-foreground">Feature</div>
               {["Supenli.ai", "ChatGPT", "Jasper", "Claude"].map((name, i) => (
-                <div key={name} className="px-6 py-6 text-center">
-                  <span className={`text-[10px] font-black uppercase tracking-widest ${i === 0 ? "text-primary" : "text-muted-foreground/50"}`}>{name}</span>
+                <div key={name} className="px-6 py-4 text-center">
+                  <span className={`text-[9px] font-black uppercase tracking-widest ${i === 0 ? "text-primary" : "text-muted-foreground/40"}`}>{name}</span>
                 </div>
               ))}
             </div>
@@ -448,28 +465,28 @@ const Index = () => {
               { feature: "5 variations per topic", supen: true, chatgpt: false, jasper: true, claude: false },
               { feature: "Anti-AI detector", supen: true, chatgpt: false, jasper: false, claude: false },
             ].map((row, i) => (
-              <div key={i} className={cn("grid grid-cols-5 border-b border-white/[0.03] last:border-b-0", i % 2 === 0 ? "bg-transparent" : "bg-white/[0.005]")}>
-                <div className="px-6 py-4 text-[11px] font-bold text-foreground/70">{row.feature}</div>
-                <div className="px-6 py-4 flex items-center justify-center">
-                  {row.supen ? <div className="w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center"><Check className="w-3 h-3 text-primary" /></div> : <XIcon className="w-3 h-3 text-white/5" />}
+              <div key={i} className={cn("grid grid-cols-5 border-b border-border/20 last:border-b-0", i % 2 === 0 ? "bg-transparent" : "bg-muted/10")}>
+                <div className="px-6 py-3 text-[10px] font-bold text-foreground/70">{row.feature}</div>
+                <div className="px-6 py-3 flex items-center justify-center">
+                  {row.supen ? <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center"><Check className="w-2.5 h-2.5 text-primary" /></div> : <XIcon className="w-2.5 h-2.5 text-muted-foreground/10" />}
                 </div>
-                <div className="px-6 py-4 flex items-center justify-center">
-                  {row.chatgpt ? <Check className="w-3.5 h-3.5 text-emerald-500/50" /> : <XIcon className="w-3 h-3 text-white/5" />}
+                <div className="px-6 py-3 flex items-center justify-center">
+                  {row.chatgpt ? <Check className="w-3 h-3 text-emerald-500/50" /> : <XIcon className="w-2.5 h-2.5 text-muted-foreground/10" />}
                 </div>
-                <div className="px-6 py-4 flex items-center justify-center">
-                  {row.jasper ? <Check className="w-3.5 h-3.5 text-emerald-500/50" /> : <XIcon className="w-3 h-3 text-white/5" />}
+                <div className="px-6 py-3 flex items-center justify-center">
+                  {row.jasper ? <Check className="w-3 h-3 text-emerald-500/50" /> : <XIcon className="w-2.5 h-2.5 text-muted-foreground/10" />}
                 </div>
-                <div className="px-6 py-4 flex items-center justify-center">
-                  {row.claude ? <Check className="w-3.5 h-3.5 text-emerald-500/50" /> : <XIcon className="w-3 h-3 text-white/5" />}
+                <div className="px-6 py-3 flex items-center justify-center">
+                  {row.claude ? <Check className="w-3 h-3 text-emerald-500/50" /> : <XIcon className="w-2.5 h-2.5 text-muted-foreground/10" />}
                 </div>
               </div>
             ))}
-            <div className="grid grid-cols-5 bg-primary/5 border-t border-primary/10">
-              <div className="px-6 py-6 text-[10px] font-black uppercase tracking-widest">Monthly price</div>
-              <div className="px-6 py-6 text-center text-base font-black text-primary">$11</div>
-              <div className="px-6 py-6 text-center text-xs font-bold text-muted-foreground/40">$20</div>
-              <div className="px-6 py-6 text-center text-xs font-bold text-muted-foreground/40">$49</div>
-              <div className="px-6 py-6 text-center text-xs font-bold text-muted-foreground/40">$20</div>
+            <div className="grid grid-cols-5 bg-primary/10 border-t border-primary/20">
+              <div className="px-6 py-4 text-[9px] font-black uppercase tracking-widest">Monthly price</div>
+              <div className="px-6 py-4 text-center text-sm font-black text-primary">$11</div>
+              <div className="px-6 py-4 text-center text-xs font-bold text-muted-foreground/40">$20</div>
+              <div className="px-6 py-4 text-center text-xs font-bold text-muted-foreground/40">$49</div>
+              <div className="px-6 py-4 text-center text-xs font-bold text-muted-foreground/40">$20</div>
             </div>
           </motion.div>
         </div>
@@ -576,7 +593,7 @@ const Index = () => {
             <h2 className="font-display text-5xl md:text-6xl font-black mb-6 tracking-display">Start free. <span className="text-primary">Scale fast.</span></h2>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-8 items-start">
+          <div className="grid md:grid-cols-3 gap-6 items-start">
             {plans.map((plan, i) => {
               const PlanIcon = plan.icon;
               return (
@@ -587,30 +604,30 @@ const Index = () => {
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1, duration: 0.5 }}
                 className={cn(
-                  "p-10 glass-card transition-all duration-500 flex flex-col",
-                  plan.highlighted ? "border-primary bg-white/[0.04] scale-105 shadow-2xl shadow-primary/10" : "border-white/[0.08]"
+                  "p-8 rounded-3xl border transition-all duration-500 flex flex-col",
+                  plan.highlighted ? "border-primary bg-card shadow-2xl shadow-primary/10 scale-105" : "bg-card/20 border-border/40"
                 )}
               >
                 <div className={cn(
-                  "w-14 h-14 rounded-2xl flex items-center justify-center mb-10 transition-all",
-                  plan.highlighted ? "bg-primary text-primary-foreground" : "bg-white/[0.03] text-muted-foreground"
+                  "w-12 h-12 rounded-xl flex items-center justify-center mb-8 transition-all",
+                  plan.highlighted ? "bg-primary text-primary-foreground shadow-lg" : "bg-muted text-muted-foreground"
                 )}>
-                  <PlanIcon className="w-7 h-7" />
+                  <PlanIcon className="w-6 h-6" />
                 </div>
 
-                <h3 className="font-display text-2xl font-black mb-2">{plan.name}</h3>
-                <p className="text-sm font-medium text-muted-foreground mb-8">{plan.desc}</p>
+                <h3 className="font-display text-xl font-black mb-1.5">{plan.name}</h3>
+                <p className="text-xs font-medium text-muted-foreground/60 mb-6">{plan.desc}</p>
 
-                <div className="flex items-baseline gap-2 mb-10">
-                  <span className="font-display text-5xl font-black tracking-tighter">{plan.price}</span>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{plan.period}</span>
+                <div className="flex items-baseline gap-2 mb-8">
+                  <span className="font-display text-4xl font-black tracking-tighter">{plan.price}</span>
+                  <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">{plan.period}</span>
                 </div>
 
-                <div className="space-y-4 mb-12 flex-1">
+                <div className="space-y-3 mb-10 flex-1">
                   {plan.features.map((feat) => (
                     <div key={feat} className="flex items-start gap-3">
-                      <Check className={cn("w-4 h-4 mt-0.5 shrink-0", plan.highlighted ? "text-primary" : "text-muted-foreground/50")} />
-                      <span className="text-sm font-bold text-foreground/70 leading-snug">{feat}</span>
+                      <Check className={cn("w-3.5 h-3.5 mt-0.5 shrink-0", plan.highlighted ? "text-primary" : "text-muted-foreground/30")} />
+                      <span className="text-xs font-bold text-foreground/70 leading-snug">{feat}</span>
                     </div>
                   ))}
                 </div>
@@ -618,10 +635,10 @@ const Index = () => {
                 <Button
                   onClick={() => navigate("/login")}
                   className={cn(
-                    "w-full h-14 rounded-xl font-black text-xs uppercase tracking-widest transition-all",
+                    "w-full h-12 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all",
                     plan.highlighted 
-                      ? "bg-primary text-primary-foreground hover:brightness-110 shadow-lg shadow-primary/20" 
-                      : "bg-white/[0.03] text-foreground hover:bg-white/[0.08] border border-white/[0.05]"
+                      ? "bg-primary text-primary-foreground hover:brightness-110 shadow-lg" 
+                      : "bg-muted text-foreground hover:bg-muted/80"
                   )}
                 >
                   {plan.cta}
@@ -696,15 +713,15 @@ const Index = () => {
             <Sparkles className="w-4 h-4 text-primary" />
             <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Ready to dominate?</span>
           </div>
-          <h2 className="font-display text-5xl md:text-8xl font-black mb-8 tracking-display leading-[1.1]">
+          <h2 className="font-display text-4xl md:text-6xl lg:text-7xl font-black mb-6 tracking-display leading-[1.1]">
             Create your first <br /><span className="text-primary italic">viral content</span>
           </h2>
-          <p className="text-lg md:text-xl text-muted-foreground mb-16 max-w-xl mx-auto font-medium opacity-60">
+          <p className="text-sm md:text-base text-muted-foreground mb-12 max-w-lg mx-auto font-medium opacity-60">
             Join 2,500+ creators using Supenli.ai to create content that converts.
           </p>
-          <Button size="lg" onClick={() => navigate("/login")} className="bg-foreground text-background hover:scale-105 active:scale-95 font-black uppercase tracking-[0.2em] h-16 px-14 text-base rounded-full transition-all shadow-2xl shadow-white/5">
+          <Button size="lg" onClick={() => navigate("/login")} className="bg-foreground text-background hover:scale-105 active:scale-95 font-black uppercase tracking-[0.2em] h-14 px-10 text-sm rounded-full transition-all shadow-2xl shadow-white/5">
             Get started free
-            <ArrowRight className="w-5 h-5 ml-2" />
+            <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         </motion.div>
       </section>
