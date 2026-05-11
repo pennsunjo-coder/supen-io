@@ -11,18 +11,14 @@ Deno.serve(async (req) => {
     const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 
-    if (!OPENAI_API_KEY) {
-      return new Response(JSON.stringify({ error: "Missing OpenAI Key" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
+    if (!OPENAI_API_KEY) return new Response(JSON.stringify({ error: "Missing keys" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const body = await req.json().catch(() => ({}));
     const { prompt, size, isRawContent } = body;
     
-    if (!prompt) return new Response(JSON.stringify({ error: "Missing prompt" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-
     let finalPrompt = prompt;
 
-    // --- EXPERT ARCHITECT (Gemini 1.5 Flash) ---
+    // --- 1. THE ARCHITECT (Gemini 1.5 Flash) ---
     if (isRawContent && GEMINI_API_KEY) {
       try {
         const architectResponse = await fetch(
@@ -35,11 +31,10 @@ Deno.serve(async (req) => {
                 You are the INFOGRAPHIC ARCHITECT (Awa K. Penn style).
                 GOAL: Transform the raw post into a DENSE, HIGH-VALUE infographic script.
                 
-                STRUCTURE:
-                - [TITLE]: High-impact catchy title.
-                - [ZONE_BODY]: 7-9 numbered sections S1-S9.
-                - [ZONE_POWER_GRID]: 6 expert tips G1-G6.
-                - [ZONE_FOOTER]: 1 Pro Tip.
+                STRICT QUALITY RULES:
+                1. SYMBIOSIS: Every point must expand the source content with logical depth.
+                2. OCR OPTIMIZATION: Use high-impact, simple words.
+                3. STRUCTURE: 1 Title, 7-9 numbered Sections (S1-S9), 6 Grid Items (G1-G6), 1 Pro Tip.
                 
                 CONTENT:
                 ${prompt}
@@ -49,16 +44,13 @@ Deno.serve(async (req) => {
         );
         if (architectResponse.ok) {
           const architectData = await architectResponse.json();
-          const expanded = architectData.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (expanded) finalPrompt = expanded;
+          finalPrompt = architectData.candidates?.[0]?.content?.parts?.[0]?.text || prompt;
         }
       } catch (e) { console.warn("Architect error", e); }
     }
 
-    // --- VISUAL ENGINE (OpenAI DALL-E 3) ---
+    // --- 2. THE VISUAL ENGINE (OpenAI DALL-E 3) ---
     const genSize = size?.includes("1792") || size?.includes("1350") ? "1024x1792" : "1024x1024";
-
-    console.log(`[generate-gemini-image] Rendering with DALL-E 3...`);
 
     const oaResponse = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
@@ -69,19 +61,19 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         model: "dall-e-3",
         prompt: `
-          Create a high-density educational whiteboard infographic.
-          STYLE: Professional Marker Sketch on clean white paper (Awa K. Penn style).
+          Create a high-density professional educational infographic.
+          STYLE: Premium Whiteboard / Marker Sketch (Awa K. Penn Forensic Style).
           
-          STRICT VISUAL ARCHITECTURE:
-          - TOP: [TITLE] in huge bold black marker inside [SQUARE BRACKETS].
-          - MIDDLE: Sections S1-S9 vertically with colored hand-drawn borders.
-          - GRID: 3x2 grid for G1-G6 with yellow highlights.
-          - BOTTOM: PRO_TIP in a distinct box with a red checkmark.
+          VISUAL ARCHITECTURE:
+          1. [ZONE_HEADER]: Render [TITLE] in huge, ultra-bold black marker font inside [SQUARE BRACKETS].
+          2. [ZONE_BODY]: Render sections S1-S9 vertically. Each has a colored hand-drawn border and a simple icon.
+          3. [ZONE_POWER_GRID]: Create a 3x2 grid of boxes. Render G1-G6 inside with yellow #FFEF5A highlight on labels.
+          4. [ZONE_FOOTER]: Render PRO_TIP in a distinct box at the bottom with a red ✓ symbol.
           
           STRICT FILL & ZOOM RULE:
-          - CLOSE-UP: Zoom in tightly on the paper texture. 
-          - FULL BLEED: The drawing MUST touch all 4 edges of the canvas. 
-          - NO WHITE MARGINS: Use every pixel. NO desk or room visible.
+          - CLOSE-UP: Zoom in tightly on the paper. 
+          - FULL BLEED: The drawing MUST touch the edges of the canvas. 
+          - NO BACKGROUND: No desk, no walls, no realistic room.
           
           SCRIPT:
           ${finalPrompt}
