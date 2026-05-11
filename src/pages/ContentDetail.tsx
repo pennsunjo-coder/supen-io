@@ -11,6 +11,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import DOMPurify from "dompurify";
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", {
@@ -274,9 +275,13 @@ const ContentDetail = () => {
                           />
                         ) : (
                           <iframe
-                            srcDoc={infographic?.infographic_html || ""}
+                            srcDoc={DOMPurify.sanitize(infographic?.infographic_html || "", {
+                              ADD_TAGS: ["link", "style"],
+                              ADD_ATTR: ["href", "rel", "target"],
+                            })}
                             className="w-full h-full pointer-events-none"
                             style={{ border: "none" }}
+                            sandbox="allow-popups"
                           />
                         )}
                         <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
