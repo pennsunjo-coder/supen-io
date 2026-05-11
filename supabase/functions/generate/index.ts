@@ -33,6 +33,8 @@ Deno.serve(async (req) => {
     const { platform, format, sourceText, sourceMode, activeSourceIds } = await req.json();
     if (!platform || !format || !sourceText) return new Response(JSON.stringify({ error: "platform, format and sourceText are required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
+    const isDocMode = sourceMode === "document" && activeSourceIds && activeSourceIds.length > 0;
+
     // RAG — sources utilisateur
     let userSection = "";
     if (activeSourceIds && activeSourceIds.length > 0) {
@@ -124,7 +126,7 @@ Rules:
     // Claude
     const anthropic = new Anthropic({ apiKey: Deno.env.get("ANTHROPIC_API_KEY")! });
     const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-3-5-sonnet-20240620",
       max_tokens: 4096,
       system: systemPrompt,
       messages: [{ role: "user", content: `${modeLabel} :\n\n${sourceText.slice(0, 5000)}` }],
@@ -158,6 +160,7 @@ Rules:
 
     return new Response(JSON.stringify({ variations }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (err) {
+    console.error("[generate] Error:", err);
     const msg = err instanceof Error ? err.message : "Server error";
     return new Response(JSON.stringify({ error: msg }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }

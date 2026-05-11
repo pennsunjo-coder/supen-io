@@ -138,5 +138,13 @@ export function friendlyError(err: unknown): string {
     return err.message;
   }
 
+  // Handle stringified JSON from Supabase Edge Functions
+  if (err.message.includes('{"error":')) {
+    try {
+      const parsed = JSON.parse(err.message.substring(err.message.indexOf('{')));
+      if (parsed.error) return parsed.error;
+    } catch { /* ignore */ }
+  }
+
   return err.message.length > 150 ? err.message.slice(0, 150) + "..." : err.message;
 }

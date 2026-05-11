@@ -29,6 +29,16 @@ export function invalidateCache(prefix: string): void {
   for (const key of store.keys()) {
     if (key.startsWith(prefix)) store.delete(key);
   }
+  
+  // Also clear localStorage if prefix is history
+  if (prefix.includes("history")) {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.includes("history")) {
+        localStorage.removeItem(key);
+      }
+    }
+  }
 }
 
 export function clearAllCache(): void {

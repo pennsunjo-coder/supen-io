@@ -14,6 +14,7 @@ import { callClaude } from "@/lib/anthropic";
 import { sanitizeInput } from "@/lib/security";
 import { toast } from "sonner";
 import { searchViralReferences, ViralReference, searchUserSources } from "@/lib/embeddings";
+import { invalidateCache } from "@/lib/cache";
 import { supabase } from "@/lib/supabase";
 import { assertOnline, withRetry, withTimeout, friendlyError } from "@/lib/resilience";
 import GenerationProgress, { CONTENT_STEPS } from "@/components/GenerationProgress";
@@ -1033,6 +1034,7 @@ ${buildAntiAiRules(tightness)}`;
         setVariations((prev) => prev.map((v, i) => ({ ...v, dbId: savedRows[i]?.id })));
       }
       setSaveStatus("saved");
+      invalidateCache("history:");
       if (onGenerationComplete) onGenerationComplete();
       toast.success("Saved! Opening workspace...");
       // Navigate to immersive editor after short delay
