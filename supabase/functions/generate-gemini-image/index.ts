@@ -16,24 +16,25 @@ Deno.serve(async (req) => {
     
     if (!prompt) return new Response(JSON.stringify({ error: "Missing prompt" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    // --- 1. ARCHITECT (Gemini 2.0 Flash) ---
-    // Expertly structure the content for the visual engine
-    const archUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+    // --- 1. ARCHITECT (Using the advanced 2.5 model discovered) ---
+    // Note: Use gemini-2.5-flash-native-audio-latest as discovered in ListModels
+    const modelId = "gemini-2.5-flash-native-audio-latest";
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${GEMINI_API_KEY}`;
     
     let finalPrompt = prompt;
     if (isRawContent) {
       try {
-        const archResp = await fetch(archUrl, {
+        const archResp = await fetch(url, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             contents: [{ parts: [{ text: `
               You are the INFOGRAPHIC ARCHITECT (Awa K. Penn style).
-              Transform this post into a structured infographic script:
-              - [TITLE]: High-impact title.
-              - [BODY]: 7-9 numbered sections S1-S9.
-              - [GRID]: 6 expert tips G1-G6.
-              - [FOOTER]: 1 Pro Tip.
+              Transform this content into a dense, high-value infographic script:
+              - TITLE in [SQUARE BRACKETS]
+              - Sections S1-S9
+              - 6 Grid items G1-G6
+              - 1 Pro Tip
               
               CONTENT:
               ${prompt}
@@ -47,24 +48,20 @@ Deno.serve(async (req) => {
       } catch (e) { console.warn("Architect error", e); }
     }
 
-    // --- 2. IMAGE GENERATION (Gemini 2.0 Flash) ---
-    console.log("[generate-gemini-image] Generating Premium Infographic with Gemini 2.0 Flash...");
+    // --- 2. IMAGE GENERATION (Using the same 2.5 model which supports multimodal output) ---
+    console.log(`[generate-gemini-image] Using Next-Gen ${modelId} for Image Generation...`);
     
-    const response = await fetch(archUrl, {
+    const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [{
           parts: [{
-            text: `
-              Create a professional educational whiteboard infographic. 
-              STYLE: Awa K. Penn Forensic Marker Style. 
-              VISUAL: Spiral notebook background with lined paper.
-              LAYOUT: Title in brackets, S1-S9 sections, 6 grid items with yellow highlights, 1 pro tip box at bottom.
-              
-              INSTRUCTIONS: High density, fill the entire canvas, zoom in on the paper, no white margins.
-              SCRIPT: ${finalPrompt}
-            `
+            text: `Create a professional educational whiteboard infographic on a SPIRAL NOTEBOOK with LINED PAPER. 
+            STYLE: Awa K. Penn Forensic Marker Style. 
+            LAYOUT: Title in brackets, S1-S9 sections, 6 grid items with yellow highlights, 1 pro tip box at bottom.
+            INSTRUCTIONS: High density, fill the entire canvas, zoom in on paper, no white margins.
+            SCRIPT: ${finalPrompt}`
           }]
         }]
       })
@@ -72,17 +69,22 @@ Deno.serve(async (req) => {
 
     if (!response.ok) {
       const errBody = await response.text();
-      return new Response(JSON.stringify({ error: `Gemini Error: ${response.status}`, details: errBody }), { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: `Gemini 2.5 Error: ${response.status}`, details: errBody }), { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const data = await response.json();
+    
+    // Attempt to find image in multimodal parts
     const base64 = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData)?.inlineData?.data;
 
     if (!base64) {
-      return new Response(JSON.stringify({ error: "Gemini returned no image data", raw: data }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ 
+        error: "Model did not return an image. Try again or check if generation is enabled for this model.",
+        raw: data 
+      }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    return new Response(JSON.stringify({ image: base64, provider: "gemini-2.0-new-key" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ image: base64, provider: "gemini-2.5-flash" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
