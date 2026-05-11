@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
       console.log("[generate-gemini-image] Architect: Expanding content into expert script...");
       try {
         const architectResponse = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -160,17 +160,15 @@ Deno.serve(async (req) => {
         { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" },
       ],
       generationConfig: { 
-        responseModalities: ["IMAGE"],
-        // @ts-ignore: aspectRatio is a valid field for Imagen-based models
-        aspectRatio: generationSize.includes("1536") || generationSize.includes("1792") ? "3:4" : 
-                     generationSize.includes("landscape") || generationSize.split("x")[0] > generationSize.split("x")[1] ? "16:9" : "1:1"
+        responseModalities: ["IMAGE"]
       },
     };
 
     let geminiError = null;
     try {
+      console.log("[generate-gemini-image] Calling Gemini 1.5 Flash for image...");
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
