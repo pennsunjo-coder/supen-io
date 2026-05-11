@@ -1002,36 +1002,17 @@ ${buildAntiAiRules(tightness)}`;
         format: selectedFormat,
       }).then(() => {}, () => {}); // Fire-and-forget, ignore errors
 
-      // Try insert with the full set of quality columns first. If the
-      // ai_flavor_score / style_memory_used migration hasn't been applied
-      // yet (older deployments), fall back to the legacy minimal insert.
-      const rowsWithQuality = parsed.map((v) => {
-        const flavor = detectAiFlavor(v.content);
-        return {
-          user_id: user.id,
-          platform: selectedPlatform.name,
-          format: selectedFormat,
-          content: v.content,
-          viral_score: v.score || 0,
-          ai_flavor_score: flavor.score,
-          style_memory_used: lastStyleMemoryUsed,
-          session_id: sessionId,
-        };
-      });
-      const firstAttempt = await supabase
+      const rows = parsed.map((v) => ({
+        user_id: user.id,
+        platform: selectedPlatform.name,
+        format: selectedFormat,
+        content: v.content,
+        viral_score: v.score || 0,
+      }));
+      const { data: savedRows, error: saveErr } = await supabase
         .from("generated_content")
-        .insert(rowsWithQuality)
+        .insert(rows)
         .select("id");
-      let savedRows = firstAttempt.data;
-      let saveErr = firstAttempt.error;
-      if (saveErr) {
-        // Drop the optional quality columns and retry with the base shape.
-        const baseRows = rowsWithQuality.map(({ ai_flavor_score: _f, style_memory_used: _s, ...rest }) => rest);
-        if (IS_DEV) console.warn("[saveVariations] Falling back to base insert:", saveErr.message);
-        const fallback = await supabase.from("generated_content").insert(baseRows).select("id");
-        savedRows = fallback.data;
-        saveErr = fallback.error;
-      }
 
       if (saveErr) {
         console.error("[StudioWizard] Save failed:", saveErr.message, saveErr.details, saveErr.hint);
