@@ -12,69 +12,60 @@ Deno.serve(async (req) => {
     if (!GEMINI_API_KEY) return new Response(JSON.stringify({ error: "Missing Gemini Key" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const body = await req.json().catch(() => ({}));
-    const { prompt, size, isRawContent } = body;
+    const { prompt, isRawContent } = body;
     
-    let finalPrompt = prompt;
+    if (!prompt) return new Response(JSON.stringify({ error: "Missing prompt" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    // --- 1. ARCHITECT (Gemini 2.0 Flash) ---
-    if (isRawContent) {
-      const archResp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: `
-            You are the INFOGRAPHIC ARCHITECT (Awa K. Penn style).
-            Transform the following content into a structured infographic script:
-            - TITLE in [SQUARE BRACKETS]
-            - Sections S1-S9 with clear titles
-            - 6 Power Grid items G1-G6
-            - 1 Pro Tip at the bottom
-            
-            CONTENT:
-            ${prompt}
-          ` }] }]
-        })
-      });
-      if (archResp.ok) {
-        const data = await archResp.json();
-        finalPrompt = data.candidates?.[0]?.content?.parts?.[0]?.text || prompt;
-      }
-    }
+    // --- USE STABLE GEMINI 1.5 FLASH ---
+    const model = "gemini-1.5-flash";
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+    
+    console.log(`[generate-gemini-image] Calling stable ${model}...`);
 
-    // --- 2. IMAGE GENERATION (Gemini 2.0 Flash) ---
-    // Back to the original engine that worked
-    const imagenUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
-    
-    console.log("[generate-gemini-image] Restoring Gemini 2.0 Flash Image Generation...");
-    
-    const imagenResp = await fetch(imagenUrl, {
+    const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [{
           parts: [{
-            text: `Create a professional educational whiteboard infographic. 
-            STYLE: Awa K. Penn Forensic Marker Style. 
-            SCRIPT: ${finalPrompt}. 
-            LAYOUT: High density, vertical orientation, fill the entire canvas, zoom in on paper texture, no white margins.`
+            text: `
+              You are the INFOGRAPHIC ARCHITECT (Awa K. Penn style).
+              Create a structured infographic design.
+              STYLE: Professional whiteboard marker sketch.
+              LAYOUT: Title in brackets, S1-S9 sections, 6 grid items, 1 pro tip.
+              CONTENT TO VISUALIZE: ${prompt}
+              
+              Note: Generate the image data directly if possible.
+            `
           }]
         }]
       })
     });
 
-    if (!imagenResp.ok) {
-      const err = await imagenResp.text();
-      return new Response(JSON.stringify({ error: `Gemini Error: ${err}` }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!response.ok) {
+      const errBody = await response.text();
+      console.error(`Google API Error (${response.status}):`, errBody);
+      return new Response(JSON.stringify({ 
+        error: `Google API Error: ${response.status}`,
+        details: errBody 
+      }), { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const data = await imagenResp.json();
+    const data = await response.json();
+    
+    // Check for image in response (multimodal)
     const base64 = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData)?.inlineData?.data;
 
     if (!base64) {
-      return new Response(JSON.stringify({ error: "Gemini returned no image data" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      // If no image, maybe it's just text? 
+      // Some regions don't support direct image generation via Gemini models yet.
+      return new Response(JSON.stringify({ 
+        error: "No image data returned. Your Gemini region might not support direct Imagen generation.",
+        textResponse: data.candidates?.[0]?.content?.parts?.[0]?.text
+      }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    return new Response(JSON.stringify({ image: base64, provider: "gemini-original" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ image: base64, provider: "gemini-stable" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
