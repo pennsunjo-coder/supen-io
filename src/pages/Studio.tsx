@@ -8,10 +8,11 @@ import { useProfile } from "@/hooks/use-profile";
 import { useDashboard } from "@/hooks/use-dashboard";
 import { useActivity } from "@/hooks/use-activity";
 import { invalidateCache } from "@/lib/cache";
-import { BookOpen, Sparkles, ArrowLeft } from "lucide-react";
+import { BookOpen, Sparkles, ArrowLeft, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { Button } from "@/components/ui/button";
+import { motion, AnimatePresence } from "framer-motion";
 
 type MobileTab = "sources" | "studio";
 
@@ -27,7 +28,7 @@ export default function Studio() {
   const activity = useActivity();
 
   const [activeSourceIds, setActiveSourceIds] = useState<Set<string>>(new Set());
-  const [mobileTab, setMobileTab] = useState<MobileTab>("studio");
+  const [showSources, setShowSources] = useState(false);
 
   const handleToggleGroup = useCallback((ids: string[]) => {
     setActiveSourceIds((prev) => {
@@ -48,77 +49,104 @@ export default function Studio() {
 
   return (
     <DashboardLayout>
-      <div className="flex-1 flex flex-col min-h-0 pb-16 md:pb-0">
-        {/* Header */}
-        <div className="flex items-center gap-4 px-5 py-4 border-b border-border/20 shrink-0 bg-background">
-          <Button variant="secondary" onClick={() => navigate("/dashboard")} className="h-10 gap-2 text-sm font-bold px-5 bg-accent hover:bg-accent/80 border border-border/40 shrink-0">
-            <ArrowLeft className="w-4 h-4" /> Dashboard
-          </Button>
-          <div className="flex-1">
-            <h1 className="text-sm font-bold">Create Content</h1>
-            <p className="text-xs text-muted-foreground">Generate viral posts + visuals</p>
-          </div>
-        </div>
-        <div className="flex-1 flex min-h-0">
-        {/* Sources panel */}
-        <div className={cn(
-          "shrink-0 border-r border-border/20 bg-accent/[0.02] md:w-auto md:flex md:flex-col",
-          mobileTab === "sources" ? "flex flex-col w-full" : "hidden md:flex",
-        )}>
-          <SourcePanel
-            groupedSources={grouped}
-            loading={sourcesLoading}
-            activeSourceIds={activeSourceIds}
-            onToggleGroup={handleToggleGroup}
-            onAddUrl={addUrl}
-            onAddNote={addNote}
-            onAddPdf={addPdf}
-            onSearchWeb={searchWeb}
-            onRemoveGroup={removeGrouped}
-          />
-        </div>
-
-        {/* Studio wizard */}
-        <div className={cn(
-          "flex-1 flex-col min-w-0 md:flex",
-          mobileTab === "studio" ? "flex" : "hidden md:flex",
-        )}>
-          <ErrorBoundary
-            fallback={
-              <div className="flex-1 flex items-center justify-center p-6">
-                <div className="text-center max-w-sm">
-                  <p className="text-sm font-medium mb-2">The Studio encountered an error</p>
-                  <p className="text-xs text-muted-foreground mb-4">Your data is safe. Reload to try again.</p>
-                  <Button onClick={() => window.location.reload()} size="sm" variant="outline">Reload</Button>
-                </div>
-              </div>
-            }
+      <div className="flex-1 flex flex-col min-h-0 bg-background relative overflow-hidden">
+        
+        {/* Floating Controls Header */}
+        <div className="absolute top-8 left-8 right-8 z-30 flex items-center justify-between pointer-events-none">
+          <Button 
+            variant="outline" 
+            onClick={() => navigate("/dashboard")} 
+            className="h-12 gap-2 px-6 rounded-2xl glass border-white/5 font-bold shadow-xl pointer-events-auto active:scale-95 transition-all"
           >
-            <StudioWizard
-              activeSourceIds={Array.from(activeSourceIds)}
-              sources={sources}
-              profile={profile}
-              sessions={dashboard.sessions}
-              onUpdateImagePrompt={dashboard.updateImagePrompt}
-              activityData={activity}
-              onGenerationComplete={handleGenerationComplete}
-            />
-          </ErrorBoundary>
-        </div>
-        </div>
-      </div>
+            <ArrowLeft className="w-4 h-4" /> Back to Library
+          </Button>
 
-      {/* Mobile nav */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-background/95 backdrop-blur-md border-t border-border/30 flex items-center justify-around px-2 py-1.5 pb-[max(env(safe-area-inset-bottom),0.375rem)]">
-        <button onClick={() => setMobileTab("sources")} className={cn("flex flex-col items-center gap-0.5 py-1.5 px-4 rounded-xl transition-all", mobileTab === "sources" ? "text-primary" : "text-muted-foreground/60")}>
-          <BookOpen className="w-5 h-5" />
-          <span className="text-[9px] font-medium">Sources</span>
-        </button>
-        <button onClick={() => setMobileTab("studio")} className={cn("flex flex-col items-center gap-0.5 py-1.5 px-5 rounded-2xl transition-all", mobileTab === "studio" ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "text-muted-foreground/60")}>
-          <Sparkles className="w-5 h-5" />
-          <span className="text-[9px] font-medium">Studio</span>
-        </button>
-      </nav>
+          <Button 
+            variant="outline" 
+            onClick={() => setShowSources(!showSources)} 
+            className={cn(
+              "h-12 gap-2 px-6 rounded-2xl glass border-white/5 font-bold shadow-xl pointer-events-auto active:scale-95 transition-all",
+              showSources && "bg-primary/10 border-primary/20 text-primary"
+            )}
+          >
+            <BookOpen className="w-4 h-4" /> 
+            {showSources ? "Close Sources" : "Select Sources"}
+            {activeSourceIds.size > 0 && <span className="ml-1 w-5 h-5 rounded-full bg-primary text-white text-[10px] flex items-center justify-center shadow-lg">{activeSourceIds.size}</span>}
+          </Button>
+        </div>
+
+        {/* Immersive Studio Environment */}
+        <div className="flex-1 flex items-center justify-center p-6 pt-24">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="w-full max-w-5xl h-full flex flex-col"
+          >
+            <ErrorBoundary
+              fallback={
+                <div className="flex-1 flex items-center justify-center glass rounded-[3rem] p-12 border-dashed border-white/10 text-center">
+                  <div className="max-w-xs">
+                    <p className="text-lg font-black mb-2 text-white">Studio temporary offline</p>
+                    <p className="text-sm text-muted-foreground mb-8 font-medium leading-relaxed">The engine encountered a friction. Your data is perfectly safe.</p>
+                    <Button onClick={() => window.location.reload()} size="lg" className="rounded-2xl px-10 font-black h-14 bg-primary shadow-2xl shadow-primary/20">Reload Studio</Button>
+                  </div>
+                </div>
+              }
+            >
+              <StudioWizard
+                activeSourceIds={Array.from(activeSourceIds)}
+                sources={sources}
+                profile={profile}
+                sessions={dashboard.sessions}
+                onUpdateImagePrompt={dashboard.updateImagePrompt}
+                activityData={activity}
+                onGenerationComplete={handleGenerationComplete}
+              />
+            </ErrorBoundary>
+          </motion.div>
+        </div>
+
+        {/* Floating Sources Drawer */}
+        <AnimatePresence>
+          {showSources && (
+            <>
+              <motion.div 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                exit={{ opacity: 0 }} 
+                onClick={() => setShowSources(false)}
+                className="fixed inset-0 z-40 bg-black/60 backdrop-blur-md"
+              />
+              <motion.div 
+                initial={{ x: 400, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: 400, opacity: 0 }}
+                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                className="fixed right-0 top-0 bottom-0 z-50 w-80 glass border-l border-white/10 flex flex-col shadow-[0_0_100px_rgba(0,0,0,0.5)]"
+              >
+                <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+                  <span className="text-sm font-bold flex items-center gap-2"><BookOpen className="w-4 h-4 text-primary" /> Content Sources</span>
+                  <Button variant="ghost" size="icon" onClick={() => setShowSources(false)} className="h-8 w-8 rounded-lg"><X className="w-4 h-4" /></Button>
+                </div>
+                <div className="flex-1 overflow-hidden">
+                  <SourcePanel
+                    groupedSources={grouped}
+                    loading={sourcesLoading}
+                    activeSourceIds={activeSourceIds}
+                    onToggleGroup={handleToggleGroup}
+                    onAddUrl={addUrl}
+                    onAddNote={addNote}
+                    onAddPdf={addPdf}
+                    onSearchWeb={searchWeb}
+                    onRemoveGroup={removeGrouped}
+                  />
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+
+      </div>
     </DashboardLayout>
   );
 }

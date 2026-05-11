@@ -1322,40 +1322,56 @@ ${buildAntiAiRules(tightness)}`;
 
         {/* ═══════ WIZARD ═══════ */}
         {started && variations.length === 0 && (
-          <motion.div key="wizard" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3, ease: "easeOut" }} className="flex-1 flex flex-col overflow-hidden">
-            {/* Compact header */}
-            <div className="flex items-center justify-between px-5 py-3 shrink-0 border-b border-border/10">
-              <div className="flex items-center gap-2.5">
-                <button onClick={goBack} className="w-7 h-7 rounded-lg hover:bg-accent/50 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
-                  <ChevronLeft className="w-3.5 h-3.5" />
-                </button>
-                <div>
-                  <p className="text-xs font-bold text-foreground">Create Content</p>
-                  <p className="text-[10px] text-muted-foreground/50">
-                    {breadcrumb || "Start by choosing a platform"}
-                  </p>
+          <motion.div key="wizard" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }} className="flex-1 flex flex-col overflow-hidden">
+            
+            {/* Header / Stepper — Minimalist Apple Style */}
+            <div className="flex flex-col gap-6 px-8 py-6 shrink-0 border-b border-white/5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <button onClick={goBack} className="w-10 h-10 rounded-xl glass border-white/5 flex items-center justify-center text-muted-foreground hover:text-white transition-all active:scale-90">
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <h1 className="text-2xl font-black tracking-tight text-white">Create Content</h1>
+                </div>
+                <div className="flex items-center gap-1">
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} className={cn("h-1.5 rounded-full transition-all duration-500", i === step ? "bg-primary w-8 shadow-[0_0_12px_rgba(20,184,166,0.6)]" : i < step ? "bg-primary/40 w-4" : "bg-white/10 w-4")} />
+                  ))}
                 </div>
               </div>
-              <div className="flex items-center gap-1.5">
-                {[0, 1, 2].map((i) => (<div key={i} className={cn("h-1.5 rounded-full transition-all duration-300", i <= step ? "bg-primary w-6" : "bg-border/30 w-3")} />))}
-              </div>
+              <p className="text-sm font-medium text-muted-foreground/60 max-w-md">
+                {step === 0 && "Choose where your message will resonate. Each platform has its own DNA."}
+                {step === 1 && `Select the perfect format for your ${selectedPlatform?.name} audience.`}
+                {step === 2 && "The raw material of your genius. Feed the AI with facts, ideas, or research."}
+              </p>
             </div>
-            <div className="flex-1 overflow-y-auto">
-              <div className="max-w-lg mx-auto px-5 py-5">
+            <div className="flex-1 overflow-y-auto no-scrollbar">
+              <div className="max-w-4xl mx-auto px-8 py-10">
                 <AnimatePresence mode="wait">
                   {step === 0 && (
-                    <motion.div key="s0" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
-                      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/50 mb-3">Platform</p>
-                      <div className="grid grid-cols-3 gap-2.5">
+                    <motion.div key="s0" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }} transition={{ duration: 0.4 }}>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
                         {sortedPlatforms.map((p) => {
                           const isFav = favPlatformNames.includes(p.name);
                           const isSelected = selectedPlatform?.id === p.id;
                           return (
-                            <button key={p.id} onClick={() => { setSelectedPlatform(p); setStep(1); supabase.auth.getUser().then(({ data: { user: u } }) => { if (u) hasStyleMemory(u.id, p.name).then(setStyleMemoryActive); }); }} className={cn("flex flex-col items-center gap-2 py-4 px-3 rounded-xl border-2 transition-all duration-150 active:scale-[0.97]", isSelected ? "border-primary bg-primary/[0.08] shadow-sm" : isFav ? "border-primary/20 bg-primary/[0.02] hover:border-primary/40" : "border-border/15 hover:border-border/40")}>
-                              <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", isSelected ? "bg-primary/15" : "bg-accent/30")}>
-                                <p.icon className="w-5 h-5" />
+                            <button 
+                              key={p.id} 
+                              onClick={() => { setSelectedPlatform(p); setStep(1); supabase.auth.getUser().then(({ data: { user: u } }) => { if (u) hasStyleMemory(u.id, p.name).then(setStyleMemoryActive); }); }} 
+                              className={cn(
+                                "group flex flex-col items-center gap-4 py-8 px-6 rounded-3xl border transition-all duration-500 active:scale-95",
+                                isSelected 
+                                  ? "bg-primary/10 border-primary shadow-[0_0_40px_-10px_rgba(20,184,166,0.3)]" 
+                                  : "glass-card border-white/5"
+                              )}
+                            >
+                              <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-500", isSelected ? "bg-primary text-white" : "bg-white/5 text-muted-foreground group-hover:scale-110 group-hover:text-white group-hover:bg-white/10")}>
+                                <p.icon className="w-8 h-8" />
                               </div>
-                              <span className="text-[11px] font-semibold text-foreground/80">{p.name}</span>
+                              <div className="text-center">
+                                <span className="block text-sm font-black text-white mb-1">{p.name}</span>
+                                {isFav && <span className="text-[10px] font-black uppercase tracking-widest text-primary opacity-60">Favorite</span>}
+                              </div>
                             </button>
                           );
                         })}
@@ -1363,110 +1379,130 @@ ${buildAntiAiRules(tightness)}`;
                     </motion.div>
                   )}
                   {step === 1 && selectedPlatform && (
-                    <motion.div key="s1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
-                      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/50 mb-3">Format</p>
-                      <div className="grid grid-cols-2 gap-2.5">
+                    <motion.div key="s1" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }} transition={{ duration: 0.4 }}>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {selectedPlatform.formats.map((f) => (
-                          <button key={f} onClick={() => { setSelectedFormat(f); setStep(2); }} className={cn("flex items-center gap-3 p-3.5 rounded-xl border-2 text-left transition-all duration-150 active:scale-[0.97]", selectedFormat === f ? "border-primary bg-primary/[0.08]" : "border-border/15 hover:border-border/30")}>
-                            <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0", selectedFormat === f ? "bg-primary/20" : "bg-accent/30")}>
-                              <FileText className="w-4 h-4 text-muted-foreground/60" />
+                          <button 
+                            key={f} 
+                            onClick={() => { setSelectedFormat(f); setStep(2); }} 
+                            className={cn(
+                              "group flex items-center gap-5 p-6 rounded-3xl border transition-all duration-500 active:scale-95",
+                              selectedFormat === f 
+                                ? "bg-primary/10 border-primary shadow-[0_0_40px_-10px_rgba(20,184,166,0.3)]" 
+                                : "glass-card border-white/5"
+                            )}
+                          >
+                            <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-all duration-500", selectedFormat === f ? "bg-primary text-white" : "bg-white/5 text-muted-foreground group-hover:bg-white/10 group-hover:text-white")}>
+                              <FileText className="w-6 h-6" />
                             </div>
-                            <span className="text-[13px] font-semibold text-foreground/90">{f}</span>
+                            <div className="flex-1 text-left">
+                              <span className="block text-base font-black text-white mb-0.5">{f}</span>
+                              <span className="text-[11px] font-medium text-muted-foreground/50 tracking-wide uppercase">Optimal for {selectedPlatform.name}</span>
+                            </div>
+                            <ArrowRight className="w-5 h-5 text-muted-foreground/30 group-hover:text-primary transition-all group-hover:translate-x-1" />
                           </button>
                         ))}
                       </div>
                     </motion.div>
                   )}
                   {step === 2 && selectedPlatform && selectedFormat && (
-                    <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
-                      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/50 mb-3">Source material</p>
-                      <div className="flex gap-1 mb-4 p-0.5 rounded-lg bg-accent/20 border border-border/20">
+                    <motion.div key="s2" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }} transition={{ duration: 0.4 }}>
+                      
+                      {/* Premium Source Mode Switcher */}
+                      <div className="flex gap-2 mb-8 p-1.5 rounded-2xl bg-white/[0.03] border border-white/5">
                         {sourceModes.map((m) => (
-                          <button key={m.id} onClick={() => { setSourceMode(m.id); setSourceText(""); setSelectedDocumentIds([]); }} className={cn("flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-[11px] font-medium transition-all", sourceMode === m.id ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
-                            <m.icon className="w-3 h-3" />{m.label}
+                          <button 
+                            key={m.id} 
+                            onClick={() => { setSourceMode(m.id); setSourceText(""); setSelectedDocumentIds([]); }} 
+                            className={cn(
+                              "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300", 
+                              sourceMode === m.id ? "bg-white/10 text-white shadow-lg" : "text-muted-foreground hover:text-white hover:bg-white/5"
+                            )}
+                          >
+                            <m.icon className="w-4 h-4" />
+                            <span className="hidden sm:inline">{m.label}</span>
                           </button>
                         ))}
                       </div>
 
-                      {/* DOCUMENT MODE — source selection */}
+                      {/* DOCUMENT MODE */}
                       {sourceMode === "document" && (
-                        <div>
+                        <div className="space-y-6">
                           {sources.length === 0 ? (
-                            <div className="rounded-xl border border-dashed border-border/30 p-6 text-center">
-                              <FileText className="w-5 h-5 text-muted-foreground/40 mx-auto mb-2" />
-                              <p className="text-xs font-medium text-muted-foreground mb-1">No documents available</p>
-                              <p className="text-[11px] text-muted-foreground/60">Add sources (PDF, URL, Notes) in your Notebook to use them here.</p>
+                            <div className="rounded-[2rem] border-2 border-dashed border-white/10 p-12 text-center glass">
+                              <FileText className="w-10 h-10 text-muted-foreground/20 mx-auto mb-4" />
+                              <p className="text-sm font-bold text-white mb-2">No documents in memory</p>
+                              <p className="text-xs text-muted-foreground/60 max-w-xs mx-auto mb-6">Add knowledge in your Library to fuel the AI with specific facts.</p>
+                              <Button onClick={() => navigate("/dashboard")} variant="outline" className="rounded-xl border-white/10">Go to Library</Button>
                             </div>
                           ) : (
-                            <>
-                              <p className="text-[11px] text-muted-foreground/70 mb-2">
-                                Select the documents to use as a base ({selectedDocumentIds.length} selected)
-                              </p>
-                              <div className="space-y-1.5 max-h-[200px] overflow-y-auto">
-                                {uniqueSources.map((s) => {
-                                  const isChecked = selectedDocumentIds.includes(s.id);
-                                  const TypeIcon = sourceTypeIcons[s.type] || StickyNote;
-                                  const baseTitle = s.title.replace(/\s*\(\d+\/\d+\)\s*$/, "").trim();
-                                  return (
-                                    <button key={s.id} type="button" onClick={() => toggleDocumentId(s.id)} className={cn("w-full flex items-center gap-2.5 p-2.5 rounded-lg border text-left transition-all", isChecked ? "border-primary/40 bg-primary/5" : "border-border/20 hover:border-border/40 hover:bg-accent/20")}>
-                                      <div className={cn("w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors", isChecked ? "bg-primary border-primary" : "border-border/40")}>
-                                        {isChecked && <Check className="w-2.5 h-2.5 text-primary-foreground" />}
-                                      </div>
-                                      <div className={cn("w-6 h-6 rounded-md flex items-center justify-center shrink-0", isChecked ? "bg-primary/15 text-primary" : "bg-accent/50 text-muted-foreground")}>
-                                        <TypeIcon className="w-3 h-3" />
-                                      </div>
-                                      <div className="flex-1 min-w-0">
-                                        <p className={cn("text-xs truncate", isChecked ? "text-foreground font-medium" : "text-muted-foreground")}>{baseTitle}</p>
-                                        <p className="text-[10px] text-muted-foreground/50">{s.type === "url" ? "Link" : s.type === "pdf" ? "PDF" : "Note"}</p>
-                                      </div>
-                                    </button>
-                                  );
-                                })}
-                              </div>
-
-                              {/* Directive fields for selected sources */}
-                              {selectedDocumentIds.length > 0 && (
-                                <div className="mt-3 space-y-2">
-                                  {selectedDocumentIds.map((id) => {
-                                    const src = sources.find((s) => s.id === id);
-                                    if (!src) return null;
-                                    const title = src.title.replace(/\s*\(\d+\/\d+\)\s*$/, "").trim();
-                                    return (
-                                      <div key={id} className="p-2.5 rounded-lg bg-accent/20 border border-border/20">
-                                        <div className="flex items-center gap-1.5 mb-1.5">
-                                          <FileText className="w-3 h-3 text-primary/60" />
-                                          <span className="text-[10px] font-medium truncate">{title}</span>
-                                        </div>
-                                        <textarea
-                                          value={sourceDirectives[id] || ""}
-                                          onChange={(e) => setSourceDirectives((prev) => ({ ...prev, [id]: e.target.value }))}
-                                          placeholder={`What to focus on? (optional)\ne.g. key stats, chapter 3, growth tips...`}
-                                          className="w-full text-[11px] rounded-md border border-border/20 bg-background/60 p-2 resize-none h-14 placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/30 leading-relaxed"
-                                        />
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              )}
-                            </>
+                            <div className="grid grid-cols-1 gap-3 max-h-[400px] overflow-y-auto no-scrollbar pr-1">
+                              {uniqueSources.map((s) => {
+                                const isChecked = selectedDocumentIds.includes(s.id);
+                                const TypeIcon = sourceTypeIcons[s.type] || StickyNote;
+                                return (
+                                  <button 
+                                    key={s.id} 
+                                    onClick={() => toggleDocumentId(s.id)} 
+                                    className={cn(
+                                      "group flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 text-left", 
+                                      isChecked ? "bg-primary/10 border-primary shadow-lg shadow-primary/5" : "bg-white/[0.02] border-white/5 hover:border-white/10 hover:bg-white/[0.04]"
+                                    )}
+                                  >
+                                    <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all", isChecked ? "bg-primary text-white" : "bg-white/5 text-muted-foreground")}>
+                                      <TypeIcon className="w-5 h-5" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className={cn("text-sm font-bold truncate", isChecked ? "text-white" : "text-muted-foreground")}>{s.title.replace(/\s*\(\d+\/\d+\)\s*$/, "").trim()}</p>
+                                      <p className="text-[10px] font-black uppercase tracking-widest opacity-40">{s.type}</p>
+                                    </div>
+                                    <div className={cn("w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all", isChecked ? "bg-primary border-primary" : "border-white/10")}>
+                                      {isChecked && <Check className="w-3.5 h-3.5 text-white" />}
+                                    </div>
+                                  </button>
+                                );
+                              })}
+                            </div>
                           )}
                         </div>
                       )}
 
-                      {/* IDEA MODE — textarea */}
-                      {sourceMode === "idea" && (
-                        <div>
-                          <Textarea value={sourceText} onChange={(e) => setSourceText(e.target.value)} placeholder={sourceModes.find((m) => m.id === sourceMode)?.placeholder} maxLength={5000} className="bg-accent/20 border-border/30 min-h-[120px] resize-none text-sm" />
-                          <div className="flex items-center justify-between mt-1.5">
-                            <span className={cn("text-[10px] font-mono", sourceText.length < 150 ? "text-emerald-400/60" : sourceText.length < 200 ? "text-amber-400/60" : "text-red-400/60")}>
-                              {sourceText.length} chars
-                            </span>
+                      {/* IDEA / KEYWORD / WEB SEARCH MODE */}
+                      {sourceMode !== "document" && (
+                        <div className="space-y-4">
+                          <div className="relative group">
+                            {sourceMode === "idea" ? (
+                              <Textarea 
+                                value={sourceText} 
+                                onChange={(e) => setSourceText(e.target.value)} 
+                                placeholder={sourceModes.find((m) => m.id === sourceMode)?.placeholder} 
+                                className="w-full bg-white/[0.03] border-white/10 rounded-3xl p-6 text-base min-h-[180px] resize-none focus:border-primary/40 focus:bg-white/[0.05] transition-all outline-none shadow-inner" 
+                              />
+                            ) : (
+                              <div className="flex gap-2">
+                                <Input 
+                                  value={sourceText} 
+                                  onChange={(e) => setSourceText(e.target.value)} 
+                                  placeholder={sourceModes.find((m) => m.id === sourceMode)?.placeholder} 
+                                  className="flex-1 h-16 bg-white/[0.03] border-white/10 rounded-2xl px-6 text-base focus:border-primary/40 focus:bg-white/[0.05] transition-all outline-none" 
+                                  onKeyDown={(e) => e.key === "Enter" && (sourceMode === "websearch" ? handleWebSearch() : handleGenerate())}
+                                />
+                                {sourceMode === "websearch" && (
+                                  <Button onClick={handleWebSearch} disabled={!sourceText.trim() || webSearching} className="h-16 px-8 rounded-2xl bg-primary font-black gap-2 shrink-0">
+                                    {webSearching ? <Loader2 className="w-5 h-5 animate-spin" /> : <GlobeIcon className="w-5 h-5" />}
+                                    Search
+                                  </Button>
+                                )}
+                              </div>
+                            )}
                           </div>
-                          {!sourceText.trim() && (
-                            <div className="flex flex-wrap gap-1.5 mt-2">
-                              {["How I grew my LinkedIn from 0 to 10K", "3 mistakes beginners make on Instagram", "Why most content fails (and how to fix it)", "The truth about going viral in 2026", "My morning routine as a content creator"].map((ex) => (
-                                <button key={ex} type="button" onClick={() => setSourceText(ex)} className="text-[10px] px-2.5 py-1 rounded-full bg-accent/20 border border-border/20 text-muted-foreground/60 hover:text-foreground hover:bg-accent/40 transition-all">
-                                  {ex}
+
+                          {/* Suggested Hooks */}
+                          {(sourceMode === "idea" || sourceMode === "keyword") && sourceText.trim().length > 3 && suggestedHooks.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-4">
+                              {suggestedHooks.map((hook, i) => (
+                                <button key={i} onClick={() => setSourceText(hook.text)} className="px-4 py-2 rounded-xl bg-white/5 border border-white/5 text-[11px] font-bold text-muted-foreground hover:text-white hover:border-primary/40 transition-all">
+                                  {hook.text}
                                 </button>
                               ))}
                             </div>
@@ -1474,78 +1510,23 @@ ${buildAntiAiRules(tightness)}`;
                         </div>
                       )}
 
-                      {/* KEYWORD MODE — input */}
-                      {sourceMode === "keyword" && (
-                        <div>
-                          <Input value={sourceText} onChange={(e) => setSourceText(e.target.value)} placeholder={sourceModes.find((m) => m.id === sourceMode)?.placeholder} maxLength={200} className="bg-accent/20 border-border/30 h-11 text-sm" onKeyDown={(e) => e.key === "Enter" && sourceText.trim() && handleGenerate()} />
-                          <span className={cn("text-[10px] font-mono mt-1 block", sourceText.length < 150 ? "text-emerald-400/60" : sourceText.length < 200 ? "text-amber-400/60" : "text-red-400/60")}>
-                            {sourceText.length}/200
-                          </span>
-                        </div>
-                      )}
-
-                      {/* WEB SEARCH MODE */}
-                      {sourceMode === "websearch" && (
-                        <div>
-                          <div className="flex gap-2">
-                            <Input value={sourceText} onChange={(e) => setSourceText(e.target.value)} placeholder={sourceModes.find((m) => m.id === sourceMode)?.placeholder} maxLength={200} className="bg-accent/20 border-border/30 h-11 text-sm flex-1" onKeyDown={(e) => e.key === "Enter" && sourceText.trim() && handleWebSearch()} />
-                            <Button onClick={handleWebSearch} disabled={!sourceText.trim() || webSearching} className="h-11 px-4 gap-2 shrink-0">
-                              {webSearching ? <><Loader2 className="w-4 h-4 animate-spin" /> Searching...</> : <><GlobeIcon className="w-4 h-4" /> Search</>}
-                            </Button>
+                      <div className="mt-12 flex flex-col items-center">
+                        <Button
+                          onClick={handleGenerate}
+                          disabled={
+                            (sourceMode === "document" ? selectedDocumentIds.length === 0 : sourceMode === "websearch" ? !webSearchResults : !sourceText.trim()) || isGenerating
+                          }
+                          className="h-16 px-16 rounded-[2rem] bg-primary hover:bg-primary/90 text-white font-black text-xl gap-4 shadow-[0_20px_50px_-10px_rgba(20,184,166,0.5)] transition-all active:scale-95 disabled:opacity-20"
+                        >
+                          {isGenerating ? (<><RefreshCw className="w-6 h-6 animate-spin" /> Distilling Magic...</>) : (<><Sparkles className="w-6 h-6" /> Generate Variations</>)}
+                        </Button>
+                        
+                        {isGenerating && (
+                          <div className="w-full max-w-sm mt-10">
+                            <GenerationProgress isActive={isGenerating} steps={CONTENT_STEPS} estimatedSeconds={25} />
                           </div>
-                          {webSearchResults && (
-                            <div className="mt-3 p-3 rounded-xl bg-accent/20 border border-border/20 max-h-[200px] overflow-y-auto">
-                              <div className="flex items-center gap-1.5 mb-2">
-                                <GlobeIcon className="w-3 h-3 text-primary" />
-                                <span className="text-[10px] font-semibold text-primary">Web results loaded</span>
-                                <span className="text-[10px] text-muted-foreground/50 ml-auto">{webSearchResults.length} chars</span>
-                              </div>
-                              <p className="text-[11px] text-muted-foreground/70 whitespace-pre-wrap leading-relaxed line-clamp-6">{webSearchResults.slice(0, 500)}{webSearchResults.length > 500 ? '...' : ''}</p>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Hook suggestions for idea/keyword modes */}
-                      {(sourceMode === "idea" || sourceMode === "keyword") && sourceText.trim().length > 3 && suggestedHooks.length > 0 && (
-                        <div className="mt-3 space-y-1">
-                          <p className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">Suggested hooks</p>
-                          {suggestedHooks.map((hook, i) => (
-                            <button
-                              key={i}
-                              type="button"
-                              onClick={() => setSourceText(hook.text)}
-                              className="text-[11px] text-left w-full px-2.5 py-1.5 rounded-lg bg-accent/15 hover:bg-accent/30 text-muted-foreground/70 hover:text-foreground transition-all truncate flex items-center gap-2"
-                            >
-                              <span className="text-amber-400/60 shrink-0">→</span>
-                              <span className="truncate">{hook.text}</span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-
-                      <Button
-                        onClick={handleGenerate}
-                        disabled={
-                          (sourceMode === "document" ? selectedDocumentIds.length === 0 : sourceMode === "websearch" ? !webSearchResults : !sourceText.trim()) || isGenerating
-                        }
-                        className="w-full h-12 mt-5 glow-sm gap-2.5 font-bold text-base shadow-lg"
-                      >
-                        {isGenerating ? (<><RefreshCw className="w-5 h-5 animate-spin" /> Generating...</>) : (<><Sparkles className="w-5 h-5" /> Generate 5 Variations</>)}
-                      </Button>
-
-                      {styleMemoryActive && !isGenerating && (
-                        <div className="flex items-center justify-center gap-1.5 mt-3 text-[10px] text-primary/60">
-                          <Brain className="w-3 h-3" />
-                          <span>Adapted to your style</span>
-                        </div>
-                      )}
-
-                      {isGenerating && (
-                        <div className="mt-4">
-                          <GenerationProgress isActive={isGenerating} steps={CONTENT_STEPS} estimatedSeconds={25} />
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -1556,428 +1537,148 @@ ${buildAntiAiRules(tightness)}`;
 
         {/* ═══════ RESULTS ═══════ */}
         {variations.length > 0 && (
-          <motion.div key="results" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="flex-1 flex flex-col overflow-hidden">
-            {/* Header */}
-            <div className="px-5 pt-4 pb-3 shrink-0 border-b border-border/10">
-              <div className="flex items-center gap-2">
-                <button onClick={goBack} className="w-7 h-7 rounded-lg border border-border/30 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-colors">
-                  <ChevronLeft className="w-3.5 h-3.5" />
-                </button>
-                <div className="flex-1">
-                  <span className="text-xs font-semibold">{variations.length} variations</span>
-                  <span className="text-[11px] text-muted-foreground ml-2">{breadcrumb}</span>
+          <motion.div key="results" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }} className="flex-1 flex flex-col overflow-hidden">
+            
+            {/* Gallery Header */}
+            <div className="flex flex-col gap-6 px-8 py-8 shrink-0 border-b border-white/5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <button onClick={goBack} className="w-10 h-10 rounded-xl glass border-white/5 flex items-center justify-center text-muted-foreground hover:text-white transition-all active:scale-90">
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <div>
+                    <h1 className="text-2xl font-black tracking-tight text-white">{variations.length} Strategic Variations</h1>
+                    <p className="text-xs font-black uppercase tracking-[0.2em] text-primary opacity-60">{selectedPlatform?.name} • {selectedFormat}</p>
+                  </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-[11px] gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
+                <Button 
+                  variant="ghost" 
                   onClick={() => {
                     const all = variations.map((v, i) => `--- Variation ${i + 1} ---\n${v.content}`).join("\n\n");
                     navigator.clipboard.writeText(all);
-                    toast.success("All variations copied!");
+                    toast.success("Creative Library copied!");
                   }}
+                  className="h-10 rounded-xl glass border-white/5 text-xs font-black uppercase tracking-widest gap-2"
                 >
-                  <Copy className="w-3 h-3" /> Copy All
+                  <Copy className="w-4 h-4" /> Copy All
                 </Button>
               </div>
             </div>
 
-            {/* Cards — scrollable */}
-            <div className="flex-1 overflow-y-auto px-5 py-4">
-              <div className="max-w-lg mx-auto space-y-3">
-                {(() => {
-                  // Compute the index of the top-ranked variation using the
-                  // same combined score as auto-pick. Memoised across the
-                  // map() iterations below so we render the badge consistently.
-                  if (variations.length === 0) return null;
-                  return null;
-                })()}
+            {/* Cards Gallery */}
+            <div className="flex-1 overflow-y-auto no-scrollbar px-8 py-10">
+              <div className="max-w-4xl mx-auto grid grid-cols-1 gap-8 pb-32">
                 {variations.map((v, idx) => {
                   const isSelected = selectedVariation === idx;
-                  // "Top pick" = highest combined score (viral - 0.6 × flavor)
-                  // AND a meaningful gap to the runner-up. Computed inline so
-                  // it stays reactive when variations get rewritten by the
-                  // background auto-retry.
-                  const topPickIdx = (() => {
-                    if (variations.length < 2) return null;
-                    const scored = variations.map((variation, i) => {
-                      const flavor = detectAiFlavor(variation.content).score;
-                      return { idx: i, score: (variation.score || 0) - flavor * 0.6 };
-                    });
-                    scored.sort((a, b) => b.score - a.score);
-                    const margin = scored[0].score - (scored[1]?.score ?? 0);
-                    return margin > 4 ? scored[0].idx : null;
-                  })();
-                  const isTopPick = topPickIdx === idx;
+                  const detector = passesDetectorEstimate(v.content);
+                  
                   return (
-                    <div key={idx}>
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: idx * 0.05 }}
-                        onClick={() => { setSelectedVariation(isSelected ? null : idx); setImagePanel(null); setInfraPanel(null); }}
-                        className={cn(
-                          "rounded-xl border p-4 cursor-pointer transition-all",
-                          isSelected
-                            ? "border-primary/40 bg-primary/[0.03] ring-1 ring-primary/15"
-                            : isTopPick
-                              ? "border-amber-400/30 hover:border-amber-400/50 bg-amber-500/[0.02]"
-                              : "border-border/20 hover:border-border/40",
-                        )}
-                      >
-                        {/* Header */}
-                        <div className="flex items-center gap-2 mb-2.5">
-                          <span className="text-[11px] font-semibold text-foreground/80">Variation {idx + 1}</span>
-                          {isTopPick && (
-                            <span
-                              className="text-[9px] font-bold text-amber-400 flex items-center gap-0.5"
-                              title="Highest combined score (viral potential − AI flavor)"
-                            >
-                              <Star className="w-2.5 h-2.5 fill-amber-400" /> Top pick
-                            </span>
-                          )}
-                          {isSelected && <span className="text-[9px] text-primary/70 flex items-center gap-0.5"><Check className="w-2.5 h-2.5" /> Selected</span>}
-                          {(() => {
-                            const detector = passesDetectorEstimate(v.content);
-                            const styleByVerdict = {
-                              likely_passes: "text-emerald-400/80 bg-emerald-500/10 border-emerald-500/20",
-                              borderline: "text-amber-400/80 bg-amber-500/10 border-amber-500/20",
-                              likely_flagged: "text-rose-400/80 bg-rose-500/10 border-rose-500/20",
-                            } as const;
-                            const labelByVerdict = {
-                              likely_passes: "human-likely",
-                              borderline: "borderline",
-                              likely_flagged: "AI-flagged",
-                            } as const;
-                            return (
-                              <span
-                                title={detector.reason}
-                                className={cn(
-                                  "text-[9px] px-1.5 py-0.5 rounded-full border font-medium",
-                                  styleByVerdict[detector.verdict]
-                                )}
-                              >
-                                {labelByVerdict[detector.verdict]}
-                              </span>
-                            );
-                          })()}
-                          <span className="text-[10px] text-muted-foreground/50 ml-auto">{v.words} words</span>
-                        </div>
-                        <p className="text-[13px] leading-relaxed whitespace-pre-wrap text-foreground/85">{v.content}</p>
-
-                        {/* Like/Dislike feedback */}
-                        <div className="flex items-center gap-2 mt-2.5 pt-2 border-t border-border/10">
-                          <span className="text-[9px] text-muted-foreground/40 mr-1">Like this content?</span>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleFeedback(idx, "liked"); }}
-                            className={cn(
-                              "flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] transition-all",
-                              feedback[idx] === "liked"
-                                ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
-                                : "text-muted-foreground/40 hover:text-emerald-400 hover:bg-emerald-500/10"
-                            )}
-                          >
-                            <ThumbsUp className="w-2.5 h-2.5" />
-                            {feedback[idx] === "liked" ? "Liked" : "Like"}
-                          </button>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleFeedback(idx, "disliked"); }}
-                            className={cn(
-                              "flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] transition-all",
-                              feedback[idx] === "disliked"
-                                ? "bg-red-500/15 text-red-400 border border-red-500/30"
-                                : "text-muted-foreground/40 hover:text-red-400 hover:bg-red-500/10"
-                            )}
-                          >
-                            <ThumbsDown className="w-2.5 h-2.5" />
-                            {feedback[idx] === "disliked" ? "Not for me" : "Not great"}
-                          </button>
-                          {feedback[idx] === "liked" && (
-                            <span className="text-[9px] text-primary/50 ml-auto flex items-center gap-1">
-                              <Brain className="w-2.5 h-2.5" /> Style saved
-                            </span>
+                    <motion.div
+                      key={idx}
+                      initial={{ opacity: 0, y: 30 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.1, duration: 0.5 }}
+                      onClick={() => { setSelectedVariation(isSelected ? null : idx); setImagePanel(null); setInfraPanel(null); }}
+                      className={cn(
+                        "group relative rounded-[2rem] border transition-all duration-500 cursor-pointer p-8",
+                        isSelected 
+                          ? "bg-white/[0.05] border-primary shadow-[0_20px_60px_-20px_rgba(20,184,166,0.3)]" 
+                          : "glass-card border-white/5 hover:border-white/20 hover:bg-white/[0.03]"
+                      )}
+                    >
+                      {/* Variation Badge */}
+                      <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/40">Variation 0{idx + 1}</span>
+                          {detector.verdict === 'likely_passes' && (
+                            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                              <Shield className="w-3 h-3 text-emerald-400" />
+                              <span className="text-[10px] font-black uppercase tracking-tighter text-emerald-400">Human Style</span>
+                            </div>
                           )}
                         </div>
+                        <div className="flex items-center gap-4">
+                           <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/30">{v.words} words</span>
+                           <div className={cn("w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all", isSelected ? "bg-primary border-primary" : "border-white/10")}>
+                             {isSelected && <Check className="w-4 h-4 text-white" />}
+                           </div>
+                        </div>
+                      </div>
 
-                        {/* Actions inline */}
+                      <div className="relative">
+                        <p className="text-lg leading-[1.7] font-medium text-white/90 whitespace-pre-wrap mb-10">{v.content}</p>
+                      </div>
+
+                      {/* Tooling for selected variation */}
+                      <AnimatePresence>
                         {isSelected && (
-                          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-2 md:flex md:flex-wrap items-center gap-1.5 mt-3 pt-3 border-t border-border/15">
-                            <Button variant="ghost" size="sm" className="h-7 text-[11px] gap-1.5 px-2.5 text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); handleCopy(idx); }}>
-                              {copiedIdx === idx ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                              {copiedIdx === idx ? "Copied" : "Copy"}
-                            </Button>
-                            <Button variant="ghost" size="sm" className="h-7 text-[11px] gap-1.5 px-2.5 text-muted-foreground hover:text-foreground" disabled={isHumanizing} onClick={(e) => { e.stopPropagation(); handleHumanize(idx); }}>
-                              {isHumanizing ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
-                              Humanize
-                            </Button>
-                            {canGenerateInfographic() && (
-                              <Button variant="ghost" size="sm" className={cn("h-7 text-[11px] gap-1.5 px-2.5", imagePanel === idx ? "text-primary" : generatedImages[idx] ? "text-emerald-400" : "text-muted-foreground hover:text-foreground")} disabled={imageGenerating !== null && imageGenerating !== idx} onClick={(e) => { e.stopPropagation(); handleGenerateImage(idx); }}>
-                                {imageGenerating === idx ? <Loader2 className="w-3 h-3 animate-spin" /> : <ImagePlus className="w-3 h-3" />}
-                                {generatedImages[idx] ? (imagePanel === idx ? "Hide" : "View image") : imageGenerating === idx ? "Generating..." : "Image"}
-                              </Button>
-                            )}
-                            {canGenerateInfographic() && (
-                              <Button variant="ghost" size="sm" className={cn("h-7 text-[11px] gap-1.5 px-2.5", infraPanel === idx ? "text-primary" : "text-muted-foreground hover:text-foreground")} onClick={(e) => { e.stopPropagation(); handleInfraPrompt(idx); }}>
-                                <Layers className="w-3 h-3" /> Infographic
-                              </Button>
-                            )}
-                            {/* Custom image — available for ALL platforms/formats, not gated */}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className={cn(
-                                "h-7 text-[11px] gap-1.5 px-2.5",
-                                customImagePanel === idx
-                                  ? "text-primary"
-                                  : customImages[idx]
-                                    ? "text-emerald-400"
-                                    : "text-muted-foreground hover:text-foreground",
-                              )}
-                              onClick={(e) => { e.stopPropagation(); toggleCustomImagePanel(idx); }}
-                              title="Generate an image from your own prompt"
-                            >
-                              <Sparkles className="w-3 h-3" />
-                              {customImages[idx] && customImagePanel !== idx ? "View prompt image" : "Custom image"}
-                            </Button>
-                            <Button variant="ghost" size="sm" className="h-7 text-[11px] gap-1.5 px-2.5 text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); setScheduleIdx(idx); setScheduleDate(new Date().toISOString().slice(0, 10)); }}>
-                              <CalendarDays className="w-3 h-3" /> Schedule
-                            </Button>
+                          <motion.div 
+                            initial={{ opacity: 0, y: 10 }} 
+                            animate={{ opacity: 1, y: 0 }} 
+                            exit={{ opacity: 0, y: 10 }}
+                            className="flex flex-wrap gap-2 pt-8 border-t border-white/5"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                             <Button onClick={(e) => { e.stopPropagation(); handleCopy(idx); }} variant="secondary" className="h-11 rounded-xl glass border-white/5 font-black uppercase tracking-widest text-[10px] gap-2 px-6">
+                               {copiedIdx === idx ? <Check className="w-4 h-4 text-primary" /> : <Copy className="w-4 h-4" />}
+                               {copiedIdx === idx ? "Copied" : "Copy Content"}
+                             </Button>
+                             <Button onClick={(e) => { e.stopPropagation(); handleHumanize(idx); }} disabled={isHumanizing} variant="secondary" className="h-11 rounded-xl glass border-white/5 font-black uppercase tracking-widest text-[10px] gap-2 px-6">
+                               {isHumanizing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                               Refine Style
+                             </Button>
+                             {canGenerateInfographic() && (
+                               <Button onClick={(e) => { e.stopPropagation(); handleGenerateImage(idx); }} variant="secondary" className="h-11 rounded-xl glass border-white/5 font-black uppercase tracking-widest text-[10px] gap-2 px-6">
+                                 <ImagePlus className="w-4 h-4" /> Visual
+                               </Button>
+                             )}
+                             <Button onClick={(e) => { e.stopPropagation(); setScheduleIdx(idx); setScheduleDate(new Date().toISOString().slice(0, 10)); }} variant="secondary" className="h-11 rounded-xl glass border-white/5 font-black uppercase tracking-widest text-[10px] gap-2 px-6">
+                               <CalendarDays className="w-4 h-4" /> Schedule
+                             </Button>
                           </motion.div>
                         )}
-                      </motion.div>
+                      </AnimatePresence>
 
-                      {/* Panel image */}
+                      {/* Image Preview Panel */}
                       <AnimatePresence>
                         {imagePanel === idx && isSelected && (
-                          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.15 }}>
-                            <div className="mt-1 p-3 rounded-lg bg-accent/20 border border-border/15">
-                              {imageGenerating === idx ? (
-                                <div className="flex items-center justify-center gap-2 py-8"><Loader2 className="w-4 h-4 animate-spin text-primary" /><span className="text-[11px] text-muted-foreground">Generating image...</span></div>
-                              ) : generatedImages[idx] ? (
-                                <>
-                                  <div className="relative rounded-xl overflow-hidden">
-                                    <img src={`data:image/jpeg;base64,${generatedImages[idx]}`} alt="Generated image" className="w-full rounded-xl" />
-                                    <div className="absolute bottom-2 right-2 flex gap-2">
-                                      <button onClick={(e) => { e.stopPropagation(); const link = document.createElement("a"); link.href = `data:image/jpeg;base64,${generatedImages[idx]}`; link.download = `supen-image-${Date.now()}.jpg`; link.click(); }} className="bg-black/60 backdrop-blur-sm text-white text-[11px] px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:bg-black/80 transition-all">
-                                        <Download className="w-3 h-3" /> Download
-                                      </button>
-                                      <button onClick={(e) => { e.stopPropagation(); handleGenerateImage(idx, true); }} className="bg-black/60 backdrop-blur-sm text-white text-[11px] px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:bg-black/80 transition-all">
-                                        <RefreshCw className="w-3 h-3" /> Regenerate
-                                      </button>
-                                    </div>
-                                  </div>
-                                  <p className="text-[10px] text-muted-foreground/50 mt-2 text-center">AI-generated image — adapted to this post's content</p>
-                                </>
-                              ) : null}
-                            </div>
+                          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-6 overflow-hidden">
+                             {imageGenerating === idx ? (
+                               <div className="flex flex-col items-center justify-center gap-4 py-12 glass rounded-3xl border-white/5">
+                                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                                 <span className="text-xs font-black uppercase tracking-widest text-white/40">Painting with AI...</span>
+                               </div>
+                             ) : generatedImages[idx] && (
+                               <div className="relative rounded-3xl overflow-hidden border border-white/10 group/img">
+                                 <img src={`data:image/jpeg;base64,${generatedImages[idx]}`} alt="Generated visual" className="w-full" />
+                                 <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black/80 to-transparent flex justify-end gap-3 translate-y-full group-hover/img:translate-y-0 transition-transform duration-500">
+                                   <Button onClick={() => { const link = document.createElement("a"); link.href = `data:image/jpeg;base64,${generatedImages[idx]}`; link.download = `supen-${Date.now()}.jpg`; link.click(); }} variant="secondary" className="glass h-10 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest">Download</Button>
+                                   <Button onClick={() => handleGenerateImage(idx, true)} variant="secondary" className="glass h-10 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest">Regenerate</Button>
+                                 </div>
+                               </div>
+                             )}
                           </motion.div>
                         )}
                       </AnimatePresence>
-
-                      {/* Custom-prompt image panel — visible across every platform */}
-                      <AnimatePresence>
-                        {customImagePanel === idx && isSelected && (
-                          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.15 }}>
-                            <div className="mt-1 p-3 rounded-lg bg-accent/20 border border-border/15 space-y-2.5">
-                              <div className="flex items-center gap-2">
-                                <Sparkles className="w-3 h-3 text-primary" />
-                                <p className="text-[11px] font-medium text-foreground/80">Generate an image from your own prompt</p>
-                              </div>
-                              <textarea
-                                value={customImagePrompts[idx] || ""}
-                                onChange={(e) => setCustomImagePrompts((prev) => ({ ...prev, [idx]: e.target.value }))}
-                                onClick={(e) => e.stopPropagation()}
-                                placeholder="Describe the image you want — e.g. 'A minimalist cup of coffee on a desk with a soft morning light, in editorial illustration style'"
-                                rows={3}
-                                maxLength={500}
-                                disabled={customImageGenerating === idx}
-                                className="w-full bg-background border border-border/30 rounded-md px-2.5 py-2 text-xs resize-none focus:outline-none focus:ring-1 focus:ring-primary/40 placeholder:text-muted-foreground/40 disabled:opacity-50"
-                              />
-                              <div className="flex items-center justify-between gap-2">
-                                <span className={cn(
-                                  "text-[10px] font-mono",
-                                  (customImagePrompts[idx] || "").length < 400
-                                    ? "text-muted-foreground/40"
-                                    : "text-amber-400/70",
-                                )}>
-                                  {(customImagePrompts[idx] || "").length}/500
-                                </span>
-                                <Button
-                                  size="sm"
-                                  className="h-7 text-[11px] gap-1.5 px-3"
-                                  disabled={customImageGenerating === idx || (customImagePrompts[idx] || "").trim().length < 4}
-                                  onClick={(e) => { e.stopPropagation(); handleCustomImageGenerate(idx); }}
-                                >
-                                  {customImageGenerating === idx ? (
-                                    <><Loader2 className="w-3 h-3 animate-spin" /> Generating...</>
-                                  ) : customImages[idx] ? (
-                                    <><RefreshCw className="w-3 h-3" /> Regenerate</>
-                                  ) : (
-                                    <><Sparkles className="w-3 h-3" /> Generate image</>
-                                  )}
-                                </Button>
-                              </div>
-                              {customImages[idx] && (
-                                <div className="relative rounded-xl overflow-hidden mt-2">
-                                  <img src={`data:image/jpeg;base64,${customImages[idx]}`} alt="Custom prompt image" className="w-full rounded-xl" />
-                                  <div className="absolute bottom-2 right-2 flex gap-2">
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        const link = document.createElement("a");
-                                        link.href = `data:image/jpeg;base64,${customImages[idx]}`;
-                                        link.download = `supen-custom-${Date.now()}.jpg`;
-                                        link.click();
-                                      }}
-                                      className="bg-black/60 backdrop-blur-sm text-white text-[11px] px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:bg-black/80 transition-all"
-                                    >
-                                      <Download className="w-3 h-3" /> Download
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
-                              {!customImages[idx] && !customImageGenerating && (
-                                <p className="text-[10px] text-muted-foreground/50 leading-relaxed">
-                                  Tip: describe the subject, the mood, the style. Avoid asking for text inside the image — it rarely renders well.
-                                </p>
-                              )}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-
-                      {/* Infographic panel */}
-                      <AnimatePresence>
-                        {infraPanel === idx && isSelected && (
-                          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.15 }}>
-                            <div className="mt-1 p-3 rounded-lg bg-accent/20 border border-border/15">
-                              <p className="text-[10px] font-medium text-muted-foreground/70 mb-2">Infographic structure</p>
-                              {genInfra ? (
-                                <div className="flex items-center gap-2 py-2"><RefreshCw className="w-3 h-3 animate-spin text-muted-foreground" /><span className="text-[10px] text-muted-foreground">Generating...</span></div>
-                              ) : (
-                                <>
-                                  <div className="text-[11px] leading-relaxed whitespace-pre-wrap text-foreground/80 mb-2">{infraContent}</div>
-                                  <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 px-2 text-muted-foreground" onClick={() => { navigator.clipboard.writeText(infraContent); setInfraCopied(true); toast.success("Structure copied. Use it in Canva or Nano Banana."); setTimeout(() => setInfraCopied(false), 2000); }}>
-                                    {infraCopied ? <Check className="w-2.5 h-2.5 text-emerald-400" /> : <Copy className="w-2.5 h-2.5" />}
-                                    {infraCopied ? "Copied" : "Copy structure"}
-                                  </Button>
-                                  <p className="text-[9px] text-muted-foreground/40 mt-1">Use this structure in Canva or Nano Banana</p>
-                                </>
-                              )}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
+                    </motion.div>
                   );
                 })}
-                {/* ═══ INLINE INFOGRAPHIC SECTION ═══ */}
-                {saveStatus === "saved" && canGenerateInfographic() && selectedVariation !== null && (
-                  <div className="border-t border-border/20 mt-4 pt-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-sm font-semibold flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-primary" />
-                        Infographic — Variation {selectedVariation + 1}
-                      </h3>
-                      {generatedInfographicBase64 && (
-                        <div className="flex gap-1.5">
-                          <Button size="sm" variant="ghost" className="h-7 text-[10px] gap-1 px-2 text-muted-foreground" onClick={() => {
-                            const link = document.createElement("a");
-                            link.href = `data:image/png;base64,${generatedInfographicBase64}`;
-                            link.download = `supen-infographic-${Date.now()}.png`;
-                            link.click();
-                            toast.success("PNG downloaded!");
-                          }}>
-                            <Download className="w-3 h-3" /> PNG
-                          </Button>
-                          <Button size="sm" variant="ghost" className="h-7 text-[10px] gap-1 px-2 text-muted-foreground" onClick={() => {
-                            const link = document.createElement("a");
-                            link.href = `data:image/jpeg;base64,${generatedInfographicBase64}`;
-                            link.download = `supen-infographic-${Date.now()}.jpg`;
-                            link.click();
-                            toast.success("JPEG downloaded!");
-                          }}>
-                            <Download className="w-3 h-3" /> JPEG
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-
-                    {generatedInfographicBase64 ? (
-                      <div className="rounded-xl overflow-hidden border border-border/20">
-                        <img
-                          src={`data:image/png;base64,${generatedInfographicBase64}`}
-                          alt="Generated infographic"
-                          className="w-full h-auto"
-                        />
-                      </div>
-                    ) : (
-                      <div
-                        className="flex items-center justify-center h-32 bg-accent/5 rounded-xl border-2 border-dashed border-border/20 cursor-pointer hover:border-primary/30 hover:bg-primary/[0.03] transition-all"
-                        onClick={() => setShowInfographic(true)}
-                      >
-                        <div className="text-center">
-                          <Sparkles className="w-6 h-6 text-primary/50 mx-auto mb-2" />
-                          <p className="text-sm font-medium">Generate Infographic</p>
-                          <p className="text-xs text-muted-foreground mt-1">Turn this into a shareable visual</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Spacer for the fixed bar */}
-                <div className="h-14" />
               </div>
             </div>
 
-            {/* ═══ FIXED ACTION BAR AT BOTTOM ═══ */}
-            <div className="shrink-0 px-4 py-2.5 border-t border-border/20 bg-background/95 backdrop-blur-sm">
-              <div className="max-w-lg mx-auto flex items-center gap-2">
-                {/* Left — save status */}
-                {saveStatus === "saving" && (
-                  <span className="text-[9px] text-muted-foreground flex items-center gap-1 shrink-0">
-                    <RefreshCw className="w-2.5 h-2.5 animate-spin" /> Saving...
-                  </span>
-                )}
-                {saveStatus === "saved" && (
-                  <span className="text-[9px] text-emerald-400/70 flex items-center gap-1 shrink-0">
-                    <Check className="w-2.5 h-2.5" /> Saved
-                  </span>
-                )}
-                {saveStatus === "failed" && (
-                  <Button variant="ghost" size="sm" onClick={retrySave} className="h-6 text-[9px] gap-1 px-2 text-red-400 hover:text-red-300 shrink-0">
-                    <Save className="w-2.5 h-2.5" /> Save
-                  </Button>
-                )}
-                <button onClick={reset} className="text-[10px] text-muted-foreground/50 hover:text-foreground transition-colors shrink-0">
-                  Start over
-                </button>
-
-                <div className="flex-1" />
-
-                {/* Right — actions */}
-                <Button variant="ghost" size="sm" onClick={handleGenerate} disabled={isGenerating} className="h-7 text-[10px] gap-1 px-2 text-muted-foreground shrink-0">
-                  <RefreshCw className={cn("w-3 h-3", isGenerating && "animate-spin")} />
-                </Button>
-                <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-1 px-2 text-muted-foreground shrink-0" onClick={() => { handleCopy(selectedVariation ?? 0); }}>
-                  <ClipboardList className="w-3 h-3" /> Copy
-                </Button>
-                <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-1 px-2 text-muted-foreground shrink-0" onClick={handleGoToDashboard}>
-                  <ChevronLeft className="w-3 h-3" /> Dashboard
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={handleViewContents}
-                  disabled={saveStatus === "saving"}
-                  className="h-7 text-[10px] gap-1 px-3 glow-sm shrink-0"
-                >
-                  {saveStatus === "saving" ? (
-                    <><RefreshCw className="w-3 h-3 animate-spin" /> Saving...</>
-                  ) : (
-                    <><Sparkles className="w-3 h-3" /> New content</>
-                  )}
-                </Button>
+            {/* Floating Navigation Bar */}
+            <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50">
+              <div className="glass px-8 py-4 rounded-[2rem] border-white/10 shadow-2xl flex items-center gap-6">
+                <div className="flex items-center gap-3 pr-6 border-r border-white/10">
+                   <div className={cn("w-2.5 h-2.5 rounded-full", saveStatus === 'saved' ? 'bg-primary shadow-[0_0_8px_rgba(20,184,166,0.6)]' : 'bg-amber-400 animate-pulse')} />
+                   <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">
+                     {saveStatus === 'saved' ? 'Synced' : 'Syncing...'}
+                   </span>
+                </div>
+                <div className="flex items-center gap-2">
+                   <Button variant="ghost" onClick={reset} className="h-10 px-6 rounded-xl hover:bg-white/5 text-xs font-black uppercase tracking-widest text-muted-foreground hover:text-white">Start Over</Button>
+                   <Button onClick={handleGoToDashboard} className="h-11 px-10 rounded-xl bg-white text-black font-black uppercase tracking-widest text-xs hover:bg-white/90 shadow-xl active:scale-95 transition-all">Finish Studio</Button>
+                </div>
               </div>
             </div>
           </motion.div>

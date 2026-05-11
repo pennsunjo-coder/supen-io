@@ -15,8 +15,8 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { invalidateCache } from "@/lib/cache";
 import {
-  Plus, Search, FileText, Sparkles, Trash2,
-  Loader2, BookOpen, Bot,
+  Plus, Search, Sparkles, Trash2,
+  Loader2, BookOpen, Bot, ChevronLeft, ChevronRight, X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -34,7 +34,7 @@ function timeAgo(date: string): string {
   return new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-type MobileTab = "sources" | "content" | "coach";
+type SidePanel = "sources" | "coach" | null;
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -59,7 +59,7 @@ const Dashboard = () => {
   const sessions = useMemo(() => hookSessions.filter((s) => !localDeleted.has(s.sessionId)), [hookSessions, localDeleted]);
   const [search, setSearch] = useState("");
   const [platformFilter, setPlatformFilter] = useState<string | null>(null);
-  const [mobileTab, setMobileTab] = useState<MobileTab>("content");
+  const [activePanel, setActivePanel] = useState<SidePanel>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -69,39 +69,20 @@ const Dashboard = () => {
     try {
       const session = sessions.find((s) => s.sessionId === sessionId);
       let ids = session?.itemIds || [];
-
       if (ids.length === 0) {
-        const { data } = await supabase
-          .from("generated_content")
-          .select("id")
-          .eq("user_id", user.id)
-          .or(`session_id.eq.${sessionId},id.eq.${sessionId}`);
+        const { data } = await supabase.from("generated_content").select("id").eq("user_id", user.id).or(`session_id.eq.${sessionId},id.eq.${sessionId}`);
         ids = (data || []).map((i) => i.id);
       }
-
-      if (ids.length === 0) {
-        toast.error("No items found for this session.");
-        return;
-      }
-
-      const { error } = await supabase
-        .from("generated_content")
-        .delete()
-        .in("id", ids)
-        .eq("user_id", user.id);
-
-      if (error) {
-        toast.error(`Delete failed: ${error.message}`);
-        return;
-      }
+      const { error } = await supabase.from("generated_content").delete().in("id", ids).eq("user_id", user.id);
+      if (error) throw error;
 
       setLocalDeleted((prev) => new Set(prev).add(sessionId));
       setDeletingId(null);
-      toast.success("Content deleted!");
+      toast.success("Deleted");
       invalidateCache("history:");
       refetchHistory();
     } catch {
-      toast.error("Delete failed. Try again.");
+      toast.error("Delete failed");
     } finally {
       setDeleting(false);
     }
@@ -112,7 +93,7 @@ const Dashboard = () => {
   useEffect(() => {
     if (searchParams.get("upgraded") === "true") {
       const plan = searchParams.get("plan") || "Pro";
-      toast.success(`Welcome to ${plan.charAt(0).toUpperCase() + plan.slice(1)}! Your account has been updated.`);
+      toast.success(`Welcome to ${plan.charAt(0).toUpperCase() + plan.slice(1)}!`);
       searchParams.delete("upgraded");
       searchParams.delete("plan");
       setSearchParams(searchParams, { replace: true });
@@ -129,7 +110,6 @@ const Dashboard = () => {
     });
   }, []);
 
-  // Platform filter chips
   const availablePlatforms = useMemo(() => {
     const set = new Set(sessions.map((s) => s.platform));
     return Array.from(set).sort();
@@ -137,9 +117,7 @@ const Dashboard = () => {
 
   const filtered = useMemo(() => {
     let result = sessions;
-    if (platformFilter) {
-      result = result.filter((s) => s.platform === platformFilter);
-    }
+    if (platformFilter) result = result.filter((s) => s.platform === platformFilter);
     if (search.trim()) {
       result = result.filter((s) =>
         s.topic.toLowerCase().includes(search.toLowerCase()) ||
@@ -150,315 +128,266 @@ const Dashboard = () => {
   }, [sessions, search, platformFilter]);
 
   const hasContent = sessions.length > 0;
-  const greeting = profile?.first_name ? `Hey ${profile.first_name}!` : "Welcome";
+  const greeting = profile?.first_name ? `Hey ${profile.first_name}` : "Welcome back";
 
   return (
     <DashboardLayout>
-      <div className="flex-1 flex flex-col overflow-hidden pb-16 md:pb-0">
-
-        {/* MOBILE BOTTOM NAV */}
-        <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-background/95 backdrop-blur-md border-t border-border/30 flex items-center justify-around px-2 py-1.5 pb-[max(env(safe-area-inset-bottom),0.375rem)]">
-          <button onClick={() => setMobileTab("sources")} className={cn("flex flex-col items-center gap-0.5 py-1.5 px-4 rounded-xl transition-all relative", mobileTab === "sources" ? "text-primary" : "text-muted-foreground/60")}>
-            <BookOpen className="w-5 h-5" />
-            <span className="text-[9px] font-medium">Sources</span>
-            {groupedSources.length > 0 && <span className="absolute top-0 right-2 w-1.5 h-1.5 rounded-full bg-primary" />}
-          </button>
-          <button onClick={() => setMobileTab("content")} className={cn("flex flex-col items-center gap-0.5 py-1.5 px-5 rounded-2xl transition-all", mobileTab === "content" ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "text-muted-foreground/60")}>
-            <Sparkles className="w-5 h-5" />
-            <span className="text-[9px] font-medium">Content</span>
-          </button>
-          <button onClick={() => setMobileTab("coach")} className={cn("flex flex-col items-center gap-0.5 py-1.5 px-4 rounded-xl transition-all relative", mobileTab === "coach" ? "text-primary" : "text-muted-foreground/60")}>
-            <Bot className="w-5 h-5" />
-            <span className="text-[9px] font-medium">Coach</span>
-            {messages.length > 0 && <span className="absolute top-0 right-2 w-1.5 h-1.5 rounded-full bg-primary" />}
-          </button>
-        </nav>
-
-        {/* 3 COLUMNS */}
-        <div className="flex-1 flex overflow-hidden min-h-0 bg-background/50">
-
-          {/* LEFT — SOURCES */}
-          <div data-tour="sources" className={cn(
-            "shrink-0 border-r border-border md:w-[260px] md:flex md:flex-col bg-sidebar-background transition-colors duration-300",
-            mobileTab === "sources" ? "flex flex-col w-full" : "hidden md:flex",
-          )}>
-            <SourcePanel
-              groupedSources={groupedSources}
-              loading={sourcesLoading}
-              activeSourceIds={activeSourceIds}
-              onToggleGroup={handleToggleGroup}
-              onAddUrl={addUrl}
-              onAddNote={addNote}
-              onAddPdf={async (file) => {
-                const result = await addPdf(file);
-                if (!result.error && result.insertedIds?.length) {
-                  setActiveSourceIds((prev) => {
-                    const next = new Set(prev);
-                    result.insertedIds!.forEach((id) => next.add(id));
-                    return next;
-                  });
-                }
-                return result;
-              }}
-              onSearchWeb={searchWeb}
-              onRemoveGroup={removeGrouped}
-            />
-          </div>
-
-          {/* CENTER — MY CONTENT */}
-          <div className={cn(
-            "flex-1 flex flex-col overflow-hidden min-w-0 bg-background md:px-6 lg:px-10",
-            mobileTab !== "content" ? "hidden md:flex" : "flex",
-          )}>
-            {/* Header */}
-            <div className="py-6 border-b border-border/60 shrink-0">
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <h1 className="text-xl font-display font-black leading-tight tracking-tight">{hasContent ? "My Content" : greeting}</h1>
-                  {hasContent && (
-                    <p className="text-xs font-bold text-muted-foreground/60 mt-1 uppercase tracking-wider">
-                      {sessions.length} session{sessions.length !== 1 ? "s" : ""}
-                    </p>
-                  )}
+      <div className="flex-1 flex overflow-hidden bg-background relative">
+        
+        {/* LEFT PANEL — Sources (Floating Drawer style) */}
+        <AnimatePresence>
+          {activePanel === "sources" && (
+            <>
+              <motion.div 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                exit={{ opacity: 0 }} 
+                onClick={() => setActivePanel(null)}
+                className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm lg:hidden"
+              />
+              <motion.div 
+                initial={{ x: -320, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -320, opacity: 0 }}
+                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                className="absolute left-0 top-0 bottom-0 z-40 w-80 glass border-r border-white/5 flex flex-col shadow-2xl"
+              >
+                <div className="p-5 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+                  <span className="text-sm font-bold flex items-center gap-2"><BookOpen className="w-4 h-4 text-primary" /> Sources</span>
+                  <Button variant="ghost" size="icon" onClick={() => setActivePanel(null)} className="h-8 w-8 rounded-lg hover:bg-white/5"><X className="w-4 h-4" /></Button>
                 </div>
-                <Button
-                  data-tour="create-btn"
-                  onClick={() => navigate("/dashboard/studio")}
-                  className="gap-2 h-11 text-sm font-bold px-6 shrink-0 rounded-xl shadow-lg shadow-primary/20"
-                >
-                  <Plus className="w-4 h-4" /> Create Content
-                </Button>
-              </div>
-            </div>
-
-            {/* Search + filters */}
-            {hasContent && (
-              <div className="py-4 border-b border-border/40 space-y-4 shrink-0">
-                <div className="relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/40" />
-                  <Input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search your library..."
-                    className="pl-11 h-11 bg-muted/40 border-border/40 text-sm rounded-xl focus:bg-background transition-all"
+                <div className="flex-1 overflow-hidden">
+                  <SourcePanel
+                    groupedSources={groupedSources}
+                    loading={sourcesLoading}
+                    activeSourceIds={activeSourceIds}
+                    onToggleGroup={handleToggleGroup}
+                    onAddUrl={addUrl}
+                    onAddNote={addNote}
+                    onAddPdf={addPdf}
+                    onSearchWeb={searchWeb}
+                    onRemoveGroup={removeGrouped}
                   />
                 </div>
-                {availablePlatforms.length > 1 && (
-                  <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-                    <button
-                      onClick={() => setPlatformFilter(null)}
-                      className={cn(
-                        "text-[10px] px-4 py-1.5 rounded-full whitespace-nowrap transition-all shrink-0 border font-bold uppercase tracking-wider",
-                        !platformFilter
-                          ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20"
-                          : "bg-muted/40 border-border/60 text-muted-foreground hover:border-primary/40",
-                      )}
-                    >
-                      All
-                    </button>
-                    {availablePlatforms.map((p) => (
-                      <button
-                        key={p}
-                        onClick={() => setPlatformFilter(platformFilter === p ? null : p)}
-                        className={cn(
-                          "text-[10px] px-4 py-1.5 rounded-full whitespace-nowrap transition-all shrink-0 border font-bold uppercase tracking-wider",
-                          platformFilter === p
-                            ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20"
-                            : "bg-muted/40 border-border/60 text-muted-foreground hover:border-primary/40",
-                        )}
-                      >
-                        {p}
-                      </button>
-                    ))}
-                  </div>
-                )}
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+
+        {/* MAIN CONTENT AREA — The Focus */}
+        <div className="flex-1 flex flex-col min-w-0 overflow-y-auto no-scrollbar pt-12 px-6 lg:px-20 xl:px-32">
+          
+          {/* Dashboard Header */}
+          <header className="mb-16">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+              <div>
+                <h1 className="text-5xl font-black tracking-tight mb-3 text-gradient">{hasContent ? "Creative Library" : greeting}</h1>
+                <p className="text-base font-medium text-muted-foreground/70 max-w-lg">
+                  {hasContent ? `Your hub for high-performing content. Manage and refine your ${sessions.length} assets.` : "The ultimate studio to transform your knowledge into viral content."}
+                </p>
+              </div>
+              <Button
+                size="lg"
+                onClick={() => navigate("/dashboard/studio")}
+                className="h-14 px-8 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-lg gap-3 shadow-[0_10px_40px_-10px_rgba(20,184,166,0.5)] transition-all active:scale-95 group"
+              >
+                <Plus className="w-6 h-6 transition-transform group-hover:rotate-90" /> Create Content
+              </Button>
+            </div>
+
+            {/* Quick Actions & Filters */}
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <div className="relative flex-1 group w-full">
+                <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search your library..."
+                  className="pl-14 h-14 glass border-white/5 rounded-2xl text-base focus:ring-primary/20 focus:bg-white/[0.05] transition-all"
+                />
+              </div>
+              <div className="flex gap-2 w-full sm:w-auto">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setActivePanel(activePanel === "sources" ? null : "sources")}
+                  className={cn("h-14 px-6 flex-1 sm:flex-none rounded-2xl gap-2 font-bold border-white/5 hover:bg-white/5 transition-all", activePanel === "sources" && "bg-primary/10 border-primary/20 text-primary")}
+                >
+                  <BookOpen className="w-5 h-5" />
+                  Sources
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setActivePanel(activePanel === "coach" ? null : "coach")}
+                  className={cn("h-14 px-6 flex-1 sm:flex-none rounded-2xl gap-2 font-bold border-white/5 hover:bg-white/5 transition-all", activePanel === "coach" && "bg-primary/10 border-primary/20 text-primary")}
+                >
+                  <Bot className="w-5 h-5" />
+                  Coach
+                </Button>
+              </div>
+            </div>
+
+            {/* Platform Filter Chips */}
+            {availablePlatforms.length > 1 && (
+              <div className="flex gap-2 mt-8 overflow-x-auto no-scrollbar pb-2">
+                <button
+                  onClick={() => setPlatformFilter(null)}
+                  className={cn(
+                    "px-6 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all border",
+                    !platformFilter ? "bg-primary border-primary text-white shadow-lg shadow-primary/20" : "bg-white/5 border-white/5 text-muted-foreground hover:bg-white/10"
+                  )}
+                >
+                  All
+                </button>
+                {availablePlatforms.map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => setPlatformFilter(platformFilter === p ? null : p)}
+                    className={cn(
+                      "px-6 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all border",
+                      platformFilter === p ? "bg-primary border-primary text-white shadow-lg shadow-primary/20" : "bg-white/5 border-white/5 text-muted-foreground hover:bg-white/10"
+                    )}
+                  >
+                    {p}
+                  </button>
+                ))}
               </div>
             )}
+          </header>
 
-            {/* Content area */}
-            <div className="flex-1 overflow-y-auto pt-6 no-scrollbar">
-              {historyLoading ? (
-                <div className="flex items-center justify-center h-48">
-                  <Loader2 className="w-8 h-8 animate-spin text-primary/40" />
+          {/* GRID AREA */}
+          <div className="pb-40">
+            {historyLoading ? (
+              <div className="flex flex-col items-center justify-center py-32 gap-6">
+                <div className="relative">
+                  <div className="w-16 h-16 rounded-full border-t-2 border-primary animate-spin" />
+                  <Sparkles className="absolute inset-0 m-auto w-6 h-6 text-primary animate-pulse" />
                 </div>
-              ) : !hasContent ? (
-                /* Empty state */
-                <div className="flex flex-col items-center justify-center h-full text-center px-8 py-12">
-                  <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.4 }}>
-                    <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center mb-6 border border-primary/20 mx-auto">
-                      <Sparkles className="w-11 h-11 text-primary/70" />
-                    </div>
-                    <h2 className="text-2xl font-display font-black mb-3">Create your first content</h2>
-                    <p className="text-sm text-muted-foreground mb-8 max-w-xs leading-relaxed font-medium">
-                      Generate viral posts for LinkedIn, Instagram, TikTok and more — with AI-powered visuals.
-                    </p>
-                    <Button size="lg" onClick={() => navigate("/dashboard/studio")} className="gap-3 font-bold px-10 h-14 text-lg shadow-xl shadow-primary/20 rounded-2xl">
-                      <Plus className="w-5 h-5" /> Create New Content
-                    </Button>
-                  </motion.div>
+                <p className="text-sm font-semibold text-muted-foreground animate-pulse">Organizing your creative space...</p>
+              </div>
+            ) : !hasContent ? (
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center py-24 text-center glass rounded-[3.5rem] p-16 border-dashed border-white/10">
+                <div className="w-28 h-28 rounded-[2.5rem] bg-gradient-to-br from-primary/20 to-transparent flex items-center justify-center mb-8 shadow-inner">
+                  <Sparkles className="w-12 h-12 text-primary" />
                 </div>
-              ) : (
-                /* Content grid */
-                <div className="pb-20">
-                  <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {/* + New card */}
-                    <motion.div
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="rounded-3xl border-2 border-dashed border-border/40 hover:border-primary/40 hover:bg-primary/[0.03] transition-all duration-300 cursor-pointer flex flex-col items-center justify-center aspect-[4/5] group bg-muted/20"
-                      onClick={() => navigate("/dashboard/studio")}
-                    >
-                      <div className="w-12 h-12 rounded-2xl bg-background flex items-center justify-center mb-3 shadow-sm border border-border/40 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300">
-                        <Plus className="w-6 h-6" />
-                      </div>
-                      <p className="text-[13px] font-bold text-muted-foreground/60 group-hover:text-foreground transition-colors">
-                        New Content
-                      </p>
-                    </motion.div>
-
-                    {/* Session cards */}
-                    {filtered.map((s, i) => {
-                      const hasVisual = !!s.infographic;
-                      return (
-                        <motion.div
-                          key={s.sessionId}
-                          initial={{ opacity: 0, y: 12 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: Math.min(i * 0.04, 0.4) }}
-                          className="group relative cursor-pointer"
-                          onClick={() => navigate(`/editor/${s.sessionId}`)}
-                        >
-                          <div className="rounded-3xl overflow-hidden border border-border/40 bg-card hover:border-primary/40 hover:shadow-2xl hover:shadow-black/[0.08] transition-all duration-500">
-                            {/* Visual zone */}
-                            <div className="relative overflow-hidden aspect-[4/5] bg-muted/40">
-                              {hasVisual ? (
-                                <img
-                                  src={`data:image/png;base64,${s.infographic}`}
-                                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.08]"
-                                  alt=""
-                                />
-                              ) : (
-                                <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-primary/[0.08] via-primary/[0.02] to-amber-500/[0.06] relative">
-                                  <div className="relative z-10 w-14 h-14 rounded-2xl bg-card/90 backdrop-blur-md flex items-center justify-center shadow-lg border border-border/40 mb-3">
-                                    <Sparkles className="w-6 h-6 text-primary/70" />
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Badges grouped — top right */}
-                              <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
-                                {hasVisual && (
-                                  <span className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-white shadow-lg">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                                    Visual
-                                  </span>
-                                )}
-                                <span className="px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/20 shadow-lg">
-                                  <span className="text-[9px] font-black uppercase tracking-widest text-white">{s.platform}</span>
-                                </span>
-                              </div>
+                <h2 className="text-3xl font-black mb-4">Your studio is ready</h2>
+                <p className="text-lg text-muted-foreground max-w-sm mx-auto mb-10 font-medium leading-relaxed">Let's create something extraordinary. Add a source to start.</p>
+                <Button size="lg" onClick={() => navigate("/dashboard/studio")} className="h-16 px-14 rounded-2xl bg-primary font-black text-xl shadow-2xl shadow-primary/20 transition-all hover:scale-105 active:scale-95">Get Started</Button>
+              </motion.div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-12">
+                {filtered.map((s, i) => (
+                  <motion.div
+                    key={s.sessionId}
+                    initial={{ opacity: 0, y: 40 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                    className="group relative"
+                    onClick={() => navigate(`/editor/${s.sessionId}`)}
+                  >
+                    <div className="glass-card overflow-hidden h-full flex flex-col group cursor-pointer">
+                      <div className="aspect-[4/5] relative overflow-hidden bg-black/20">
+                        {s.infographic ? (
+                          <img src={`data:image/png;base64,${s.infographic}`} className="w-full h-full object-cover transition-transform duration-[1.5s] ease-out group-hover:scale-110" alt="" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/5 via-transparent to-white/[0.02]">
+                            <div className="w-20 h-20 rounded-full bg-white/[0.03] flex items-center justify-center backdrop-blur-md border border-white/5">
+                              <Sparkles className="w-10 h-10 text-primary/40" />
                             </div>
-
-                            {/* Title */}
-                            <div className="px-5 pt-4 pb-2">
-                              <p className="text-[15px] font-bold leading-snug line-clamp-2 text-foreground/90 tracking-tight">
-                                {s.topic || "Untitled session"}
-                              </p>
-                            </div>
-
-                            {/* Metadata footer */}
-                            <div className="px-5 py-4 flex items-center justify-between border-t border-border/20 mt-1 bg-muted/[0.02]">
-                              <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
-                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
-                                  Complete
-                                </span>
-                              </div>
-                              <span className="text-[10px] font-bold text-muted-foreground/40">
-                                {timeAgo(s.createdAt)}
-                              </span>
-                            </div>
-
-                            {/* Hover Actions */}
-                            <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                            <button
-                              className="absolute bottom-4 right-4 w-9 h-9 rounded-xl bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-red-600 shadow-xl shadow-red-500/30 translate-y-2 group-hover:translate-y-0"
-                              onClick={(e) => { e.stopPropagation(); setDeletingId(s.sessionId); }}
-                              title="Delete session"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
                           </div>
-                        </motion.div>
-                      );
-                    })}
+                        )}
+                        
+                        {/* Overlay Status Badges */}
+                        <div className="absolute top-5 left-5 z-10 flex flex-wrap gap-2">
+                          <span className="px-4 py-1.5 rounded-full glass text-[10px] font-black uppercase tracking-widest text-white">{s.platform}</span>
+                          {s.infographic && (
+                            <span className="px-4 py-1.5 rounded-full bg-primary/20 backdrop-blur-md border border-primary/30 text-[10px] font-black uppercase tracking-widest text-primary">Visual Ready</span>
+                          )}
+                        </div>
 
-                    {filtered.length === 0 && search && (
-                      <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
-                        <Search className="w-8 h-8 text-muted-foreground/20 mb-3" />
-                        <p className="text-sm font-medium">No results</p>
-                        <p className="text-xs text-muted-foreground mt-1">Try different keywords</p>
+                        {/* Hover Quick Actions */}
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all duration-500 flex items-center justify-center gap-3 px-8">
+                           <Button className="flex-1 h-12 rounded-xl font-black bg-white text-black hover:bg-white/90 shadow-2xl transition-all translate-y-4 group-hover:translate-y-0 duration-500">View Asset</Button>
+                           <Button size="icon" variant="destructive" className="h-12 w-12 rounded-xl shadow-2xl transition-all translate-y-4 group-hover:translate-y-0 duration-500 delay-75" onClick={(e) => { e.stopPropagation(); setDeletingId(s.sessionId); }}>
+                             <Trash2 className="w-5 h-5" />
+                           </Button>
+                        </div>
                       </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
 
-          {/* RIGHT — COACH (320px) */}
-          <div data-tour="coach" className={cn(
-            "shrink-0 border-l border-border/20 bg-accent/[0.02] lg:w-[320px] lg:flex lg:flex-col",
-            mobileTab === "coach" ? "flex flex-col w-full" : "hidden lg:flex",
-          )}>
-            <ErrorBoundary fallback={<div className="flex-1 flex items-center justify-center p-4"><p className="text-xs text-muted-foreground text-center">The Coach encountered an error. Reload the page.</p></div>}>
-              <ChatPanel
-                sources={sources}
-                messages={messages}
-                onMessagesChange={setMessages}
-                conversationLoading={conversationLoading}
-                onClearConversation={clearConversation}
-                profile={profile}
-              />
-            </ErrorBoundary>
+                      <div className="p-8 flex-1 flex flex-col">
+                        <h3 className="text-xl font-black leading-tight line-clamp-2 mb-4 group-hover:text-primary transition-colors duration-300">{s.topic || "Untitled Session"}</h3>
+                        <div className="mt-auto pt-6 border-t border-white/5 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(20,184,166,0.8)]" />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{timeAgo(s.createdAt)}</span>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
-      </div>
-      <OnboardingTour />
 
-      {/* DELETE CONFIRMATION MODAL */}
+        {/* RIGHT PANEL — Coach (Floating Drawer style) */}
+        <AnimatePresence>
+          {activePanel === "coach" && (
+            <>
+              <motion.div 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                exit={{ opacity: 0 }} 
+                onClick={() => setActivePanel(null)}
+                className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm lg:hidden"
+              />
+              <motion.div 
+                initial={{ x: 350, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: 350, opacity: 0 }}
+                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                className="absolute right-0 top-0 bottom-0 z-40 w-96 glass border-l border-white/5 flex flex-col shadow-2xl"
+              >
+                <div className="p-5 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+                  <span className="text-sm font-bold flex items-center gap-2"><Bot className="w-4 h-4 text-primary" /> AI Creative Coach</span>
+                  <Button variant="ghost" size="icon" onClick={() => setActivePanel(null)} className="h-8 w-8 rounded-lg hover:bg-white/5"><X className="w-4 h-4" /></Button>
+                </div>
+                <div className="flex-1 overflow-hidden">
+                  <ChatPanel
+                    sources={sources}
+                    messages={messages}
+                    onMessagesChange={setMessages}
+                    conversationLoading={conversationLoading}
+                    onClearConversation={clearConversation}
+                    profile={profile}
+                  />
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+
+      </div>
+
+      <OnboardingTour />
+      
+      {/* DELETE MODAL */}
       <AnimatePresence>
         {deletingId && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
-            onClick={() => setDeletingId(null)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-card border border-border/30 rounded-2xl p-6 max-w-sm w-full shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center mb-4">
-                <Trash2 className="w-6 h-6 text-red-400" />
-              </div>
-              <h3 className="text-base font-bold mb-2">Delete this content?</h3>
-              <p className="text-sm text-muted-foreground mb-6">
-                This will permanently delete all variations and the infographic. This cannot be undone.
-              </p>
-              <div className="flex gap-3">
-                <Button variant="outline" className="flex-1 h-9 text-sm" onClick={() => setDeletingId(null)} disabled={deleting}>
-                  Cancel
-                </Button>
-                <Button variant="destructive" className="flex-1 h-9 text-sm gap-2" disabled={deleting} onClick={() => deleteSession(deletingId)}>
-                  {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                  {deleting ? "Deleting..." : "Delete"}
-                </Button>
-              </div>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="glass max-w-sm w-full p-10 rounded-[3rem] text-center border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.6)]">
+               <div className="w-20 h-20 rounded-[1.5rem] bg-red-500/10 flex items-center justify-center mx-auto mb-8">
+                 <Trash2 className="w-10 h-10 text-red-500" />
+               </div>
+               <h3 className="text-2xl font-black mb-3 text-white">Delete Asset?</h3>
+               <p className="text-base text-muted-foreground mb-10 font-medium">This is permanent. Your viral content and visuals will vanish forever.</p>
+               <div className="flex flex-col gap-3">
+                 <Button variant="destructive" className="w-full rounded-2xl font-black h-14 text-lg shadow-2xl shadow-red-500/20" onClick={() => deleteSession(deletingId)} disabled={deleting}>
+                   {deleting ? <Loader2 className="w-5 h-5 animate-spin" /> : "Delete Permanently"}
+                 </Button>
+                 <Button variant="ghost" className="w-full rounded-2xl font-bold h-12 text-muted-foreground hover:text-white" onClick={() => setDeletingId(null)}>Keep Content</Button>
+               </div>
             </motion.div>
           </motion.div>
         )}
