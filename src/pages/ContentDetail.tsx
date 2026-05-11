@@ -266,7 +266,7 @@ const ContentDetail = () => {
                           <img
                             src={`data:image/png;base64,${infographic.infographic_base64}`}
                             alt="Infographic"
-                            className="w-full h-full object-cover group-hover:scale-[1.05] transition-transform duration-[1.5s] ease-out"
+                            className="w-full h-full object-cover group-hover:scale-[1.05] transition-transform duration-[1500ms] ease-out"
                           />
                         ) : (
                           <iframe
