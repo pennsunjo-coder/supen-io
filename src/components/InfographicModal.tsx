@@ -477,9 +477,8 @@ export default function InfographicModal({ open, onClose, content, platform, con
         console.log("=== END PROMPT ===");
       }
 
-      // Determine generation size for DALL-E
-      const pl = platform?.toLowerCase() || "";
-      const genSize = (pl.includes("twitter") || pl.includes("x (")) ? "1792x1024" : "1024x1024";
+      // Determine generation size for DALL-E/Gemini
+      const genSize = imageConfig.size;
 
       // Attempt 1
       if (IS_DEV) console.log("[InfographicModal] Attempt 1 — generating infographic...");

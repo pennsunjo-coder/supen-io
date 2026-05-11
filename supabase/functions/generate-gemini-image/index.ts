@@ -144,6 +144,11 @@ Deno.serve(async (req) => {
         3. [ZONE_POWER_GRID]: Create a 3x2 grid of boxes. Render G1-G6 inside these boxes with a yellow #FFEF5A highlight on labels.
         4. [ZONE_FOOTER]: Render PRO_TIP in a distinct box at the bottom with a red ✓ symbol.
         
+        STRICT FILL RULE:
+        - The visual MUST occupy 100% of the canvas width and height.
+        - FULL BLEED: No white borders or empty space around the edges.
+        - Ensure the background texture (whiteboard or notebook) covers the entire image area.
+        
         SCRIPT TO RENDER:
         ${finalPrompt}
       ` }] }],
@@ -219,6 +224,11 @@ Deno.serve(async (req) => {
             - MIDDLE: Sections S1-S9 vertically with colored hand-drawn borders.
             - GRID: 3x2 grid of boxes for G1-G6 with yellow highlights.
             - BOTTOM: PRO_TIP in a box with a red checkmark symbol.
+            
+            STRICT FILL RULE:
+            - The visual MUST occupy 100% of the canvas width and height.
+            - FULL BLEED: No white borders or empty space around the edges.
+            - Ensure the background texture (whiteboard or notebook) covers the entire image area.
             
             SCRIPT:
             ${finalPrompt}
