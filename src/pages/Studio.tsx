@@ -3,12 +3,14 @@ import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import SourcePanel from "@/components/SourcePanel";
 import StudioWizard from "@/components/StudioWizard";
+import ChatPanel from "@/components/ChatPanel";
 import { useSources } from "@/hooks/use-sources";
 import { useProfile } from "@/hooks/use-profile";
 import { useDashboard } from "@/hooks/use-dashboard";
 import { useActivity } from "@/hooks/use-activity";
+import { useConversation } from "@/hooks/use-conversation";
 import { invalidateCache } from "@/lib/cache";
-import { BookOpen, Sparkles, ArrowLeft, X } from "lucide-react";
+import { BookOpen, Sparkles, ArrowLeft, X, Bot } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { Button } from "@/components/ui/button";
@@ -26,9 +28,11 @@ export default function Studio() {
 
   const dashboard = useDashboard();
   const activity = useActivity();
+  const { messages, setMessages, loading: conversationLoading, clearConversation } = useConversation();
 
   const [activeSourceIds, setActiveSourceIds] = useState<Set<string>>(new Set());
   const [showSources, setShowSources] = useState(false);
+  const [showCoach, setShowCoach] = useState(false);
 
   const handleToggleGroup = useCallback((ids: string[]) => {
     setActiveSourceIds((prev) => {
@@ -80,24 +84,38 @@ export default function Studio() {
           
           {/* Controls Header */}
           <div className="absolute top-6 left-6 right-6 z-30 flex items-center justify-between pointer-events-none">
-            <Button 
-              variant="outline" 
-              onClick={() => navigate("/dashboard")} 
-              className="h-10 gap-2 px-4 rounded-xl glass border-border/40 text-[10px] font-black uppercase tracking-widest shadow-xl pointer-events-auto active:scale-95 transition-all"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" /> Library
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => navigate("/dashboard")} 
+                className="h-10 gap-2 px-4 rounded-xl glass border-border/40 text-[10px] font-black uppercase tracking-widest shadow-xl pointer-events-auto active:scale-95 transition-all"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" /> Library
+              </Button>
+
+              <Button 
+                variant="outline" 
+                onClick={() => setShowSources(!showSources)} 
+                className={cn(
+                  "h-10 gap-2 px-4 rounded-xl glass border-border/40 text-[10px] font-black uppercase tracking-widest shadow-xl pointer-events-auto lg:hidden active:scale-95 transition-all",
+                  showSources && "bg-primary/10 border-primary/20 text-primary"
+                )}
+              >
+                <BookOpen className="w-3.5 h-3.5" /> 
+                Sources
+              </Button>
+            </div>
 
             <Button 
               variant="outline" 
-              onClick={() => setShowSources(!showSources)} 
+              onClick={() => setShowCoach(!showCoach)} 
               className={cn(
-                "h-10 gap-2 px-4 rounded-xl glass border-border/40 text-[10px] font-black uppercase tracking-widest shadow-xl pointer-events-auto lg:hidden active:scale-95 transition-all",
-                showSources && "bg-primary/10 border-primary/20 text-primary"
+                "h-10 gap-2 px-4 rounded-xl glass border-border/40 text-[10px] font-black uppercase tracking-widest shadow-xl pointer-events-auto active:scale-95 transition-all",
+                showCoach && "bg-primary/10 border-primary/20 text-primary"
               )}
             >
-              <BookOpen className="w-3.5 h-3.5" /> 
-              Sources
+              <Bot className="w-3.5 h-3.5" /> 
+              Coach
             </Button>
           </div>
 
@@ -130,6 +148,27 @@ export default function Studio() {
                 />
               </ErrorBoundary>
             </motion.div>
+          </div>
+        </div>
+
+        {/* RIGHT SIDEBAR — Coach */}
+        <div className={cn(
+          "w-80 border-l border-border/40 flex flex-col transition-all duration-500 bg-card/10 backdrop-blur-xl shrink-0 z-20",
+          !showCoach && "hidden"
+        )}>
+          <div className="p-4 border-b border-border/40 flex items-center justify-between bg-card/20">
+            <span className="text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2"><Bot className="w-3.5 h-3.5 text-primary" /> AI Coach</span>
+            <Button variant="ghost" size="icon" onClick={() => setShowCoach(false)} className="h-8 w-8"><X className="w-4 h-4" /></Button>
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <ChatPanel
+              sources={sources}
+              messages={messages}
+              onMessagesChange={setMessages}
+              conversationLoading={conversationLoading}
+              onClearConversation={clearConversation}
+              profile={profile}
+            />
           </div>
         </div>
       </div>

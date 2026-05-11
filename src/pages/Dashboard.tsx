@@ -335,9 +335,9 @@ const Dashboard = () => {
                 transition={{ type: "spring", damping: 25, stiffness: 200 }}
                 className="absolute right-0 top-0 bottom-0 z-40 w-96 glass border-l border-white/5 flex flex-col shadow-2xl"
               >
-                <div className="p-5 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
-                  <span className="text-sm font-bold flex items-center gap-2"><Bot className="w-4 h-4 text-primary" /> AI Creative Coach</span>
-                  <Button variant="ghost" size="icon" onClick={() => setActivePanel(null)} className="h-8 w-8 rounded-lg hover:bg-white/5"><X className="w-4 h-4" /></Button>
+                <div className="p-5 border-b border-border/40 flex items-center justify-between bg-card/20">
+                  <span className="text-sm font-bold flex items-center gap-2 text-foreground"><Bot className="w-4 h-4 text-primary" /> AI Creative Coach</span>
+                  <Button variant="ghost" size="icon" onClick={() => setActivePanel(null)} className="h-8 w-8 rounded-lg hover:bg-card"><X className="w-4 h-4" /></Button>
                 </div>
                 <div className="flex-1 overflow-hidden">
                   <ChatPanel
@@ -366,7 +366,7 @@ const Dashboard = () => {
                <div className="w-20 h-20 rounded-[1.5rem] bg-red-500/10 flex items-center justify-center mx-auto mb-8">
                  <Trash2 className="w-10 h-10 text-red-500" />
                </div>
-               <h3 className="text-2xl font-black mb-3 text-white">Delete Asset?</h3>
+               <h3 className="text-2xl font-black mb-3 text-foreground">Delete Asset?</h3>
                <p className="text-base text-muted-foreground mb-10 font-medium">This is permanent. Your viral content and visuals will vanish forever.</p>
                <div className="flex flex-col gap-3">
                  <Button variant="destructive" className="w-full rounded-2xl font-black h-14 text-lg shadow-2xl shadow-red-500/20" onClick={() => deleteSession(deletingId)} disabled={deleting}>

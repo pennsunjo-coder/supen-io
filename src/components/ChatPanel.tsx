@@ -94,32 +94,32 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
   return (
     <div className="flex flex-col h-full bg-transparent">
       {/* Header */}
-      <div className="px-6 py-8 border-b border-white/5 flex items-center justify-between shrink-0">
+      <div className="px-4 py-4 border-b border-border/40 flex items-center justify-between shrink-0 bg-card/20">
         <div>
-          <h2 className="text-xs font-black tracking-[0.2em] uppercase text-primary mb-2">Creative Coach</h2>
+          <h2 className="text-[10px] font-black tracking-[0.2em] uppercase text-primary mb-1">Creative Coach</h2>
           <div className="flex items-center gap-2">
-            <div className={cn("w-2 h-2 rounded-full", isLoading ? "bg-amber-400 animate-pulse" : "bg-primary")} />
-            <span className="text-sm font-bold text-white">{isLoading ? "Analyzing..." : "Ready to strategist"}</span>
+            <div className={cn("w-1.5 h-1.5 rounded-full", isLoading ? "bg-amber-400 animate-pulse" : "bg-primary")} />
+            <span className="text-xs font-bold text-foreground">{isLoading ? "Analyzing..." : "Ready"}</span>
           </div>
         </div>
-        <Button variant="ghost" size="icon" onClick={onClearConversation} className="h-10 w-10 rounded-xl hover:bg-white/5 text-muted-foreground/30 hover:text-red-400">
-          <Trash2 className="w-4 h-4" />
+        <Button variant="ghost" size="icon" onClick={onClearConversation} className="h-8 w-8 rounded-lg hover:bg-card text-muted-foreground/30 hover:text-red-400 transition-all">
+          <Trash2 className="w-3.5 h-3.5" />
         </Button>
       </div>
 
       {/* Chat Area */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto no-scrollbar px-6 py-8 space-y-8">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto no-scrollbar px-4 py-6 space-y-6">
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center max-w-xs mx-auto">
-            <div className="w-20 h-20 rounded-[2rem] bg-primary/10 flex items-center justify-center mb-8 shadow-inner border border-primary/20">
-              <Sparkles className="w-10 h-10 text-primary" />
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-6 shadow-inner border border-primary/20">
+              <Sparkles className="w-6 h-6 text-primary" />
             </div>
-            <h3 className="text-xl font-black mb-3">Your Digital Strategist</h3>
-            <p className="text-sm text-muted-foreground font-medium mb-10 leading-relaxed">I'm here to sharpen your hooks and polish your ideas. What's on your mind?</p>
+            <h3 className="text-lg font-black mb-2">Your Strategist</h3>
+            <p className="text-[13px] text-muted-foreground font-medium mb-8 leading-relaxed">I'm here to sharpen your hooks and polish your ideas.</p>
             
             <div className="grid grid-cols-1 gap-2 w-full">
               {getSuggestions(profile).map(s => (
-                <button key={s} onClick={() => sendMessage(s)} className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 text-xs font-bold text-muted-foreground hover:text-white hover:border-primary/40 hover:bg-white/[0.06] transition-all text-left">
+                <button key={s} onClick={() => sendMessage(s)} className="p-3 rounded-xl bg-card/40 border border-border/40 text-[11px] font-bold text-muted-foreground hover:text-foreground hover:border-primary/40 hover:bg-card transition-all text-left">
                   {s}
                 </button>
               ))}
@@ -134,10 +134,10 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
               className={cn("flex flex-col", msg.role === "user" ? "items-end" : "items-start")}
             >
               <div className={cn(
-                "max-w-[85%] p-5 text-sm leading-relaxed",
+                "max-w-[90%] p-3 text-[13px] leading-relaxed",
                 msg.role === "user" 
-                  ? "bg-primary text-white rounded-[2rem] rounded-tr-none font-bold shadow-xl shadow-primary/20" 
-                  : "bg-white/[0.05] border border-white/5 text-white rounded-[2rem] rounded-tl-none"
+                  ? "bg-primary text-white rounded-2xl rounded-tr-none font-bold shadow-xl shadow-primary/20" 
+                  : "bg-card/40 border border-border/40 text-foreground rounded-2xl rounded-tl-none"
               )}>
                 {msg.content}
               </div>
@@ -159,26 +159,26 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
       </div>
 
       {/* Input Area */}
-      <div className="p-6 border-t border-white/5">
+      <div className="p-4 border-t border-border/40 bg-card/20">
         <div className="relative group">
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
-            placeholder="Write a message..."
+            placeholder="Advice me..."
             rows={1}
             disabled={isLoading}
-            className="w-full bg-white/[0.03] border border-white/10 rounded-[2rem] pl-6 pr-16 py-5 text-sm outline-none focus:border-primary focus:bg-white/[0.06] transition-all resize-none shadow-2xl"
+            className="w-full bg-card/40 border border-border/40 rounded-xl pl-4 pr-12 py-3 text-[13px] outline-none focus:border-primary focus:bg-card transition-all resize-none shadow-xl"
           />
           <Button 
             onClick={() => sendMessage()} 
             disabled={!input.trim() || isLoading}
-            className="absolute right-2.5 top-2.5 h-10 w-10 rounded-full bg-primary shadow-xl"
+            className="absolute right-1.5 top-1.5 h-7 w-7 rounded-lg bg-primary shadow-lg"
           >
-            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
           </Button>
         </div>
-        <p className="text-[9px] text-center text-muted-foreground/30 mt-4 font-black uppercase tracking-[0.2em]">Press Enter to send</p>
+        <p className="text-[8px] text-center text-muted-foreground/30 mt-3 font-black uppercase tracking-[0.2em]">Enter to send</p>
       </div>
     </div>
   );

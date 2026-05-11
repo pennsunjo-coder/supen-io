@@ -1540,15 +1540,15 @@ ${buildAntiAiRules(tightness)}`;
           <motion.div key="results" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }} className="flex-1 flex flex-col overflow-hidden">
             
             {/* Gallery Header */}
-            <div className="flex flex-col gap-6 px-8 py-8 shrink-0 border-b border-white/5">
+            <div className="flex flex-col gap-4 px-6 py-4 shrink-0 border-b border-border/10">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <button onClick={goBack} className="w-10 h-10 rounded-xl glass border-white/5 flex items-center justify-center text-muted-foreground hover:text-white transition-all active:scale-90">
-                    <ChevronLeft className="w-5 h-5" />
+                <div className="flex items-center gap-3">
+                  <button onClick={goBack} className="w-8 h-8 rounded-lg glass border-border/40 flex items-center justify-center text-muted-foreground hover:text-foreground transition-all active:scale-90">
+                    <ChevronLeft className="w-4 h-4" />
                   </button>
                   <div>
-                    <h1 className="text-2xl font-black tracking-tight text-white">{variations.length} Strategic Variations</h1>
-                    <p className="text-xs font-black uppercase tracking-[0.2em] text-primary opacity-60">{selectedPlatform?.name} • {selectedFormat}</p>
+                    <h1 className="text-lg font-black tracking-tight text-foreground">{variations.length} Strategic Variations</h1>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary opacity-60">{selectedPlatform?.name} • {selectedFormat}</p>
                   </div>
                 </div>
                 <Button 
@@ -1566,8 +1566,8 @@ ${buildAntiAiRules(tightness)}`;
             </div>
 
             {/* Cards Gallery */}
-            <div className="flex-1 overflow-y-auto no-scrollbar px-6 py-8">
-              <div className="max-w-4xl mx-auto grid grid-cols-1 gap-6 pb-32">
+            <div className="flex-1 overflow-y-auto no-scrollbar px-4 py-6">
+              <div className="max-w-3xl mx-auto grid grid-cols-1 gap-4 pb-32">
                 {variations.map((v, idx) => {
                   const isSelected = selectedVariation === idx;
                   const detector = passesDetectorEstimate(v.content);
@@ -1580,7 +1580,7 @@ ${buildAntiAiRules(tightness)}`;
                       transition={{ delay: idx * 0.1, duration: 0.5 }}
                       onClick={() => { setSelectedVariation(isSelected ? null : idx); setImagePanel(null); setInfraPanel(null); }}
                       className={cn(
-                        "group relative rounded-2xl border transition-all duration-500 cursor-pointer p-6",
+                        "group relative rounded-2xl border transition-all duration-500 cursor-pointer p-4",
                         isSelected 
                           ? "bg-primary/5 border-primary shadow-xl shadow-primary/5" 
                           : "bg-card/20 border-border/40 hover:border-primary/20 hover:bg-card/30"
@@ -1606,7 +1606,7 @@ ${buildAntiAiRules(tightness)}`;
                       </div>
 
                       <div className="relative">
-                        <p className="text-sm leading-relaxed font-medium text-foreground/90 whitespace-pre-wrap mb-6">{v.content}</p>
+                        <p className="text-[13px] leading-relaxed font-medium text-foreground/90 whitespace-pre-wrap mb-4">{v.content}</p>
                       </div>
 
                       {/* Tooling for selected variation */}
@@ -1616,24 +1616,24 @@ ${buildAntiAiRules(tightness)}`;
                             initial={{ opacity: 0, y: 10 }} 
                             animate={{ opacity: 1, y: 0 }} 
                             exit={{ opacity: 0, y: 10 }}
-                            className="flex flex-wrap gap-2 pt-8 border-t border-white/5"
+                            className="flex flex-wrap gap-2 pt-4 border-t border-border/10"
                             onClick={(e) => e.stopPropagation()}
                           >
-                             <Button onClick={(e) => { e.stopPropagation(); handleCopy(idx); }} variant="secondary" className="h-11 rounded-xl glass border-white/5 font-black uppercase tracking-widest text-[10px] gap-2 px-6">
-                               {copiedIdx === idx ? <Check className="w-4 h-4 text-primary" /> : <Copy className="w-4 h-4" />}
-                               {copiedIdx === idx ? "Copied" : "Copy Content"}
+                             <Button onClick={(e) => { e.stopPropagation(); handleCopy(idx); }} variant="secondary" className="h-9 rounded-lg glass border-border/40 font-black uppercase tracking-widest text-[9px] gap-2 px-4">
+                               {copiedIdx === idx ? <Check className="w-3.5 h-3.5 text-primary" /> : <Copy className="w-3.5 h-3.5" />}
+                               {copiedIdx === idx ? "Copied" : "Copy"}
                              </Button>
-                             <Button onClick={(e) => { e.stopPropagation(); handleHumanize(idx); }} disabled={isHumanizing} variant="secondary" className="h-11 rounded-xl glass border-white/5 font-black uppercase tracking-widest text-[10px] gap-2 px-6">
-                               {isHumanizing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-                               Refine Style
+                             <Button onClick={(e) => { e.stopPropagation(); handleHumanize(idx); }} disabled={isHumanizing} variant="secondary" className="h-9 rounded-lg glass border-border/40 font-black uppercase tracking-widest text-[9px] gap-2 px-4">
+                               {isHumanizing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
+                               Refine
                              </Button>
                              {canGenerateInfographic() && (
-                               <Button onClick={(e) => { e.stopPropagation(); handleGenerateImage(idx); }} variant="secondary" className="h-11 rounded-xl glass border-white/5 font-black uppercase tracking-widest text-[10px] gap-2 px-6">
-                                 <ImagePlus className="w-4 h-4" /> Visual
+                               <Button onClick={(e) => { e.stopPropagation(); handleGenerateImage(idx); }} variant="secondary" className="h-9 rounded-lg glass border-border/40 font-black uppercase tracking-widest text-[9px] gap-2 px-4">
+                                 <ImagePlus className="w-3.5 h-3.5" /> Visual
                                </Button>
                              )}
-                             <Button onClick={(e) => { e.stopPropagation(); setScheduleIdx(idx); setScheduleDate(new Date().toISOString().slice(0, 10)); }} variant="secondary" className="h-11 rounded-xl glass border-white/5 font-black uppercase tracking-widest text-[10px] gap-2 px-6">
-                               <CalendarDays className="w-4 h-4" /> Schedule
+                             <Button onClick={(e) => { e.stopPropagation(); setScheduleIdx(idx); setScheduleDate(new Date().toISOString().slice(0, 10)); }} variant="secondary" className="h-9 rounded-lg glass border-border/40 font-black uppercase tracking-widest text-[9px] gap-2 px-4">
+                               <CalendarDays className="w-3.5 h-3.5" /> Schedule
                              </Button>
                           </motion.div>
                         )}
