@@ -39,25 +39,38 @@ export default function Editor() {
 
   const fetchData = useCallback(async () => {
     if (!user || !sessionId) return;
-    const { data } = await supabase
-      .from("generated_content")
-      .select("*")
-      .eq("user_id", user.id)
-      .or(`session_id.eq.${sessionId},id.eq.${sessionId}`)
-      .order("viral_score", { ascending: false });
+    setLoading(true);
+    
+    try {
+      const { data, error } = await supabase
+        .from("generated_content")
+        .select("*")
+        .eq("user_id", user.id)
+        .or(`session_id.eq.${sessionId},id.eq.${sessionId}`)
+        .order("viral_score", { ascending: false });
 
-    if (data && data.length > 0) {
-      const posts = data.filter((r) => r.format !== "Infographic");
-      const inf = data.find((r) => r.format === "Infographic" && r.infographic_base64);
-      const infFallback = data.find((r) => r.format === "Infographic");
-      const attached = posts.find((r) => r.infographic_base64);
-      setVariations(posts);
-      setInfographic(inf?.infographic_base64 || attached?.infographic_base64 || infFallback?.infographic_base64 || null);
-      setTopic(posts[0]?.content?.split(/\s+/).slice(0, 10).join(" ") || "Untitled");
-      setPlatform(posts[0]?.platform || "");
-      setCreatedAt(posts[0]?.created_at || "");
+      if (error) {
+        console.error("[Editor] Fetch error:", error);
+        toast.error("Error loading content: " + error.message);
+      } else if (data && data.length > 0) {
+        const posts = data.filter((r) => r.format !== "Infographic");
+        const inf = data.find((r) => r.format === "Infographic" && r.infographic_base64);
+        const infFallback = data.find((r) => r.format === "Infographic");
+        const attached = posts.find((r) => r.infographic_base64);
+        
+        setVariations(posts);
+        setInfographic(inf?.infographic_base64 || attached?.infographic_base64 || infFallback?.infographic_base64 || null);
+        setTopic(posts[0]?.content?.split(/\s+/).slice(0, 10).join(" ") || "Untitled");
+        setPlatform(posts[0]?.platform || "");
+        setCreatedAt(posts[0]?.created_at || "");
+      } else {
+        console.warn("[Editor] No content found for session:", sessionId);
+      }
+    } catch (err) {
+      console.error("[Editor] Unexpected error:", err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, [user, sessionId]);
 
   useEffect(() => { fetchData(); }, [fetchData]);

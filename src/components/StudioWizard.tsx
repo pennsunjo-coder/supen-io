@@ -1005,6 +1005,7 @@ ${buildAntiAiRules(tightness)}`;
 
       const rows = parsed.map((v) => ({
         user_id: user.id,
+        session_id: sessionId,
         platform: selectedPlatform.name,
         format: selectedFormat,
         content: v.content,
