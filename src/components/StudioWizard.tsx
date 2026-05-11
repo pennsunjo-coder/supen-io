@@ -993,15 +993,19 @@ ${buildAntiAiRules(tightness)}`;
       const sessionId = crypto.randomUUID();
       setCurrentSessionId(sessionId);
 
-      // Create a content_sessions row (best-effort — table may not exist yet)
+      // Create a content_sessions row (best-effort)
       const topic = sourceText.trim().slice(0, 200) || "Untitled";
-      supabase.from("content_sessions").insert({
-        id: sessionId,
-        user_id: user.id,
-        topic,
-        platform: selectedPlatform.name,
-        format: selectedFormat,
-      }).then(() => {}, () => {}); // Fire-and-forget, ignore errors
+      try {
+        await supabase.from("content_sessions").insert({
+          id: sessionId,
+          user_id: user.id,
+          topic,
+          platform: selectedPlatform.name,
+          format: selectedFormat,
+        });
+      } catch (err) {
+        console.warn("[StudioWizard] Session save failed (non-critical):", err);
+      }
 
       const rows = parsed.map((v) => ({
         user_id: user.id,
