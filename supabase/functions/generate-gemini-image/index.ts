@@ -144,10 +144,11 @@ Deno.serve(async (req) => {
         3. [ZONE_POWER_GRID]: Create a 3x2 grid of boxes. Render G1-G6 inside these boxes with a yellow #FFEF5A highlight on labels.
         4. [ZONE_FOOTER]: Render PRO_TIP in a distinct box at the bottom with a red ✓ symbol.
         
-        STRICT FILL RULE:
-        - The visual MUST occupy 100% of the canvas width and height.
-        - FULL BLEED: No white borders or empty space around the edges.
-        - Ensure the background texture (whiteboard or notebook) covers the entire image area.
+        STRICT FILL & ZOOM RULE:
+        - CLOSE-UP: Zoom in tightly on the whiteboard/notebook texture. 
+        - The notebook/paper edges MUST be cut off by the canvas edges or touch them exactly.
+        - FULL BLEED: 0px margin. The content must fill the entire ${generationSize} area.
+        - NO BACKGROUND: Only the paper/whiteboard texture should be visible. No desk, no walls, no realistic room around it.
         
         SCRIPT TO RENDER:
         ${finalPrompt}
@@ -159,7 +160,10 @@ Deno.serve(async (req) => {
         { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" },
       ],
       generationConfig: { 
-        responseModalities: ["IMAGE"]
+        responseModalities: ["IMAGE"],
+        // @ts-ignore: aspectRatio is a valid field for Imagen-based models
+        aspectRatio: generationSize.includes("1536") || generationSize.includes("1792") ? "3:4" : 
+                     generationSize.includes("landscape") || generationSize.split("x")[0] > generationSize.split("x")[1] ? "16:9" : "1:1"
       },
     };
 
@@ -225,16 +229,18 @@ Deno.serve(async (req) => {
             - GRID: 3x2 grid of boxes for G1-G6 with yellow highlights.
             - BOTTOM: PRO_TIP in a box with a red checkmark symbol.
             
-            STRICT FILL RULE:
-            - The visual MUST occupy 100% of the canvas width and height.
-            - FULL BLEED: No white borders or empty space around the edges.
-            - Ensure the background texture (whiteboard or notebook) covers the entire image area.
+            STRICT FILL & ZOOM RULE:
+            - CLOSE-UP: Zoom in tightly on the whiteboard/notebook texture. 
+            - The notebook/paper edges MUST be cut off by the canvas edges or touch them exactly.
+            - FULL BLEED: 0px margin. The content must fill the entire canvas.
+            - NO BACKGROUND: Only the paper/whiteboard texture should be visible. No desk, no walls, no realistic room around it.
             
             SCRIPT:
             ${finalPrompt}
           `,
           n: 1,
-          size: generationSize,
+          size: generationSize.includes("1536") || generationSize.includes("1792") ? "1024x1792" : 
+                generationSize.includes("landscape") ? "1792x1024" : "1024x1024",
           response_format: "b64_json",
         }),
       });
