@@ -191,6 +191,7 @@ export function useHistory() {
           infographic,
         };
       })
+      .filter((s) => !!s.infographic) // Only show sessions that have a completed visual
       .sort((a, b) => {
         // Sort strictly by date (newest first)
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();

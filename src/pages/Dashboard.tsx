@@ -342,9 +342,6 @@ const Dashboard = () => {
                                   <div className="relative z-10 w-14 h-14 rounded-2xl bg-card/90 backdrop-blur-md flex items-center justify-center shadow-lg border border-border/40 mb-3">
                                     <Sparkles className="w-6 h-6 text-primary/70" />
                                   </div>
-                                  <span className="relative z-10 text-[10px] font-black uppercase tracking-widest text-foreground/40 px-3 py-1 rounded-full bg-card/80 backdrop-blur-md border border-border/40">
-                                    Draft
-                                  </span>
                                 </div>
                               )}
 
@@ -372,9 +369,9 @@ const Dashboard = () => {
                             {/* Metadata footer */}
                             <div className="px-5 py-4 flex items-center justify-between border-t border-border/20 mt-1 bg-muted/[0.02]">
                               <div className="flex items-center gap-2">
-                                <div className={cn("w-2 h-2 rounded-full", hasVisual ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" : "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]")} />
+                                <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
                                 <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
-                                  {hasVisual ? "Complete" : "Draft"}
+                                  Complete
                                 </span>
                               </div>
                               <span className="text-[10px] font-bold text-muted-foreground/40">
