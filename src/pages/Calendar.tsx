@@ -348,9 +348,12 @@ const Calendar = () => {
                     <PostCard post={post} onPublished={markPublished} onCancel={cancelPost} onDelete={deletePost} expanded />
                   </div>
                 ))
-              )}
-            </div>
-          {/* ═══ SCHEDULE MODAL ═══ */}
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ═══ SCHEDULE MODAL ═══ */}
       <AnimatePresence>
         {showModal && (
           <motion.div
