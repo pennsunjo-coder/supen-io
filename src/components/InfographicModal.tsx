@@ -15,6 +15,7 @@ import {
   getFormatDimensions,
   resetRegenerationCounter,
   distillInfographicContent,
+  buildInfographicPrompt,
 } from "@/lib/infographic-style";
 import { callClaude } from "@/lib/anthropic";
 import { sanitizeForPlatform } from "@/lib/output-sanitizer";

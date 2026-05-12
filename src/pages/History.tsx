@@ -193,16 +193,6 @@ const History = () => {
                         <span className="text-[10px] text-muted-foreground/50">
                           {session.variationCount} post{session.variationCount > 1 ? "s" : ""}
                         </span>
-                        {session.bestScore > 0 && (
-                          <span className={cn(
-                            "text-[10px] font-semibold",
-                            session.bestScore >= 80 ? "text-emerald-400" :
-                            session.bestScore >= 60 ? "text-amber-400" :
-                            "text-muted-foreground/50",
-                          )}>
-                            {session.bestScore}%
-                          </span>
-                        )}
                       </div>
                     </div>
                     <p className="text-[10px] text-muted-foreground/40 mt-1.5">

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Send, Bot, User, Loader2, Trash2, Sparkles, Brain, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { callClaude } from "@/lib/anthropic";
+import { callClaude, streamClaude } from "@/lib/anthropic";
 import { sanitizeInput, createRateLimiter } from "@/lib/security";
 import { assertOnline, friendlyError } from "@/lib/resilience";
 import { getUserStyleMemory } from "@/lib/user-memory";
@@ -102,25 +102,32 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
 
     try {
       assertOnline();
-      // Fetch style memory on demand to keep the prompt fresh
       let styleMemory = "";
       if (user) {
         styleMemory = await getUserStyleMemory(user.id, "LinkedIn");
       }
 
       const system = buildCoachPrompt(profile, sources, lastGeneratedContent, styleMemory);
-      // Only send last 10 messages to keep payload small and avoid token limits
       const history = messages.slice(-10);
       const apiMessages = [...history, userMsg].map(m => ({ role: m.role, content: m.content }));
       
-      const response = await withTimeout(
-        callClaude(system, apiMessages, { maxTokens: 1000, model: "claude-haiku-4-5-20251001" }),
-        40000,
-        "The coach is taking too long to respond. Please try again."
-      );
+      // Add empty assistant message placeholder
+      onMessagesChange((prev: any) => [...prev, { role: "assistant", content: "" }]);
       
-      const cleaned = cleanAIResponse(response);
-      onMessagesChange((prev: any) => [...prev, { role: "assistant", content: cleaned }]);
+      let fullContent = "";
+      const stream = streamClaude(system, apiMessages, { maxTokens: 1000, model: "claude-3-5-sonnet-20240620" });
+      
+      for await (const chunk of stream) {
+        fullContent += chunk;
+        onMessagesChange((prev: any) => {
+          const newMessages = [...prev];
+          const lastMsg = newMessages[newMessages.length - 1];
+          if (lastMsg && lastMsg.role === "assistant") {
+            lastMsg.content = fullContent;
+          }
+          return newMessages;
+        });
+      }
     } catch (err) {
       console.error("[ChatPanel] Error sending message:", err);
       toast.error(friendlyError(err));

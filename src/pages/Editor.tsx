@@ -305,18 +305,6 @@ export default function Editor() {
                         <span className="text-xs font-medium text-muted-foreground flex-1 truncate">
                           {v.angle || `Variation ${i + 1}`}
                         </span>
-                        {v.viral_score > 0 && (
-                          <div className={cn(
-                            "flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold",
-                            v.viral_score >= 80
-                              ? "bg-emerald-500/15 text-emerald-400"
-                              : v.viral_score >= 60
-                                ? "bg-amber-500/15 text-amber-400"
-                                : "bg-accent/30 text-muted-foreground",
-                          )}>
-                            {v.viral_score}%
-                          </div>
-                        )}
                       </div>
 
                       {/* Content with generous line-height — editable in place */}
@@ -451,9 +439,6 @@ export default function Editor() {
                 <div className="flex flex-wrap gap-2">
                   <span className="px-2.5 py-1 rounded-full bg-accent/40 text-xs font-medium">{platform}</span>
                   <span className="px-2.5 py-1 rounded-full bg-accent/40 text-xs font-medium">{variations.length} variations</span>
-                  {avgScore > 0 && (
-                    <span className="px-2.5 py-1 rounded-full bg-accent/40 text-xs font-medium">Avg {avgScore}%</span>
-                  )}
                   {infographic && (
                     <span className="px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-400 text-xs font-medium">✓ Visual ready</span>
                   )}

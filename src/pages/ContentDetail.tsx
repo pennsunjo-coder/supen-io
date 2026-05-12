@@ -176,7 +176,7 @@ const ContentDetail = () => {
                       <div className="px-10 pt-10 flex items-center justify-between">
                          <div className="flex items-center gap-4">
                             <span className="w-10 h-10 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-xs font-black text-white/40">
-                              0{idx + 1}
+                              {idx + 1}
                             </span>
                             {isBest && (
                               <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/20 border border-primary/30 shadow-[0_0_15px_rgba(20,184,166,0.3)]">
@@ -185,14 +185,6 @@ const ContentDetail = () => {
                               </div>
                             )}
                          </div>
-                         {v.viral_score > 0 && (
-                            <div className="flex flex-col items-end">
-                               <span className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest mb-1">Potential</span>
-                               <span className={cn("text-2xl font-black tracking-tighter", v.viral_score >= 80 ? "text-emerald-400" : "text-primary")}>
-                                 {v.viral_score}%
-                               </span>
-                            </div>
-                         )}
                       </div>
 
                       {/* Card Content */}
@@ -349,7 +341,7 @@ const ContentDetail = () => {
                           </div>
                           <div className="glass p-5 rounded-2xl border-white/5">
                              <p className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-widest mb-2">Top Score</p>
-                             <p className="text-xs font-black text-emerald-400">{bestScore}%</p>
+                             <p className="text-xs font-black text-emerald-400">High</p>
                           </div>
                        </div>
                     </div>

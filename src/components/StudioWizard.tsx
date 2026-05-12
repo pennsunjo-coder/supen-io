@@ -789,7 +789,7 @@ Each variation includes: HOOK, PROBLEM, SOLUTION, PROOF, CTA, ON-SCREEN TEXT.`;
       const text = await withTimeout(
         callClaude(systemPrompt, [{ role: "user", content: userMessage }], {
           maxTokens: 4000,
-          model: "claude-haiku-4-5-20251001",
+          model: "claude-3-5-sonnet-20240620",
         }),
         60_000,
         "Generation took too long. Try again with shorter content.",
@@ -895,7 +895,7 @@ ${buildAntiAiRules(tightness)}`;
             const raw = await callClaude(
               retrySystem,
               [{ role: "user", content: `Rewrite this draft:\n\n${v.content}` }],
-              { maxTokens: 1500, model: "claude-haiku-4-5-20251001" },
+              { maxTokens: 1500, model: "claude-3-5-sonnet-20240620" },
             );
             const cleaned = sanitizeForPlatform(stripMarkdown(raw).trim(), platformName, selectedFormat || "");
             // Only accept the rewrite if it actually moved the needle.
@@ -1589,7 +1589,7 @@ ${buildAntiAiRules(tightness)}`;
                       {/* Variation Badge */}
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
-                          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40">Variation 0{idx + 1}</span>
+                          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40">Variation {idx + 1}</span>
                           {detector.verdict === 'likely_passes' && (
                             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
                               <Shield className="w-2.5 h-2.5 text-emerald-400" />
