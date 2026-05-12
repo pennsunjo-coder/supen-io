@@ -23,7 +23,7 @@ export async function callClaude(
   messages: ClaudeMessage[],
   options?: { maxTokens?: number; model?: string },
 ): Promise<string> {
-  const { data, error } = await supabase.functions.invoke("chat", {
+  let { data, error } = await supabase.functions.invoke("chat", {
     body: {
       system,
       messages,
@@ -32,8 +32,23 @@ export async function callClaude(
     },
   });
 
+  // FALLBACK: If Anthropic fails with 404 (Model not found), try OpenAI
+  if (error && (error.message?.includes("404") || error.message?.includes("model") || error.message?.includes("not_found"))) {
+    console.warn("[callClaude] Anthropic model not found, falling back to OpenAI...");
+    const openaiRes = await supabase.functions.invoke("openai", {
+      body: {
+        system,
+        messages,
+        model: "gpt-4o-mini", // Use mini as a safe, fast fallback
+        max_tokens: options?.maxTokens || 2048,
+      },
+    });
+    data = openaiRes.data;
+    error = openaiRes.error;
+  }
+
   if (error) {
-    console.error("[callClaude] Supabase Function Error:", error);
+    console.error("[callClaude] Final Error:", error);
     
     // Attempt to extract error message from response body if available
     let detailedError = error.message;
@@ -42,16 +57,16 @@ export async function callClaude(
         const response = (error as any).context;
         if (response && typeof response.json === 'function') {
           const body = await response.json();
-          if (body && body.error) detailedError = body.error;
+          if (body && body.error) detailedError = typeof body.error === 'string' ? body.error : JSON.stringify(body.error);
         }
       } catch { /* ignore parsing errors */ }
     }
     
-    throw new Error(detailedError || "Claude API call failed");
+    throw new Error(detailedError || "AI service currently unavailable");
   }
 
   if (data?.error) {
-    throw new Error(data.error);
+    throw new Error(typeof data.error === 'string' ? data.error : JSON.stringify(data.error));
   }
 
   return data?.text || "";
