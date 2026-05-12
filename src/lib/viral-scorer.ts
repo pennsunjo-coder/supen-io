@@ -59,7 +59,7 @@ export async function scoreVariation(
     const text = await callClaude(
       `Platform: ${platform}\n\n${SCORING_PROMPT}`,
       [{ role: "user", content: content.slice(0, 800) }],
-      { maxTokens: 200, model: "claude-3-5-sonnet-20240620" },
+      { maxTokens: 200, model: "gpt-4o" },
     );
 
     const jsonStr = text.replace(/```json?\s*/g, "").replace(/```/g, "").trim();

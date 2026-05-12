@@ -115,7 +115,7 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
       onMessagesChange((prev: any) => [...prev, { role: "assistant", content: "" }]);
       
       let fullContent = "";
-      const stream = streamClaude(system, apiMessages, { maxTokens: 1000, model: "claude-3-5-sonnet-20240620" });
+      const stream = streamClaude(system, apiMessages, { maxTokens: 1000, model: "gpt-4o" });
       
       for await (const chunk of stream) {
         fullContent += chunk;

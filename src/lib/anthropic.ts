@@ -1,8 +1,9 @@
 import { supabase } from "@/lib/supabase";
 
 /**
- * Secure Claude API proxy — all calls go through the "chat" Edge Function.
- * The API key lives server-side only (ANTHROPIC_API_KEY secret in Supabase).
+ * Secure AI API proxy — all calls go through the "chat" Edge Function.
+ * The system now uses OpenAI (GPT-4o) as the primary engine for better reliability.
+ * The API key lives server-side only (OPENAI_API_KEY secret in Supabase).
  */
 
 export interface ClaudeMessage {

@@ -789,7 +789,7 @@ Each variation includes: HOOK, PROBLEM, SOLUTION, PROOF, CTA, ON-SCREEN TEXT.`;
       const text = await withTimeout(
         callClaude(systemPrompt, [{ role: "user", content: userMessage }], {
           maxTokens: 4000,
-          model: "claude-3-5-sonnet-20240620",
+          model: "gpt-4o",
         }),
         60_000,
         "Generation took too long. Try again with shorter content.",
@@ -895,7 +895,7 @@ ${buildAntiAiRules(tightness)}`;
             const raw = await callClaude(
               retrySystem,
               [{ role: "user", content: `Rewrite this draft:\n\n${v.content}` }],
-              { maxTokens: 1500, model: "claude-3-5-sonnet-20240620" },
+              { maxTokens: 1500, model: "gpt-4o" },
             );
             const cleaned = sanitizeForPlatform(stripMarkdown(raw).trim(), platformName, selectedFormat || "");
             // Only accept the rewrite if it actually moved the needle.
