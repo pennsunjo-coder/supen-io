@@ -110,7 +110,7 @@ export default function Studio() {
               variant="outline" 
               onClick={() => setShowCoach(!showCoach)} 
               className={cn(
-                "h-10 gap-2 px-4 rounded-xl glass border-border/40 text-[10px] font-black uppercase tracking-widest shadow-xl pointer-events-auto active:scale-95 transition-all",
+                "h-10 gap-2 px-4 rounded-xl glass border-border/40 text-[10px] font-black uppercase tracking-widest shadow-xl pointer-events-auto lg:hidden active:scale-95 transition-all",
                 showCoach && "bg-primary/10 border-primary/20 text-primary"
               )}
             >
@@ -124,7 +124,7 @@ export default function Studio() {
             <motion.div 
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="w-full max-w-4xl h-full flex flex-col"
+              className="w-full max-w-2xl h-full flex flex-col"
             >
               <ErrorBoundary
                 fallback={
@@ -151,14 +151,14 @@ export default function Studio() {
           </div>
         </div>
 
-        {/* RIGHT SIDEBAR — Coach */}
+        {/* RIGHT SIDEBAR — Coach (Permanent on desktop) */}
         <div className={cn(
           "w-80 border-l border-border/40 flex flex-col transition-all duration-500 bg-card/10 backdrop-blur-xl shrink-0 z-20",
-          !showCoach && "hidden"
+          !showCoach && "hidden lg:flex"
         )}>
           <div className="p-4 border-b border-border/40 flex items-center justify-between bg-card/20">
             <span className="text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2"><Bot className="w-3.5 h-3.5 text-primary" /> AI Coach</span>
-            <Button variant="ghost" size="icon" onClick={() => setShowCoach(false)} className="h-8 w-8"><X className="w-4 h-4" /></Button>
+            <Button variant="ghost" size="icon" onClick={() => setShowCoach(false)} className="h-8 w-8 lg:hidden"><X className="w-4 h-4" /></Button>
           </div>
           <div className="flex-1 overflow-hidden">
             <ChatPanel

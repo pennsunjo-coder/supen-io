@@ -144,8 +144,14 @@ const SourcePanel = ({
     setPdfLoading(true);
     try {
       const result = await onAddPdf(file);
-      if (result.error) toast.error(result.error);
-      else toast.success(`"${file.name}" imported.`);
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success(`"${file.name}" imported.`);
+        if (result.insertedIds && result.insertedIds.length > 0) {
+          onToggleGroup(result.insertedIds);
+        }
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Unexpected error");
     } finally {
