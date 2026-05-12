@@ -99,23 +99,33 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
     onMessagesChange((prev: any) => [...prev, userMsg]);
 
     try {
+      assertOnline();
       // Fetch style memory on demand to keep the prompt fresh
       let styleMemory = "";
       if (user) {
-        styleMemory = await getUserStyleMemory(user.id, "LinkedIn"); // Default to LinkedIn style for general advice
+        styleMemory = await getUserStyleMemory(user.id, "LinkedIn");
       }
 
       const system = buildCoachPrompt(profile, sources, lastGeneratedContent, styleMemory);
-      const apiMessages = [...messages, userMsg].map(m => ({ role: m.role, content: m.content }));
-      const response = await callClaude(system, apiMessages);
+      // Only send last 10 messages to keep payload small and avoid token limits
+      const history = messages.slice(-10);
+      const apiMessages = [...history, userMsg].map(m => ({ role: m.role, content: m.content }));
+      
+      const response = await withTimeout(
+        callClaude(system, apiMessages),
+        40000,
+        "The coach is taking too long to respond. Please try again."
+      );
+      
       const cleaned = cleanAIResponse(response);
       onMessagesChange((prev: any) => [...prev, { role: "assistant", content: cleaned }]);
     } catch (err) {
+      console.error("[ChatPanel] Error sending message:", err);
       toast.error(friendlyError(err));
     } finally {
       setIsLoading(false);
     }
-  }, [input, isLoading, messages, profile, sources, lastGeneratedContent]);
+  }, [input, isLoading, messages, profile, sources, lastGeneratedContent, onMessagesChange, user]);
 
   return (
     <div className="flex flex-col h-full bg-transparent">
