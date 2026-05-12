@@ -161,7 +161,8 @@ const Dashboard = () => {
         </div>
 
         {/* MAIN CONTENT AREA — The Focus */}
-        <div className="flex-1 flex flex-col min-w-0 overflow-y-auto no-scrollbar pt-8 px-6 lg:px-12 xl:px-20">
+        <div className="flex-1 flex flex-col min-w-0 overflow-y-auto no-scrollbar pt-8 px-6 lg:px-10">
+          <div className="max-w-5xl mx-auto w-full">
           
           {/* Dashboard Header */}
           <header className="mb-12">
@@ -260,7 +261,7 @@ const Dashboard = () => {
                 <Button size="lg" onClick={() => navigate("/dashboard/studio")} className="h-14 px-10 rounded-xl bg-primary font-black text-base shadow-xl shadow-primary/20 transition-all active:scale-95">Get Started</Button>
               </motion.div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                 {filtered.map((s, i) => (
                   <motion.div
                     key={s.sessionId}
@@ -271,7 +272,7 @@ const Dashboard = () => {
                     onClick={() => navigate(`/editor/${s.sessionId}`)}
                   >
                     <div className="glass-card overflow-hidden h-full flex flex-col group cursor-pointer border-border/30 hover:border-primary/40">
-                      <div className="aspect-[4/5] relative overflow-hidden bg-card/50">
+                      <div className="aspect-square relative overflow-hidden bg-card/50">
                         {s.infographic ? (
                           <img src={`data:image/png;base64,${s.infographic}`} className="w-full h-full object-cover transition-transform duration-[1500ms] ease-out group-hover:scale-110" alt="" />
                         ) : (
@@ -299,14 +300,14 @@ const Dashboard = () => {
                         </div>
                       </div>
 
-                      <div className="p-6 flex-1 flex flex-col">
-                        <h3 className="text-base font-black leading-tight line-clamp-2 mb-3 group-hover:text-primary transition-colors duration-300">{s.topic || "Untitled Session"}</h3>
-                        <div className="mt-auto pt-4 border-t border-border/20 flex items-center justify-between">
+                      <div className="p-4 flex-1 flex flex-col">
+                        <h3 className="text-sm font-black leading-tight line-clamp-2 mb-2 group-hover:text-primary transition-colors duration-300">{s.topic || "Untitled Session"}</h3>
+                        <div className="mt-auto pt-3 border-t border-border/20 flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <div className="w-1.5 h-1.5 rounded-full bg-primary glow-sm" />
-                            <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">{timeAgo(s.createdAt)}</span>
+                            <div className="w-1 h-1 rounded-full bg-primary glow-sm" />
+                            <span className="text-[8px] font-black uppercase tracking-widest text-muted-foreground/40">{timeAgo(s.createdAt)}</span>
                           </div>
-                          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/20 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                          <ChevronRight className="w-3 h-3 text-muted-foreground/20 group-hover:text-primary group-hover:translate-x-1 transition-all" />
                         </div>
                       </div>
                     </div>
@@ -315,44 +316,29 @@ const Dashboard = () => {
               </div>
             )}
           </div>
+          </div>
         </div>
 
-        {/* RIGHT PANEL — Coach (Floating Drawer style) */}
-        <AnimatePresence>
-          {activePanel === "coach" && (
-            <>
-              <motion.div 
-                initial={{ opacity: 0 }} 
-                animate={{ opacity: 1 }} 
-                exit={{ opacity: 0 }} 
-                onClick={() => setActivePanel(null)}
-                className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm lg:hidden"
-              />
-              <motion.div 
-                initial={{ x: 350, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: 350, opacity: 0 }}
-                transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                className="absolute right-0 top-0 bottom-0 z-40 w-96 glass border-l border-white/5 flex flex-col shadow-2xl"
-              >
-                <div className="p-5 border-b border-border/40 flex items-center justify-between bg-card/20">
-                  <span className="text-sm font-bold flex items-center gap-2 text-foreground"><Bot className="w-4 h-4 text-primary" /> AI Creative Coach</span>
-                  <Button variant="ghost" size="icon" onClick={() => setActivePanel(null)} className="h-8 w-8 rounded-lg hover:bg-card"><X className="w-4 h-4" /></Button>
-                </div>
-                <div className="flex-1 overflow-hidden">
-                  <ChatPanel
-                    sources={sources}
-                    messages={messages}
-                    onMessagesChange={setMessages}
-                    conversationLoading={conversationLoading}
-                    onClearConversation={clearConversation}
-                    profile={profile}
-                  />
-                </div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
+        {/* RIGHT SIDEBAR — Coach (Permanent on desktop) */}
+        <div className={cn(
+          "w-80 border-l border-border/40 flex flex-col transition-all duration-500 bg-card/10 backdrop-blur-xl shrink-0 z-20",
+          activePanel !== "coach" && "hidden lg:flex"
+        )}>
+          <div className="p-4 border-b border-border/40 flex items-center justify-between bg-card/20">
+            <span className="text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2 text-foreground"><Bot className="w-3.5 h-3.5 text-primary" /> AI Creative Coach</span>
+            <Button variant="ghost" size="icon" onClick={() => setActivePanel(null)} className="h-8 w-8 lg:hidden"><X className="w-4 h-4" /></Button>
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <ChatPanel
+              sources={sources}
+              messages={messages}
+              onMessagesChange={setMessages}
+              conversationLoading={conversationLoading}
+              onClearConversation={clearConversation}
+              profile={profile}
+            />
+          </div>
+        </div>
 
       </div>
 
