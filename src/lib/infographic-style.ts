@@ -798,15 +798,15 @@ FORMAT: ${formatHint}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 DNA VISUAL SPECS (FORENSIC ACCURACY)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1. BACKGROUND: Warm off-white #f8f9f7 with visible paper grain texture (4% opacity).
+1. BACKGROUND: Warm off-white #f8f9f7 with visible paper grain texture (4% opacity). The background must fill 100% of the canvas from edge to edge.
 2. HARDWARE: 
    ${styleType === 'WHITEBOARD' 
-     ? '- Corner Clips: 4 metallic dark gray rectangular clips at the very corners.' 
-     : '- Spiral Binding: 22 metallic silver-gray coils at the top edge, catching light.'}
+     ? '- Corner Clips: 4 metallic dark gray rectangular clips at the very corners, touching the edges.' 
+     : '- Spiral Binding: 22 metallic silver-gray coils at the top edge, touching the top border, catching light.'}
 3. TYPOGRAPHY: 
    - TITLES: Extremely heavy hand-drawn marker font (weight 900+). Strokes are thick.
    - BODY: Handwritten Caveat-style (weight 500). Looks like a thin Sharpie marker.
-4. HIGHLIGHTS: Yellow #FFEF5A used for full-width section bands and 3-5 inline keywords.
+4. HIGHLIGHTS: Yellow #FFEF5A used for full-width section bands (touching left and right edges) and 3-5 inline keywords.
 5. NO EMOJIS: Use hand-drawn simple black line-art sketches ONLY (gear, bulb, book, rocket).
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -818,15 +818,17 @@ ${rawExt.points.map((p, i) => `[POINT_${i + 1}]: "${p}"`).join("\n")}
 [FOOTER]: "Follow @${handle} for more AI systems | Repost ♻️"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-LAYOUT DENSITY (85-95% FILL)
+LAYOUT DENSITY (100% FILL - FULL BLEED)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- Zero empty space at the bottom. Content must fill the entire canvas top-to-bottom.
-- Whiteboard: Include 2-3 full-width yellow #FFEF5A background bands for major sections.
-- Notebook: Include light blue ruled lines every 34px and a red vertical margin line at x=72px.
+- ABSOLUTELY ZERO EMPTY SPACE. The content must touch all four edges (top, bottom, left, right).
+- NO MARGINS, NO VIGNETTING, NO EXTERNAL SHADOWS.
+- The canvas IS the ${styleType.toLowerCase()} surface. 
+- Whiteboard: Include 2-3 full-width yellow #FFEF5A background bands for major sections that go from edge to edge.
+- Notebook: Include light blue ruled lines that span the entire width. The red vertical margin line is at x=72px.
 - Use 3 levels of hierarchy: Bold Section Headers → Sub-headers → Detailed Bullet Points.
 - Use circled numbers ①②③④⑤ and checkmarks ✓ in red #C0392B.
 
-GO! Create a high-density, professional infographic that looks hand-written on a real surface.
+GO! Create a high-density, professional infographic where the content fills every single pixel of the ${formatHint.split('.')[0]} canvas.
 `;
 }
 
