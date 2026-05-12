@@ -645,77 +645,45 @@ export function buildInfographicPrompt(
   platform: string,
   customInstructions?: string,
   forcedTemplate?: string,
+  distilled?: EnhancedExtraction & { quotes: string[]; contentType: string; proTip: string }
 ): string {
   const UNIVERSAL_STYLE_CONTEXT = `
 STYLE CONTEXT — READ THIS FIRST AND APPLY TO EVERYTHING:
 
-You are generating viral educational infographic HTML/CSS for social media.
-The reference style is Awa K Penn — hand-crafted whiteboard/notebook content.
-
-════════════════════════════════════════════════
-MANDATORY AESTHETIC RULES — NO EXCEPTIONS
-════════════════════════════════════════════════
-
-1. Background: ALWAYS #f8f9f7 to #fffef8 — NEVER dark backgrounds
-2. TWO fonts ONLY:
-   - Titles/headers: Nunito ExtraBold weight 900
-   - Body/bullets: Caveat Regular/Bold (handwritten feel)
+MANDATORY AESTHETIC RULES — NO EXCEPTIONS:
+1. Background: ALWAYS #f8f9f7 to #fffef8 — NEVER dark backgrounds.
+2. FULL BLEED: The content MUST touch the edges of the canvas. 100% fill.
+3. TWO fonts ONLY:
+   - Titles/headers: Nunito ExtraBold weight 900.
+   - Body/bullets: Caveat Regular/Bold (handwritten feel).
    - Load: https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Caveat:wght@400;500;600;700&display=swap
-3. Yellow ONLY as inline highlighter: background:#FFEF5A on specific words
-   NEVER as card background or section color
-4. Max 4 accent colors:
-   - Red: #C0392B (warm brownish — NOT #FF0000)
-   - Blue: #2563EB (medium — NOT navy)
-   - Green: #4A8B35 (natural — NOT lime)
-   - Orange: #F5922A (tertiary only)
-5. NO gradients. NO dark cards. NO corporate slide aesthetic.
-6. Dense information — every section packed with useful content
-7. Each section header has colored underline in accent color
-8. NO footer, NO signature, NO watermark, NO "follow for more" text
-9. ALL CSS MUST BE INLINE (style="...") — NEVER use CSS classes
-   This is critical for PNG export with html2canvas
-
-════════════════════════════════════════════════
-VISUAL SIGNATURE ELEMENTS (MANDATORY)
-════════════════════════════════════════════════
-
-WHITEBOARD TEMPLATES:
-- 4 small metal clips at corners (12x18px dark gray rectangles)
-- Very subtle border 0.5px #e0e0e0 around canvas
-- Background grain 2% opacity
-- [Square brackets] around title — bold black, Nunito 900
-
-NOTEBOOK TEMPLATES:
-- Top spiral binding: 20 metallic coils, 70px tall
-- Left margin line: vertical #E63946, 1.5px, at x=72px
-- Horizontal ruled lines: #dde8f0, 0.5px, every 34px
-
-ALL TEMPLATES:
-- Yellow #FFEF5A inline highlights (flat, no border-radius, like Stabilo marker)
-- Colored section header underlines (2px, accent color)
-- Circle/oval badges for numbered lists (stroke 1.5px, white fill)
-- ✓ checkmarks in #C0392B
-- ★ stars for emphasis in #F5922A
-- → arrows between elements
-- Circled numbers ①②③④⑤⑥ in Nunito Bold blue #2563EB
-
-════════════════════════════════════════════════
-QUALITY THRESHOLD — REJECT IF ANY OF THESE:
-════════════════════════════════════════════════
-✗ Clean modern sans-serif throughout (Caveat missing)
-✗ Dark backgrounds or dark section cards
-✗ Pale/washed-out colors
-✗ Empty whitespace between sections
-✗ Missing numbered badge circles on step items
-✗ Text cut off or misaligned
-✗ Yellow used as card/section background
-✗ More than 4 accent colors`;
+4. ORGANIC FEEL:
+   - Rotate headers and surligneurs by random small amounts (-1.5deg to 1.5deg).
+   - Use border-radius: 2px 12px 4px 15px to avoid perfect digital corners.
+5. Yellow ONLY as inline highlighter: background:#FFEF5A; padding: 2px 8px; mix-blend-mode: multiply; transform: rotate(-0.5deg);
+6. Max 4 accent colors:
+   - Red: #C0392B (warm)
+   - Blue: #2563EB
+   - Green: #4A8B35
+   - Orange: #F5922A
+7. Dense information — 90-95% canvas fill. Zero empty space at bottom.
+8. NO footer, NO signature, NO watermark.
+9. ALL CSS MUST BE INLINE (style="...") — Critical for PNG export.`;
 
   const analysis = analyzeContent(content, platform);
   const dims = FORMAT_DIMS[analysis.format];
   const selection = selectBestTemplate(content, platform, forcedTemplate);
   const templateId = selection.templateId;
-  const extraction = extractKeyPoints(content);
+  
+  // Use distilled content if provided, otherwise fallback to local extraction
+  const extraction = distilled ? {
+    title: distilled.title,
+    badge: distilled.contentType.toUpperCase(),
+    subtitle: distilled.quotes[0] || "",
+    points: distilled.points.map(p => ({ title: p, body: "" })),
+    sections: [{ header: "Core System", bullets: distilled.points }],
+    proTip: distilled.proTip
+  } : extractKeyPoints(content);
 
   const templatePrompt = getTemplatePrompt(templateId, extraction, dims);
 

@@ -465,60 +465,46 @@ export default function InfographicModal({ open, onClose, content, platform, con
       assertOnline();
 
       if (IS_DEV) console.log("[Infographic] Content length:", content.length);
-      if (IS_DEV) console.log("[Infographic] Template:", templateSelection.templateId);
+      const template = styleChoice === "auto" ? templateSelection.templateId : styleChoice;
 
-      // STEP 1: VETTING & DISTILLATION
-      // Use Claude to extract high-quality, hierarchical content
+      // STEP 1: VETTING & DISTILLATION (The "Vetter")
       const distilled = await distillInfographicContent(content, platform || "LinkedIn", callClaude);
 
-      // STEP 2: BUILD PROMPT
+      // STEP 2: BUILD PROMPTS
       const cleanContent = sanitizeForPlatform(content, platform || "", "Post");
-      const dallePrompt = buildDallEPrompt(cleanContent, platform, templateSelection.templateId, userName, distilled);
+      const dallePrompt = buildDallEPrompt(cleanContent, platform, template, userName, distilled);
+      const htmlPrompt = buildInfographicPrompt(cleanContent, platform, undefined, template, distilled);
 
-      if (IS_DEV) {
-        console.log("=== INFOGRAPHIC PROMPT ===");
-        console.log("Template:", templateSelection.templateId);
-        console.log("Prompt length:", dallePrompt.length);
-        console.log(dallePrompt.slice(0, 600));
-        console.log("=== END PROMPT ===");
+      // STEP 3: GENERATE BOTH PARALLEL
+      if (IS_DEV) console.log("[Infographic] Launching dual-generation...");
+      
+      const [imgResult, htmlResult] = await Promise.allSettled([
+        generateInfographic(dallePrompt, imageConfig.size),
+        callClaude(htmlPrompt, [])
+      ]);
+
+      let base64 = "";
+      if (imgResult.status === "fulfilled") {
+        base64 = imgResult.value;
+        setImageBase64(base64);
       }
 
-      // Determine generation size for DALL-E/Gemini
-      const genSize = imageConfig.size;
-
-      // Attempt 1
-      if (IS_DEV) console.log("[InfographicModal] Attempt 1 — generating infographic...");
-      let base64: string | null = null;
-      try {
-        base64 = await generateInfographic(dallePrompt, genSize);
-      } catch (firstErr) {
-        if (IS_DEV) console.warn("[InfographicModal] Attempt 1 failed:", firstErr);
-
-        // Attempt 2: retry with simplified prompt
-        if (IS_DEV) console.log("[InfographicModal] Attempt 2 — retrying...");
-        try {
-          base64 = await generateInfographic(dallePrompt + "\n\nIMPORTANT: Use EXACT strings from the SACRED TEXT table. Zero typos. Clean professional layout.", genSize);
-        } catch (secondErr) {
-          if (IS_DEV) console.error("[InfographicModal] Attempt 2 also failed:", secondErr);
-          throw secondErr;
-        }
+      let html = "";
+      if (htmlResult.status === "fulfilled") {
+        html = postProcessHtml(htmlResult.value);
+        setHtmlCode(html);
+      } else {
+        // Fallback to image-as-html if Claude failed
+        html = wrapBase64AsHtml(base64, dims);
+        setHtmlCode(html);
       }
 
-      if (!base64) {
-        throw new Error("Image generation failed. Please try again.");
-      }
-
-      // Store the raw base64 for direct downloads
-      setImageBase64(base64);
-
-      // Also wrap in HTML for iframe preview (backward-compatible display)
-      const html = wrapBase64AsHtml(base64, dims);
-      setHtmlCode(html);
-      setResultMode("openai");
+      // Default result mode: prefer Image if available, otherwise HTML
+      setResultMode(base64 ? "openai" : "claude");
       setStep("result");
 
       // Save to Supabase
-      await handleSave({ html, image: base64, mode: "openai" });
+      await handleSave({ html, image: base64, mode: base64 ? "openai" : "claude" });
     } catch (err) {
       if (IS_DEV) console.error("[InfographicModal] Generation failed:", err);
       const fallbackMsg = err instanceof Error ? err.message : "Generation failed";
@@ -979,68 +965,78 @@ export default function InfographicModal({ open, onClose, content, platform, con
 
             {/* ═══ State 3: Result ═══ */}
             {step === "result" && (
-              <div>
-                {/* Confetti + success */}
-                <AnimatePresence>
-                  {showConfetti && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
-                      className="text-center mb-3"
+              <div className="space-y-4">
+                {/* View Mode Toggle */}
+                <div className="flex justify-center">
+                  <div className="inline-flex p-1 bg-accent/30 rounded-xl border border-border/20">
+                    <button
+                      onClick={() => setResultMode("openai")}
+                      className={cn(
+                        "px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2",
+                        resultMode === "openai" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                      )}
                     >
-                      <p className="text-sm font-semibold">
-                        Your infographic is ready! <span className="text-lg">🎉</span>
-                      </p>
-                      <div className="flex justify-center gap-1 mt-1 text-lg">
-                        {["✨", "⭐", "✨", "⭐"].map((s, i) => (
-                          <motion.span
-                            key={i}
-                            initial={{ opacity: 0, scale: 0, y: -20 }}
-                            animate={{ opacity: [0, 1, 0], scale: [0.5, 1.2, 0], y: [0, -10, 20] }}
-                            transition={{ duration: 1.2, delay: i * 0.15 }}
-                          >
-                            {s}
-                          </motion.span>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                      <Sparkles className="w-3.5 h-3.5" />
+                      Creative (AI Image)
+                    </button>
+                    <button
+                      onClick={() => setResultMode("claude")}
+                      className={cn(
+                        "px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2",
+                        resultMode === "claude" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                      Perfect (AI Text)
+                    </button>
+                  </div>
+                </div>
 
-                {/* Preview */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.4, ease: "easeOut" }}
-                  className="rounded-xl overflow-hidden border border-border/30 bg-white mb-4 relative group"
-                >
-                  <div className="relative w-full" style={{ paddingBottom: `${aspectRatio * 100}%` }}>
-                    <iframe
-                      ref={iframeRef}
-                      srcDoc={injectFontsInHtml(htmlCode)}
-                      className="absolute inset-0 w-full h-full"
-                      style={{
-                        border: "none",
-                        transform: `scale(${iframeScale})`,
-                        transformOrigin: "top left",
-                        width: `${100 / iframeScale}%`,
-                        height: `${100 / iframeScale}%`,
-                      }}
-                      sandbox="allow-popups"
-                      title="Infographic preview"
-                    />
+                {/* Infographic Preview Area */}
+                <div className="relative group">
+                  <div
+                    className={cn(
+                      "rounded-xl overflow-hidden border border-border/30 bg-white transition-all shadow-lg relative",
+                      showZoom && "fixed inset-10 z-[60] bg-white flex items-center justify-center p-8 overflow-auto"
+                    )}
+                    style={!showZoom ? { paddingBottom: `${aspectRatio * 100}%` } : {}}
+                  >
+                    <div className={cn(!showZoom && "absolute inset-0")}>
+                      {resultMode === "openai" ? (
+                        imageBase64 ? (
+                          <img
+                            src={`data:image/png;base64,${imageBase64}`}
+                            className="w-full h-full object-contain"
+                            alt="Generated infographic"
+                          />
+                        ) : (
+                          <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground bg-accent/10 p-10 text-center">
+                            <Loader2 className="w-8 h-8 animate-spin" />
+                            <p className="text-xs">Image loading... If it takes too long, switch to Perfect mode.</p>
+                          </div>
+                        )
+                      ) : (
+                        <iframe
+                          ref={iframeRef}
+                          srcDoc={htmlCode}
+                          className="w-full h-full border-0"
+                          style={showZoom ? { width: dims.width, height: dims.height, maxWidth: '100%', maxHeight: '100%' } : { transform: `scale(${iframeScale})`, transformOrigin: "top left", width: dims.width, height: dims.height }}
+                          title="Infographic Preview"
+                          sandbox="allow-popups allow-scripts allow-same-origin"
+                        />
+                      )}
+                    </div>
                   </div>
 
                   {/* Zoom overlay */}
                   <button
-                    onClick={() => setShowZoom(true)}
-                    className="absolute top-3 right-3 w-8 h-8 rounded-lg bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                    title="Full screen"
+                    onClick={() => setShowZoom(!showZoom)}
+                    className="absolute top-3 right-3 w-8 h-8 rounded-lg bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                    title={showZoom ? "Close zoom" : "Full screen"}
                   >
                     <Maximize2 className="w-4 h-4" />
                   </button>
-                </motion.div>
+                </div>
 
                 {/* ═══ Custom Image Generator (Repositioned for high visibility) ═══ */}
                 {!showCustomGen ? (
