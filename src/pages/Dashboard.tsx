@@ -67,22 +67,28 @@ const Dashboard = () => {
     if (!user) return;
     setDeleting(true);
     try {
-      const session = sessions.find((s) => s.sessionId === sessionId);
-      let ids = session?.itemIds || [];
-      if (ids.length === 0) {
-        const { data } = await supabase.from("generated_content").select("id").eq("user_id", user.id).or(`session_id.eq.${sessionId},id.eq.${sessionId}`);
-        ids = (data || []).map((i) => i.id);
-      }
-      const { error } = await supabase.from("generated_content").delete().in("id", ids).eq("user_id", user.id);
+      // Delete all items belonging to this session
+      const { error } = await supabase
+        .from("generated_content")
+        .delete()
+        .or(`session_id.eq.${sessionId},id.eq.${sessionId}`)
+        .eq("user_id", user.id);
+        
       if (error) throw error;
 
+      // Update local state immediately for responsiveness
       setLocalDeleted((prev) => new Set(prev).add(sessionId));
       setDeletingId(null);
-      toast.success("Deleted");
-      invalidateCache("history:");
-      refetchHistory();
-    } catch {
-      toast.error("Delete failed");
+      toast.success("Content deleted");
+      
+      // Invalidate both memory and localStorage cache
+      invalidateCache("history"); 
+      
+      // Force a clean refetch from server
+      await refetchHistory(true);
+    } catch (err) {
+      console.error("[Dashboard] Delete error:", err);
+      toast.error("Delete failed. Please try again.");
     } finally {
       setDeleting(false);
     }

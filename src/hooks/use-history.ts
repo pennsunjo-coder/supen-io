@@ -105,8 +105,8 @@ export function useHistory() {
   const cacheKey = user ? `supenli_history_${user.id}` : "";
 
   // Fetch from Supabase and update state + cache
-  const fetchFromSupabase = useCallback(async () => {
-    if (!user || fetchingRef.current) return;
+  const fetchFromSupabase = useCallback(async (force = false) => {
+    if (!user || (fetchingRef.current && !force)) return;
     fetchingRef.current = true;
 
     try {
@@ -232,5 +232,5 @@ export function useHistory() {
       });
   })();
 
-  return { items, grouped, sessions, loading, refetch: fetchFromSupabase };
+  return { items, grouped, sessions, loading, refetch: (force?: boolean) => fetchFromSupabase(force) };
 }
