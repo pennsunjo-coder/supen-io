@@ -34,52 +34,59 @@ export default function Stats() {
   useEffect(() => {
     if (!user) return;
     async function fetchStats() {
-      const { data } = await supabase
-        .from("generated_content")
-        .select("id, platform, format, viral_score, session_id, created_at, infographic_base64")
-        .eq("user_id", user!.id)
-        .order("created_at", { ascending: false });
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from("generated_content")
+          .select("id, platform, format, viral_score, session_id, created_at")
+          .eq("user_id", user!.id)
+          .order("created_at", { ascending: false });
 
-      if (!data) { setLoading(false); return; }
+        if (error) throw error;
+        if (!data) { setLoading(false); return; }
 
-      const posts = data.filter((d) => d.format !== "Infographic");
-      const infographics = data.filter((d) => d.format === "Infographic" || d.infographic_base64);
-      const sessions = new Set(data.map((d) => d.session_id || d.id));
+        const posts = data.filter((d) => d.format !== "Infographic");
+        const infographics = data.filter((d) => d.format === "Infographic");
+        const sessions = new Set(data.map((d) => d.session_id || d.id));
 
-      const scores = posts.map((d) => d.viral_score || 0).filter((s) => s > 0);
-      const avgScore = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
-      const bestScore = scores.length > 0 ? Math.max(...scores) : 0;
+        const scores = posts.map((d) => d.viral_score || 0).filter((s) => s > 0);
+        const avgScore = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
+        const bestScore = scores.length > 0 ? Math.max(...scores) : 0;
 
-      const platformCounts: Record<string, number> = {};
-      posts.forEach((d) => { if (d.platform) platformCounts[d.platform] = (platformCounts[d.platform] || 0) + 1; });
-      const topPlatform = Object.entries(platformCounts).sort(([, a], [, b]) => b - a)[0]?.[0] || "—";
-      const platformBreakdown = Object.entries(platformCounts).sort(([, a], [, b]) => b - a).map(([platform, count]) => ({ platform, count }));
+        const platformCounts: Record<string, number> = {};
+        posts.forEach((d) => { if (d.platform) platformCounts[d.platform] = (platformCounts[d.platform] || 0) + 1; });
+        const topPlatform = Object.entries(platformCounts).sort(([, a], [, b]) => b - a)[0]?.[0] || "—";
+        const platformBreakdown = Object.entries(platformCounts).sort(([, a], [, b]) => b - a).map(([platform, count]) => ({ platform, count }));
 
-      const now = new Date();
-      const weekAgo = new Date(now.getTime() - 7 * 86400000);
-      const monthAgo = new Date(now.getTime() - 30 * 86400000);
-      const contentThisWeek = posts.filter((d) => new Date(d.created_at) > weekAgo).length;
-      const contentThisMonth = posts.filter((d) => new Date(d.created_at) > monthAgo).length;
+        const now = new Date();
+        const weekAgo = new Date(now.getTime() - 7 * 86400000);
+        const monthAgo = new Date(now.getTime() - 30 * 86400000);
+        const contentThisWeek = posts.filter((d) => new Date(d.created_at) > weekAgo).length;
+        const contentThisMonth = posts.filter((d) => new Date(d.created_at) > monthAgo).length;
 
-      const activityMap: Record<string, number> = {};
-      for (let i = 6; i >= 0; i--) {
-        const d = new Date(now.getTime() - i * 86400000);
-        activityMap[d.toLocaleDateString("en-US", { weekday: "short" })] = 0;
-      }
-      posts.forEach((d) => {
-        if (new Date(d.created_at) > weekAgo) {
-          const key = new Date(d.created_at).toLocaleDateString("en-US", { weekday: "short" });
-          if (key in activityMap) activityMap[key]++;
+        const activityMap: Record<string, number> = {};
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date(now.getTime() - i * 86400000);
+          activityMap[d.toLocaleDateString("en-US", { weekday: "short" })] = 0;
         }
-      });
+        posts.forEach((d) => {
+          if (new Date(d.created_at) > weekAgo) {
+            const key = new Date(d.created_at).toLocaleDateString("en-US", { weekday: "short" });
+            if (key in activityMap) activityMap[key]++;
+          }
+        });
 
-      setStats({
-        totalContent: posts.length, totalSessions: sessions.size, totalInfographics: infographics.length,
-        avgViralScore: avgScore, topPlatform, contentThisWeek, contentThisMonth, bestScore,
-        platformBreakdown,
-        recentActivity: Object.entries(activityMap).map(([date, count]) => ({ date, count })),
-      });
-      setLoading(false);
+        setStats({
+          totalContent: posts.length, totalSessions: sessions.size, totalInfographics: infographics.length,
+          avgViralScore: avgScore, topPlatform, contentThisWeek, contentThisMonth, bestScore,
+          platformBreakdown,
+          recentActivity: Object.entries(activityMap).map(([date, count]) => ({ date, count })),
+        });
+      } catch (err) {
+        console.error("[Stats] Failed to fetch stats:", err);
+      } finally {
+        setLoading(false);
+      }
     }
     fetchStats();
   }, [user]);
