@@ -123,16 +123,33 @@ Rules:
 3. Reply ONLY with the 5 variations.
 4. Always reply in English.${isDocMode ? "\n5. Base the content ONLY on the provided sources." : ""}`;
 
-    // Claude
+    // Claude with automatic fallback
     const anthropic = new Anthropic({ apiKey: Deno.env.get("ANTHROPIC_API_KEY")! });
-    const response = await anthropic.messages.create({
-      model: "claude-3-5-sonnet-20240620",
-      max_tokens: 4096,
-      system: systemPrompt,
-      messages: [{ role: "user", content: `${modeLabel} :\n\n${sourceText.slice(0, 5000)}` }],
-    });
+    const preferredModel = "claude-3-5-sonnet-latest";
+    
+    let response;
+    try {
+      response = await anthropic.messages.create({
+        model: preferredModel,
+        max_tokens: 4096,
+        system: systemPrompt,
+        messages: [{ role: "user", content: `${modeLabel} :\n\n${sourceText.slice(0, 5000)}` }],
+      });
+    } catch (err) {
+      if (err.status === 404 || err.message?.includes("model")) {
+        console.warn(`[generate] Model ${preferredModel} not found, falling back to claude-3-haiku-20240307`);
+        response = await anthropic.messages.create({
+          model: "claude-3-haiku-20240307",
+          max_tokens: 4096,
+          system: systemPrompt,
+          messages: [{ role: "user", content: `${modeLabel} :\n\n${sourceText.slice(0, 5000)}` }],
+        });
+      } else {
+        throw err;
+      }
+    }
 
-    const text = response.content.filter((b: { type: string }) => b.type === "text").map((b: { text: string }) => b.text).join("");
+    const text = response.content.filter((b: any) => b.type === "text").map((b: any) => b.text).join("");
 
     // Save to DB
     let parts = text.split(/---VARIATION---/).map((s: string) => s.trim()).filter((s: string) => s.length > 20);
