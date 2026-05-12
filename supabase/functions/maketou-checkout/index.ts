@@ -17,9 +17,8 @@ serve(async (req) => {
     const { planId, email, firstName, lastName, phone, redirectURL, meta } = await req.json();
 
     // Map plan IDs to MakEtoU productDocumentIds
-    // NOTE: These IDs must be provided by the user from their MakEtoU dashboard
     const PLAN_MAP: Record<string, string> = {
-      'annual': Deno.env.get("MAKETOU_PLAN_ANNUAL_ID") || "",
+      'annual': 'd433ea5c-b6d7-44b7-b47b-29af558af30c',
       'semestrial': Deno.env.get("MAKETOU_PLAN_SEMESTRIAL_ID") || "",
     };
 
