@@ -13,6 +13,8 @@ import type { Source } from "@/types/database";
 import type { ConversationMessage } from "@/types/database";
 import type { UserProfile } from "@/hooks/use-profile";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
+import { withTimeout } from "@/lib/resilience";
 
 const MAX_MESSAGE_LENGTH = 4000;
 const RATE_LIMIT_MAX = 10;
