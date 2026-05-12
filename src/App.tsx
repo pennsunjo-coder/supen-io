@@ -47,30 +47,20 @@ const App = () => {
   useEffect(() => {
     function handleRejection(event: PromiseRejectionEvent) {
       if (IS_DEV) console.error("[Unhandled Promise Rejection]", event.reason);
-      const msg = event.reason?.message || "";
-      // Skip errors already handled locally (529/overloaded in StudioWizard/InfographicModal,
-      // network retries, and normal abort/cancel from AbortController timeouts)
+      const msg = event.reason?.message || (typeof event.reason === "string" ? event.reason : "");
+      
       const isSilent =
         /abort|cancel|aborterror/i.test(msg) ||
         /529|overloaded|surcharge/i.test(msg) ||
         /network|fetch|load failed/i.test(msg);
-      if (msg && !isSilent) {
-        toast.error(msg.length > 60 ? msg.slice(0, 60) + "..." : msg);
-      }
-    }
-    function handleError(event: ErrorEvent) {
-      if (IS_DEV) console.error("[Window Error]", event.error || event.message);
-      const msg = event.message || "";
-      const isSilent = /abort|cancel|aborterror/i.test(msg) || /529|overloaded|surcharge/i.test(msg);
+        
       if (msg && !isSilent) {
         toast.error(msg.length > 60 ? msg.slice(0, 60) + "..." : msg);
       }
     }
     window.addEventListener("unhandledrejection", handleRejection);
-    window.addEventListener("error", handleError);
     return () => {
       window.removeEventListener("unhandledrejection", handleRejection);
-      window.removeEventListener("error", handleError);
     };
   }, []);
 
