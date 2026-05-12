@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import Anthropic from "https://esm.sh/@anthropic-ai/sdk@0.81.0";
+import OpenAI from "https://esm.sh/openai@4.28.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -123,33 +123,20 @@ Rules:
 3. Reply ONLY with the 5 variations.
 4. Always reply in English.${isDocMode ? "\n5. Base the content ONLY on the provided sources." : ""}`;
 
-    // Claude with automatic fallback
-    const anthropic = new Anthropic({ apiKey: Deno.env.get("ANTHROPIC_API_KEY")! });
-    const preferredModel = "claude-3-5-sonnet-latest";
+    const openai = new OpenAI({ apiKey: Deno.env.get("OPENAI_API_KEY")! });
+    const PRIMARY_MODEL = "gpt-4o";
     
-    let response;
-    try {
-      response = await anthropic.messages.create({
-        model: preferredModel,
-        max_tokens: 4096,
-        system: systemPrompt,
-        messages: [{ role: "user", content: `${modeLabel} :\n\n${sourceText.slice(0, 5000)}` }],
-      });
-    } catch (err) {
-      if (err.status === 404 || err.message?.includes("model")) {
-        console.warn(`[generate] Model ${preferredModel} not found, falling back to claude-3-haiku-20240307`);
-        response = await anthropic.messages.create({
-          model: "claude-3-haiku-20240307",
-          max_tokens: 4096,
-          system: systemPrompt,
-          messages: [{ role: "user", content: `${modeLabel} :\n\n${sourceText.slice(0, 5000)}` }],
-        });
-      } else {
-        throw err;
-      }
-    }
+    const response = await openai.chat.completions.create({
+      model: PRIMARY_MODEL,
+      max_tokens: 4096,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: `${modeLabel} :\n\n${sourceText.slice(0, 5000)}` }
+      ],
+      temperature: 0.7,
+    });
 
-    const text = response.content.filter((b: any) => b.type === "text").map((b: any) => b.text).join("");
+    const text = response.choices[0]?.message?.content || "";
 
     // Save to DB
     let parts = text.split(/---VARIATION---/).map((s: string) => s.trim()).filter((s: string) => s.length > 20);
@@ -182,3 +169,4 @@ Rules:
     return new Response(JSON.stringify({ error: msg }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
+
