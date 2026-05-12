@@ -114,7 +114,7 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
       const apiMessages = [...history, userMsg].map(m => ({ role: m.role, content: m.content }));
       
       const response = await withTimeout(
-        callClaude(system, apiMessages),
+        callClaude(system, apiMessages, { model: "claude-3-5-sonnet-latest" }),
         40000,
         "The coach is taking too long to respond. Please try again."
       );
