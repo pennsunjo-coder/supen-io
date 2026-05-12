@@ -19,7 +19,7 @@ serve(async (req) => {
     // Map plan IDs to MakEtoU productDocumentIds
     const PLAN_MAP: Record<string, string> = {
       'annual': 'd433ea5c-b6d7-44b7-b47b-29af558af30c',
-      'semestrial': Deno.env.get("MAKETOU_PLAN_SEMESTRIAL_ID") || "",
+      'semestrial': '4021e7c1-4370-4509-8ca5-c512943d9323',
     };
 
     const productDocumentId = PLAN_MAP[planId];
