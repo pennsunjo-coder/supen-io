@@ -278,6 +278,64 @@ function detectContentType(content: string): string {
   return "educational";
 }
 
+/**
+ * ASYNC VETTER: Distills raw content into a high-quality "Sacred Text Map"
+ * using Claude. This ensures the infographic text is coherent, 
+ * hierarchical, and "square for the brain".
+ */
+export async function distillInfographicContent(
+  content: string, 
+  platform: string,
+  callClaude: (system: string, messages: any[]) => Promise<string>
+): Promise<EnhancedExtraction & { quotes: string[]; contentType: string; proTip: string }> {
+  const system = `You are an elite infographic content architect.
+Your task is to take a raw social media post and distill it into a "Sacred Text Map" for a high-density infographic.
+
+HIERARCHY RULES:
+1. TITLE: Max 40 characters. Punchy, high-status.
+2. KEY POINTS: Exactly 7-9 points. Each must be "Action -> Result". Max 60 chars per point.
+3. STATS: 3-5 real numbers or metrics from the text.
+4. QUOTES: 1-2 powerful short quotes.
+5. PRO TIP: One high-value actionable "secret" from the content.
+
+CLARITY RULES:
+- No fluff. No "AI filler". 
+- Correct any typos in the source.
+- Ensure the logical flow is "Square for the brain" (Title -> Context -> Steps -> Result).
+- Respond in structured blocks.`;
+
+  const prompt = `Distill this ${platform} post into an infographic map:\n\n${content}`;
+  
+  try {
+    const raw = await callClaude(system, [{ role: "user", content: prompt }]);
+    
+    // Parse the structured response
+    const titleMatch = raw.match(/TITLE:\s*(.*)/i);
+    const points = raw.match(/POINT\s*\d+:\s*(.*)/gi)?.map(p => p.replace(/POINT\s*\d+:\s*/i, "").trim()) || [];
+    const stats = raw.match(/STAT\s*\d+:\s*(.*)/gi)?.map(s => s.replace(/STAT\s*\d+:\s*/i, "").trim()) || [];
+    const quotes = raw.match(/QUOTE\s*\d+:\s*(.*)/gi)?.map(q => q.replace(/QUOTE\s*\d+:\s*/i, "").trim()) || [];
+    const proTipMatch = raw.match(/PRO TIP:\s*(.*)/i);
+    const proTip = proTipMatch ? proTipMatch[1].trim() : "Apply this system today.";
+
+    return {
+      title: titleMatch ? titleMatch[1].trim() : "Strategic Insights",
+      points: points.slice(0, 9),
+      stats: stats.slice(0, 5),
+      keywords: [],
+      quotes: quotes.slice(0, 2),
+      contentType: detectContentType(content),
+      proTip
+    };
+  } catch (err) {
+    console.warn("[Distiller] Claude distillation failed, falling back to regex extraction:", err);
+    const regexExt = extractForDallE(content);
+    return {
+      ...regexExt,
+      proTip: "Apply this system today."
+    };
+  }
+}
+
 export function extractForDallE(content: string): EnhancedExtraction & { quotes: string[]; contentType: string } {
   const lines = content
     .split(/\n+/)
@@ -716,16 +774,18 @@ export function buildDallEPrompt(
   platform: string,
   template?: string,
   userName?: string,
+  distilled?: EnhancedExtraction & { quotes: string[]; contentType: string; proTip?: string }
 ): string {
   void template;
 
-  const rawExt = extractForDallE(content);
+  const rawExt = distilled || extractForDallE(content);
+  const proTip = (distilled as any)?.proTip || generateProTip(content);
   const handle = userName ? userName.replace(/^@/, "").replace(/\s+/g, "").toLowerCase() : "gamaliettankeu";
   
   const pl = platform?.toLowerCase() || "";
-  let formatHint = "Portrait (1024x1792). Full vertical length.";
-  if (pl.includes("facebook")) formatHint = "Square (1024x1024).";
-  else if (pl.includes("twitter") || pl.includes("x (")) formatHint = "Landscape (1792x1024).";
+  let formatHint = "Portrait (1024x1344). Aspect ratio 4:5. Full vertical length.";
+  if (pl.includes("facebook")) formatHint = "Square (1024x1024). Aspect ratio 1:1.";
+  else if (pl.includes("twitter") || pl.includes("x (")) formatHint = "Landscape (1792x1024). Aspect ratio 1.75:1.";
 
   const isResourceList = /free|course|book|resource|tool|site|app|platform/i.test(content);
   const styleType = isResourceList ? "NOTEBOOK" : "WHITEBOARD";
@@ -754,6 +814,7 @@ SACRED TEXT TO RENDER (VERBATIM ONLY)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [TITLE]: "[${rawExt.title.toUpperCase()}]"
 ${rawExt.points.map((p, i) => `[POINT_${i + 1}]: "${p}"`).join("\n")}
+[PRO_TIP]: "${proTip}"
 [FOOTER]: "Follow @${handle} for more AI systems | Repost ♻️"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

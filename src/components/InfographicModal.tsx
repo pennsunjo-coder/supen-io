@@ -14,7 +14,9 @@ import {
   analyzeContent,
   getFormatDimensions,
   resetRegenerationCounter,
+  distillInfographicContent,
 } from "@/lib/infographic-style";
+import { callClaude } from "@/lib/anthropic";
 import { sanitizeForPlatform } from "@/lib/output-sanitizer";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -47,8 +49,8 @@ function getImageSize(platform: string): ImageSizeConfig {
   if (p.includes("facebook")) {
     return { size: "1024x1024", label: "Square", description: "Optimized for Facebook" };
   }
-  // LinkedIn, Instagram, TikTok, default → portrait
-  return { size: "1024x1536", label: "Portrait", description: `Optimized for ${platform || "social media"}` };
+  // LinkedIn, Instagram, TikTok, default → portrait 4:5
+  return { size: "1024x1344", label: "Portrait", description: `Optimized for ${platform || "social media"}` };
 }
 
 // ─── Image Generation via Edge Function ───
@@ -465,9 +467,13 @@ export default function InfographicModal({ open, onClose, content, platform, con
       if (IS_DEV) console.log("[Infographic] Content length:", content.length);
       if (IS_DEV) console.log("[Infographic] Template:", templateSelection.templateId);
 
-      // Platform-specific format hint prepended to prompt
+      // STEP 1: VETTING & DISTILLATION
+      // Use Claude to extract high-quality, hierarchical content
+      const distilled = await distillInfographicContent(content, platform || "LinkedIn", callClaude);
+
+      // STEP 2: BUILD PROMPT
       const cleanContent = sanitizeForPlatform(content, platform || "", "Post");
-      const dallePrompt = buildDallEPrompt(cleanContent, platform, templateSelection.templateId, userName);
+      const dallePrompt = buildDallEPrompt(cleanContent, platform, templateSelection.templateId, userName, distilled);
 
       if (IS_DEV) {
         console.log("=== INFOGRAPHIC PROMPT ===");
@@ -553,7 +559,7 @@ export default function InfographicModal({ open, onClose, content, platform, con
     const pl = platform?.toLowerCase() || "";
     if (pl.includes("facebook")) return { w: 1024, h: 1024, label: "facebook-square" };
     if (pl.includes("twitter") || pl.includes("x (")) return { w: 1792, h: 1024, label: "x-landscape" };
-    return { w: 1080, h: 1350, label: "linkedin-portrait" };
+    return { w: 1024, h: 1344, label: "linkedin-portrait" };
   }
 
   async function handleDownload(format: "png" | "jpeg") {
