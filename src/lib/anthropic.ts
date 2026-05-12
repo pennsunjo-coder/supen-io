@@ -33,7 +33,21 @@ export async function callClaude(
   });
 
   if (error) {
-    throw new Error(error.message || "Claude API call failed");
+    console.error("[callClaude] Supabase Function Error:", error);
+    
+    // Attempt to extract error message from response body if available
+    let detailedError = error.message;
+    if (error instanceof Error && "context" in error) {
+      try {
+        const response = (error as any).context;
+        if (response && typeof response.json === 'function') {
+          const body = await response.json();
+          if (body && body.error) detailedError = body.error;
+        }
+      } catch { /* ignore parsing errors */ }
+    }
+    
+    throw new Error(detailedError || "Claude API call failed");
   }
 
   if (data?.error) {
