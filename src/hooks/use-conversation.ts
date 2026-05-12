@@ -79,7 +79,8 @@ export function useConversation() {
     (updater: (prev: ConversationMessage[]) => ConversationMessage[]) => {
       setMessages((prev) => {
         const next = updater(prev);
-        persistMessages(next);
+        // Persist after the state update cycle to keep the updater pure
+        setTimeout(() => persistMessages(next), 0);
         return next;
       });
     },

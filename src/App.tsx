@@ -55,11 +55,16 @@ const App = () => {
         /529|overloaded|surcharge/i.test(msg) ||
         /network|fetch|load failed/i.test(msg);
       if (msg && !isSilent) {
-        toast.error("An unexpected error occurred");
+        toast.error(msg.length > 60 ? msg.slice(0, 60) + "..." : msg);
       }
     }
     function handleError(event: ErrorEvent) {
       if (IS_DEV) console.error("[Window Error]", event.error || event.message);
+      const msg = event.message || "";
+      const isSilent = /abort|cancel|aborterror/i.test(msg) || /529|overloaded|surcharge/i.test(msg);
+      if (msg && !isSilent) {
+        toast.error(msg.length > 60 ? msg.slice(0, 60) + "..." : msg);
+      }
     }
     window.addEventListener("unhandledrejection", handleRejection);
     window.addEventListener("error", handleError);
