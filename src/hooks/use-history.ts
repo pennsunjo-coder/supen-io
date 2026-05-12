@@ -64,9 +64,9 @@ function groupByDate(items: GeneratedItem[]): HistoryGroup[] {
     .map((label) => ({ label, items: groups.get(label)! }));
 }
 
-// Lightweight columns — NO content field (too heavy for list view)
-const LIST_COLS = "id, session_id, platform, format, content, viral_score, infographic_base64, created_at";
-const LIST_COLS_FALLBACK = "id, platform, format, content, viral_score, created_at";
+// Lightweight columns — NO infographic_base64 (too heavy for list view)
+const LIST_COLS = "id, session_id, platform, format, content, viral_score, created_at";
+const LIST_COLS_FALLBACK = "id, platform, format, created_at";
 
 function processItems(data: any[]): GeneratedItem[] {
   const allItems = data as GeneratedItem[];
@@ -98,6 +98,7 @@ function processItems(data: any[]): GeneratedItem[] {
 export function useHistory() {
   const { user } = useAuth();
   const [items, setItems] = useState<GeneratedItem[]>([]);
+  const [visuals, setVisuals] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const fetchingRef = useRef(false);
 
@@ -114,7 +115,7 @@ export function useHistory() {
         .select(LIST_COLS)
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
-        .limit(50);
+        .limit(24);
 
       if (error) {
         const fallback = await supabase
@@ -122,7 +123,7 @@ export function useHistory() {
           .select(LIST_COLS_FALLBACK)
           .eq("user_id", user.id)
           .order("created_at", { ascending: false })
-          .limit(50);
+          .limit(24);
         data = fallback.data;
       }
 
@@ -160,6 +161,39 @@ export function useHistory() {
     fetchFromSupabase();
   }, [user, cacheKey, fetchFromSupabase]);
 
+  // Step 3: Fetch visuals in background after items are loaded
+  useEffect(() => {
+    if (items.length === 0 || !user) return;
+    
+    const sessionIds = Array.from(new Set(items.map(i => i.session_id || i.id)));
+    const missingVisuals = sessionIds.filter(id => !visuals[id]);
+    
+    if (missingVisuals.length === 0) return;
+
+    async function fetchVisuals() {
+      try {
+        const { data } = await supabase
+          .from("generated_content")
+          .select("session_id, infographic_base64, id")
+          .in("session_id", missingVisuals)
+          .not("infographic_base64", "is", null);
+
+        if (data) {
+          const newVisuals: Record<string, string> = { ...visuals };
+          data.forEach(d => {
+            const key = d.session_id || d.id;
+            if (d.infographic_base64) newVisuals[key] = d.infographic_base64;
+          });
+          setVisuals(newVisuals);
+        }
+      } catch (err) {
+        console.error("[useHistory] Failed to fetch background visuals:", err);
+      }
+    }
+    
+    fetchVisuals();
+  }, [items, user]);
+
   const grouped = groupByDate(items);
 
   const sessions: HistorySession[] = (() => {
@@ -188,10 +222,10 @@ export function useHistory() {
           createdAt: first.created_at,
           variationCount: sessionItems.length,
           bestScore,
-          infographic,
+          infographic: visuals[key] || null,
+          hasVisual: !!visuals[key] || sessionItems.some(i => i.format === "Infographic")
         };
       })
-      .filter((s) => !!s.infographic) // Only show sessions that have a completed visual
       .sort((a, b) => {
         // Sort strictly by date (newest first)
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
