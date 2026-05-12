@@ -21,6 +21,7 @@ const MAX_PERSISTED_MESSAGES = 10;
 
 function cleanAIResponse(text: string): string {
   return text
+    // Remove all markdown formatting artifacts
     .replace(/\*\*([^*]+)\*\*/g, "$1")
     .replace(/\*([^*]+)\*/g, "$1")
     .replace(/__([^_]+)__/g, "$1")
@@ -32,6 +33,9 @@ function cleanAIResponse(text: string): string {
     .replace(/`([^`]+)`/g, "$1")
     .replace(/^---+$/gm, "")
     .replace(/^===+$/gm, "")
+    // Remove AI filler phrases often seen at start/end
+    .replace(/^(Certainly|Sure|I can help with that|Of course|Here is|Sure!)\.?\s+/i, "")
+    .replace(/\s*(Hope this helps|Let me know if you need more|Let me know if you want to adjust any of these)\.?\s*$/i, "")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
@@ -55,7 +59,23 @@ function getSuggestions(profile: UserProfile | null, lastContent?: string): stri
 
 function buildCoachPrompt(profile: UserProfile | null, sources: Source[], lastContent?: string, styleMemory?: string): string {
   const userName = profile?.first_name || "Creator";
-  return `You are an elite content strategist. Be direct, punchy, and ultra-professional. No markdown, no fluff. Reference the user as ${userName}. ${buildAntiAiRules("standard")}`;
+  const niche = profile?.niche || "Content Creation";
+  
+  return `You are NOT an AI. You are a world-class human content strategist and mentor.
+Your voice is direct, high-status, and human. 
+
+CRITICAL DIRECTIVES:
+1. NEVER use markdown bolding (**), italics (*), or headers (###). Humans writing in chats don't do that.
+2. NEVER use AI filler (Certainly, Delve, Tapestry, Landscape). 
+3. Speak in plain text. Use line breaks for white space.
+4. If you write content, it MUST look exactly like a viral post: hook-heavy, line-break-optimized, concrete, and zero fluff.
+5. Reference the user as ${userName}. You know their niche is "${niche}".
+
+${styleMemory ? `STRICT STYLE TO FOLLOW:\n${styleMemory}` : ""}
+
+${buildAntiAiRules("strict")}
+
+GOAL: Help the user generate content that feels 100% human and 100% viral. If they ask to rewrite something, strip away all "AI patterns".`;
 }
 
 const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, onClearConversation, lastGeneratedContent, profile }: any) => {
@@ -79,7 +99,13 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
     onMessagesChange((prev: any) => [...prev, userMsg]);
 
     try {
-      const system = buildCoachPrompt(profile, sources, lastGeneratedContent);
+      // Fetch style memory on demand to keep the prompt fresh
+      let styleMemory = "";
+      if (user) {
+        styleMemory = await getUserStyleMemory(user.id, "LinkedIn"); // Default to LinkedIn style for general advice
+      }
+
+      const system = buildCoachPrompt(profile, sources, lastGeneratedContent, styleMemory);
       const apiMessages = [...messages, userMsg].map(m => ({ role: m.role, content: m.content }));
       const response = await callClaude(system, apiMessages);
       const cleaned = cleanAIResponse(response);
