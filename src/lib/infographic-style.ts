@@ -754,41 +754,31 @@ export function buildDallEPrompt(
   void template;
 
   const rawExt = distilled || extractForDallE(content);
-  const handle = userName ? userName.replace(/^@/, "").replace(/\s+/g, "").toLowerCase() : "gamaliettankeu";
+  const numPoints = Math.min(rawExt.points.length, 7);
 
-  // Build clean content summary from extracted points
-  const pointsText = rawExt.points
-    .slice(0, 7)
-    .map((p, i) => `${i + 1}. ${p}`)
-    .join("\n");
+  return `Generate a single image of a BLANK hand-drawn infographic TEMPLATE on a large notebook page. This is a TEMPLATE — do NOT write any text, words, or letters on it.
 
-  const title = rawExt.title || "Key Insights";
+CRUCIAL STYLE INSTRUCTIONS:
+Medium: The image must look like a photograph of a real notebook or large paper notepad with spiral binding at the top.
+Texture: All decorative elements must look created by hand using colored marker pens (black, blue, red, green) and highlighters (yellow/orange). Lines should be slightly imperfect, wobbly, and have the texture of ink on a surface.
 
-  return `Generate a single image of a physical, hand-drawn infographic on a large whiteboard or notebook page.
+LAYOUT (1080x1350 image):
+1. TOP ZONE (15%): A large empty rectangular banner drawn in bold black marker where a title would go. Leave it BLANK inside.
+2. CONTENT ZONE (70%): ${numPoints} empty content blocks arranged vertically, each with:
+   - A small hand-drawn icon/doodle on the left (brain, lightbulb, gear, rocket, book, star, checkmark — vary them)
+   - A colored marker underline or bracket where a heading would go (alternate colors: red, blue, green)
+   - An empty lined area below each heading for body text
+   - Yellow highlighter stripes on some blocks for emphasis
+3. BOTTOM ZONE (15%): A simple footer area with a small hand-drawn line separator.
 
-Crucial Style Instructions (Read First):
-Medium: The image must look like a photograph of a real whiteboard or large paper notepad.
-Texture: All elements must look created by hand using colored marker pens (black, blue, red, green) and highlighters (yellow/orange). Lines should be slightly imperfect, wobbly, and have the texture of ink on a surface.
-No Digital Fonts: All text, headings, and bullet points must appear handwritten or hand-printed in marker pen.
-
-Layout: Structure the 1080x1350 image as follows:
-- Title at the top: "${title}" written in large bold marker.
-- Content sections below, each with a colored marker heading and bullet points.
-- Use multi-colored markers for emphasis.
-- Keep text large and legible.
+CRITICAL RULES:
+- DO NOT WRITE ANY TEXT, WORDS, NUMBERS, OR LETTERS ANYWHERE.
+- Only draw visual elements: borders, lines, icons, doodles, colored frames, highlighter marks.
+- Make it look like an empty template ready to be filled in.
+- Use multi-colored markers (black, blue, red, green) for the frames and decorations.
+- Include small hand-drawn doodles/icons next to each content block.
 - Make everything look hand-drawn with slight imperfections.
-- Make it look like a photograph of an actual notebook page.
-
-Content to render:
-${pointsText}
-
-Use simple language. Avoid technical terms unless necessary.
-Do not explain too much.
-Make it easy to scan in less than 10 seconds.
-Use a consistent structure across all sections.
-Make use of realistic icons, logos and elements like the ultimate and best design expert in the world.
-
-Always include the handwritten text "Follow @${handle} for more amazing AI content | Repost ♻️" at the bottom of the image, in the same hand-drawn marker style.`;
+- Fill the entire canvas with the notebook surface.`;
 }
 
 // ─── Post-process generated HTML ───
