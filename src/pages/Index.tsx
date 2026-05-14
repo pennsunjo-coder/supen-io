@@ -192,6 +192,9 @@ const Index = () => {
   const { theme, toggleTheme } = useTheme();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [wordIdx, setWordIdx] = useState(0);
+  
+  // ⛔ GUARDRAIL: This must remain TRUE/controlled by popup until launch. 
+  // DO NOT replace CTAs with navigate("/login") without user permission.
   const [showWaitlist, setShowWaitlist] = useState(false);
 
   useEffect(() => {
@@ -728,7 +731,7 @@ const Index = () => {
         </motion.div>
       </section>
 
-      {/* ═══════════ FOOTER ═══════════ */}
+      {/* ⛔ GUARDRAIL: DO NOT REMOVE THIS SECTION. IT IS ACTIVE FOR CAPTURING LEADS. */}
       {/* ═══════════ WAITLIST ═══════════ */}
       <WaitlistSection />
 

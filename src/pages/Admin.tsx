@@ -27,6 +27,7 @@ const NAV_ITEMS: { id: Section; label: string; icon: typeof LayoutDashboard }[] 
   { id: "contents", label: "Generated Content", icon: FileText },
   { id: "analytics", label: "Analytics", icon: BarChart3 },
   { id: "revenue", label: "Revenue", icon: CreditCard },
+  // ⛔ GUARDRAIL: DO NOT REMOVE. Critical for waitlist management.
   { id: "waitlist", label: "Waitlist", icon: Mail },
 ];
 
