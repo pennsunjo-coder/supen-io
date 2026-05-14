@@ -288,51 +288,58 @@ export async function distillInfographicContent(
   platform: string,
   callClaude: (system: string, messages: any[]) => Promise<string>
 ): Promise<EnhancedExtraction & { quotes: string[]; contentType: string; proTip: string }> {
-  const system = `You are an elite infographic content architect.
-Your task is to take a raw social media post and distill it into a "Sacred Text Map" for a high-density infographic.
+  const system = `You are a content extractor for infographics.
+Your ONLY job is to EXTRACT the key information from the source text. 
+DO NOT invent, add, or generalize anything.
 
-HIERARCHY RULES:
-1. TITLE: Max 40 characters. Punchy, high-status.
-2. KEY POINTS: Exactly 7-9 points. Each must be "Action -> Result". Max 60 chars per point.
-3. STATS: 3-5 real numbers or metrics from the text.
-4. QUOTES: 1-2 powerful short quotes.
-5. PRO TIP: One high-value actionable "secret" from the content.
+RULES:
+1. Use ONLY words, numbers, and facts that appear in the source.
+2. Keep the same language as the source (if French, write French. If English, write English. NEVER mix languages).
+3. Be brief and punchy. Each point max 50 characters.
+4. Extract 5-7 key points maximum.
 
-CLARITY RULES:
-- No fluff. No "AI filler". 
-- Correct any typos in the source.
-- Ensure the logical flow is "Square for the brain" (Title -> Context -> Steps -> Result).
-- Respond in structured blocks.`;
+OUTPUT FORMAT (exactly):
+TITLE: [Short catchy title from the source, max 40 chars]
+POINT 1: [Key fact or tip from source]
+POINT 2: [Key fact or tip from source]
+POINT 3: [Key fact or tip from source]
+POINT 4: [Key fact or tip from source]
+POINT 5: [Key fact or tip from source]
+PRO TIP: [Best actionable advice from the source]
+DOODLES: [3-4 simple object names in English: brain, laptop, etc.]`;
 
-  const prompt = `Distill this ${platform} post into an infographic map:\n\n${content}`;
+  const prompt = `Extract the key points from this ${platform} post. Do NOT add anything that isn't in the source:\n\n${content}`;
   
   try {
     const raw = await callClaude(system, [{ role: "user", content: prompt }]);
     
-    // Parse the structured response
     const titleMatch = raw.match(/TITLE:\s*(.*)/i);
     const points = raw.match(/POINT\s*\d+:\s*(.*)/gi)?.map(p => p.replace(/POINT\s*\d+:\s*/i, "").trim()) || [];
-    const stats = raw.match(/STAT\s*\d+:\s*(.*)/gi)?.map(s => s.replace(/STAT\s*\d+:\s*/i, "").trim()) || [];
-    const quotes = raw.match(/QUOTE\s*\d+:\s*(.*)/gi)?.map(q => q.replace(/QUOTE\s*\d+:\s*/i, "").trim()) || [];
     const proTipMatch = raw.match(/PRO TIP:\s*(.*)/i);
-    const proTip = proTipMatch ? proTipMatch[1].trim() : "Apply this system today.";
+    const proTip = proTipMatch ? proTipMatch[1].trim() : "Apply this today.";
+    const doodlesMatch = raw.match(/DOODLES:\s*(.*)/i);
+    const doodles = doodlesMatch
+      ? doodlesMatch[1].split(",").map(d => d.trim()).filter(Boolean).slice(0, 4)
+      : [];
 
     return {
-      title: titleMatch ? titleMatch[1].trim() : "Strategic Insights",
-      points: points.slice(0, 9),
-      stats: stats.slice(0, 5),
+      title: titleMatch ? titleMatch[1].trim() : "Key Insights",
+      points: points.slice(0, 7),
+      stats: [],
       keywords: [],
-      quotes: quotes.slice(0, 2),
+      quotes: [],
       contentType: detectContentType(content),
-      proTip
-    };
+      proTip,
+      doodles
+    } as any;
   } catch (err) {
-    console.warn("[Distiller] Claude distillation failed, falling back to regex extraction:", err);
+    console.warn("[Distiller] Claude extraction failed, using regex fallback:", err);
     const regexExt = extractForDallE(content);
     return {
       ...regexExt,
-      proTip: "Apply this system today."
-    };
+      proTip: "Start implementing today.",
+      doodles: []
+    } as any;
   }
 }
 
@@ -747,57 +754,41 @@ export function buildDallEPrompt(
   void template;
 
   const rawExt = distilled || extractForDallE(content);
-  const proTip = (distilled as any)?.proTip || generateProTip(content);
   const handle = userName ? userName.replace(/^@/, "").replace(/\s+/g, "").toLowerCase() : "gamaliettankeu";
-  
-  const pl = platform?.toLowerCase() || "";
-  let formatHint = "Portrait (1024x1344). Aspect ratio 4:5. Full vertical length.";
-  if (pl.includes("facebook")) formatHint = "Square (1024x1024). Aspect ratio 1:1.";
-  else if (pl.includes("twitter") || pl.includes("x (")) formatHint = "Landscape (1792x1024). Aspect ratio 1.75:1.";
 
-  const isResourceList = /free|course|book|resource|tool|site|app|platform/i.test(content);
-  const styleType = isResourceList ? "NOTEBOOK" : "WHITEBOARD";
+  // Build clean content summary from extracted points
+  const pointsText = rawExt.points
+    .slice(0, 7)
+    .map((p, i) => `${i + 1}. ${p}`)
+    .join("\n");
 
-  return `
-IMAGE SPECIFICATION: Professional viral educational infographic.
-STYLE: Hand-crafted ${styleType} / Marker Sketch (Awa K. Penn forensic style).
-FORMAT: ${formatHint}
+  const title = rawExt.title || "Key Insights";
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-DNA VISUAL SPECS (FORENSIC ACCURACY)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1. BACKGROUND: Warm off-white #f8f9f7 with visible paper grain texture (4% opacity). The background must fill 100% of the canvas from edge to edge.
-2. HARDWARE: 
-   ${styleType === 'WHITEBOARD' 
-     ? '- Corner Clips: 4 metallic dark gray rectangular clips at the very corners, touching the edges.' 
-     : '- Spiral Binding: 22 metallic silver-gray coils at the top edge, touching the top border, catching light.'}
-3. TYPOGRAPHY: 
-   - TITLES: Extremely heavy hand-drawn marker font (weight 900+). Strokes are thick.
-   - BODY: Handwritten Caveat-style (weight 500). Looks like a thin Sharpie marker.
-4. HIGHLIGHTS: Yellow #FFEF5A used for full-width section bands (touching left and right edges) and 3-5 inline keywords.
-5. NO EMOJIS: Use hand-drawn simple black line-art sketches ONLY (gear, bulb, book, rocket).
+  return `Generate a single image of a physical, hand-drawn infographic on a large whiteboard or notebook page.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-SACRED TEXT TO RENDER (VERBATIM ONLY)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-[TITLE]: "[${rawExt.title.toUpperCase()}]"
-${rawExt.points.map((p, i) => `[POINT_${i + 1}]: "${p}"`).join("\n")}
-[PRO_TIP]: "${proTip}"
-[FOOTER]: "Follow @${handle} for more AI systems | Repost ♻️"
+Crucial Style Instructions (Read First):
+Medium: The image must look like a photograph of a real whiteboard or large paper notepad.
+Texture: All elements must look created by hand using colored marker pens (black, blue, red, green) and highlighters (yellow/orange). Lines should be slightly imperfect, wobbly, and have the texture of ink on a surface.
+No Digital Fonts: All text, headings, and bullet points must appear handwritten or hand-printed in marker pen.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-LAYOUT DENSITY (100% FILL - FULL BLEED)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- ABSOLUTELY ZERO EMPTY SPACE. The content must touch all four edges (top, bottom, left, right).
-- NO MARGINS, NO VIGNETTING, NO EXTERNAL SHADOWS.
-- The canvas IS the ${styleType.toLowerCase()} surface. 
-- Whiteboard: Include 2-3 full-width yellow #FFEF5A background bands for major sections that go from edge to edge.
-- Notebook: Include light blue ruled lines that span the entire width. The red vertical margin line is at x=72px.
-- Use 3 levels of hierarchy: Bold Section Headers → Sub-headers → Detailed Bullet Points.
-- Use circled numbers ①②③④⑤ and checkmarks ✓ in red #C0392B.
+Layout: Structure the 1080x1350 image as follows:
+- Title at the top: "${title}" written in large bold marker.
+- Content sections below, each with a colored marker heading and bullet points.
+- Use multi-colored markers for emphasis.
+- Keep text large and legible.
+- Make everything look hand-drawn with slight imperfections.
+- Make it look like a photograph of an actual notebook page.
 
-GO! Create a high-density, professional infographic where the content fills every single pixel of the ${formatHint.split('.')[0]} canvas.
-`;
+Content to render:
+${pointsText}
+
+Use simple language. Avoid technical terms unless necessary.
+Do not explain too much.
+Make it easy to scan in less than 10 seconds.
+Use a consistent structure across all sections.
+Make use of realistic icons, logos and elements like the ultimate and best design expert in the world.
+
+Always include the handwritten text "Follow @${handle} for more amazing AI content | Repost ♻️" at the bottom of the image, in the same hand-drawn marker style.`;
 }
 
 // ─── Post-process generated HTML ───
