@@ -197,11 +197,13 @@ const Index = () => {
   // DO NOT replace CTAs with navigate("/login") without user permission.
   const [showWaitlist, setShowWaitlist] = useState(false);
 
+  /* 
   useEffect(() => {
     if (!authLoading && user) {
       navigate("/dashboard", { replace: true });
     }
   }, [user, authLoading, navigate]);
+  */
 
   useEffect(() => {
     const interval = setInterval(() => {

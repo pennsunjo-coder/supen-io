@@ -55,7 +55,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
 
       {/* Header — Re-engineered for minimal elegance */}
       <header className="h-20 glass border-b border-white/5 flex items-center px-8 shrink-0 z-50">
-        <Link to="/dashboard" className="hover:opacity-80 transition-all active:scale-95 shrink-0">
+        <Link to="/" className="hover:opacity-80 transition-all active:scale-95 shrink-0">
           <LogoFull size="sm" />
         </Link>
 
