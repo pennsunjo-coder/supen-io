@@ -17,7 +17,7 @@ const Index = () => {
   const { theme, toggleTheme } = useTheme();
   
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [firstName, setFirstName] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
@@ -31,7 +31,7 @@ const Index = () => {
 
   async function handleJoin(e: React.FormEvent) {
     e.preventDefault();
-    if (!email.trim()) return;
+    if (!email.trim() || !firstName.trim()) return;
 
     setLoading(true);
     try {
@@ -39,7 +39,7 @@ const Index = () => {
         .from("waitlist")
         .insert({ 
           email: email.trim().toLowerCase(), 
-          phone: phone.trim(),
+          first_name: firstName.trim(),
           plan: "early_access" 
         });
 
@@ -120,7 +120,7 @@ const Index = () => {
 
               <h1 className="text-5xl md:text-7xl font-black mb-8 leading-[1] tracking-tight">
                 The Future of <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#24A89B] to-[#6366f1]">Viral Content.</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#24A89B] to-[#24A89B]/60">Viral Content.</span>
               </h1>
 
               <p className="text-white/60 text-lg md:text-xl font-medium max-w-lg mx-auto mb-10 leading-relaxed">
@@ -141,24 +141,23 @@ const Index = () => {
 
               <form onSubmit={handleJoin} className="w-full max-w-md mx-auto space-y-4">
                 <div className="relative group">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-[#24A89B] transition-colors" />
+                  <Input 
+                    type="text" 
+                    placeholder="First name" 
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    required
+                    className="h-14 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[#24A89B]/50 rounded-2xl transition-all"
+                  />
+                </div>
+                <div className="relative group">
                   <Input 
                     type="email" 
                     placeholder="Enter your email" 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="h-14 pl-12 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[#24A89B]/50 rounded-2xl transition-all"
-                  />
-                </div>
-                <div className="relative group">
-                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-[#24A89B] transition-colors" />
-                  <Input 
-                    type="tel" 
-                    placeholder="Phone number (optional)" 
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="h-14 pl-12 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[#24A89B]/50 rounded-2xl transition-all"
+                    className="h-14 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[#24A89B]/50 rounded-2xl transition-all"
                   />
                 </div>
                 <Button 
