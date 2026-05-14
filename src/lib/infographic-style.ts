@@ -750,6 +750,7 @@ export function buildDallEPrompt(
   template?: string,
   userName?: string,
   distilled?: EnhancedExtraction & { quotes: string[]; contentType: string; proTip?: string }
+
 ): string {
   void template;
 
@@ -764,20 +765,29 @@ export function buildDallEPrompt(
   const title = rawExt.title || "Key Insights";
   const proTip = (distilled as any)?.proTip || "";
 
-  return `Generate a single image of a physical, hand-drawn infographic on a large whiteboard or notebook page.
+  // Determine aspect ratio based on platform
+  let formatString = "Portrait (4:5 aspect ratio, ideal for LinkedIn/Instagram feeds)";
+  if (platform.toLowerCase().includes("tiktok") || platform.toLowerCase().includes("reel") || platform.toLowerCase().includes("short")) {
+    formatString = "Vertical (9:16 aspect ratio)";
+  } else if (platform.toLowerCase().includes("twitter") || platform.toLowerCase().includes("x")) {
+    formatString = "Square or Landscape (1:1 or 16:9 aspect ratio)";
+  }
+
+  return `Generate a flat digital graphic infographic with a hand-drawn marker aesthetic. 
+Do NOT generate a photograph of a physical notebook sitting on a desk. The image itself MUST BE the infographic, filling the entire canvas from edge to edge with a clean white or off-white background.
 
 Crucial Style Instructions (Read First):
-Medium: The image must look like a photograph of a real whiteboard or large paper notepad.
-Texture: All elements must look created by hand using colored marker pens (black, blue, red, green) and highlighters (yellow/orange). Lines should be slightly imperfect, wobbly, and have the texture of ink on a surface.
+Medium: Digital graphic mimicking a physical whiteboard or blank paper. The background should be flat and clean. No desks, no shadows, no hands, no 3D objects around it.
+Texture: All elements must look created by hand using colored marker pens (black, blue, red, green) and highlighters (yellow/orange).
 No Digital Fonts: All text, headings, and bullet points must appear handwritten or hand-printed in marker pen.
 
-Layout: Structure the 1080x1350 image as follows:
+Format & Layout:
+- Format: ${formatString}
+- The content must flow perfectly and fill the canvas.
 - Title at the top: "${title}" written in large bold marker.
 - Content sections below, each with a colored marker heading and bullet points.
 - Use multi-colored markers for emphasis.
 - Keep text large and legible.
-- Make everything look hand-drawn with slight imperfections.
-- Make it look like a photograph of an actual notebook page.
 
 Content to render:
 ${pointsText}
@@ -787,7 +797,7 @@ Use simple language. Avoid technical terms unless necessary.
 Do not explain too much.
 Make it easy to scan in less than 10 seconds.
 Use a consistent structure across all sections.
-Make use of realistic icons, logos and elements like the ultimate and best design expert in the world.
+Make use of realistic hand-drawn icons (brain, lightbulb, rocket, etc.).
 
 Always include the handwritten text "Follow @${handle} for more amazing AI content | Repost ♻️" at the bottom of the image, in the same hand-drawn marker style.`;
 }
