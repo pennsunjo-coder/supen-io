@@ -468,97 +468,29 @@ export default function InfographicModal({ open, onClose, content, platform, con
       if (IS_DEV) console.log("[Infographic] Content length:", content.length);
       const template = styleChoice === "auto" ? templateSelection.templateId : styleChoice;
 
-      // STEP 1: EXTRACT content (simple extraction, no transformation)
+      // STEP 1: EXTRACT content (simple extraction, no hallucination)
       const distilled = await distillInfographicContent(content, platform || "LinkedIn", callClaude);
 
-      // STEP 2: BUILD BACKGROUND PROMPT (visual only, NO text)
+      // STEP 2: BUILD PROMPT (with content, direct to image model)
       const cleanContent = sanitizeForPlatform(content, platform || "", "Post");
-      const bgPrompt = buildDallEPrompt(cleanContent, platform, template, userName, distilled);
+      const imagePrompt = buildDallEPrompt(cleanContent, platform, template, userName, distilled);
 
-      // STEP 3: GENERATE BACKGROUND IMAGE
-      if (IS_DEV) console.log("[Infographic] Generating background template...");
+      // STEP 3: GENERATE IMAGE (direct — no Architect middle-layer)
+      if (IS_DEV) console.log("[Infographic] Generating infographic image...");
       
-      let base64 = "";
-      try {
-        base64 = await generateInfographic(bgPrompt, imageConfig.size);
-      } catch (imgErr) {
-        console.warn("[Infographic] Background generation failed, using solid background:", imgErr);
-      }
-
-      // STEP 4: BUILD HYBRID HTML (background image + text overlay)
-      const handle = userName ? userName.replace(/^@/, "").replace(/\s+/g, "").toLowerCase() : "gamalieltankeu";
-      const points = distilled.points?.slice(0, 7) || [];
-      const title = distilled.title || "Key Insights";
-      const proTip = (distilled as any).proTip || "";
-
-      const sectionColors = ["#C0392B", "#2563EB", "#2E7D32", "#D4A017", "#8B5CF6", "#E67E22", "#0D9488"];
-      const icons = ["🧠", "💡", "⚡", "🚀", "📚", "🎯", "✅"];
-
-      const pointsHtml = points.map((p: string, i: number) => `
-        <div style="margin-bottom:18px;padding:12px 16px;background:rgba(255,255,255,0.85);border-radius:8px;border-left:5px solid ${sectionColors[i % sectionColors.length]};">
-          <div style="font-family:'Patrick Hand',cursive;font-size:22px;font-weight:700;color:${sectionColors[i % sectionColors.length]};margin-bottom:4px;">
-            ${icons[i % icons.length]} ${i + 1}.
-          </div>
-          <div style="font-family:'Caveat',cursive;font-size:20px;color:#1a1a1a;line-height:1.3;">
-            ${p}
-          </div>
-        </div>
-      `).join("");
-
-      const bgStyle = base64
-        ? `background-image:url(data:image/png;base64,${base64});background-size:cover;background-position:center;`
-        : `background:#f8f9f7;`;
-
-      const html = `<!DOCTYPE html>
-<html><head><meta charset="UTF-8">
-<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>*{margin:0;padding:0;box-sizing:border-box}body{width:${dims.width}px;height:${dims.height}px;overflow:hidden}</style>
-</head><body>
-<div style="width:${dims.width}px;height:${dims.height}px;${bgStyle}position:relative;display:flex;flex-direction:column;padding:32px 28px;">
-
-  <!-- Title -->
-  <div style="background:rgba(255,255,255,0.9);border-radius:12px;padding:20px 24px;margin-bottom:20px;border:3px solid #1a1a1a;text-align:center;">
-    <div style="font-family:'Patrick Hand',cursive;font-size:36px;font-weight:700;color:#1a1a1a;text-transform:uppercase;letter-spacing:1px;">
-      ${title}
-    </div>
-  </div>
-
-  <!-- Content Points -->
-  <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;">
-    ${pointsHtml}
-  </div>
-
-  ${proTip ? `
-  <!-- Pro Tip -->
-  <div style="background:rgba(255,239,90,0.3);border:2px solid #C0392B;border-radius:8px;padding:12px 16px;margin-top:12px;margin-bottom:12px;">
-    <div style="font-family:'Patrick Hand',cursive;font-size:20px;font-weight:700;color:#C0392B;">
-      ⭐ PRO TIP:
-    </div>
-    <div style="font-family:'Caveat',cursive;font-size:18px;color:#1a1a1a;line-height:1.3;">
-      ${proTip}
-    </div>
-  </div>
-  ` : ""}
-
-  <!-- Footer -->
-  <div style="background:rgba(26,26,26,0.9);border-radius:8px;padding:12px;text-align:center;">
-    <span style="font-family:'Patrick Hand',cursive;font-size:16px;color:#ffffff;">
-      Follow @${handle} for more amazing AI content | Repost ♻️
-    </span>
-  </div>
-
-</div>
-</body></html>`;
-
+      const base64 = await generateInfographic(imagePrompt, imageConfig.size);
       setImageBase64(base64);
+
+      // Wrap image as HTML for storage/display
+      const html = wrapBase64AsHtml(base64, dims);
       setHtmlCode(html);
 
-      // Default to HTML view (it has the composite with perfect text)
-      setResultMode("claude");
+      // Show image result
+      setResultMode("openai");
       setStep("result");
 
       // Save to Supabase
-      await handleSave({ html, image: base64, mode: "claude" });
+      await handleSave({ html, image: base64, mode: "openai" });
     } catch (err) {
       if (IS_DEV) console.error("[InfographicModal] Generation failed:", err);
       const fallbackMsg = err instanceof Error ? err.message : "Generation failed";
