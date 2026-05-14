@@ -13,6 +13,7 @@ import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/contexts/ThemeContext";
 import { LogoFull } from "@/components/Logo";
+import WaitlistSection from "@/components/WaitlistSection";
 import { WaitlistPopup } from "@/components/WaitlistPopup";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -236,6 +237,7 @@ const Index = () => {
               { label: "Features", href: "#features" },
               { label: "Results", href: "#results" },
               { label: "Pricing", href: "#pricing" },
+              { label: "Waitlist", href: "#waitlist" },
               { label: "FAQ", href: "#faq" },
             ].map((item) => (
               <a 
@@ -257,7 +259,7 @@ const Index = () => {
             </button>
             <Button 
               size="sm" 
-              onClick={() => navigate("/login")} 
+              onClick={() => setShowWaitlist(true)} 
               className="bg-primary text-primary-foreground hover:brightness-110 active:scale-95 rounded-full px-6 h-10 text-sm font-bold shadow-lg shadow-primary/25 transition-all"
             >
               Get started free
@@ -316,7 +318,7 @@ const Index = () => {
           </motion.p>
 
           <motion.div variants={fadeUp} custom={3} className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button size="lg" onClick={() => navigate("/login")} className="bg-foreground text-background hover:scale-[1.02] active:scale-95 h-12 px-8 text-sm font-bold rounded-full group transition-all shadow-xl">
+            <Button size="lg" onClick={() => setShowWaitlist(true)} className="bg-foreground text-background hover:scale-[1.02] active:scale-95 h-12 px-8 text-sm font-bold rounded-full group transition-all shadow-xl">
               Start Creating Free
               <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
             </Button>
@@ -633,7 +635,7 @@ const Index = () => {
                 </div>
 
                 <Button
-                  onClick={() => navigate("/login")}
+                  onClick={() => setShowWaitlist(true)}
                   className={cn(
                     "w-full h-12 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all",
                     plan.highlighted 
@@ -719,7 +721,7 @@ const Index = () => {
           <p className="text-sm md:text-base text-muted-foreground mb-12 max-w-lg mx-auto font-medium opacity-60">
             Join 2,500+ creators using Supenli.ai to create content that converts.
           </p>
-          <Button size="lg" onClick={() => navigate("/login")} className="bg-foreground text-background hover:scale-105 active:scale-95 font-black uppercase tracking-[0.2em] h-14 px-10 text-sm rounded-full transition-all shadow-2xl shadow-white/5">
+          <Button size="lg" onClick={() => setShowWaitlist(true)} className="bg-foreground text-background hover:scale-105 active:scale-95 font-black uppercase tracking-[0.2em] h-14 px-10 text-sm rounded-full transition-all shadow-2xl shadow-white/5">
             Get started free
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
@@ -727,6 +729,9 @@ const Index = () => {
       </section>
 
       {/* ═══════════ FOOTER ═══════════ */}
+      {/* ═══════════ WAITLIST ═══════════ */}
+      <WaitlistSection />
+
       <footer className="border-t border-white/[0.05] py-20 px-6 relative bg-white/[0.005]">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-12 mb-20">

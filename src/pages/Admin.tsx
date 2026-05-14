@@ -48,13 +48,19 @@ function useWaitlist() {
 
   const fetch = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from("waitlist")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(500);
-    setEntries((data as WaitlistEntry[]) ?? []);
-    setLoading(false);
+    try {
+      const { data, error } = await supabase
+        .from("waitlist")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (error) console.error("Admin stats error (waitlist):", error);
+      setEntries((data as WaitlistEntry[]) ?? []);
+    } catch (err) {
+      console.error("Unexpected error in useWaitlist:", err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { fetch(); }, [fetch]);
