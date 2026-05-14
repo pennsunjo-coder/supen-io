@@ -293,19 +293,19 @@ Your ONLY job is to EXTRACT the key information from the source text.
 DO NOT invent, add, or generalize anything.
 
 RULES:
-1. Use ONLY words, numbers, and facts that appear in the source.
+1. Use ONLY words, numbers, and facts that appear in the source. DO NOT invent content.
 2. Keep the same language as the source (if French, write French. If English, write English. NEVER mix languages).
-3. Be brief and punchy. Each point max 50 characters.
-4. Extract 5-7 key points maximum.
+3. Provide rich, detailed explanations for each point to fill the large canvas space. Extract a clear concept AND a full sentence of explanation for each point (around 80-120 characters per point).
+4. Extract 5 to 6 key points.
 
 OUTPUT FORMAT (exactly):
-TITLE: [Short catchy title from the source, max 40 chars]
-POINT 1: [Key fact or tip from source]
-POINT 2: [Key fact or tip from source]
-POINT 3: [Key fact or tip from source]
-POINT 4: [Key fact or tip from source]
-POINT 5: [Key fact or tip from source]
-PRO TIP: [Best actionable advice from the source]
+TITLE: [Short catchy title from the source]
+POINT 1: [Concept] - [Detailed explanation from source]
+POINT 2: [Concept] - [Detailed explanation from source]
+POINT 3: [Concept] - [Detailed explanation from source]
+POINT 4: [Concept] - [Detailed explanation from source]
+POINT 5: [Concept] - [Detailed explanation from source]
+PRO TIP: [Best actionable detailed advice from the source]
 DOODLES: [3-4 simple object names in English: brain, laptop, etc.]`;
 
   const prompt = `Extract the key points from this ${platform} post. Do NOT add anything that isn't in the source:\n\n${content}`;
@@ -785,9 +785,9 @@ Format & Layout:
 - Format: ${formatString}
 - The content must flow perfectly and fill the canvas.
 - Title at the top: "${title}" written in large bold marker.
-- Content sections below, each with a colored marker heading and bullet points.
-- Use multi-colored markers for emphasis.
-- Keep text large and legible.
+- Content sections below. Each point has a Concept (make it a bold, colored sub-heading) and an Explanation (write it neatly underneath).
+- Use multi-colored markers and highlighters for emphasis.
+- Keep text neatly organized, large, and perfectly legible.
 
 Content to render:
 ${pointsText}
