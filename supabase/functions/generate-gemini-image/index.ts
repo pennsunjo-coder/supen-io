@@ -40,8 +40,8 @@ Deno.serve(async (req) => {
           }]
         }],
         generationConfig: {
+          responseModalities: ["IMAGE"],
           aspectRatio: aspectRatio,
-          personGeneration: "DONT_ALLOW"
         }
       })
     });
