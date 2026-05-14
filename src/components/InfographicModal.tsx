@@ -51,7 +51,7 @@ function getImageSize(platform: string): ImageSizeConfig {
     return { size: "1024x1024", label: "Square", description: "Optimized for Facebook" };
   }
   // LinkedIn, Instagram, TikTok, default → portrait 4:5
-  return { size: "1024x1344", label: "Portrait", description: `Optimized for ${platform || "social media"}` };
+  return { size: "1080x1350", label: "Portrait", description: `Optimized for ${platform || "social media"}` };
 }
 
 // ─── Image Generation via Edge Function ───

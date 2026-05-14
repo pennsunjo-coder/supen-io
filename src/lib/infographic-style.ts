@@ -766,9 +766,9 @@ export function buildDallEPrompt(
   const proTip = (distilled as any)?.proTip || "";
 
   // Determine aspect ratio based on platform
-  let formatString = "Portrait (4:5 aspect ratio, ideal for LinkedIn/Instagram feeds)";
+  let formatString = "Portrait (4:5 aspect ratio, exactly 1080x1350 pixels, ideal for LinkedIn/Instagram feeds)";
   if (platform.toLowerCase().includes("tiktok") || platform.toLowerCase().includes("reel") || platform.toLowerCase().includes("short")) {
-    formatString = "Vertical (9:16 aspect ratio)";
+    formatString = "Vertical (9:16 aspect ratio, exactly 1080x1920 pixels)";
   } else if (platform.toLowerCase().includes("twitter") || platform.toLowerCase().includes("x")) {
     formatString = "Square or Landscape (1:1 or 16:9 aspect ratio)";
   }
