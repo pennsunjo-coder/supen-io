@@ -89,14 +89,6 @@ const Index = () => {
              >
                 {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
              </button>
-             <Button 
-               variant="ghost" 
-               size="sm" 
-               onClick={() => navigate("/login")} 
-               className="text-white/20 hover:text-white/60 text-[10px] uppercase tracking-widest font-bold"
-             >
-                Admin
-             </Button>
           </div>
         </div>
       </nav>

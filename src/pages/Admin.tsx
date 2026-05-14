@@ -609,6 +609,44 @@ export default function Admin() {
                 ))}
               </div>
 
+              {/* Add to Waitlist */}
+              <div className="bg-card border border-border/20 rounded-xl p-5">
+                <h3 className="text-sm font-semibold mb-3">Add to Waitlist (Grant Access)</h3>
+                <form 
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    const form = e.currentTarget;
+                    const emailInput = form.elements.namedItem("email") as HTMLInputElement;
+                    const nameInput = form.elements.namedItem("name") as HTMLInputElement;
+                    const email = emailInput.value.trim();
+                    const name = nameInput.value.trim();
+                    if (!email) return;
+
+                    try {
+                      const { error } = await supabase.from("waitlist").insert({ 
+                        email, 
+                        first_name: name,
+                        plan: "pro",
+                        notified: true // Default to granted access
+                      });
+                      if (error) throw error;
+                      toast.success(`Added ${email} and granted access`);
+                      form.reset();
+                      refetchWaitlist();
+                    } catch (err) {
+                      toast.error("Failed to add user");
+                    }
+                  }}
+                  className="flex flex-col sm:flex-row gap-3"
+                >
+                  <Input name="name" placeholder="First Name" className="h-9 text-xs" />
+                  <Input name="email" type="email" placeholder="Email Address" required className="h-9 text-xs" />
+                  <Button type="submit" size="sm" className="h-9 px-6 text-xs font-bold">
+                    Add & Grant Access
+                  </Button>
+                </form>
+              </div>
+
               {/* Send launch email — placeholder */}
               <div className="bg-card border border-border/20 rounded-xl p-5 flex items-center justify-between">
                 <div>
@@ -656,7 +694,31 @@ export default function Admin() {
                             </span>
                           </td>
                           <td className="py-2.5 pr-3"><Badge ok={e.paid} /></td>
-                          <td className="py-2.5 pr-3"><Badge ok={e.notified} /></td>
+                          <td className="py-2.5 pr-3">
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const { error } = await supabase
+                                    .from("waitlist")
+                                    .update({ notified: !e.notified })
+                                    .eq("id", e.id);
+                                  if (error) throw error;
+                                  refetchWaitlist();
+                                  toast.success(`Access ${!e.notified ? "granted" : "revoked"} for ${e.email}`);
+                                } catch (err) {
+                                  toast.error("Failed to update access");
+                                }
+                              }}
+                              className="focus:outline-none"
+                            >
+                              <span className={cn(
+                                "px-1.5 py-0.5 rounded text-[10px] font-medium",
+                                e.notified ? "bg-green-500/15 text-green-400" : "bg-red-500/15 text-red-400",
+                              )}>
+                                {e.notified ? "Has Access" : "No Access"}
+                              </span>
+                            </button>
+                          </td>
                           <td className="py-2.5 text-muted-foreground">{formatDate(e.created_at)}</td>
                         </tr>
                       ))}

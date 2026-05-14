@@ -39,11 +39,28 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !password.trim()) return;
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!trimmedEmail || !password.trim()) return;
     if (loading) return;
     setLoading(true);
     try {
-      const { error } = isSignUp ? await signUp(email, password) : await signIn(email, password);
+      // ⛔ GATEKEEPER: Check if user has access (via waitlist)
+      const ADMIN_EMAILS = ["gamalielkelman@gmail.com"];
+      if (isSignUp && !ADMIN_EMAILS.includes(trimmedEmail)) {
+        const { data: waitlistEntry, error: waitlistError } = await supabase
+          .from("waitlist")
+          .select("notified")
+          .eq("email", trimmedEmail)
+          .maybeSingle();
+
+        if (waitlistError || !waitlistEntry || !waitlistEntry.notified) {
+          toast.error("You don't have access yet. Please join the waitlist first.");
+          setLoading(false);
+          return;
+        }
+      }
+
+      const { error } = isSignUp ? await signUp(trimmedEmail, password) : await signIn(trimmedEmail, password);
       if (error) {
         toast.error(error);
         return;
