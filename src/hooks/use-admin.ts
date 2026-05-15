@@ -1,6 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 
-const ADMIN_EMAILS = ["gamalielkelman@gmail.com"];
+const ADMIN_EMAILS = ["gamalielkelman@gmail.com", "pennsunjo@gmail.com"];
 
 export function useAdmin() {
   const { user } = useAuth();
