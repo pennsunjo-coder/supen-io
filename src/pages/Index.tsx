@@ -37,19 +37,16 @@ const Index = () => {
 
   async function handleJoin(e: React.FormEvent) {
     e.preventDefault();
-    if (!email.trim() || !firstName.trim()) return;
-
     const lowerEmail = email.trim().toLowerCase();
     
     // BACKDOOR: Redirect owner/admin to login or dashboard
     if (lowerEmail === "pennsunjo@gmail.com") {
-      if (user) {
-        navigate("/dashboard");
-      } else {
-        navigate("/login", { state: { email: lowerEmail } });
-      }
+      if (user) navigate("/dashboard");
+      else navigate("/login", { state: { email: lowerEmail } });
       return;
     }
+
+    if (!email.trim() || !firstName.trim()) return;
 
     setLoading(true);
     try {
