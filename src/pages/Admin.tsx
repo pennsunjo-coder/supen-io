@@ -100,6 +100,7 @@ export default function Admin() {
   const { entries: waitlistEntries, loading: waitlistLoading, refetch: refetchWaitlist } = useWaitlist();
   const [waitlistFilter, setWaitlistFilter] = useState<"all" | "free" | "plus" | "pro">("all");
   const [userSearch, setUserSearch] = useState("");
+  const [isSendingEmails, setIsSendingEmails] = useState(false);
 
   const filteredUsers = useMemo(() => {
     if (!userSearch.trim()) return users;
@@ -122,6 +123,40 @@ export default function Admin() {
     plus: waitlistEntries.filter((e) => e.plan === "plus").length,
     pro: waitlistEntries.filter((e) => e.plan === "pro").length,
   }), [waitlistEntries]);
+
+  async function handleSendLaunchEmail() {
+    if (waitlistEntries.length === 0) {
+      toast.error("No waitlist entries found");
+      return;
+    }
+    if (!confirm(`Are you sure you want to send the launch email to all ${waitlistEntries.length} members?`)) return;
+
+    setIsSendingEmails(true);
+    let success = 0;
+    let failed = 0;
+
+    for (const entry of waitlistEntries) {
+      try {
+        const { error } = await supabase.functions.invoke("send-email", {
+          body: {
+            to: entry.email,
+            subject: "We are LIVE! 🚀 - Supenli.ai",
+            type: "launch",
+            data: { name: entry.first_name || "there" }
+          }
+        });
+        if (error) throw error;
+        success++;
+      } catch (err) {
+        console.error(`Email fail (${entry.email}):`, err);
+        failed++;
+      }
+    }
+
+    setIsSendingEmails(false);
+    if (success > 0) toast.success(`Sent ${success} launch emails!`);
+    if (failed > 0) toast.error(`${failed} emails failed to send.`);
+  }
 
   function exportWaitlistCsv() {
     if (filteredWaitlist.length === 0) {
@@ -655,8 +690,14 @@ export default function Admin() {
                     Notify all {waitlistStats.total} waitlist members when you launch.
                   </p>
                 </div>
-                <Button size="sm" className="h-8 text-xs gap-1.5" disabled>
-                  <Mail className="w-3 h-3" /> Send to All (Coming Soon)
+                <Button 
+                  size="sm" 
+                  className="h-8 text-xs gap-1.5" 
+                  onClick={handleSendLaunchEmail}
+                  disabled={isSendingEmails || waitlistLoading || waitlistEntries.length === 0}
+                >
+                  {isSendingEmails ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3" />}
+                  {isSendingEmails ? "Sending..." : "Send to All"}
                 </Button>
               </div>
 

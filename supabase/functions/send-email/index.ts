@@ -148,25 +148,26 @@ function buildFeedbackEmail(name: string): string {
 </div></div></body></html>`;
 }
 
-// ── Waitlist ──
-
-function buildWaitlistEmail(name: string): string {
+// ── Launch Announcement ──
+function buildLaunchEmail(name: string): string {
   return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${STYLES}</style></head>
 <body><div class="wr"><div class="cd">
-<div class="hd">${LOGO}<p class="sub">Priority Access List</p></div>
+<div class="hd">${LOGO}<p class="sub">The wait is over</p></div>
 <div class="bd">
-<div class="bg">${I.str} Early Access</div>
-<div class="gr">You're on the list, ${name}!</div>
-<p class="tx">You just joined the priority access list for <span class="hl">Supenli.ai</span> &mdash; the AI-powered viral content creation platform.<br><br>You'll be among the <strong>first</strong> to be notified on launch day.</p>
+<div class="bg">${I.zap} We are LIVE!</div>
+<div class="gr">It's time to go viral, ${name}.</div>
+<p class="tx">The wait is officially over. <span class="hl">Supenli.ai</span> is now open to all waitlist members.<br><br>As an early supporter, you now have priority access to the full engine to create, optimize and automate your content strategy across 6 platforms.</p>
 <div class="ft">
-<div class="fi">${I.zap}<div class="fi-t"><strong>Early access guaranteed</strong><br>You'll receive an email the moment the platform goes live.</div></div>
-<div class="fi">${I.str}<div class="fi-t"><strong>Exclusive deals</strong><br>Waitlist members get special conditions at launch.</div></div>
-<div class="fi">${I.heart}<div class="fi-t"><strong>We can't wait to show you</strong><br>Supenli.ai will transform the way you create content.</div></div>
+<div class="fi">${I.chk}<div class="fi-t"><strong>Elite Content Engine</strong><br>Generate high-performing scripts for LinkedIn, X, YouTube and more.</div></div>
+<div class="fi">${I.chk}<div class="fi-t"><strong>Visual Creator</strong><br>Turn any text into premium infographics in one click.</div></div>
+<div class="fi">${I.chk}<div class="fi-t"><strong>AI Strategy Coach</strong><br>Get real-time advice on how to improve your reach.</div></div>
 </div>
+<p class="tx" style="margin-top:24px">Click below to claim your spot and choose the plan that fits your growth goals.</p>
+<div class="ct"><a href="${APP}" class="cta">Get Started Now &rarr;</a></div>
 <div class="dv"></div>
-<p class="tx" style="font-size:13px;margin-bottom:0;text-align:center">Questions? Reply directly to this email.</p>
+<p class="tx" style="font-size:13px;margin-bottom:0;text-align:center">Let's build your audience together.</p>
 </div>
-<div class="fo"><p>&copy; 2026 Supenli.ai &middot; You're receiving this because you joined our waitlist.</p></div>
+<div class="fo"><p>&copy; 2026 Supenli.ai &middot; Built for the next era of creators.</p></div>
 </div></div></body></html>`;
 }
 
@@ -189,6 +190,7 @@ Deno.serve(async (req) => {
     else if (type === "content-ready") html = buildContentReadyEmail(data?.name || "there", data?.platform || "Social Media", data?.topic || "your topic");
     else if (type === "feedback") html = buildFeedbackEmail(data?.name || "there");
     else if (type === "waitlist") html = buildWaitlistEmail(data?.name || "there");
+    else if (type === "launch") html = buildLaunchEmail(data?.name || "there");
     else html = data?.html || "<p>No content</p>";
 
     const res = await fetch("https://api.resend.com/emails", {
