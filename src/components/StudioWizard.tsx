@@ -436,6 +436,23 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
       const directive = focusDirectives.join(", ");
       let sourceContext = "";
 
+      // === Viral References: Retrieve high-quality examples ===
+      let viralExamplesContext = "";
+      try {
+        const viralRefs = await searchViralReferences(
+          sanitized,
+          selectedPlatform.name,
+          selectedFormat,
+          5
+        );
+        if (viralRefs && viralRefs.length > 0) {
+          if (IS_DEV) console.log("[StudioWizard] Found", viralRefs.length, "viral references");
+          viralExamplesContext = viralRefs.map((r, i) => `EXAMPLE ${i + 1} (${r.platform} ${r.format}):\n${r.content}`).join("\n\n---\n\n");
+        }
+      } catch (e) {
+        if (IS_DEV) console.warn("[StudioWizard] Viral references search failed:", e);
+      }
+
       if (allSourceIds.length > 0) {
         // Strategy 1: RAG search (semantic + trigram + direct fallback)
         try {
@@ -538,6 +555,17 @@ SOURCE-USAGE RULES (non-negotiable):
    carrying the source's facts — not a copy-paste of the source.
 
 ${directive ? `7. USER FOCUS DIRECTIVE: ${directive}` : ""}
+
+${viralExamplesContext ? `
+╔══════════════════════════════════════╗
+║     HIGH-QUALITY VIRAL EXAMPLES      ║
+╚══════════════════════════════════════╝
+
+Use the following real publications as inspiration for style, cadence, and hook structure.
+Do NOT copy their content, but mimic their high-performing DNA:
+
+${viralExamplesContext}
+` : ""}
 
 ` : ''}CONTENT TO CREATE:
 Topic: ${sanitizedInput}
