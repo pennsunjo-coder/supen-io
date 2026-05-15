@@ -21,6 +21,12 @@ const Index = () => {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
+  useEffect(() => {
+    if (user && user.email === "pennsunjo@gmail.com") {
+      navigate("/dashboard");
+    }
+  }, [user, navigate]);
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#050505]">
@@ -28,12 +34,6 @@ const Index = () => {
       </div>
     );
   }
-
-  useEffect(() => {
-    if (user && user.email === "pennsunjo@gmail.com") {
-      navigate("/dashboard");
-    }
-  }, [user, navigate]);
 
   async function handleJoin(e: React.FormEvent) {
     e.preventDefault();
