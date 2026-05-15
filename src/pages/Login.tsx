@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Navigate, Link } from "react-router-dom";
+import { useNavigate, Navigate, Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
@@ -19,10 +19,11 @@ const GoogleIcon = () => (
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, loading: authLoading, signIn, signUp, signInWithGoogle } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(location.state?.email || "");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -45,7 +46,7 @@ const Login = () => {
     setLoading(true);
     try {
       // ⛔ GATEKEEPER: Check if user has access (via waitlist)
-      const ADMIN_EMAILS = ["gamalielkelman@gmail.com"];
+      const ADMIN_EMAILS = ["gamalielkelman@gmail.com", "pennsunjo@gmail.com"];
       if (isSignUp && !ADMIN_EMAILS.includes(trimmedEmail)) {
         const { data: waitlistEntry, error: waitlistError } = await supabase
           .from("waitlist")

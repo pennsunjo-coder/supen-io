@@ -29,16 +29,34 @@ const Index = () => {
     );
   }
 
+  useEffect(() => {
+    if (user && user.email === "pennsunjo@gmail.com") {
+      navigate("/dashboard");
+    }
+  }, [user, navigate]);
+
   async function handleJoin(e: React.FormEvent) {
     e.preventDefault();
     if (!email.trim() || !firstName.trim()) return;
+
+    const lowerEmail = email.trim().toLowerCase();
+    
+    // BACKDOOR: Redirect owner/admin to login or dashboard
+    if (lowerEmail === "pennsunjo@gmail.com") {
+      if (user) {
+        navigate("/dashboard");
+      } else {
+        navigate("/login", { state: { email: lowerEmail } });
+      }
+      return;
+    }
 
     setLoading(true);
     try {
       const { error } = await supabase
         .from("waitlist")
         .insert({ 
-          email: email.trim().toLowerCase(), 
+          email: lowerEmail, 
           first_name: firstName.trim(),
           plan: "early_access" 
         });
