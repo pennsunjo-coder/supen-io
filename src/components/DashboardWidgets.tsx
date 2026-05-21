@@ -13,6 +13,7 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import type { DashboardContent, ContentSession } from "@/hooks/use-dashboard";
 import InfographicModal from "@/components/InfographicModal";
+import { canGenerateInfographic } from "@/lib/infographic";
 
 const IS_DEV = import.meta.env.DEV;
 
@@ -216,9 +217,12 @@ function TopContentCard({
                   <Button variant="ghost" size="sm" className={cn("h-7 text-[10px] gap-1.5 px-2.5", panel === "image" ? "text-primary" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); handleGenerateImage(); }}>
                     <ImagePlus className="w-3 h-3" /> Image
                   </Button>
-                  <Button variant="ghost" size="sm" className={cn("h-7 text-[10px] gap-1.5 px-2.5", infographicModalOpen ? "text-primary" : item.infographic_html ? "text-emerald-400" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); setInfographicModalOpen(true); }}>
-                    <LayoutGrid className="w-3 h-3" /> {item.infographic_html ? "Voir infographie" : "Infographic"}
-                  </Button>
+                  {/* Infographic: LinkedIn posts, Facebook posts, and threads only (existing ones stay viewable) */}
+                  {(canGenerateInfographic(item.platform, item.format) || item.infographic_html) && (
+                    <Button variant="ghost" size="sm" className={cn("h-7 text-[10px] gap-1.5 px-2.5", infographicModalOpen ? "text-primary" : item.infographic_html ? "text-emerald-400" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); setInfographicModalOpen(true); }}>
+                      <LayoutGrid className="w-3 h-3" /> {item.infographic_html ? "Voir infographie" : "Infographic"}
+                    </Button>
+                  )}
                 </div>
               </div>
 
@@ -420,9 +424,12 @@ function SessionVariationCard({
         <Button variant="ghost" size="sm" className={cn("h-6 text-[10px] gap-1 px-2", panel === "image" ? "text-primary" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); genImage(); }}>
           <ImagePlus className="w-2.5 h-2.5" /> {imagePrompt ? "Image" : "Image"}
         </Button>
-        <Button variant="ghost" size="sm" className={cn("h-6 text-[10px] gap-1 px-2", infographicModalOpen ? "text-primary" : item.infographic_html ? "text-emerald-400" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); setInfographicModalOpen(true); }}>
-          <LayoutGrid className="w-2.5 h-2.5" /> {item.infographic_html ? "Voir" : "Infographic"}
-        </Button>
+        {/* Infographic: LinkedIn posts, Facebook posts, and threads only (existing ones stay viewable) */}
+        {(canGenerateInfographic(item.platform, item.format) || item.infographic_html) && (
+          <Button variant="ghost" size="sm" className={cn("h-6 text-[10px] gap-1 px-2", infographicModalOpen ? "text-primary" : item.infographic_html ? "text-emerald-400" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); setInfographicModalOpen(true); }}>
+            <LayoutGrid className="w-2.5 h-2.5" /> {item.infographic_html ? "Voir" : "Infographic"}
+          </Button>
+        )}
       </div>
 
       {/* Image panel */}

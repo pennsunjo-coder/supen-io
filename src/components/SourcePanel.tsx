@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { sanitizeInput } from "@/lib/security";
 import type { GroupedSource } from "@/hooks/use-sources";
 import { motion, AnimatePresence } from "framer-motion";
+import TimedProgress from "@/components/TimedProgress";
 
 interface SourcePanelProps {
   groupedSources: GroupedSource[];
@@ -64,6 +65,7 @@ const SourcePanel = ({
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfImportName, setPdfImportName] = useState<string>("");
   const [dragOver, setDragOver] = useState(false);
   const [editingDirective, setEditingDirective] = useState<string | null>(null);
   const [directiveText, setDirectiveText] = useState("");
@@ -142,6 +144,7 @@ const SourcePanel = ({
       return;
     }
     setPdfLoading(true);
+    setPdfImportName(file.name);
     try {
       const result = await onAddPdf(file);
       if (result.error) {
@@ -156,6 +159,7 @@ const SourcePanel = ({
       toast.error(err instanceof Error ? err.message : "Unexpected error");
     } finally {
       setPdfLoading(false);
+      setPdfImportName("");
       if (fileRef.current) fileRef.current.value = "";
     }
   };
@@ -213,6 +217,14 @@ const SourcePanel = ({
         if (file) importPdf(file);
         e.target.value = "";
       }} />
+
+      <div className="px-5 -mt-1 mb-2">
+        <TimedProgress
+          active={pdfLoading}
+          label={pdfImportName ? `Extracting "${pdfImportName}"...` : "Extracting PDF..."}
+          estimatedSec={20}
+        />
+      </div>
 
       {/* Form Area */}
       <AnimatePresence>

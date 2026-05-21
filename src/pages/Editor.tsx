@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import InfographicModal from "@/components/InfographicModal";
+import { canGenerateInfographic } from "@/lib/infographic";
 import { detectAiFlavor } from "@/lib/ai-flavor-detector";
 import { scoreVariationHeuristic } from "@/lib/viral-scorer";
 
@@ -196,7 +197,8 @@ export default function Editor() {
     : 0;
 
   const contentFormat = variations[0]?.format || "";
-  const isScript = /script|reel|video/i.test(contentFormat);
+  // Infographics: LinkedIn posts, Facebook posts, and threads (Facebook + X) only.
+  const canShowInfographic = canGenerateInfographic(platform, contentFormat);
 
   if (loading) return (
     <div className="h-screen flex items-center justify-center bg-background">
@@ -390,14 +392,8 @@ export default function Editor() {
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
 
-              {/* Infographic or generate — hidden for script formats */}
-              {isScript ? (
-                <div className="rounded-xl border border-border/20 p-4 text-center bg-accent/[0.02]">
-                  <p className="text-xs text-muted-foreground">
-                    Visuals are not available for scripts. Switch to Post or Thread format to generate infographics.
-                  </p>
-                </div>
-              ) : infographic ? (
+              {/* Infographic — LinkedIn posts, Facebook posts, and threads only */}
+              {infographic ? (
                 <div className="space-y-3">
                   <div className="rounded-xl overflow-hidden border border-border/20 cursor-zoom-in group relative" onClick={() => setLightbox(true)}>
                     <img src={`data:image/png;base64,${infographic}`} alt="Infographic" className="w-full h-auto" />
@@ -416,6 +412,12 @@ export default function Editor() {
                   <Button className="w-full gap-2 font-bold h-11 bg-violet-600 hover:bg-violet-700 text-white border-0" onClick={() => setShowModal(true)}>
                     <Sparkles className="w-4 h-4" /> Regenerate Visual
                   </Button>
+                </div>
+              ) : !canShowInfographic ? (
+                <div className="rounded-xl border border-border/20 p-4 text-center bg-accent/[0.02]">
+                  <p className="text-xs text-muted-foreground">
+                    Visuals are only available for LinkedIn posts, Facebook posts, and threads.
+                  </p>
                 </div>
               ) : (
                 <div className="rounded-xl border-2 border-dashed border-border/20 p-6 text-center">

@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { useProfile } from "@/hooks/use-profile";
 import { getCache, setCache, invalidateCache } from "@/lib/cache";
 import { embedSource } from "@/lib/embeddings";
+import { getPlanLimits, upgradeMessage } from "@/lib/plan-limits";
 import type { Source } from "@/types/database";
 
 const IS_DEV = import.meta.env.DEV;
@@ -69,7 +71,8 @@ async function extractTextFromPdf(
 
   console.log("=== PDF EXTRACT v2 ===", file.name, file.size, file.type);
 
-  // Strategy 1: Edge Function (Claude Vision server-side, most reliable)
+  // Strategy 1: Edge Function (Claude/Gemini server-side, most reliable)
+  let edgeError = "";
   try {
     console.log("[PDF] S1: Edge Function...");
     const formData = new FormData();
@@ -82,8 +85,20 @@ async function extractTextFromPdf(
       onProgress?.(1, 1);
       return { text: data.text, pages: data.pages || 1 };
     }
+
+    // Capture the upstream error so it can be surfaced if every strategy fails.
+    // Supabase wraps non-2xx responses; data may still hold the JSON body.
+    if (data?.error) edgeError = String(data.error);
+    else if (error?.message) edgeError = error.message;
+    if (error && typeof (error as { context?: { json?: () => Promise<{ error?: string }> } }).context?.json === "function") {
+      try {
+        const body = await (error as { context: { json: () => Promise<{ error?: string }> } }).context.json();
+        if (body?.error) edgeError = String(body.error);
+      } catch { /* ignore */ }
+    }
   } catch (e) {
-    console.warn("[PDF] S1 failed:", e);
+    edgeError = e instanceof Error ? e.message : String(e);
+    console.warn("[PDF] S1 failed:", edgeError);
   }
 
   // Strategy 2: Client-side PDF text parsing (no deps)
@@ -122,7 +137,8 @@ async function extractTextFromPdf(
     console.warn("[PDF] S2 failed:", e);
   }
 
-  throw new Error("Could not extract text. Please paste the content manually.");
+  const detail = edgeError ? ` (server: ${edgeError})` : "";
+  throw new Error(`Could not extract text${detail}. Please paste the content manually.`);
 }
 
 export interface GroupedSource {
@@ -173,8 +189,23 @@ function groupSources(sources: Source[]): GroupedSource[] {
 
 export function useSources() {
   const { user } = useAuth();
+  const { profile } = useProfile();
   const [sources, setSources] = useState<Source[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Gate keeper: returns an error string when the current plan would block
+  // adding one more source (counted as deduplicated groups, not chunks).
+  const checkSourceQuota = useCallback((): string | null => {
+    const limits = getPlanLimits(profile?.plan);
+    if (limits.maxSources === "unlimited") return null;
+    const groupCount = new Set(
+      sources.map((s) => s.title.replace(/\s*\(\d+\/\d+\)$/, ""))
+    ).size;
+    if (groupCount >= limits.maxSources) {
+      return upgradeMessage(profile?.plan, `Source limit (${limits.maxSources})`);
+    }
+    return null;
+  }, [profile?.plan, sources]);
 
   const fetchSources = useCallback(async () => {
     if (!user) { setLoading(false); return; }
@@ -207,6 +238,8 @@ export function useSources() {
   const addUrl = useCallback(
     async (url: string): Promise<{ error: string | null }> => {
       if (!user) return { error: "Not connected" };
+      const quotaError = checkSourceQuota();
+      if (quotaError) return { error: quotaError };
 
       // Fetch via Edge Function (no CORS)
       let title = url.slice(0, 120);
@@ -266,12 +299,14 @@ export function useSources() {
       await fetchSources();
       return { error: null };
     },
-    [user, fetchSources]
+    [user, fetchSources, checkSourceQuota]
   );
 
   const addNote = useCallback(
     async (title: string, content: string): Promise<{ error: string | null }> => {
       if (!user) return { error: "Not connected" };
+      const quotaError = checkSourceQuota();
+      if (quotaError) return { error: quotaError };
 
       const chunks = chunkText(content);
 
@@ -300,7 +335,7 @@ export function useSources() {
       await fetchSources();
       return { error: null };
     },
-    [user, fetchSources]
+    [user, fetchSources, checkSourceQuota]
   );
 
   const addPdf = useCallback(
@@ -308,6 +343,8 @@ export function useSources() {
       console.log("=== addPdf START ===", file?.name, file?.size);
       if (!user) { console.error("[addPdf] No user"); return { error: "Not authenticated" }; }
       if (file.size > 10 * 1024 * 1024) return { error: "File must not exceed 10 MB." };
+      const quotaError = checkSourceQuota();
+      if (quotaError) return { error: quotaError };
 
       // 1. Extract text
       let pdfText: string;
@@ -392,6 +429,8 @@ export function useSources() {
   const searchWeb = useCallback(
     async (query: string): Promise<{ error: string | null }> => {
       if (!user) return { error: "Not connected" };
+      const quotaError = checkSourceQuota();
+      if (quotaError) return { error: quotaError };
 
       // Try via Edge Function (Tavily key server-side)
       let title = "";
@@ -455,7 +494,7 @@ export function useSources() {
       await fetchSources();
       return { error: null };
     },
-    [user, fetchSources]
+    [user, fetchSources, checkSourceQuota]
   );
 
   const removeSource = useCallback(

@@ -120,21 +120,24 @@ export function friendlyError(err: unknown): string {
   const msg = err.message.toLowerCase();
 
   if (msg.includes("429") || msg.includes("rate") || msg.includes("too many")) {
-    return "Too many requests. Wait a few seconds and try again.";
+    return "Rate limit reached (60 generations/hour). Wait a few minutes and try again.";
   }
   if (msg.includes("401") || msg.includes("unauthorized") || msg.includes("invalid api key")) {
-    return "API authentication error. Contact support.";
+    return "API authentication error. Check that OPENAI_API_KEY is set correctly on the server.";
   }
   if (msg.includes("overloaded") || msg.includes("529")) {
-    return "Servers overloaded — try again in 30 seconds.";
+    return "OpenAI servers overloaded — try again in 30 seconds.";
   }
-  if (msg.includes("timeout") || msg.includes("pris trop de temps") || msg.includes("took too long")) {
-    return "Generation took too long. Try again with shorter content.";
+  if (msg.includes("timeout") || msg.includes("took too long")) {
+    return "Generation took too long (>2 min). Try with fewer sources or a shorter topic.";
+  }
+  if (msg.includes("context_length_exceeded") || msg.includes("maximum context length")) {
+    return "Sources too long for one generation. Uncheck some PDFs and retry.";
   }
   if (msg.includes("network") || msg.includes("fetch") || msg.includes("load failed")) {
     return "Network error. Check your internet connection.";
   }
-  if (msg.includes("internet connection") || msg.includes("connexion internet")) {
+  if (msg.includes("internet connection")) {
     return err.message;
   }
 
@@ -142,9 +145,9 @@ export function friendlyError(err: unknown): string {
   if (err.message.includes('{"error":')) {
     try {
       const parsed = JSON.parse(err.message.substring(err.message.indexOf('{')));
-      if (parsed.error) return parsed.error;
+      if (parsed.error) return typeof parsed.error === "string" ? parsed.error : JSON.stringify(parsed.error);
     } catch { /* ignore */ }
   }
 
-  return err.message.length > 150 ? err.message.slice(0, 150) + "..." : err.message;
+  return err.message.length > 200 ? err.message.slice(0, 200) + "..." : err.message;
 }

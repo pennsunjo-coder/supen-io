@@ -18,6 +18,7 @@ import { invalidateCache } from "@/lib/cache";
 import { supabase } from "@/lib/supabase";
 import { assertOnline, withRetry, withTimeout, friendlyError } from "@/lib/resilience";
 import GenerationProgress, { CONTENT_STEPS } from "@/components/GenerationProgress";
+import TimedProgress from "@/components/TimedProgress";
 import { scoreAllVariations, scoreColor, scoreBarColor, scoreBadge, scoreVariationHeuristic, type ScoreDetails } from "@/lib/viral-scorer";
 import { saveInteraction, getUserStyleMemory, hasStyleMemory } from "@/lib/user-memory";
 import { getHooks, detectNiche, getDailyHook, type Hook } from "@/lib/viral-hooks";
@@ -32,6 +33,8 @@ import { buildInstagramPlaybook } from "@/lib/instagram-playbook";
 import { buildAntiAiRules } from "@/lib/anti-ai-rules";
 import { sanitizeForPlatform } from "@/lib/output-sanitizer";
 import { detectAiFlavor, passesDetectorEstimate } from "@/lib/ai-flavor-detector";
+import { getPlanLimits, upgradeMessage } from "@/lib/plan-limits";
+import { canGenerateInfographic as isInfographicEligible } from "@/lib/infographic";
 import { fetchTrends, type Trend } from "@/lib/trends";
 import type { Source } from "@/types/database";
 import type { UserProfile } from "@/hooks/use-profile";
@@ -348,16 +351,18 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
     setGeneratedInfographicBase64(null);
   }
 
+  // Infographics: LinkedIn posts, Facebook posts, and threads (Facebook + X) only.
+  // See @/lib/infographic for the shared eligibility rule.
   function canGenerateInfographic(): boolean {
-    const pl = selectedPlatform?.id?.toLowerCase() || "";
-    const fmt = (selectedFormat || "").toLowerCase();
-    return (pl.includes("linkedin") || pl.includes("facebook")) && fmt.includes("post");
+    return isInfographicEligible(selectedPlatform?.id, selectedFormat);
   }
 
+  // Single-document selection: clicking a different document replaces
+  // the current pick; clicking the same one again deselects it.
+  // One source per generation keeps the prompt small enough to stay under
+  // the model's effective attention budget and avoids 60s+ generations.
   function toggleDocumentId(id: string) {
-    setSelectedDocumentIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
+    setSelectedDocumentIds((prev) => (prev[0] === id ? [] : [id]));
   }
 
   function goBack() {
@@ -407,6 +412,36 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
       : sanitizeInput(sourceText, 5000);
     if (!sanitized) return;
 
+    // Plan-based generation quota: count successful generations from
+    // content_sessions over the rolling day/month window. Free 5/day,
+    // Plus 20/day & 100/month, Pro unlimited. Block before any API spend.
+    try {
+      const limits = getPlanLimits(profile?.plan);
+      const { data: { user: u } } = await supabase.auth.getUser();
+      if (u && (limits.generationsPerDay !== "unlimited" || limits.generationsPerMonth !== "unlimited")) {
+        const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+        const [{ count: dayCount }, { count: monthCount }] = await Promise.all([
+          supabase.from("content_sessions").select("id", { count: "exact", head: true }).eq("user_id", u.id).gte("created_at", dayAgo),
+          supabase.from("content_sessions").select("id", { count: "exact", head: true }).eq("user_id", u.id).gte("created_at", monthAgo),
+        ]);
+        if (limits.generationsPerDay !== "unlimited" && (dayCount ?? 0) >= limits.generationsPerDay) {
+          const msg = upgradeMessage(profile?.plan, `Daily generations (${limits.generationsPerDay})`);
+          toast.error(msg, { duration: 8000 });
+          setError(msg);
+          return;
+        }
+        if (limits.generationsPerMonth !== "unlimited" && (monthCount ?? 0) >= limits.generationsPerMonth) {
+          const msg = upgradeMessage(profile?.plan, `Monthly generations (${limits.generationsPerMonth})`);
+          toast.error(msg, { duration: 8000 });
+          setError(msg);
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn("[StudioWizard] Quota check failed (non-blocking):", e);
+    }
+
     setIsGenerating(true);
     setVariations([]);
     setSelectedVariation(null);
@@ -420,12 +455,16 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
       // niche, tone preferences) so we can inject it into the system
       // prompt and personalise generation. Best-effort — silent on error.
       let userStyleMemoryBlock = "";
-      try {
-        const { data: { user: u } } = await supabase.auth.getUser();
-        if (u && selectedPlatform) {
-          userStyleMemoryBlock = await getUserStyleMemory(u.id, selectedPlatform.name);
-        }
-      } catch { /* style memory is non-critical */ }
+      // Style memory is a Plus/Pro feature — Free users get the same
+      // generation engine but no personalisation from their past edits.
+      if (getPlanLimits(profile?.plan).styleMemory) {
+        try {
+          const { data: { user: u } } = await supabase.auth.getUser();
+          if (u && selectedPlatform) {
+            userStyleMemoryBlock = await getUserStyleMemory(u.id, selectedPlatform.name);
+          }
+        } catch { /* style memory is non-critical */ }
+      }
       // Track whether memory actually carried weight this run, so
       // saveVariations can persist the flag for later A/B analysis.
       setLastStyleMemoryUsed(userStyleMemoryBlock.length > 0);
@@ -813,14 +852,16 @@ Each variation includes: HOOK, PROBLEM, SOLUTION, PROOF, CTA, ON-SCREEN TEXT.`;
 
       assertOnline();
 
-      // Call Claude via secure Edge Function (API key server-side only)
+      // Call Claude via secure Edge Function (API key server-side only).
+      // 120s timeout: long PDF sources push the context past 30K tokens
+      // and GPT-4o can take 60-90s on those payloads.
       const text = await withTimeout(
         callClaude(systemPrompt, [{ role: "user", content: userMessage }], {
           maxTokens: 4000,
           model: "gpt-4o",
         }),
-        60_000,
-        "Generation took too long. Try again with shorter content.",
+        120_000,
+        "Generation took too long. Try again with shorter content or fewer sources.",
       );
 
       setError(null);
@@ -982,7 +1023,16 @@ ${buildAntiAiRules(tightness)}`;
       // Save without waiting for real scoring
       saveVariations(scored);
     } catch (err: unknown) {
-      setError(friendlyError(err));
+      const friendly = friendlyError(err);
+      const raw = err instanceof Error ? err.message : String(err);
+      console.error("[StudioWizard] Generation failed:", raw, err);
+      // Show the friendly message in the UI banner, but include the raw
+      // upstream message in the toast so the user actually sees what broke.
+      const toastMsg = raw && raw !== friendly && raw.length < 200
+        ? `${friendly} (server: ${raw})`
+        : friendly;
+      toast.error(toastMsg, { duration: 8000 });
+      setError(friendly);
     } finally {
       setIsGenerating(false);
     }
@@ -1052,13 +1102,26 @@ ${buildAntiAiRules(tightness)}`;
         console.error("[StudioWizard] Save failed:", saveErr.message, saveErr.details, saveErr.hint);
         toast.error("Content not saved. Check your connection.");
         setSaveStatus("failed");
-        // Still show infographic prompt despite save failure
-        setTimeout(() => {
-          toast("Turn this into a visual?", {
-            description: "Generate an infographic for your best variation.",
-            duration: 10000,
-            action: { label: "Generate →", onClick: () => setShowInfographic(true) },
-          });
+        // Still show infographic prompt despite save failure — but only if
+        // the plan unlocks the premium infographic engine. Free users get
+        // a one-time hint pointing to the upgrade page instead of the modal.
+        // Only offer the infographic prompt for eligible content
+        // (LinkedIn posts, Facebook posts, and threads).
+        const canUseInfographic = getPlanLimits(profile?.plan).premiumInfographics;
+        if (canGenerateInfographic()) setTimeout(() => {
+          if (canUseInfographic) {
+            toast("Turn this into a visual?", {
+              description: "Generate an infographic for your best variation.",
+              duration: 10000,
+              action: { label: "Generate →", onClick: () => setShowInfographic(true) },
+            });
+          } else {
+            toast("Premium infographics unlocked on Plus", {
+              description: "Upgrade to turn your posts into branded visuals.",
+              duration: 10000,
+              action: { label: "Upgrade →", onClick: () => navigate("/settings") },
+            });
+          }
         }, 5000);
         return false;
       }
@@ -1455,7 +1518,7 @@ ${buildAntiAiRules(tightness)}`;
 
                       {/* DOCUMENT MODE */}
                       {sourceMode === "document" && (
-                        <div className="space-y-6">
+                        <div className="space-y-3">
                           {sources.length === 0 ? (
                             <div className="rounded-[2rem] border-2 border-dashed border-white/10 p-12 text-center glass">
                               <FileText className="w-10 h-10 text-muted-foreground/20 mx-auto mb-4" />
@@ -1464,33 +1527,40 @@ ${buildAntiAiRules(tightness)}`;
                               <Button onClick={() => navigate("/dashboard")} variant="outline" className="rounded-xl border-white/10">Go to Library</Button>
                             </div>
                           ) : (
-                            <div className="grid grid-cols-1 gap-3 max-h-[400px] overflow-y-auto no-scrollbar pr-1">
-                              {uniqueSources.map((s) => {
-                                const isChecked = selectedDocumentIds.includes(s.id);
-                                const TypeIcon = sourceTypeIcons[s.type] || StickyNote;
-                                return (
-                                  <button 
-                                    key={s.id} 
-                                    onClick={() => toggleDocumentId(s.id)} 
-                                    className={cn(
-                                      "group flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 text-left", 
-                                      isChecked ? "bg-primary/10 border-primary shadow-lg shadow-primary/5" : "bg-white/[0.02] border-white/5 hover:border-white/10 hover:bg-white/[0.04]"
-                                    )}
-                                  >
-                                    <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all", isChecked ? "bg-primary text-white" : "bg-white/5 text-muted-foreground")}>
-                                      <TypeIcon className="w-5 h-5" />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <p className={cn("text-sm font-bold truncate", isChecked ? "text-white" : "text-muted-foreground")}>{s.title.replace(/\s*\(\d+\/\d+\)\s*$/, "").trim()}</p>
-                                      <p className="text-[10px] font-black uppercase tracking-widest opacity-40">{s.type}</p>
-                                    </div>
-                                    <div className={cn("w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all", isChecked ? "bg-primary border-primary" : "border-white/10")}>
-                                      {isChecked && <Check className="w-3.5 h-3.5 text-white" />}
-                                    </div>
-                                  </button>
-                                );
-                              })}
-                            </div>
+                            <>
+                              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 px-1">
+                                Pick 1 source · {selectedDocumentIds.length === 1 ? "1 selected" : "none selected"}
+                              </p>
+                              <div className="grid grid-cols-1 gap-3 max-h-[400px] overflow-y-auto no-scrollbar pr-1">
+                                {uniqueSources.map((s) => {
+                                  const isChecked = selectedDocumentIds[0] === s.id;
+                                  const TypeIcon = sourceTypeIcons[s.type] || StickyNote;
+                                  return (
+                                    <button
+                                      key={s.id}
+                                      onClick={() => toggleDocumentId(s.id)}
+                                      role="radio"
+                                      aria-checked={isChecked}
+                                      className={cn(
+                                        "group flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 text-left",
+                                        isChecked ? "bg-primary/10 border-primary shadow-lg shadow-primary/5" : "bg-white/[0.02] border-white/5 hover:border-white/10 hover:bg-white/[0.04]"
+                                      )}
+                                    >
+                                      <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all", isChecked ? "bg-primary text-white" : "bg-white/5 text-muted-foreground")}>
+                                        <TypeIcon className="w-5 h-5" />
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <p className={cn("text-sm font-bold truncate", isChecked ? "text-white" : "text-muted-foreground")}>{s.title.replace(/\s*\(\d+\/\d+\)\s*$/, "").trim()}</p>
+                                        <p className="text-[10px] font-black uppercase tracking-widest opacity-40">{s.type}</p>
+                                      </div>
+                                      <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all", isChecked ? "bg-primary border-primary" : "border-white/10")}>
+                                        {isChecked && <div className="w-2 h-2 rounded-full bg-white" />}
+                                      </div>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </>
                           )}
                         </div>
                       )}
@@ -1524,6 +1594,13 @@ ${buildAntiAiRules(tightness)}`;
                               </div>
                             )}
                           </div>
+                          {sourceMode === "websearch" && (
+                            <TimedProgress
+                              active={webSearching}
+                              label={sourceText.trim() ? `Searching the web for "${sourceText.trim().slice(0, 60)}"...` : "Searching the web..."}
+                              estimatedSec={8}
+                            />
+                          )}
 
                           {/* Suggested Hooks */}
                           {(sourceMode === "idea" || sourceMode === "keyword") && sourceText.trim().length > 3 && suggestedHooks.length > 0 && (
@@ -1714,15 +1791,31 @@ ${buildAntiAiRules(tightness)}`;
       </AnimatePresence>
 
       {(error || retryCountdown > 0) && (
-        <div className="mx-5 mb-3 px-3 py-2 rounded-lg bg-destructive/10 border border-destructive/20 shrink-0 space-y-1.5">
-          {error && <p className="text-[11px] text-destructive">{error}</p>}
-          {retryCountdown > 0 && (
-            <p className="text-[11px] text-muted-foreground font-mono">Auto-retry in {retryCountdown}s...</p>
+        <div className="mx-5 mb-4 px-4 py-3 rounded-xl bg-destructive/10 border border-destructive/30 shrink-0 space-y-2">
+          {error && (
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold text-destructive uppercase tracking-widest mb-1">Generation failed</p>
+                <p className="text-sm text-foreground/90 leading-snug break-words">{error}</p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {(error.includes("overloaded") || error.includes("529")) && retryCountdown === 0 ? (
+                  <button onClick={handleRetryWithDelay} className="text-xs font-bold text-primary hover:underline whitespace-nowrap">
+                    Retry in 30s
+                  </button>
+                ) : (
+                  <button onClick={() => { setError(null); handleGenerate(); }} className="text-xs font-bold text-primary hover:underline whitespace-nowrap">
+                    Retry now
+                  </button>
+                )}
+                <button onClick={() => setError(null)} className="text-xs text-muted-foreground hover:text-foreground" aria-label="Dismiss">
+                  ✕
+                </button>
+              </div>
+            </div>
           )}
-          {error && (error.includes("overloaded") || error.includes("529")) && retryCountdown === 0 && (
-            <button onClick={handleRetryWithDelay} className="text-[11px] text-primary hover:underline font-medium">
-              Retry in 30s
-            </button>
+          {retryCountdown > 0 && (
+            <p className="text-xs text-muted-foreground font-mono">Auto-retry in {retryCountdown}s...</p>
           )}
         </div>
       )}

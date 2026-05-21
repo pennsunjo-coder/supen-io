@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useContentDetail } from "@/hooks/use-content-detail";
 import InfographicModal from "@/components/InfographicModal";
+import { canGenerateInfographic } from "@/lib/infographic";
 import { Button } from "@/components/ui/button";
 import {
   ArrowLeft, Copy, Check, Download, Loader2, Image, FileText, Flame, Sparkles,
@@ -83,6 +84,8 @@ const ContentDetail = () => {
   const createdAt = session?.created_at || variations[0]?.created_at || "";
 
   const hasInfographic = !!(infographic?.infographic_base64 || infographic?.infographic_html);
+  // Infographics: LinkedIn posts, Facebook posts, and threads (Facebook + X) only.
+  const canShowInfographic = canGenerateInfographic(platform, format);
 
   if (loading) {
     return (
@@ -277,7 +280,7 @@ const ContentDetail = () => {
                            </div>
                         </div>
                       </div>
-                    ) : (
+                    ) : canShowInfographic ? (
                       <>
                          <div className="w-24 h-24 rounded-[2rem] glass border-white/10 flex items-center justify-center mb-8 shadow-inner">
                            <Sparkles className="w-10 h-10 text-primary/40 animate-pulse" />
@@ -292,6 +295,16 @@ const ContentDetail = () => {
                         >
                           <Sparkles className="w-5 h-5" /> Generate Visual
                         </Button>
+                      </>
+                    ) : (
+                      <>
+                         <div className="w-24 h-24 rounded-[2rem] glass border-white/10 flex items-center justify-center mb-8 shadow-inner">
+                           <Image className="w-10 h-10 text-muted-foreground/30" />
+                         </div>
+                         <h4 className="text-lg font-black text-white mb-3">Visuals Unavailable</h4>
+                         <p className="text-xs text-muted-foreground/60 leading-relaxed">
+                            Infographics are only available for LinkedIn posts, Facebook posts, and threads.
+                         </p>
                       </>
                     )}
                   </div>

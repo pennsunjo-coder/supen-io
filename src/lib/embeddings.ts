@@ -91,8 +91,9 @@ export async function searchUserSources(
         const { data, error } = await supabase.rpc("search_sources_semantic", {
           query_embedding: JSON.stringify(queryEmbedding),
           user_id_param: user.id,
+          source_ids: activeSourceIds,
           match_count: limit,
-          match_threshold: 0.35,
+          match_threshold: 0.3,
         });
         if (!error && data && data.length > 0) {
           console.log("[RAG] Vector search hit:", data.length, "results");

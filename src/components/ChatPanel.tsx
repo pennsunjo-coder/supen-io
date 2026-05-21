@@ -6,6 +6,7 @@ import { callClaude, streamClaude } from "@/lib/anthropic";
 import { sanitizeInput, createRateLimiter } from "@/lib/security";
 import { assertOnline, friendlyError } from "@/lib/resilience";
 import { getUserStyleMemory } from "@/lib/user-memory";
+import { searchUserSources } from "@/lib/embeddings";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { buildAntiAiRules } from "@/lib/anti-ai-rules";
@@ -107,7 +108,37 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
         styleMemory = await getUserStyleMemory(user.id, "LinkedIn");
       }
 
-      const system = buildCoachPrompt(profile, sources, lastGeneratedContent, styleMemory);
+      // RAG: pull the most relevant chunks from the user's sources for this turn
+      let sourceContext = "";
+      const sourceIds: string[] = (sources || []).map((s: Source) => s.id).filter(Boolean);
+      if (sourceIds.length > 0) {
+        try {
+          const ragResults = await searchUserSources(content, sourceIds, 6);
+          if (ragResults.length > 0) {
+            const seen = new Set<string>();
+            sourceContext = ragResults
+              .filter((r) => {
+                const key = r.content?.slice(0, 80) ?? "";
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+              })
+              .map((r) => {
+                const cleanTitle = r.title.replace(/\s*\(\d+\/\d+\)\s*$/, "").trim();
+                return `━━━ ${cleanTitle} ━━━\n${(r.content ?? "").slice(0, 2500)}`;
+              })
+              .join("\n\n");
+          }
+        } catch (e) {
+          console.warn("[ChatPanel] RAG retrieval failed, continuing without source context:", e);
+        }
+      }
+
+      const baseSystem = buildCoachPrompt(profile, sources, lastGeneratedContent, styleMemory);
+      const system = sourceContext
+        ? `${baseSystem}\n\n=== USER REFERENCE MATERIAL (ground every answer in these excerpts; cite the source title in plain text when you quote or paraphrase) ===\n${sourceContext}`
+        : baseSystem;
+
       const history = messages.slice(-10);
       const apiMessages = [...history, userMsg].map(m => ({ role: m.role, content: m.content }));
       
