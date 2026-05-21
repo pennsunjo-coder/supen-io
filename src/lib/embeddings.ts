@@ -67,6 +67,41 @@ export interface UserSourceMatch {
   similarity: number;
 }
 
+// ─── Relevance filtering ───
+
+/**
+ * Minimum trigram score worth keeping — cuts common-word noise ("the", "how",
+ * "you") that scrapes past the SQL floor (0.05) without being topically
+ * relevant.
+ */
+export const TRIGRAM_RELEVANCE_FLOOR = 0.08;
+
+/**
+ * Drop weakly-related chunks so the generation prompt isn't diluted with
+ * off-topic source text. `results` must arrive score-ordered (best first).
+ *
+ * Filtering is RELATIVE to the best match (scale-invariant). This is the key
+ * design choice: short keyword queries make even a perfectly relevant chunk
+ * score low, so an absolute cutoff would starve retrieval and push the model
+ * back toward generic output. A relative cutoff instead keeps everything when
+ * scores are uniformly low, and only trims the long tail when one chunk
+ * clearly dominates. The optional absolute floor removes near-zero noise.
+ *
+ * Safety: never returns empty when given input — keeps the single best match
+ * so the user's selected sources are always represented.
+ */
+export function filterByRelevance<T extends { similarity: number }>(
+  results: T[],
+  ratio = 0.5,
+  absoluteFloor = 0,
+): T[] {
+  if (results.length <= 1) return results;
+  const top = results[0]?.similarity ?? 0;
+  const floor = Math.max(absoluteFloor, top * ratio);
+  const kept = results.filter((r) => (r.similarity ?? 0) >= floor);
+  return kept.length > 0 ? kept : results.slice(0, 1);
+}
+
 /**
  * Search user sources using the best available method:
  * 1. Semantic search via pgvector (if embeddings exist)
@@ -96,8 +131,9 @@ export async function searchUserSources(
           match_threshold: 0.3,
         });
         if (!error && data && data.length > 0) {
-          console.log("[RAG] Vector search hit:", data.length, "results");
-          return data as UserSourceMatch[];
+          const filtered = filterByRelevance(data as UserSourceMatch[]);
+          console.log("[RAG] Vector search hit:", data.length, "results,", filtered.length, "kept");
+          return filtered;
         }
       }
     }
@@ -113,8 +149,9 @@ export async function searchUserSources(
       match_count: limit,
     });
     if (!error && data && data.length > 0) {
-      console.log("[RAG] Trigram search hit:", data.length, "results");
-      return data as UserSourceMatch[];
+      const filtered = filterByRelevance(data as UserSourceMatch[], 0.5, TRIGRAM_RELEVANCE_FLOOR);
+      console.log("[RAG] Trigram search hit:", data.length, "results,", filtered.length, "kept");
+      return filtered;
     }
   } catch {
     // Trigram search unavailable — fall through
@@ -180,7 +217,7 @@ export async function embedAllExistingSources(userId: string): Promise<number> {
       .eq("user_id", userId)
       .is("embedding", null)
       .not("content", "is", null)
-      .limit(20);
+      .limit(50);
 
     if (!sources || sources.length === 0) return 0;
 

@@ -1,11 +1,10 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import {
   Sparkles, Copy, Check, RefreshCw, ChevronLeft, ArrowRight,
-  FileText, Lightbulb, Hash, ImagePlus, Wand2, Download, Loader2,
+  FileText, ImagePlus, Wand2, Download, Loader2,
   Shield, Layers, Globe, ClipboardList, Save, ExternalLink, Star,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -21,7 +20,7 @@ import GenerationProgress, { CONTENT_STEPS } from "@/components/GenerationProgre
 import TimedProgress from "@/components/TimedProgress";
 import { scoreAllVariations, scoreColor, scoreBarColor, scoreBadge, scoreVariationHeuristic, type ScoreDetails } from "@/lib/viral-scorer";
 import { saveInteraction, getUserStyleMemory, hasStyleMemory } from "@/lib/user-memory";
-import { getHooks, detectNiche, getDailyHook, type Hook } from "@/lib/viral-hooks";
+import { getDailyHook, type Hook } from "@/lib/viral-hooks";
 import { buildThreadPlaybook } from "@/lib/thread-playbook";
 import { buildReelPlaybook } from "@/lib/reel-playbook";
 import { buildYoutubePlaybook } from "@/lib/youtube-playbook";
@@ -30,6 +29,7 @@ import { buildTiktokPlaybook } from "@/lib/tiktok-playbook";
 import { buildXPlaybook } from "@/lib/x-playbook";
 import { buildFacebookPostPlaybook, buildFacebookThreadPlaybook } from "@/lib/facebook-playbook";
 import { buildInstagramPlaybook } from "@/lib/instagram-playbook";
+import { buildTopicAnchor } from "@/lib/topic-anchor";
 import { buildAntiAiRules } from "@/lib/anti-ai-rules";
 import { sanitizeForPlatform } from "@/lib/output-sanitizer";
 import { detectAiFlavor, passesDetectorEstimate } from "@/lib/ai-flavor-detector";
@@ -87,12 +87,10 @@ const platforms: Platform[] = [
   { id: "youtube", name: "YouTube", icon: IconYouTube, formats: ["Script long", "Script Shorts"] },
 ];
 
-type SourceMode = "document" | "idea" | "keyword" | "websearch";
+type SourceMode = "document" | "websearch";
 
 const sourceModes: { id: SourceMode; label: string; placeholder: string; icon: React.FC<{ className?: string }> }[] = [
   { id: "document", label: "Document", placeholder: "Paste the text from your article, PDF or web page...", icon: FileText },
-  { id: "idea", label: "Idea", placeholder: "Describe your idea, what you want to convey...", icon: Lightbulb },
-  { id: "keyword", label: "Keyword", placeholder: "E.g.: productivity, AI, digital marketing...", icon: Hash },
   { id: "websearch", label: "Web Search", placeholder: "Search the web for fresh data, trends, stats...", icon: GlobeIcon },
 ];
 
@@ -242,7 +240,7 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
   const [step, setStep] = useState(0);
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(null);
   const [selectedFormat, setSelectedFormat] = useState<string | null>(null);
-  const [sourceMode, setSourceMode] = useState<SourceMode>("keyword");
+  const [sourceMode, setSourceMode] = useState<SourceMode>("document");
   const [sourceText, setSourceText] = useState("");
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
   const [sourceDirectives, setSourceDirectives] = useState<Record<string, string>>({});
@@ -318,18 +316,10 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
 
   function useTrend(trend: Trend) {
     setSourceText(trend.title);
-    setSourceMode("idea");
+    setSourceMode("websearch");
     setStarted(true);
     setStep(2);
   }
-
-  // Hook suggestions based on user input + profile niche
-  const suggestedHooks = useMemo<Hook[]>(() => {
-    if (!sourceText.trim() || sourceText.trim().length < 3) return [];
-    const detected = detectNiche(sourceText);
-    const niche = detected !== "general" ? detected : (profile?.niche || "general");
-    return getHooks(niche, undefined, 3);
-  }, [sourceText, profile?.niche]);
 
   // Daily hook for the home screen
   const dailyHook = useMemo<Hook>(() => getDailyHook(profile?.niche), [profile?.niche]);
@@ -339,7 +329,7 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
     setStep(0);
     setSelectedPlatform(null);
     setSelectedFormat(null);
-    setSourceMode("keyword");
+    setSourceMode("document");
     setSourceText("");
     setSelectedDocumentIds([]);
     setVariations([]);
@@ -495,7 +485,10 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
       if (allSourceIds.length > 0) {
         // Strategy 1: RAG search (semantic + trigram + direct fallback)
         try {
-          const ragQuery = directive ? `${directive}\n\n${sanitized}` : sanitized;
+          // Focused retrieval query: cap length so trigram/embedding lock onto
+          // the core subject instead of being diluted by a long "idea" dump.
+          const subject = sanitized.slice(0, 800);
+          const ragQuery = directive ? `${directive}\n\n${subject}` : subject;
           const ragResults = await searchUserSources(ragQuery, allSourceIds, 8);
 
           if (ragResults.length > 0) {
@@ -551,6 +544,10 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
       const sanitizedInput = sanitized;
       const combinedContext = sourceContext;
       const sourceLabel = isWebMode ? "web research" : "documents";
+      // Topic anchor — keeps all variations on the user's actual subject and
+      // niche (the playbooks supply structure, this supplies the subject).
+      // Injected even in keyword mode, where the source rules below are skipped.
+      const topicAnchorBlock = buildTopicAnchor(sanitizedInput, profile?.niche, profile?.target_audience);
       const userMessage = `
 ${combinedContext ? `
 ╔══════════════════════════════════════╗
@@ -605,6 +602,8 @@ Do NOT copy their content, but mimic their high-performing DNA:
 
 ${viralExamplesContext}
 ` : ""}
+
+` : ''}${topicAnchorBlock ? `${topicAnchorBlock}
 
 ` : ''}CONTENT TO CREATE:
 Topic: ${sanitizedInput}
@@ -705,7 +704,7 @@ OUTPUT FORMAT — EXACT:
 
       // Combined voice profile + playbook block — same string injected
       // at every system-prompt branch so we don't duplicate the wiring.
-      const voiceAndPlaybookBlock = `${userStyleMemoryBlock ? `═══ USER VOICE PROFILE ═══\n${userStyleMemoryBlock}\n═══ END VOICE PROFILE ═══\n\n` : ""}${playbookSection ? `═══ PLAYBOOK (follow this structure) ═══\n${playbookSection}\n═══ END PLAYBOOK ═══\n` : ""}`;
+      const voiceAndPlaybookBlock = `${userStyleMemoryBlock ? `═══ USER VOICE PROFILE ═══\n${userStyleMemoryBlock}\n═══ END VOICE PROFILE ═══\n\n` : ""}${playbookSection ? `═══ PLAYBOOK (follow this structure) ═══\n${playbookSection}\n═══ END PLAYBOOK ═══\nThe playbook shows STRUCTURE, cadence and hook shape only — write about the user's topic and niche, never the example subjects.\n` : ""}`;
 
       let systemPrompt: string;
 
@@ -753,7 +752,7 @@ ${voiceAndPlaybookBlock}${isLinkedIn ? `LINKEDIN-SPECIFIC RULES:
 9. SHORT sentences — max 15 words per sentence
 10. White space: use line breaks generously for mobile readability
 
-5 ANGLES — one per variation:
+5 ANGLES — one per variation (apply each angle TO the topic above; the wording below is the PATTERN, not the subject):
 1. Story/failure angle: "I wasted 6 months doing X before I realized..."
 2. Contrarian angle: "Everyone says X. They're wrong. Here's why:"
 3. Data/proof angle: "From 0 to 47K in 90 days. Here's exactly how:"
@@ -828,7 +827,7 @@ ON-SCREEN TEXT: List 3-5 text overlays for the video.
 
 ${ANTI_AI_RULES_SCRIPT}
 
-5 ANGLES for 5 script variations:
+5 ANGLES for 5 script variations (apply each to the topic above — these show the angle PATTERN, not the subject):
 1. AI showcase: "[Tool] can now [impressive claim]. Here's how to use it free."
 2. Secret feature: "This secret [platform] feature will [specific outcome]"
 3. 3 mistakes: "You're stuck because you don't do these 3 things"
@@ -1565,53 +1564,29 @@ ${buildAntiAiRules(tightness)}`;
                         </div>
                       )}
 
-                      {/* IDEA / KEYWORD / WEB SEARCH MODE */}
-                      {sourceMode !== "document" && (
+                      {/* WEB SEARCH MODE */}
+                      {sourceMode === "websearch" && (
                         <div className="space-y-3">
                           <div className="relative group">
-                            {sourceMode === "idea" ? (
-                              <Textarea 
-                                value={sourceText} 
-                                onChange={(e) => setSourceText(e.target.value)} 
-                                placeholder={sourceModes.find((m) => m.id === sourceMode)?.placeholder} 
-                                className="w-full bg-card/20 border-border/40 rounded-2xl p-4 text-sm min-h-[140px] resize-none focus:border-primary/40 transition-all outline-none" 
+                            <div className="flex gap-2">
+                              <Input
+                                value={sourceText}
+                                onChange={(e) => setSourceText(e.target.value)}
+                                placeholder={sourceModes.find((m) => m.id === sourceMode)?.placeholder}
+                                className="flex-1 h-12 bg-card/20 border-border/40 rounded-xl px-4 text-sm focus:border-primary/40 transition-all outline-none"
+                                onKeyDown={(e) => e.key === "Enter" && handleWebSearch()}
                               />
-                            ) : (
-                              <div className="flex gap-2">
-                                <Input 
-                                  value={sourceText} 
-                                  onChange={(e) => setSourceText(e.target.value)} 
-                                  placeholder={sourceModes.find((m) => m.id === sourceMode)?.placeholder} 
-                                  className="flex-1 h-12 bg-card/20 border-border/40 rounded-xl px-4 text-sm focus:border-primary/40 transition-all outline-none" 
-                                  onKeyDown={(e) => e.key === "Enter" && (sourceMode === "websearch" ? handleWebSearch() : handleGenerate())}
-                                />
-                                {sourceMode === "websearch" && (
-                                  <Button onClick={handleWebSearch} disabled={!sourceText.trim() || webSearching} className="h-12 px-6 rounded-xl bg-primary font-black text-xs gap-2 shrink-0">
-                                    {webSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <GlobeIcon className="w-4 h-4" />}
-                                    Search
-                                  </Button>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                          {sourceMode === "websearch" && (
-                            <TimedProgress
-                              active={webSearching}
-                              label={sourceText.trim() ? `Searching the web for "${sourceText.trim().slice(0, 60)}"...` : "Searching the web..."}
-                              estimatedSec={8}
-                            />
-                          )}
-
-                          {/* Suggested Hooks */}
-                          {(sourceMode === "idea" || sourceMode === "keyword") && sourceText.trim().length > 3 && suggestedHooks.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 mt-2">
-                              {suggestedHooks.map((hook, i) => (
-                                <button key={i} onClick={() => setSourceText(hook.text)} className="px-3 py-1.5 rounded-lg bg-card/30 border border-border/40 text-[9px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all">
-                                  {hook.text}
-                                </button>
-                              ))}
+                              <Button onClick={handleWebSearch} disabled={!sourceText.trim() || webSearching} className="h-12 px-6 rounded-xl bg-primary font-black text-xs gap-2 shrink-0">
+                                {webSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <GlobeIcon className="w-4 h-4" />}
+                                Search
+                              </Button>
                             </div>
-                          )}
+                          </div>
+                          <TimedProgress
+                            active={webSearching}
+                            label={sourceText.trim() ? `Searching the web for "${sourceText.trim().slice(0, 60)}"...` : "Searching the web..."}
+                            estimatedSec={8}
+                          />
                         </div>
                       )}
 

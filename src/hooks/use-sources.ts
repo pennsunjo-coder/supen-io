@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/use-profile";
 import { getCache, setCache, invalidateCache } from "@/lib/cache";
-import { embedSource } from "@/lib/embeddings";
+import { embedSource, embedAllExistingSources } from "@/lib/embeddings";
 import { getPlanLimits, upgradeMessage } from "@/lib/plan-limits";
 import type { Source } from "@/types/database";
 
@@ -187,6 +187,10 @@ function groupSources(sources: Source[]): GroupedSource[] {
   });
 }
 
+// Tracks which users we've already run the embedding backfill for this
+// session, so it fires once per login rather than on every hook mount.
+const embeddingBackfillDone = new Set<string>();
+
 export function useSources() {
   const { user } = useAuth();
   const { profile } = useProfile();
@@ -234,6 +238,17 @@ export function useSources() {
   useEffect(() => {
     fetchSources();
   }, [fetchSources]);
+
+  // Backfill embeddings for sources created before embedding existed (or whose
+  // fire-and-forget embed on insert failed). Best-effort, non-blocking, and
+  // bounded: it only processes sources with a NULL embedding (up to 20 per
+  // run), then becomes a no-op. Without this, older sources stay invisible to
+  // semantic RAG search and weaken source relevance.
+  useEffect(() => {
+    if (!user?.id || embeddingBackfillDone.has(user.id)) return;
+    embeddingBackfillDone.add(user.id);
+    embedAllExistingSources(user.id).catch(() => {});
+  }, [user?.id]);
 
   const addUrl = useCallback(
     async (url: string): Promise<{ error: string | null }> => {
