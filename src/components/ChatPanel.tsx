@@ -22,25 +22,48 @@ const RATE_LIMIT_MAX = 10;
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const MAX_PERSISTED_MESSAGES = 10;
 
+// Reflow bullet lists into flowing prose. Numbered lists are left intact
+// because they are a legitimate format for the viral posts the coach writes.
+function collapseBulletLists(text: string): string {
+  const isBullet = (l: string) => /^\s*[-*+•▪◦‣]\s+\S/.test(l);
+  const strip = (l: string) => l.replace(/^\s*[-*+•▪◦‣]\s+/, "").trim();
+  const lines = text.split("\n");
+  const out: string[] = [];
+  let buffer: string[] = [];
+
+  const flush = () => {
+    if (buffer.length === 0) return;
+    const sentences = buffer
+      .map(strip)
+      .filter(Boolean)
+      .map((s) => (/[.!?:]$/.test(s) ? s : `${s}.`));
+    out.push(sentences.join(" "));
+    buffer = [];
+  };
+
+  for (const line of lines) {
+    if (isBullet(line)) buffer.push(line);
+    else { flush(); out.push(line); }
+  }
+  flush();
+  return out.join("\n");
+}
+
 function cleanAIResponse(text: string): string {
-  return text
-    // Remove all markdown formatting artifacts
-    .replace(/\*\*([^*]+)\*\*/g, "$1")
-    .replace(/\*([^*]+)\*/g, "$1")
-    .replace(/__([^_]+)__/g, "$1")
-    .replace(/_([^_]+)_/g, "$1")
-    .replace(/^#{1,6}\s+/gm, "")
-    .replace(/^\s*[-*+]\s+/gm, "")
-    .replace(/^\s*\d+\.\s+/gm, "")
-    .replace(/```[\s\S]*?```/g, "")
-    .replace(/`([^`]+)`/g, "$1")
-    .replace(/^---+$/gm, "")
-    .replace(/^===+$/gm, "")
-    // Remove AI filler phrases often seen at start/end
-    .replace(/^(Certainly|Sure|I can help with that|Of course|Here is|Sure!)\.?\s+/i, "")
-    .replace(/\s*(Hope this helps|Let me know if you need more|Let me know if you want to adjust any of these)\.?\s*$/i, "")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
+  let t = text;
+  t = t.replace(/```[\s\S]*?```/g, "");                                 // code blocks
+  t = t.replace(/`([^`]+)`/g, "$1");                                    // inline code
+  t = t.replace(/^#{1,6}\s+/gm, "");                                    // headings
+  t = t.replace(/^\s*>\s?/gm, "");                                      // blockquotes
+  t = collapseBulletLists(t);                                           // bullet lists → prose (before stripping bullets)
+  t = t.replace(/\*+/g, "");                                            // bold / italic / stray asterisks
+  t = t.replace(/(^|[\s(])_{1,3}([^_]+?)_{1,3}(?=[\s).,!?:;]|$)/g, "$1$2"); // _italic_ / __bold__ (snake_case safe)
+  t = t.replace(/^\s*(?:-{3,}|_{3,}|={3,})\s*$/gm, "");                 // horizontal rules
+  // Remove AI filler phrases often seen at start/end
+  t = t.replace(/^(Certainly|Sure|I can help with that|Of course|Here is|Sure!)\.?\s+/i, "");
+  t = t.replace(/\s*(Hope this helps|Let me know if you need more|Let me know if you want to adjust any of these)\.?\s*$/i, "");
+  t = t.replace(/\n{3,}/g, "\n\n");                                     // collapse blank lines
+  return t.trim();
 }
 
 function getSuggestions(profile: UserProfile | null, lastContent?: string): string[] {
@@ -64,21 +87,34 @@ function buildCoachPrompt(profile: UserProfile | null, sources: Source[], lastCo
   const userName = profile?.first_name || "Creator";
   const niche = profile?.niche || "Content Creation";
   
-  return `You are NOT an AI. You are a world-class human content strategist and mentor.
-Your voice is direct, high-status, and human. 
+  return `You are a world-class human content strategist mentoring ${userName} one on one. Their niche is "${niche}". You are NOT an AI and you never sound like one. You talk like a sharp creator friend texting back: direct, warm, specific, sometimes blunt.
 
-CRITICAL DIRECTIVES:
-1. NEVER use markdown bolding (**), italics (*), or headers (###). Humans writing in chats don't do that.
-2. NEVER use AI filler (Certainly, Delve, Tapestry, Landscape). 
-3. Speak in plain text. Use line breaks for white space.
-4. If you write content, it MUST look exactly like a viral post: hook-heavy, line-break-optimized, concrete, and zero fluff.
-5. Reference the user as ${userName}. You know their niche is "${niche}".
+How you write:
+Plain text only. No asterisks, no bold, no italics, no headings, no bullet points. If you have several points, fold them into normal sentences. Use line breaks for white space, never markdown.
+Keep it short. Usually two to four sentences. Lead with the actual answer, no warm up, no repeating the question back.
+Be concrete. A real example, a real number, or a line they could paste straight into a post. Skip advice everyone already knows.
+Have an opinion. Pick the one or two things that matter most instead of listing ten.
+End with a short question only when it genuinely moves things forward.
+When ${userName} asks you to write or rewrite a post, make it look exactly like a viral post: hook in line one, short lines, concrete, zero fluff, no markdown.
 
-${styleMemory ? `STRICT STYLE TO FOLLOW:\n${styleMemory}` : ""}
-
+${styleMemory ? `STYLE TO MATCH (the user's own voice):\n${styleMemory}\n` : ""}
 ${buildAntiAiRules("strict")}
 
-GOAL: Help the user generate content that feels 100% human and 100% viral. If they ask to rewrite something, strip away all "AI patterns".`;
+This is the voice. Study how these sound, then write like this.
+
+User: My posts get no engagement, what am I doing wrong?
+Coach: Probably not the writing. Nobody knows why they should care by the end of your first line, because you ease in. Open with the most useful or most surprising thing you have, then earn the rest. Paste your last hook here and I'll cut it down with you.
+
+User: How often should I post on LinkedIn?
+Coach: Three or four times a week beats daily if daily means filler. Consistency only pays off when each post is worth showing up for. Pick a rhythm you can hold for two months, then judge the numbers.
+
+User: Give me content ideas for my account.
+Coach: What does your audience get wrong every single week? Build around that. "Stop counting calories, count protein" travels way further than another five tips post. What mistake do you see most?
+
+User: Can you make my caption sound more professional?
+Coach: Careful, professional usually just means boring. Keep your voice, tighten it. Drop the caption here and I'll trim the dead words without flattening the personality.
+
+GOAL: Help ${userName} create content that feels 100% human and 100% viral. If they ask to rewrite something, strip every AI pattern out of it.`;
 }
 
 const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, onClearConversation, lastGeneratedContent, profile }: any) => {
@@ -154,7 +190,7 @@ const ChatPanel = ({ sources, messages, onMessagesChange, conversationLoading, o
           const newMessages = [...prev];
           const lastMsg = newMessages[newMessages.length - 1];
           if (lastMsg && lastMsg.role === "assistant") {
-            lastMsg.content = fullContent;
+            lastMsg.content = cleanAIResponse(fullContent);
           }
           return newMessages;
         });
