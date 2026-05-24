@@ -70,6 +70,21 @@ const ERA_2024_GPT4O = [
   "cutting-edge",
   "game-changer",
   "next-level",
+  // ── puffery / "words to watch" cluster (Wikipedia AI-writing field guide) ──
+  "profound",
+  "exemplifies",
+  "renowned",
+  "ensuring", // superficial-analysis participle tail
+  "encompassing",
+  "cultivating",
+  "resonate",
+  "resonates",
+  "commitment to",
+  "diverse array",
+  "focal point",
+  "setting the stage for",
+  "deeply rooted",
+  "rich cultural heritage",
 ];
 
 const ERA_2025_GPT5 = [
@@ -137,6 +152,18 @@ const FORBIDDEN_PHRASES = [
   "would you like me to",
   "as a large language model",
   "as an ai language model",
+
+  // Vague attribution — name the source on the next line or cut it
+  "industry reports",
+  "observers have cited",
+  "observers have noted",
+  "experts argue",
+  "experts say",
+  "some critics argue",
+  "studies show",
+  "research suggests",
+  "it is widely regarded",
+  "is considered one of the most",
 ];
 
 // ─── Patterns that reveal AI writing even when individual words look fine ───
@@ -193,6 +220,22 @@ line.
 
 OVERATTRIBUTION ("Her work has been featured in CNN, Vogue, Wired, and..."
 when you can't actually cite the link) — banned.
+
+ELEGANT VARIATION — do NOT swap in fancy synonyms just to avoid repeating a
+word ("the device... the apparatus... the gadget..."). Repeat the plain word.
+Reaching for a thesaurus to dodge repetition is a classic AI tell.
+
+PLACEHOLDER / TEMPLATE LEAKAGE — never ship scaffolding in the final text:
+no [brackets], {{curly placeholders}}, "insert X here", "[Your Name]",
+"[link]", "as needed", or "(add example)". If you don't have the real value,
+write a concrete plausible one. The output is final copy, not a template.
+
+COPULATIVE AVOIDANCE — don't dress up "is/are" to sound grander. Write
+"X is a tool that...", not "X serves as / stands as / functions as / boasts /
+represents a tool that...". Plain "is" is the human choice.
+
+OPENER "ADDITIONALLY/MOREOVER/FURTHERMORE" — never start a sentence with
+these. Start with the actual point.
 `;
 
 // ─── Voice + specificity (what TO do, not just what to avoid) ───
