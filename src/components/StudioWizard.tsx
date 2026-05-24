@@ -89,9 +89,10 @@ const platforms: Platform[] = [
 
 type SourceMode = "document" | "websearch";
 
+// Web Search is intentionally NOT offered here — web research already lives in
+// the Sources/Library. The Create flow only generates from saved documents.
 const sourceModes: { id: SourceMode; label: string; placeholder: string; icon: React.FC<{ className?: string }> }[] = [
   { id: "document", label: "Document", placeholder: "Paste the text from your article, PDF or web page...", icon: FileText },
-  { id: "websearch", label: "Web Search", placeholder: "Search the web for fresh data, trends, stats...", icon: GlobeIcon },
 ];
 
 /* ─── Angles & scores ─── */
@@ -123,9 +124,11 @@ interface ParsedVariation {
 function stripMarkdown(text: string): string {
   return text
     .replace(/\*\*([^*]+)\*\*/g, "$1")
-    .replace(/\*([^*]+)\*/g, "$1")
-    .replace(/__([^_]+)__/g, "$1")
-    .replace(/_([^_]+)_/g, "$1")
+    .replace(/\*([^*\n]+)\*/g, "$1")
+    // Underscore emphasis only when bounded by space/punctuation — never fuse
+    // words like "open_ai" or "get_results" by stripping mid-word underscores.
+    .replace(/(^|[\s(])__([^_]+?)__(?=[\s).,!?:;]|$)/g, "$1$2")
+    .replace(/(^|[\s(])_([^_]+?)_(?=[\s).,!?:;]|$)/g, "$1$2")
     .replace(/^#{1,6}\s+/gm, "")
     .replace(/^[-*+]\s+/gm, "")
     .replace(/```[\s\S]*?```/g, "")
@@ -1498,14 +1501,15 @@ ${buildAntiAiRules(tightness)}`;
                   {step === 2 && selectedPlatform && selectedFormat && (
                     <motion.div key="s2" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }} transition={{ duration: 0.4 }}>
                       
-                      {/* Premium Source Mode Switcher */}
+                      {/* Source Mode Switcher — hidden when only one mode is available */}
+                      {sourceModes.length > 1 && (
                       <div className="flex gap-1.5 mb-6 p-1 rounded-xl bg-card/10 border border-border/40">
                         {sourceModes.map((m) => (
-                          <button 
-                            key={m.id} 
-                            onClick={() => { setSourceMode(m.id); setSourceText(""); setSelectedDocumentIds([]); }} 
+                          <button
+                            key={m.id}
+                            onClick={() => { setSourceMode(m.id); setSourceText(""); setSelectedDocumentIds([]); }}
                             className={cn(
-                              "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[9px] font-black uppercase tracking-[0.2em] transition-all duration-300", 
+                              "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[9px] font-black uppercase tracking-[0.2em] transition-all duration-300",
                               sourceMode === m.id ? "bg-foreground text-background shadow-lg" : "text-muted-foreground hover:text-foreground hover:bg-muted"
                             )}
                           >
@@ -1514,6 +1518,7 @@ ${buildAntiAiRules(tightness)}`;
                           </button>
                         ))}
                       </div>
+                      )}
 
                       {/* DOCUMENT MODE */}
                       {sourceMode === "document" && (

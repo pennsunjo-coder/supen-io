@@ -13,7 +13,7 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import type { DashboardContent, ContentSession } from "@/hooks/use-dashboard";
 import InfographicModal from "@/components/InfographicModal";
-import { canGenerateInfographic } from "@/lib/infographic";
+import { canGenerateInfographic, isThreadFormat } from "@/lib/infographic";
 
 const IS_DEV = import.meta.env.DEV;
 
@@ -214,10 +214,13 @@ function TopContentCard({
                     {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                     {copied ? "Copied" : "Copy"}
                   </Button>
-                  <Button variant="ghost" size="sm" className={cn("h-7 text-[10px] gap-1.5 px-2.5", panel === "image" ? "text-primary" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); handleGenerateImage(); }}>
-                    <ImagePlus className="w-3 h-3" /> Image
-                  </Button>
-                  {/* Infographic: LinkedIn posts, Facebook posts, and threads only (existing ones stay viewable) */}
+                  {/* No image generation for threads */}
+                  {!isThreadFormat(item.format) && (
+                    <Button variant="ghost" size="sm" className={cn("h-7 text-[10px] gap-1.5 px-2.5", panel === "image" ? "text-primary" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); handleGenerateImage(); }}>
+                      <ImagePlus className="w-3 h-3" /> Image
+                    </Button>
+                  )}
+                  {/* Infographic: LinkedIn posts and Facebook posts only (existing ones stay viewable) */}
                   {(canGenerateInfographic(item.platform, item.format) || item.infographic_html) && (
                     <Button variant="ghost" size="sm" className={cn("h-7 text-[10px] gap-1.5 px-2.5", infographicModalOpen ? "text-primary" : item.infographic_html ? "text-emerald-400" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); setInfographicModalOpen(true); }}>
                       <LayoutGrid className="w-3 h-3" /> {item.infographic_html ? "Voir infographie" : "Infographic"}
@@ -421,10 +424,13 @@ function SessionVariationCard({
           {copiedV ? <Check className="w-2.5 h-2.5 text-emerald-400" /> : <Copy className="w-2.5 h-2.5" />}
           {copiedV ? "Copied" : "Copy"}
         </Button>
-        <Button variant="ghost" size="sm" className={cn("h-6 text-[10px] gap-1 px-2", panel === "image" ? "text-primary" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); genImage(); }}>
-          <ImagePlus className="w-2.5 h-2.5" /> {imagePrompt ? "Image" : "Image"}
-        </Button>
-        {/* Infographic: LinkedIn posts, Facebook posts, and threads only (existing ones stay viewable) */}
+        {/* No image generation for threads */}
+        {!isThreadFormat(item.format) && (
+          <Button variant="ghost" size="sm" className={cn("h-6 text-[10px] gap-1 px-2", panel === "image" ? "text-primary" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); genImage(); }}>
+            <ImagePlus className="w-2.5 h-2.5" /> {imagePrompt ? "Image" : "Image"}
+          </Button>
+        )}
+        {/* Infographic: LinkedIn posts and Facebook posts only (existing ones stay viewable) */}
         {(canGenerateInfographic(item.platform, item.format) || item.infographic_html) && (
           <Button variant="ghost" size="sm" className={cn("h-6 text-[10px] gap-1 px-2", infographicModalOpen ? "text-primary" : item.infographic_html ? "text-emerald-400" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); setInfographicModalOpen(true); }}>
             <LayoutGrid className="w-2.5 h-2.5" /> {item.infographic_html ? "Voir" : "Infographic"}

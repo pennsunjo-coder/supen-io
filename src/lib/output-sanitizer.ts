@@ -77,40 +77,11 @@ function stripDecorativeEmojiPrefixes(text: string): string {
     .join("\n");
 }
 
-/**
- * Convert Title Case lines to sentence case if and only if the line
- * looks like a heading (short, ends without punctuation, mostly capitalised
- * words, no real sentence verbs).
- */
-function downgradeTitleCaseHeadings(text: string): string {
-  return text
-    .split("\n")
-    .map((line) => {
-      const trimmed = line.trim();
-      if (!trimmed) return line;
-      if (trimmed.length > 80) return line; // probably a sentence
-      if (/[.?!]$/.test(trimmed)) return line; // ends with punctuation → likely sentence
-      const words = trimmed.split(/\s+/).filter(Boolean);
-      if (words.length < 3 || words.length > 10) return line;
-
-      // Title Case heuristic: at least 60% of words have a capital first letter
-      // AND none of them are obviously connective lowercase ("the", "of", "and").
-      const capitalised = words.filter((w) => /^[A-Z][a-z]+/.test(w)).length;
-      if (capitalised / words.length < 0.6) return line;
-
-      // Lowercase everything except the first character of the first word.
-      const sentenced = words
-        .map((w, i) => {
-          if (i === 0) return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
-          return w.toLowerCase();
-        })
-        .join(" ");
-      // Preserve leading whitespace.
-      const leading = line.slice(0, line.length - line.trimStart().length);
-      return leading + sentenced;
-    })
-    .join("\n");
-}
+// NOTE: a Title-Case→sentence-case downgrade used to live here. It was removed
+// because it corrupted brand names and hooks (OpenAI→Openai, ChatGPT→chatgpt,
+// NotebookLM→notebooklm) — there's no reliable way to tell a brand ("Google")
+// from a generic heading word ("Matters"). Sentence-case preference is handled
+// by the prompt instead, where it can't damage real capitalisation.
 
 /** Remove markdown formatting that breaks on social platforms. */
 function stripMarkdownFormatting(text: string): string {
@@ -150,15 +121,13 @@ function normaliseWhitespace(text: string): string {
 export interface SanitizeOptions {
   /** Max em-dashes allowed in the final text. Default: 1 */
   maxEmDashes?: number;
-  /** Skip Title Case heading downgrade (e.g. for poems / song lyrics). */
-  preserveCapitalisation?: boolean;
 }
 
 export function sanitizeVariation(
   content: string,
   options: SanitizeOptions = {}
 ): string {
-  const { maxEmDashes = 1, preserveCapitalisation = false } = options;
+  const { maxEmDashes = 1 } = options;
 
   let out = content;
   out = stripCollaborativeLeakage(out);
@@ -166,7 +135,8 @@ export function sanitizeVariation(
   out = straightenQuotes(out);
   out = stripDecorativeEmojiPrefixes(out);
   out = capEmDashes(out, maxEmDashes);
-  if (!preserveCapitalisation) out = downgradeTitleCaseHeadings(out);
+  // No Title-Case downgrade — it corrupted brand names and hooks. The prompt
+  // handles sentence-case preference where it can't damage real capitalisation.
   out = normaliseWhitespace(out);
   return out;
 }

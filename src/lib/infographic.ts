@@ -1,12 +1,12 @@
 /**
- * Infographic eligibility — single source of truth.
+ * Visual eligibility (infographic AND image) — single source of truth.
  *
- * Infographics may ONLY be generated for:
+ * Visuals may ONLY be generated for:
  *   - LinkedIn posts
  *   - Facebook posts
- *   - Threads (Facebook and X)
  *
- * Every other content type is excluded: tweets, captions, scripts, reels,
+ * Every other content type is excluded — including THREADS (Facebook and X),
+ * which never get a visual. Also excluded: tweets, captions, scripts, reels,
  * and Instagram / TikTok / YouTube posts.
  *
  * Accepts either a platform id ("linkedin", "facebook", "x") or its display
@@ -19,7 +19,17 @@ export function canGenerateInfographic(
   const pl = (platform || "").toLowerCase();
   const fmt = (format || "").toLowerCase();
   const isThread = fmt.includes("thread");
+  if (isThread) return false; // threads never get visuals
   const isPost = fmt.includes("post");
   const isPostPlatform = pl.includes("linkedin") || pl.includes("facebook");
-  return isThread || (isPost && isPostPlatform);
+  return isPost && isPostPlatform;
+}
+
+/**
+ * Threads get NO visuals at all — neither infographic nor image.
+ * Used to hide image-generation buttons (which are otherwise allowed for
+ * reels, captions, etc.) specifically for Thread content.
+ */
+export function isThreadFormat(format?: string | null): boolean {
+  return (format || "").toLowerCase().includes("thread");
 }

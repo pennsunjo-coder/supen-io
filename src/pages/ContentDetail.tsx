@@ -303,7 +303,7 @@ const ContentDetail = () => {
                          </div>
                          <h4 className="text-lg font-black text-white mb-3">Visuals Unavailable</h4>
                          <p className="text-xs text-muted-foreground/60 leading-relaxed">
-                            Infographics are only available for LinkedIn posts, Facebook posts, and threads.
+                            Infographics are only available for LinkedIn posts and Facebook posts.
                          </p>
                       </>
                     )}
