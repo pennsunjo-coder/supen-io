@@ -171,6 +171,57 @@ function buildLaunchEmail(name: string): string {
 </div></div></body></html>`;
 }
 
+// ── Waitlist confirmation ──
+function buildWaitlistEmail(name: string): string {
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${STYLES}</style></head>
+<body><div class="wr"><div class="cd">
+<div class="hd">${LOGO}<p class="sub">Early Access · Priority List</p></div>
+<div class="bd">
+<div class="bg">${I.str} You're on the list</div>
+<div class="gr">You're in, ${name}!</div>
+<p class="tx">Thanks for joining the <span class="hl">Supenli.ai</span> priority list. You're now first in line for early access when we go live.</p>
+<div class="ft">
+<div class="fi">${I.zap}<div class="fi-t"><strong>Priority access</strong><br>You get in before the public launch.</div></div>
+<div class="fi">${I.str}<div class="fi-t"><strong>Founding-member perks</strong><br>Early supporters get exclusive deals on launch day.</div></div>
+<div class="fi">${I.bot}<div class="fi-t"><strong>The full engine</strong><br>Viral content, infographics and a personal AI coach across 6 platforms.</div></div>
+</div>
+<div class="dv"></div>
+<p class="tx" style="font-size:13px;margin-bottom:0;text-align:center">No spam. We'll send one email the moment we launch.</p>
+</div>
+<div class="fo"><p>&copy; 2026 Supenli.ai &middot; You're receiving this because you joined the waitlist.</p></div>
+</div></div></body></html>`;
+}
+
+// ── Contact form (internal notification) ──
+function escapeHtml(s: string): string {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function buildContactEmail(name: string, fromEmail: string, subject: string, message: string): string {
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${STYLES}</style></head>
+<body><div class="wr"><div class="cd">
+<div class="hd">${LOGO}<p class="sub">New contact message</p></div>
+<div class="bd">
+<div class="bg">${I.msg} Contact</div>
+<div class="gr">Message from ${escapeHtml(name)}</div>
+<div class="ft">
+<div class="fi-t"><strong>From:</strong> ${escapeHtml(name)} &lt;${escapeHtml(fromEmail)}&gt;</div>
+<div class="dv" style="margin:16px 0"></div>
+<div class="fi-t"><strong>Subject:</strong> ${escapeHtml(subject) || "(none)"}</div>
+<div class="dv" style="margin:16px 0"></div>
+<div class="fi-t" style="white-space:pre-wrap">${escapeHtml(message)}</div>
+</div>
+<p class="tx" style="font-size:13px;margin-bottom:0">Reply directly to this email to respond to ${escapeHtml(name)}.</p>
+</div>
+<div class="fo"><p>&copy; 2026 Supenli.ai &middot; Sent from the contact form.</p></div>
+</div></div></body></html>`;
+}
+
 // ── Main handler ──
 
 Deno.serve(async (req) => {
@@ -179,7 +230,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { to, subject, type, data } = await req.json();
+    const { to, subject, type, data, replyTo } = await req.json();
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY not configured");
     if (!to || !subject) throw new Error("Missing: to, subject");
@@ -191,12 +242,21 @@ Deno.serve(async (req) => {
     else if (type === "feedback") html = buildFeedbackEmail(data?.name || "there");
     else if (type === "waitlist") html = buildWaitlistEmail(data?.name || "there");
     else if (type === "launch") html = buildLaunchEmail(data?.name || "there");
-    else html = data?.html || "<p>No content</p>";
+    else if (type === "contact") html = buildContactEmail(data?.name || "there", data?.email || "", data?.subject || "", data?.message || "");
+    else throw new Error(`Unknown email type: ${type}`);
+
+    const payload: Record<string, unknown> = {
+      from: "Supenli.ai <noreply@supenli.ai>",
+      to: [to],
+      subject,
+      html,
+    };
+    if (replyTo) payload.reply_to = replyTo;
 
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
-      body: JSON.stringify({ from: "Supenli.ai <onboarding@resend.dev>", to: [to], subject, html }),
+      body: JSON.stringify(payload),
     });
 
     if (!res.ok) { const e = await res.json(); throw new Error(e.message || `Resend ${res.status}`); }

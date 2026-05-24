@@ -6,6 +6,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { LogoFull } from "@/components/Logo";
 import { ArrowLeft, Mail, Clock, Send, Loader2, Check } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
+
+const CONTACT_INBOX = "pennsunjo@gmail.com";
 
 export default function Contact() {
   const [name, setName] = useState("");
@@ -20,11 +23,29 @@ export default function Contact() {
     if (!name.trim() || !email.trim() || !message.trim()) return;
 
     setSending(true);
-    // Simulate send (replace with real endpoint later)
-    await new Promise((r) => setTimeout(r, 800));
-    setSending(false);
-    setSent(true);
-    toast.success("Message sent! We'll get back to you soon.");
+    try {
+      const { error } = await supabase.functions.invoke("send-email", {
+        body: {
+          to: CONTACT_INBOX,
+          subject: `Contact form: ${subject.trim() || "New message"}`,
+          type: "contact",
+          replyTo: email.trim(),
+          data: {
+            name: name.trim(),
+            email: email.trim(),
+            subject: subject.trim(),
+            message: message.trim(),
+          },
+        },
+      });
+      if (error) throw error;
+      setSent(true);
+      toast.success("Message sent! We'll get back to you soon.");
+    } catch {
+      toast.error("Couldn't send your message. Please email us directly.");
+    } finally {
+      setSending(false);
+    }
   }
 
   return (

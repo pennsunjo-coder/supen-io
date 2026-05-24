@@ -1004,7 +1004,7 @@ ${buildAntiAiRules(tightness)}`;
       // Send content-ready email (fire and forget)
       supabase.auth.getUser().then(({ data: { user: u } }) => {
         if (u?.email) {
-          supabase.functions.invoke("bright-processor", {
+          supabase.functions.invoke("send-email", {
             body: {
               to: u.email,
               subject: "Your Supenli.ai content is ready!",

@@ -29,7 +29,7 @@ export default function ForgotPassword() {
       if (error) throw error;
 
       // Send branded reset email via Resend (in addition to Supabase default)
-      supabase.functions.invoke("bright-processor", {
+      supabase.functions.invoke("send-email", {
         body: {
           to: email.trim(),
           subject: "Reset your Supenli.ai password",

@@ -62,6 +62,16 @@ export default function WaitlistSection() {
         setJoined(true);
         if (count !== null) setCount(count + 1);
         toast.success("You're on the waitlist!");
+
+        // Send confirmation email via Resend (fire and forget)
+        supabase.functions.invoke("send-email", {
+          body: {
+            to: trimmedEmail,
+            subject: "You're on the list! Supenli.ai is coming soon",
+            type: "waitlist",
+            data: { name: firstName.trim() || "there" },
+          },
+        }).catch(() => {});
       }
     } catch {
       toast.error("Something went wrong. Please try again.");

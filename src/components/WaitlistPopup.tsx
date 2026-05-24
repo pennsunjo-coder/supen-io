@@ -32,7 +32,7 @@ export function WaitlistPopup({ isOpen, onClose }: WaitlistPopupProps) {
     try {
       const { error: dbError } = await supabase
         .from("waitlist")
-        .insert({ name: name.trim(), email: email.trim().toLowerCase() });
+        .insert({ first_name: name.trim(), email: email.trim().toLowerCase() });
 
       if (IS_DEV) console.log("[Waitlist] Insert result:", dbError ? dbError.message : "OK");
 
@@ -45,7 +45,7 @@ export function WaitlistPopup({ isOpen, onClose }: WaitlistPopupProps) {
         throw dbError;
       }
 
-      supabase.functions.invoke("bright-processor", {
+      supabase.functions.invoke("send-email", {
         body: {
           to: email.trim(),
           subject: "You're on the list! Supenli.ai is coming soon",
