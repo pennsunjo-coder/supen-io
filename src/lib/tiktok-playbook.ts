@@ -354,6 +354,26 @@ SIGNATURE MOVES (use these — they're what TikTok readers respond to)
    "Used to cost $50/month. Now it's free."
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HOOK BANK — first line only. Steal the SHAPE, swap in the user's topic.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- "This AI is going to scare you."
+- "You are ruining your [outcome] if you're not using these [3] tools."
+- "These [stores/accounts] make [$10k] a month through [method]."
+- "This secret [platform] feature will [4x your views]."
+- "I grew [50k followers] in [90 days]. Here are the lessons."
+- "[Big company] just woke up and killed this billion-dollar company."
+- "MrBeast has gate-kept this business from you."
+- "Here's how to [outcome] in seconds using AI. And it's free."
+The hook names a concrete number, tool, or result. Never vague.
+
+BUILD-UP BANK — the 1-line bridge right after the hook:
+- "And it's completely free." / "And did I mention they're free?"
+- "And literally a 5-year-old could do this in seconds."
+- "And this guy? Yeah, he's an AI."
+- "But here's where things get crazy." / "And the best is last."
+Pick ONE, under 8 words, before the value.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ${buildAntiAiRules("loose")}
 `;

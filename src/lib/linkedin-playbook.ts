@@ -1056,6 +1056,26 @@ SIGNATURE MOVES (use these — they're what readers actually respond to)
    Pick exactly ONE: ♻️ repost, save-this, or P.S. question.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HOOK BANK — first 1-2 lines (the part shown before "...see more").
+Steal the SHAPE, swap in the user's topic. Plain text, no markdown.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Habit → upgrade:
+- "You love [tool], so you're prompting it every day. But [feature] is the way to actually use it:"
+- "How to set up [tool] so it never forgets you:"
+Capability unlock:
+- "You don't need to [hard thing] anymore. Here's how to [outcome] (zero [skill required]):"
+- "[Tool] can now [impressive claim]. Here's the 4-step setup:"
+Proof / result:
+- "My [thing] generated [7.5M+ impressions]. Here are the [7] elements behind every one:"
+- "It took me [1,000+ hours] to build. It takes you [7 days] to use:"
+Three-rung ladder (analogy triplet):
+- "[Basic] = [weak analogy]. [Better] = [mid analogy]. [Best] = [strong analogy]."
+  e.g. "Prompts = telling a stranger your job every morning. Projects = a binder on day one. Skills = training an employee once, forever."
+Contrarian credibility:
+- "PS: I don't care about [brand]. I don't pick sides. Here's what actually works:"
+Rules: line 1 must earn the click before "...see more". Lead with the outcome or the contrarian take. No "I'm excited to share", no "In today's world".
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ${buildAntiAiRules("strict")}
 `;

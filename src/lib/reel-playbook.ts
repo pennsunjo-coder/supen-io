@@ -392,6 +392,73 @@ SIGNATURE MOVES (proven short-form patterns)
    Buys you 5 more seconds of watch time.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HOOK BANK — first line only. Steal the SHAPE, swap in the user's topic.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Fear / loss aversion:
+- "This AI is going to scare you."
+- "You are ruining your [outcome] if you're not using these [3] tools."
+- "You're stuck at [200 views] because you don't do these [3] things."
+- "[X] will hate me for sharing this secret AI."
+Result + specificity:
+- "These [stores/accounts] make [$10k] a month through [method]."
+- "I grew [50k followers] in [90 days]. Here are the lessons."
+- "This is how I make [100 shorts per hour] with AI."
+- "Here's how to make your first [$1,000] as a [creator]."
+Curiosity / secret:
+- "This secret [platform] feature will [4x your views]."
+- "Here's how to [outcome] in seconds using AI. And it's free."
+- "[Cartoon / infinite-zoom / drone] videos are going super viral right now. Here's how."
+Authority steal / disruption:
+- "MrBeast has gate-kept this business from you."
+- "Your favorite content creators can make you rich. Here's how to steal their strategy."
+- "[Big company] just woke up and killed this billion-dollar company."
+- "These [3] AI tools just broke content creation."
+Rule: the hook names a concrete number, tool, or result. Never vague.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BUILD-UP BANK — the 1-line bridge right after the hook (lowers friction,
+raises curiosity, buys watch time before the value).
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- "And it's completely free."
+- "And did I mention they're completely free?"
+- "And literally a 5-year-old could do this in a couple of seconds."
+- "And this guy? Yeah, he's an AI."
+- "And no, this is not some BS strategy."
+- "Here's how to do it for free."
+- "But here's where things get crazy."
+- "And the best is last."
+Pick ONE. Keep it under 8 words. Never skip it on a tool/result hook.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+MORE REFERENCE EXAMPLES — fresh, varied. Match cadence, not words.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[disruption_news] —
+"OpenAI just woke up and decided to end a billion-dollar company.
+They announced Search GPT — basically a carbon copy of Perplexity.
+This is what I've said from day one: there's no real moat in AI.
+Perplexity was raising $250M at a $3B valuation, and now OpenAI is
+breathing down their neck. But it's still waitlist-only, and remember
+how the ChatGPT browsing plugin flopped. Follow to be first to know."
+
+[money_hack] —
+"Your favorite content creators can make you rich. Find their long-form
+video, copy the link, and visit Opus Pro. Paste it, hit 'get clips,'
+and the AI cuts the best parts into captioned shorts. Now build a fan
+page and monetize. Comment Opus and I'll DM you the link."
+
+[walkthrough] —
+"This is how I make 100 shorts per hour with AI. Go to faceless.video
+and click start for free. Pick your story type, choose a background,
+add a voiceover, hit create series. Link your account and it posts for
+you daily on autopilot. Comment AI and I'll send the link."
+
+[ai_showcase] —
+"Here's how to boost your views using only AI. Right now I'm speaking
+English. But now I'm speaking Hindi. I could even do Spanish. This is
+HeyGen — drag your video in, pick the language, and it translates the
+whole thing with perfect lip sync. Comment AI to try it. But wait —"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ${buildAntiAiRules("loose")}
 `;

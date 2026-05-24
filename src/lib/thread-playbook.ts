@@ -383,6 +383,33 @@ SIGNATURE MOVES (use these — they're what thread readers respond to)
    End with a colon and "👇" or "Here's how:" — never a period.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HOOK BANK — Post 1 openers. Steal the SHAPE, swap in the user's topic.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Cheatcode / framework:
+- "BREAKING: [Tool A] + [Tool B] is literally a cheatcode for [outcome]. Here are [N] ways + prompts (step by step) 👇"
+- "[Tool] can now [impressive claim]. Here's the exact workflow:"
+Disruption / warning (3 parallels, then the new one):
+- "In [year], [X] killed [incumbent]. In [year], [X] killed [incumbent]. In [current year], [new thing] will kill [current incumbent]. And [who] is behind it. 👇"
+RIP / obituary:
+- "BREAKING: RIP [old tool]. [New tool] is [claim]. It works like [a full X in one dashboard]. And the best part: it's FREE. Here's how:"
+Social proof + prompt library:
+- "[Tool] can now [claim]. I [grew 15k followers / made $X] in [timeframe]. Here are the [N] prompts I used:"
+Contrarian / insider:
+- "Everyone is using [tool] wrong. Here's the [N]-step way that actually works:"
+- "Here's the [framework] [big creator] uses but never talks about:"
+Rules: Post 1 names a concrete tool/number/result. End on a colon + 👇, never a period.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PRO MOVE — context-engineered prompt threads (only when the topic IS
+about prompting / using AI). Inside a prompt post, model the "SUCCESS
+BRIEF" shape that pro prompters use, so the copyable prompt feels elite:
+  - "First, read these files: [audience.md], [offer.md], [voice.md]"
+  - "Here's a reference + what makes it work: ..."
+  - "SUCCESS BRIEF — output + length / desired reaction / does NOT sound like / success means"
+  - "Before writing, list the 3 rules that matter most, then your plan."
+Use this ONLY for prompt-library threads, never for normal threads.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ${buildAntiAiRules("standard")}
 `;

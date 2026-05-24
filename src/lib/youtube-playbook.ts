@@ -587,6 +587,24 @@ SIGNATURE MOVES (the cadence Awa Penn uses repeatedly)
    the next one."
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HOOK BANK — first 5-10 seconds. Curiosity gap + an almost-unbelievable
+but specific claim. Steal the SHAPE, swap in the user's topic.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Curiosity / imagine:
+- "What if you could [outcome] without [the painful part]?"
+- "Just imagine having [a version of you / a system] that [does the work] even when you're not [filming/working]."
+Mistake / pattern-interrupt:
+- "Most people mess up [tool] before they even type a single prompt."
+- "You're using [tool] wrong, and it's costing you [outcome]."
+Cost / free angle:
+- "Right now most creators pay $20, $40, even $100 a month for AI tools. What if you could replace them with free ones?"
+- "While everyone still pays for [X, Y, Z] every month, [tool] is a completely different beast — and most of it is free."
+Opportunity / gold-rush:
+- "AI is booming in [year], and there's a global gold rush happening. Most people are standing right next to it and don't realise."
+- "What's the most lucrative way to use [tool] in [year] if you're starting from zero — no followers, no budget, no plan?"
+Rules: back the hook with a concrete tool, number, or result within the first 2 lines. Then go straight into the Intro/promise — no "hey guys."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ${buildAntiAiRules("loose")}
 `;
