@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { callClaude } from "@/lib/anthropic";
+import { BANNED_WORDS_INLINE } from "@/lib/anti-ai-rules";
 import { supabase } from "@/lib/supabase";
 import { useProfile } from "@/hooks/use-profile";
 import { useSources } from "@/hooks/use-sources";
@@ -280,7 +281,7 @@ function HookGenerator({ profileNiche, profilePlatforms }: { profileNiche?: stri
       assertOnline();
       const text = await withTimeout(
           callClaude(
-            `You are an expert in viral hooks for social media. Generate 10 powerful hooks in English for ${platform}, niche ${niche || "creator"}.\n\nStrict rules:\n- Each hook is MAX 12 words\n- No intro, just the 10 numbered hooks 1. to 10.\n- Variety of styles: question, shocking stat, contrarian, confession, promise, story, FOMO\n- Avoid AI cliches (never "delve", "tapestry", "in today's world")\n- Direct, punchy, natural English tone\n- Respond ONLY with the 10 numbered hooks, nothing else`,
+            `You are an expert in viral hooks for social media. Generate 10 powerful hooks in English for ${platform}, niche ${niche || "creator"}.\n\nStrict rules:\n- Each hook is MAX 12 words\n- No intro, just the 10 numbered hooks 1. to 10.\n- Variety of styles: question, shocking stat, contrarian, confession, promise, story, FOMO\n- Avoid AI cliches and never use these banned words: ${BANNED_WORDS_INLINE}\n- Direct, punchy, natural English tone\n- Respond ONLY with the 10 numbered hooks, nothing else`,
             [{ role: "user", content: `Topic: ${topic.trim()}` }],
             { maxTokens: 1000, model: "gpt-4o" },
           ),
@@ -409,7 +410,7 @@ function Humanizer() {
       assertOnline();
       const text = await withTimeout(
           callClaude(
-            `You are an expert in anti-AI rewriting. Transform this text into 100% human writing undetectable by AI detectors.\n\nStrict rules:\n- English only\n- Vary sentence length (mix short + long)\n- Natural, imperfect, sometimes casual phrasing\n- No banned AI words: delve, tapestry, vibrant, garner, intricate, foster, leverage, robust, seamless\n- No AI expressions: "in today's world", "game changer", "embark on a journey"\n- Keep the meaning and main message\n- No markdown, no lists\n- Respond ONLY with the rewritten text, nothing else`,
+            `You are an expert in anti-AI rewriting. Transform this text into 100% human writing undetectable by AI detectors.\n\nStrict rules:\n- English only\n- Vary sentence length (mix short + long)\n- Natural, imperfect, sometimes casual phrasing\n- No banned AI words: ${BANNED_WORDS_INLINE}\n- No AI expressions: "in today's world", "game changer", "embark on a journey", "it's important to note"\n- Keep the meaning and main message\n- No markdown, no lists\n- Respond ONLY with the rewritten text, nothing else`,
             [{ role: "user", content: input.trim() }],
             { maxTokens: 2000, model: "gpt-4o" },
           ),

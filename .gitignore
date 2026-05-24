@@ -27,3 +27,8 @@ dist-ssr
 .env.save
 .eny
 .vercel
+
+# Training material — source PDFs/notes used to tune prompts, not app code
+/content&model/
+Anti AI writing.md
+/tmp/cm/
