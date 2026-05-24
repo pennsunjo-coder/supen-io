@@ -2,6 +2,7 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/use-profile";
 import { Loader2 } from "lucide-react";
+import PlanGate from "@/components/PlanGate";
 
 interface Props {
   children: React.ReactNode;
@@ -48,6 +49,6 @@ export default function ProtectedRoute({ children, skipOnboardingCheck = false }
     return <Navigate to="/onboarding" replace />;
   }
 
-  // 6. All good → render the page
-  return <>{children}</>;
+  // 6. All good → render the page (behind the plan paywall when enabled)
+  return <PlanGate>{children}</PlanGate>;
 }

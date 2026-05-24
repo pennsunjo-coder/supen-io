@@ -66,18 +66,23 @@ async function generateInfographic(prompt: string, size: string = "1024x1024"): 
 
   if (error) {
     console.error("[Infographic] Edge Function error object:", error);
-    
-    // Supabase error objects often contain the response body in the message
+
+    // supabase-js puts the raw Response on error.context for non-2xx replies
+    // (e.g. our 429 "Monthly image limit reached"). Read it so the user sees
+    // the real reason instead of a generic failure.
     let msg = "Image generation failed. Please try again.";
     try {
-      // If it's a stringified JSON error from our function
-      if (typeof error.message === 'string' && (error.message.includes('{') || error.message.includes('code'))) {
+      const ctx = (error as { context?: Response }).context;
+      if (ctx && typeof ctx.json === "function") {
+        const body = await ctx.json();
+        if (body?.error) msg = body.error;
+      } else if (typeof error.message === "string" && error.message.includes("{")) {
         msg = error.message;
       }
     } catch {
       msg = error.message || msg;
     }
-    
+
     throw new Error(msg);
   }
 

@@ -421,9 +421,9 @@ export default function Settings() {
               </div>
 
               {/* Plan cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {(Object.entries(PLANS) as [Plan, typeof PLANS[Plan]][]).map(([planId, config]) => {
-                  const isCurrent = currentPlan === planId && (planId === "free" || planActive);
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {(Object.entries(PLANS) as ["plus" | "pro", (typeof PLANS)["plus"]][]).map(([planId, config]) => {
+                  const isCurrent = currentPlan === planId && planActive;
                   return (
                     <div key={planId} className={cn("bg-card border rounded-xl p-5 relative flex flex-col", config.color, isCurrent && "ring-1 ring-primary/30")}>
                       {config.badge && (
@@ -450,16 +450,16 @@ export default function Settings() {
                         <Button variant="outline" disabled className="w-full h-9 text-xs">
                           Current plan
                         </Button>
-                      ) : planId !== "free" ? (
+                      ) : (
                         <Button
-                          onClick={() => handleUpgrade(planId as "plus" | "pro")}
+                          onClick={() => handleUpgrade(planId)}
                           disabled={!!upgrading}
                           className={cn("w-full h-9 text-xs gap-1.5 font-semibold", planId === "pro" && "bg-amber-500 hover:bg-amber-600 text-white")}
                         >
                           {upgrading === planId ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Crown className="w-3.5 h-3.5" />}
                           {upgrading === planId ? "Redirecting..." : `Upgrade to ${config.name}`}
                         </Button>
-                      ) : null}
+                      )}
                     </div>
                   );
                 })}

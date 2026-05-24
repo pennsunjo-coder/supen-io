@@ -19,8 +19,8 @@ serve(async (req) => {
     const { plan, userId, email, successUrl, cancelUrl } = await req.json();
 
     const PRICES: Record<string, string> = {
+      plus: Deno.env.get("STRIPE_PLUS_PRICE_ID") || "",
       pro: Deno.env.get("STRIPE_PRO_PRICE_ID") || "",
-      business: Deno.env.get("STRIPE_BUSINESS_PRICE_ID") || "",
     };
 
     const priceId = PRICES[plan];

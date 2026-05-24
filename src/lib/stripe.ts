@@ -14,18 +14,9 @@ export interface PlanConfig {
   features: string[];
 }
 
-export const PLANS: Record<Plan, PlanConfig> = {
-  free: {
-    name: "Free",
-    price: 0,
-    color: "border-border/30",
-    badge: null,
-    features: [
-      "5 generations / day",
-      "3 sources max",
-      "Basic infographics",
-    ],
-  },
+// Only paid plans are shown/sold. "free" stays in the Plan type as the
+// "not subscribed yet" sentinel (used by plan-limits and the paywall).
+export const PLANS: Record<"plus" | "pro", PlanConfig> = {
   plus: {
     name: "Plus",
     price: 10,
@@ -33,6 +24,7 @@ export const PLANS: Record<Plan, PlanConfig> = {
     badge: "Most popular",
     features: [
       "100 generations / month",
+      "50 images / month",
       "Unlimited sources",
       "Premium infographics",
       "Style memory & learning",
@@ -48,6 +40,7 @@ export const PLANS: Record<Plan, PlanConfig> = {
     features: [
       "Everything in Plus",
       "Unlimited generations",
+      "300 images / month",
       "Advanced analytics",
       "Team collaboration (coming soon)",
       "API access (coming soon)",

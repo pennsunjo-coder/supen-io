@@ -14,3 +14,8 @@ verify_jwt = false
 # so JWT must not be required.
 [functions.send-email]
 verify_jwt = false
+
+# Stripe calls this server-to-server with no Supabase JWT (it uses its own
+# signature verification), so JWT must not be required.
+[functions.stripe-webhook]
+verify_jwt = false

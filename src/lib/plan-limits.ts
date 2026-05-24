@@ -19,6 +19,9 @@ export interface PlanLimits {
   generationsPerMonth: number | "unlimited";
   /** Per-hour cap kept as a safety net against abuse / runaway clients. */
   generationsPerHour: number;
+  /** Image / infographic generations per rolling 30-day window. Each
+   *  regeneration counts as one. Enforced server-side. */
+  imagesPerMonth: number | "unlimited";
   /** Premium infographic templates (typography-rich, multi-section). */
   premiumInfographics: boolean;
   /** Style memory + viral scoring loop (learns from edits). */
@@ -33,6 +36,7 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
     generationsPerDay: 5,
     generationsPerMonth: 5 * 30, // soft cap; daily is the binding limit
     generationsPerHour: 5,
+    imagesPerMonth: 5, // grace allowance before subscribing
     premiumInfographics: false,
     styleMemory: false,
     advancedAnalytics: false,
@@ -42,6 +46,7 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
     generationsPerDay: 20,
     generationsPerMonth: 100,
     generationsPerHour: 20,
+    imagesPerMonth: 50,
     premiumInfographics: true,
     styleMemory: true,
     advancedAnalytics: false,
@@ -51,6 +56,7 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
     generationsPerDay: "unlimited",
     generationsPerMonth: "unlimited",
     generationsPerHour: 60,
+    imagesPerMonth: 300,
     premiumInfographics: true,
     styleMemory: true,
     advancedAnalytics: true,
