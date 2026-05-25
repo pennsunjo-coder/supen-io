@@ -5,7 +5,7 @@ import {
   Zap, ArrowRight, Sparkles, BookOpen, Wand2, Shield,
   Youtube, FileText, Globe, MessageSquare, Check, Star,
   ChevronDown, Twitter, Instagram, Linkedin, Mail,
-  Layers, Target, PenTool, BarChart3, Users, Sun, Moon, Gift,
+  Layers, Target, PenTool, BarChart3, Users, Sun, Moon,
   X as XIcon, Brain, TrendingUp, Clock, CreditCard, CalendarDays,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -60,20 +60,9 @@ const tierColors = { gold: "bg-amber-500/90", green: "bg-emerald-500/90", cyan: 
 
 const plans = [
   {
-    name: "Free",
-    icon: Gift,
-    price: "$0",
-    period: "/month",
-    desc: "Try Supenli.ai risk-free",
-    features: ["YouTube Transcriber (1 video/day)", "Platform preview", "No credit card required"],
-    cta: "Get started free",
-    highlighted: false,
-    rotation: "rotate-[-1deg]",
-  },
-  {
     name: "Plus",
     icon: Sparkles,
-    price: "$11",
+    price: "$10",
     period: "/month",
     desc: "For solo creators who want to grow fast",
     features: [
@@ -86,7 +75,7 @@ const plans = [
       "RAG — AI trained on YOUR content",
       "Image & infographic prompt generator",
     ],
-    cta: "Start for $11/month →",
+    cta: "Start for $10/month →",
     highlighted: true,
     rotation: "rotate-[1deg]",
   },
@@ -109,7 +98,7 @@ const faqs = [
   { q: "How is this different from ChatGPT?", a: "ChatGPT gives you one generic answer. Supenli.ai gives you 5 variations with different angles, scores them for virality, and remembers your style over time." },
   { q: "Can I generate infographics too?", a: "Infographics are available for Facebook and LinkedIn posts only. For other platforms, you can generate custom images using your own prompt." },
   { q: "Is my content private?", a: "Your content belongs to you. We never train our models on your data. Everything is encrypted and stored securely." },
-  { q: "What's the free plan?", a: "The free plan gives you access to content generation, the AI coach, and basic infographics. No credit card required to start." },
+  { q: "Can I cancel anytime?", a: "Yes. You can cancel your subscription at any moment from your account settings. You keep access until the end of your billing period." },
 ];
 
 const PlatformX = () => (

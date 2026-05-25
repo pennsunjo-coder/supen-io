@@ -34,7 +34,7 @@ export const PLANS: Record<"plus" | "pro", PlanConfig> = {
   },
   pro: {
     name: "Pro",
-    price: 29,
+    price: 30,
     color: "border-amber-500/40",
     badge: "Best value",
     features: [

@@ -6,7 +6,7 @@ import {
   ArrowLeft, LayoutDashboard, Users, FileText,
   BarChart3, CreditCard, Loader2, TrendingUp, Calendar,
   ChevronLeft, ChevronRight, Zap, DollarSign, Crown,
-  Search, RefreshCw, Download, Mail,
+  Search, RefreshCw, Download, Mail, Trash2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
@@ -156,6 +156,34 @@ export default function Admin() {
     setIsSendingEmails(false);
     if (success > 0) toast.success(`Sent ${success} launch emails!`);
     if (failed > 0) toast.error(`${failed} emails failed to send.`);
+  }
+
+  // Delete a user account (auth + all related rows) via the delete-user edge fn.
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  async function handleDeleteUser(userId: string, name: string) {
+    if (!confirm(`Permanently delete ${name || "this user"}? This cannot be undone.`)) return;
+    setDeletingUserId(userId);
+    try {
+      const { error } = await supabase.functions.invoke("delete-user", { body: { userId } });
+      if (error) {
+        // Surface the real error body from the edge function when present.
+        const ctx = (error as { context?: Response }).context;
+        let msg = error.message;
+        if (ctx && typeof ctx.json === "function") {
+          try {
+            const body = await ctx.json();
+            if (body?.error) msg = body.error;
+          } catch { /* ignore */ }
+        }
+        throw new Error(msg);
+      }
+      toast.success("User deleted");
+      refetchUsers();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not delete user");
+    } finally {
+      setDeletingUserId(null);
+    }
   }
 
   function exportWaitlistCsv() {
@@ -400,7 +428,8 @@ export default function Admin() {
                         <th className="text-left py-2 pr-3 font-medium">Platforms</th>
                         <th className="text-left py-2 pr-3 font-medium">Onboarding</th>
                         <th className="text-left py-2 pr-3 font-medium">Content</th>
-                        <th className="text-left py-2 font-medium">Signup</th>
+                        <th className="text-left py-2 pr-3 font-medium">Signup</th>
+                        <th className="text-right py-2 font-medium">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -412,7 +441,23 @@ export default function Admin() {
                           <td className="py-2.5 pr-3 text-muted-foreground max-w-[200px] truncate">{u.platforms?.join(", ") || "—"}</td>
                           <td className="py-2.5 pr-3"><Badge ok={u.onboarding_completed} /></td>
                           <td className="py-2.5 pr-3 font-medium">{u.content_count}</td>
-                          <td className="py-2.5 text-muted-foreground">{formatDate(u.created_at)}</td>
+                          <td className="py-2.5 pr-3 text-muted-foreground">{formatDate(u.created_at)}</td>
+                          <td className="py-2.5 text-right">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              disabled={deletingUserId === u.user_id}
+                              onClick={() => handleDeleteUser(u.user_id, u.first_name)}
+                              className="h-7 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              title="Delete user permanently"
+                            >
+                              {deletingUserId === u.user_id ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-3.5 h-3.5" />
+                              )}
+                            </Button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
