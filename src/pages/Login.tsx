@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { LogoFull } from "@/components/Logo";
 
@@ -46,22 +45,8 @@ const Login = () => {
     if (loading) return;
     setLoading(true);
     try {
-      // ⛔ GATEKEEPER: Check if user has access (via waitlist)
-      const ADMIN_EMAILS = ["gamalielkelman@gmail.com", "pennsunjo@gmail.com"];
-      if (isSignUp && !ADMIN_EMAILS.includes(trimmedEmail)) {
-        const { data: waitlistEntry, error: waitlistError } = await supabase
-          .from("waitlist")
-          .select("notified")
-          .eq("email", trimmedEmail)
-          .maybeSingle();
-
-        if (waitlistError || !waitlistEntry || !waitlistEntry.notified) {
-          toast.error("You don't have access yet. Please join the waitlist first.");
-          setLoading(false);
-          return;
-        }
-      }
-
+      // Public signup — no waitlist gate. Anyone can register; the paywall
+      // (when enabled) handles plan selection / subscription after sign-in.
       const { error } = isSignUp ? await signUp(trimmedEmail, password) : await signIn(trimmedEmail, password);
       if (error) {
         toast.error(error);
