@@ -108,7 +108,8 @@ export default function Admin() {
     return users.filter((u) =>
       u.first_name.toLowerCase().includes(q) ||
       u.niche.toLowerCase().includes(q) ||
-      u.user_id.includes(q)
+      u.user_id.includes(q) ||
+      (u.email?.toLowerCase().includes(q) ?? false)
     );
   }, [users, userSearch]);
 
@@ -422,7 +423,7 @@ export default function Admin() {
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="text-muted-foreground border-b border-border/20">
-                        <th className="text-left py-2 pr-3 font-medium">User ID</th>
+                        <th className="text-left py-2 pr-3 font-medium">Email</th>
                         <th className="text-left py-2 pr-3 font-medium">Name</th>
                         <th className="text-left py-2 pr-3 font-medium">Niche</th>
                         <th className="text-left py-2 pr-3 font-medium">Platforms</th>
@@ -435,7 +436,7 @@ export default function Admin() {
                     <tbody>
                       {filteredUsers.map((u) => (
                         <tr key={u.user_id} className="border-b border-border/10 hover:bg-accent/20 transition-colors">
-                          <td className="py-2.5 pr-3 font-mono text-muted-foreground">{u.user_id.slice(0, 8)}...</td>
+                          <td className="py-2.5 pr-3 font-medium max-w-[260px] truncate" title={u.email}>{u.email || "—"}</td>
                           <td className="py-2.5 pr-3 font-medium">{u.first_name || "—"}</td>
                           <td className="py-2.5 pr-3 text-muted-foreground">{u.niche || "—"}</td>
                           <td className="py-2.5 pr-3 text-muted-foreground max-w-[200px] truncate">{u.platforms?.join(", ") || "—"}</td>

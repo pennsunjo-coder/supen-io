@@ -5,12 +5,15 @@ import { supabase } from "@/lib/supabase";
 
 export interface AdminUser {
   user_id: string;
+  email?: string;
   first_name: string;
   niche: string;
   platforms: string[];
   onboarding_completed: boolean;
   created_at: string;
   content_count: number;
+  plan?: string;
+  last_sign_in_at?: string | null;
 }
 
 export interface AdminContent {
@@ -269,39 +272,18 @@ export function useAdminUsers() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Reads via the `list-users` edge function (service role + admin check).
+  // Reading user_profiles directly only showed the few users who completed
+  // onboarding — auth.users is the source of truth for "every account".
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const { data: profiles, error: e1 } = await supabase
-        .from("user_profiles")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (e1) console.error("Admin stats error (fetchUsers profiles):", e1);
-
-      if (profiles) {
-        // Batch: get all content grouped by user
-        const { data: allContent, error: e2 } = await supabase
-          .from("generated_content")
-          .select("user_id");
-        if (e2) console.error("Admin stats error (fetchUsers content):", e2);
-
-        const countMap = new Map<string, number>();
-        allContent?.forEach((c) => {
-          countMap.set(c.user_id, (countMap.get(c.user_id) || 0) + 1);
-        });
-
-        setUsers(profiles.map((p) => ({
-          user_id: p.user_id,
-          first_name: p.first_name || "",
-          niche: p.niche || "",
-          platforms: p.platforms || [],
-          onboarding_completed: p.onboarding_completed,
-          created_at: p.created_at,
-          content_count: countMap.get(p.user_id) || 0,
-        })));
-      }
+      const { data, error } = await supabase.functions.invoke("list-users");
+      if (error) throw error;
+      setUsers((data?.users as AdminUser[]) ?? []);
     } catch (err) {
-      console.error("Unexpected error in fetchUsers:", err);
+      console.error("[useAdminUsers] fetch error:", err);
+      setUsers([]);
     } finally {
       setLoading(false);
     }
