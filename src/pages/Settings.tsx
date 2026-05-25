@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -65,7 +65,14 @@ export default function Settings() {
   const { user, signOut } = useAuth();
   const { profile, loading: profileLoading, updateProfile } = useProfile();
 
-  const [activeSection, setActiveSection] = useState<Section>("profil");
+  // Optional ?tab via navigation state — e.g. Login sends { tab: "compte" } so
+  // fresh signups land directly on the plan picker instead of the profile form.
+  const location = useLocation();
+  const stateTab = location.state?.tab;
+  const initialTab: Section = stateTab === "profil" || stateTab === "preferences" || stateTab === "compte" || stateTab === "about"
+    ? stateTab
+    : "profil";
+  const [activeSection, setActiveSection] = useState<Section>(initialTab);
   const [saving, setSaving] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
 

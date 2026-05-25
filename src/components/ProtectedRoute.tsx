@@ -43,9 +43,10 @@ export default function ProtectedRoute({ children, skipOnboardingCheck = false }
     return <>{children}</>;
   }
 
-  // 5. Onboarding not completed → /onboarding
-  // ONLY when profileLoading = false (we have the Supabase response)
-  if (!onboardingCompleted && location.pathname !== "/onboarding") {
+  // 5. Onboarding not completed → /onboarding, EXCEPT for /settings.
+  // Fresh signups need to reach the plan picker (in /settings) BEFORE doing
+  // onboarding — the funnel is signup → pick a plan → pay → then onboard.
+  if (!onboardingCompleted && location.pathname !== "/onboarding" && location.pathname !== "/settings") {
     return <Navigate to="/onboarding" replace />;
   }
 

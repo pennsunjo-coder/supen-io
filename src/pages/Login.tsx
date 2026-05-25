@@ -43,7 +43,7 @@ const Login = () => {
     // them to /settings (where the Upgrade button lives); otherwise dashboard.
     const incomingPlan = location.state?.plan;
     if (incomingPlan === "plus" || incomingPlan === "pro") {
-      return <Navigate to="/settings" replace />;
+      return <Navigate to="/settings" state={{ tab: "compte" }} replace />;
     }
     return <Navigate to="/dashboard" replace />;
   }
@@ -79,7 +79,7 @@ const Login = () => {
             return;
           } catch (err) {
             toast.error(err instanceof Error ? err.message : "Couldn't start checkout. Try again from Settings.");
-            navigate("/settings");
+            navigate("/settings", { state: { tab: "compte" } });
             return;
           }
         }
@@ -90,8 +90,31 @@ const Login = () => {
         return;
       }
 
-      if (isSignUp) toast.success("Account created! Check your email to confirm.");
-      else navigate(location.state?.redirectTo || "/dashboard");
+      if (isSignUp) {
+        // No specific plan was passed in state — but every signup is supposed
+        // to end on the plan picker so the user can pick Plus/Pro right away.
+        const { data: { user: signedUpUser } } = await supabase.auth.getUser();
+        if (signedUpUser) {
+          // Session is live (Supabase Email Confirm OFF) → straight to /settings.
+          sessionStorage.removeItem("pendingSignup");
+          navigate("/settings", { state: { tab: "compte" } });
+        } else {
+          // Email confirmation required: remember the intent so the next
+          // sign-in lands on the plan picker too.
+          sessionStorage.setItem("pendingSignup", "1");
+          toast.success("Account created! Confirm your email, then sign back in to pick your plan.");
+        }
+      } else {
+        // Sign-in. If a recent signup is still pending its first sign-in,
+        // finish that flow by sending the user to the plan picker.
+        const pendingSignup = sessionStorage.getItem("pendingSignup");
+        if (pendingSignup === "1") {
+          sessionStorage.removeItem("pendingSignup");
+          navigate("/settings", { state: { tab: "compte" } });
+        } else {
+          navigate(location.state?.redirectTo || "/dashboard");
+        }
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Unexpected error. Please try again.");
     } finally {
