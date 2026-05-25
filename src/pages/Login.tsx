@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { LogoFull } from "@/components/Logo";
 
@@ -67,7 +68,7 @@ const Login = () => {
         return;
       }
       if (isSignUp) toast.success("Account created! Check your email to confirm.");
-      else navigate("/dashboard");
+      else navigate(location.state?.redirectTo || "/dashboard");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Unexpected error. Please try again.");
     } finally {

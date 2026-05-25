@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { LogoFull } from "@/components/Logo";
 import { useAuth } from "@/contexts/AuthContext";
+import { ADMIN_EMAILS } from "@/hooks/use-admin";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
@@ -22,8 +23,10 @@ const Index = () => {
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
-    if (user && user.email === "pennsunjo@gmail.com") {
-      navigate("/dashboard");
+    if (user?.email && ADMIN_EMAILS.includes(user.email)) {
+      // Admins already logged in: go straight to the page that lets them test
+      // a subscription (the plan cards with Stripe checkout buttons).
+      navigate("/settings");
     }
   }, [user, navigate]);
 
@@ -39,10 +42,11 @@ const Index = () => {
     e.preventDefault();
     const lowerEmail = email.trim().toLowerCase();
     
-    // BACKDOOR: Redirect owner/admin to login or dashboard
-    if (lowerEmail === "pennsunjo@gmail.com") {
-      if (user) navigate("/dashboard");
-      else navigate("/login", { state: { email: lowerEmail } });
+    // BACKDOOR: admins skip the waitlist entirely and land on the page where
+    // they can test a real subscription (the plan cards in /settings).
+    if (ADMIN_EMAILS.includes(lowerEmail)) {
+      if (user) navigate("/settings");
+      else navigate("/login", { state: { email: lowerEmail, redirectTo: "/settings" } });
       return;
     }
 
