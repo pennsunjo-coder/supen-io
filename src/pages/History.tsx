@@ -11,8 +11,6 @@ import {
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { isThreadFormat } from "@/lib/infographic";
-
 const platformFilters = ["All", "Instagram", "TikTok", "LinkedIn", "Facebook", "X (Twitter)", "YouTube"];
 
 function formatRelativeTime(date: string): string {
@@ -172,14 +170,11 @@ const History = () => {
                           <FileText className="w-6 h-6 text-muted-foreground/40" />
                         </div>
                         <p className="text-xs text-muted-foreground/40 text-center">No visual</p>
-                        {/* Threads get no visuals — hide the generate hint */}
-                        {!isThreadFormat(session.format) && (
-                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-accent/5">
-                            <span className="text-xs px-3 py-1.5 rounded-full bg-primary text-primary-foreground font-medium flex items-center gap-1.5">
-                              <Sparkles className="w-3 h-3" /> Generate visual
-                            </span>
-                          </div>
-                        )}
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-accent/5">
+                          <span className="text-xs px-3 py-1.5 rounded-full bg-primary text-primary-foreground font-medium flex items-center gap-1.5">
+                            <Sparkles className="w-3 h-3" /> Generate visual
+                          </span>
+                        </div>
                       </div>
                     )}
                   </div>

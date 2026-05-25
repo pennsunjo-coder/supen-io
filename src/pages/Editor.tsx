@@ -416,7 +416,7 @@ export default function Editor() {
               ) : !canShowInfographic ? (
                 <div className="rounded-xl border border-border/20 p-4 text-center bg-accent/[0.02]">
                   <p className="text-xs text-muted-foreground">
-                    Visuals are only available for LinkedIn posts and Facebook posts.
+                    Visuals are only available for LinkedIn posts, Facebook posts, and threads.
                   </p>
                 </div>
               ) : (
