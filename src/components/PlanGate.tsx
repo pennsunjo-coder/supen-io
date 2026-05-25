@@ -8,10 +8,10 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-// Hard paywall. Dormant until VITE_PAYWALL_ENABLED === "true" so it can ship
-// before Stripe is live without locking everyone out. Flip the flag the day
-// Stripe checkout works.
-const PAYWALL_ENABLED = import.meta.env.VITE_PAYWALL_ENABLED === "true";
+// Hard paywall — every unpaid non-admin user is gated to the plan picker.
+// Enabled by default now that Stripe checkout is live. Set
+// VITE_PAYWALL_ENABLED=false in Vercel only as an emergency kill-switch.
+const PAYWALL_ENABLED = import.meta.env.VITE_PAYWALL_ENABLED !== "false";
 
 /**
  * Wraps the app. A user with no active Plus/Pro subscription sees the plan
