@@ -5,8 +5,10 @@ import { Input } from "@/components/ui/input";
 import { ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { LogoFull } from "@/components/Logo";
+import { createCheckoutSession } from "@/lib/stripe";
 
 const GoogleIcon = () => (
   <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none">
@@ -21,7 +23,7 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, loading: authLoading, signIn, signUp, signInWithGoogle } = useAuth();
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(location.state?.signup === true);
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState(location.state?.email || "");
   const [password, setPassword] = useState("");
@@ -36,7 +38,15 @@ const Login = () => {
     );
   }
 
-  if (user) return <Navigate to="/dashboard" replace />;
+  if (user) {
+    // Already authenticated. If they arrived here with a plan in mind, send
+    // them to /settings (where the Upgrade button lives); otherwise dashboard.
+    const incomingPlan = location.state?.plan;
+    if (incomingPlan === "plus" || incomingPlan === "pro") {
+      return <Navigate to="/settings" replace />;
+    }
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,6 +62,34 @@ const Login = () => {
         toast.error(error);
         return;
       }
+      // Plan-aware redirect. Plan can come from this navigation (landing CTA)
+      // or from a previous signup that's now signing in for the first time
+      // (we stashed it in sessionStorage when email confirmation was required).
+      const requested = (location.state?.plan as string | undefined) ?? sessionStorage.getItem("pendingPlan");
+      const validPlan = requested === "plus" || requested === "pro" ? requested : null;
+
+      if (validPlan) {
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (currentUser?.id && currentUser.email) {
+          // Live session (signin OR signup without email confirmation): go straight to Stripe.
+          sessionStorage.removeItem("pendingPlan");
+          try {
+            const url = await createCheckoutSession(validPlan, currentUser.id, currentUser.email);
+            window.location.href = url;
+            return;
+          } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Couldn't start checkout. Try again from Settings.");
+            navigate("/settings");
+            return;
+          }
+        }
+        // Signup with email confirmation required: persist the plan and bring
+        // the user to checkout on their next signin.
+        sessionStorage.setItem("pendingPlan", validPlan);
+        toast.success("Account created. Confirm your email, then sign back in to finish subscribing.");
+        return;
+      }
+
       if (isSignUp) toast.success("Account created! Check your email to confirm.");
       else navigate(location.state?.redirectTo || "/dashboard");
     } catch (err) {

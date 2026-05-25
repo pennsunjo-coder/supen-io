@@ -619,11 +619,11 @@ const Index = () => {
                 </div>
 
                 <Button
-                  onClick={() => navigate("/login")}
+                  onClick={() => navigate("/login", { state: { signup: true, plan: plan.name.toLowerCase() } })}
                   className={cn(
                     "w-full h-12 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all",
-                    plan.highlighted 
-                      ? "bg-primary text-primary-foreground hover:brightness-110 shadow-lg" 
+                    plan.highlighted
+                      ? "bg-primary text-primary-foreground hover:brightness-110 shadow-lg"
                       : "bg-muted text-foreground hover:bg-muted/80"
                   )}
                 >

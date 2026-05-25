@@ -12,6 +12,10 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
 import { useAdminStats, useAdminContent, useAdminUsers } from "@/hooks/use-admin-stats";
@@ -160,14 +164,21 @@ export default function Admin() {
   }
 
   // Delete a user account (auth + all related rows) via the delete-user edge fn.
+  // Two-step: click the trash button opens a styled confirmation modal; only
+  // confirmDeleteUser() actually calls the edge function.
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
-  async function handleDeleteUser(userId: string, name: string) {
-    if (!confirm(`Permanently delete ${name || "this user"}? This cannot be undone.`)) return;
+  const [deleteCandidate, setDeleteCandidate] = useState<{ userId: string; label: string } | null>(null);
+  function openDeleteModal(userId: string, label: string) {
+    setDeleteCandidate({ userId, label });
+  }
+  async function confirmDeleteUser() {
+    if (!deleteCandidate) return;
+    const { userId } = deleteCandidate;
     setDeletingUserId(userId);
+    setDeleteCandidate(null);
     try {
       const { error } = await supabase.functions.invoke("delete-user", { body: { userId } });
       if (error) {
-        // Surface the real error body from the edge function when present.
         const ctx = (error as { context?: Response }).context;
         let msg = error.message;
         if (ctx && typeof ctx.json === "function") {
@@ -448,7 +459,7 @@ export default function Admin() {
                               size="sm"
                               variant="ghost"
                               disabled={deletingUserId === u.user_id}
-                              onClick={() => handleDeleteUser(u.user_id, u.first_name)}
+                              onClick={() => openDeleteModal(u.user_id, u.first_name || u.email || "this user")}
                               className="h-7 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
                               title="Delete user permanently"
                             >
@@ -823,6 +834,27 @@ export default function Admin() {
 
         </div>
       </div>
+
+      {/* Confirmation modal for permanent user deletion */}
+      <AlertDialog open={deleteCandidate !== null} onOpenChange={(open) => { if (!open) setDeleteCandidate(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this account?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove <strong className="text-foreground">{deleteCandidate?.label}</strong> and every row attached to that account (profile, generated content, sources, coach conversations, sessions). This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteUser}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete permanently
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
