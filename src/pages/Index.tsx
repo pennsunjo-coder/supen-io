@@ -728,8 +728,12 @@ const Index = () => {
                 AI-powered content creation platform for creators who want to sound human. Build your legacy, one viral post at a time.
               </p>
               <div className="flex gap-4">
-                {[Twitter, Linkedin, Instagram].map((Icon, idx) => (
-                  <a key={idx} href="#" className="w-9 h-9 rounded-full border border-white/[0.05] flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary transition-all duration-300">
+                {[
+                  { Icon: Twitter, href: "https://x.com" },
+                  { Icon: Linkedin, href: "https://linkedin.com" },
+                  { Icon: Instagram, href: "https://instagram.com" },
+                ].map(({ Icon, href }) => (
+                  <a key={href} href={href} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full border border-white/[0.05] flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary transition-all duration-300">
                     <Icon className="w-3.5 h-3.5" />
                   </a>
                 ))}
