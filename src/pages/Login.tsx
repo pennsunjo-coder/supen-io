@@ -125,14 +125,26 @@ const Login = () => {
   const handleGoogleLogin = async () => {
     if (googleLoading) return;
     setGoogleLoading(true);
+
+    // Safety net: if the redirect to Google never happens (provider not
+    // enabled in Supabase, blocked popup, network stall…), stop spinning
+    // after 12s and tell the user instead of leaving them stuck forever.
+    const safetyTimeout = setTimeout(() => {
+      setGoogleLoading(false);
+      toast.error("Google sign-in is taking too long. Try again, or use your email below.");
+    }, 12000);
+
     try {
       const { error } = await signInWithGoogle();
       if (error) {
+        clearTimeout(safetyTimeout);
         toast.error(error);
         setGoogleLoading(false);
       }
-      // success: browser is redirecting to Google; keep spinner until unload
+      // success: browser is redirecting to Google; the page unloads, so
+      // the safety timeout is killed automatically with the unload.
     } catch (err) {
+      clearTimeout(safetyTimeout);
       toast.error(err instanceof Error ? err.message : "Google sign-in failed.");
       setGoogleLoading(false);
     }
