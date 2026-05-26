@@ -171,6 +171,33 @@ function buildLaunchEmail(name: string): string {
 </div></div></body></html>`;
 }
 
+// ── Reminder / re-engagement ──
+function buildReminderEmail(name: string, message?: string, daysAway?: number): string {
+  const intro = daysAway && daysAway > 0
+    ? `It's been <strong>${daysAway} days</strong> since your last visit. Your audience is waiting and so are we.`
+    : `We noticed you haven't generated any content yet. Your audience is waiting.`;
+  const customMessage = message ? `<p class="tx">${escapeHtml(message)}</p>` : "";
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${STYLES}</style></head>
+<body><div class="wr"><div class="cd">
+<div class="hd">${LOGO}<p class="sub">We miss you</p></div>
+<div class="bd">
+<div class="bg">${I.zap} Quick reminder</div>
+<div class="gr">Hey ${name}, ready to go viral?</div>
+<p class="tx">${intro}</p>
+${customMessage}
+<div class="ft">
+<div class="fi">${I.zap}<div class="fi-t"><strong>5 viral variations in 30 seconds</strong><br>Pick a topic, hit generate, ship.</div></div>
+<div class="fi">${I.img}<div class="fi-t"><strong>Auto infographics</strong><br>Turn any thread into a scroll-stopping visual.</div></div>
+<div class="fi">${I.bot}<div class="fi-t"><strong>AI Coach 24/7</strong><br>Stuck? Ask. It's trained on what actually works.</div></div>
+</div>
+<div class="ct"><a href="${APP}" class="cta">Create something now &rarr;</a></div>
+<div class="dv"></div>
+<p class="tx" style="font-size:13px;margin-bottom:0;text-align:center">Not feeling it right now? Reply and tell us what's missing. Every message is read.</p>
+</div>
+<div class="fo"><p>&copy; 2026 Supenli.ai &middot; You're receiving this because you joined Supenli.ai.</p></div>
+</div></div></body></html>`;
+}
+
 // ── Waitlist confirmation ──
 function buildWaitlistEmail(name: string): string {
   return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${STYLES}</style></head>
@@ -242,6 +269,7 @@ Deno.serve(async (req) => {
     else if (type === "feedback") html = buildFeedbackEmail(data?.name || "there");
     else if (type === "waitlist") html = buildWaitlistEmail(data?.name || "there");
     else if (type === "launch") html = buildLaunchEmail(data?.name || "there");
+    else if (type === "reminder") html = buildReminderEmail(data?.name || "there", data?.message, data?.daysAway);
     else if (type === "contact") html = buildContactEmail(data?.name || "there", data?.email || "", data?.subject || "", data?.message || "");
     else throw new Error(`Unknown email type: ${type}`);
 

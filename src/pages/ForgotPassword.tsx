@@ -19,6 +19,10 @@ export default function ForgotPassword() {
 
     setLoading(true);
     try {
+      // Supabase Auth handles the reset email. Customize the template in
+      // Dashboard → Authentication → Email Templates. We used to also fire
+      // a branded Resend email here, but its link didn't carry the auth
+      // token, so it landed on /reset-password broken — confusing users.
       const { error } = await supabase.auth.resetPasswordForEmail(
         email.trim(),
         {
@@ -27,19 +31,6 @@ export default function ForgotPassword() {
       );
 
       if (error) throw error;
-
-      // Send branded reset email via Resend (in addition to Supabase default)
-      supabase.functions.invoke("send-email", {
-        body: {
-          to: email.trim(),
-          subject: "Reset your Supenli.ai password",
-          type: "reset-password",
-          data: {
-            resetLink: `${window.location.origin}/reset-password`,
-            name: email.split("@")[0],
-          },
-        },
-      }).catch(() => {});
 
       setSent(true);
     } catch (err: unknown) {

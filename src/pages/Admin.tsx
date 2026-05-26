@@ -105,6 +105,51 @@ export default function Admin() {
   const [waitlistFilter, setWaitlistFilter] = useState<"all" | "free" | "plus" | "pro">("all");
   const [userSearch, setUserSearch] = useState("");
   const [isSendingEmails, setIsSendingEmails] = useState(false);
+  const [isSendingReminders, setIsSendingReminders] = useState(false);
+  const [reminderPreview, setReminderPreview] = useState<{ count: number; emails: string[] } | null>(null);
+
+  // Preview which users would receive a re-engagement reminder
+  // (dry-run on the send-reminders edge function — no email is sent).
+  async function previewReminders() {
+    setIsSendingReminders(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-reminders", {
+        body: { dryRun: true },
+      });
+      if (error) throw error;
+      const candidates = (data?.candidates as { email: string }[] | undefined) ?? [];
+      setReminderPreview({
+        count: data?.candidateCount ?? 0,
+        emails: candidates.map((c) => c.email).slice(0, 100),
+      });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not preview reminders");
+    } finally {
+      setIsSendingReminders(false);
+    }
+  }
+
+  async function sendReminders() {
+    if (!reminderPreview || reminderPreview.count === 0) {
+      toast.error("Run preview first or no inactive users to remind.");
+      return;
+    }
+    if (!confirm(`Send re-engagement emails to ${reminderPreview.count} inactive users?`)) return;
+    setIsSendingReminders(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-reminders", { body: {} });
+      if (error) throw error;
+      const sent = data?.sent ?? 0;
+      const failed = data?.failed ?? 0;
+      if (sent > 0) toast.success(`Sent ${sent} reminder${sent === 1 ? "" : "s"}.`);
+      if (failed > 0) toast.error(`${failed} failed.`);
+      setReminderPreview(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not send reminders");
+    } finally {
+      setIsSendingReminders(false);
+    }
+  }
 
   const filteredUsers = useMemo(() => {
     if (!userSearch.trim()) return users;
@@ -423,6 +468,52 @@ export default function Admin() {
                     {usersLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
                   </Button>
                 </div>
+              </div>
+
+              {/* Re-engagement reminders — emails inactive users who signed up but
+                  haven't created any content. Preview first, then confirm to send. */}
+              <div className="bg-card border border-border/20 rounded-xl p-5">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <h3 className="text-sm font-semibold">Re-engagement reminders</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Email signups who haven't generated content (3+ days old, 7+ days inactive, free plan).
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                      variant="outline" size="sm" className="h-8 text-xs gap-1.5"
+                      onClick={previewReminders}
+                      disabled={isSendingReminders}
+                    >
+                      {isSendingReminders ? <Loader2 className="w-3 h-3 animate-spin" /> : <Search className="w-3 h-3" />}
+                      Preview
+                    </Button>
+                    <Button
+                      size="sm" className="h-8 text-xs gap-1.5"
+                      onClick={sendReminders}
+                      disabled={isSendingReminders || !reminderPreview || reminderPreview.count === 0}
+                    >
+                      <Mail className="w-3 h-3" />
+                      {reminderPreview ? `Send (${reminderPreview.count})` : "Send"}
+                    </Button>
+                  </div>
+                </div>
+                {reminderPreview && (
+                  <div className="mt-3 pt-3 border-t border-border/10">
+                    <p className="text-[11px] text-muted-foreground mb-2">
+                      <strong className="text-foreground">{reminderPreview.count}</strong> user{reminderPreview.count === 1 ? "" : "s"} matched
+                      {reminderPreview.emails.length < reminderPreview.count && ` (showing first ${reminderPreview.emails.length})`}
+                    </p>
+                    <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
+                      {reminderPreview.emails.map((email) => (
+                        <span key={email} className="text-[10px] px-1.5 py-0.5 rounded bg-accent/30 text-muted-foreground font-mono">
+                          {email}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {usersLoading && users.length === 0 ? (
