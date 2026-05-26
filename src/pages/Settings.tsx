@@ -63,7 +63,7 @@ const NAV_ITEMS: { id: Section; label: string; icon: typeof User }[] = [
 export default function Settings() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { profile, loading: profileLoading, updateProfile } = useProfile();
+  const { profile, loading: profileLoading, updateProfile, refetch: refreshProfile } = useProfile();
 
   // Optional ?tab via navigation state — e.g. Login sends { tab: "compte" } so
   // fresh signups land directly on the plan picker instead of the profile form.
@@ -95,6 +95,8 @@ export default function Settings() {
 
   // Billing
   const [upgrading, setUpgrading] = useState<string | null>(null);
+  const [canceling, setCanceling] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const currentPlan = (profile?.plan || "free") as Plan;
   const planActive = isPlanActive(profile?.plan, profile?.plan_expires_at);
 
@@ -108,6 +110,32 @@ export default function Settings() {
       toast.error("Error starting payment. Try again.");
     }
     setUpgrading(null);
+  }
+
+  async function handleCancelSubscription() {
+    setCanceling(true);
+    try {
+      const { error } = await supabase.functions.invoke("cancel-subscription", { body: {} });
+      if (error) {
+        // Edge function returned non-2xx — extract the JSON error body.
+        const ctx = (error as { context?: Response }).context;
+        let msg = error.message;
+        if (ctx && typeof ctx.json === "function") {
+          try {
+            const body = await ctx.json();
+            if (body?.error) msg = body.error;
+          } catch { /* ignore */ }
+        }
+        throw new Error(msg);
+      }
+      toast.success("Subscription canceled. You're back on the Free plan.");
+      setShowCancelConfirm(false);
+      await refreshProfile();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't cancel subscription. Contact support.");
+    } finally {
+      setCanceling(false);
+    }
   }
 
   // Load profile data
@@ -471,6 +499,55 @@ export default function Settings() {
                   );
                 })}
               </div>
+
+              {/* Cancel subscription — only shown to users with an active
+                  Plus/Pro plan. Immediate cancel: Stripe sub is killed and
+                  user_profiles flips to "free" the moment they confirm,
+                  so the paid features lock instantly. */}
+              {planActive && currentPlan !== "free" && (
+                <div className="bg-card border border-border/30 rounded-xl p-6">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-semibold">Cancel subscription</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Cancel immediately and go back to the Free plan. You'll lose access to paid features right away.
+                      </p>
+                    </div>
+                    {!showCancelConfirm ? (
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowCancelConfirm(true)}
+                        disabled={canceling}
+                        className="h-9 gap-2 text-xs shrink-0"
+                      >
+                        Cancel subscription
+                      </Button>
+                    ) : (
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={handleCancelSubscription}
+                          disabled={canceling}
+                          className="h-9 text-xs gap-1.5"
+                        >
+                          {canceling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                          {canceling ? "Canceling..." : "Yes, cancel now"}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowCancelConfirm(false)}
+                          disabled={canceling}
+                          className="h-9 text-xs"
+                        >
+                          Keep plan
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Deconnexion */}
               <div className="bg-card border border-border/30 rounded-xl p-6">
