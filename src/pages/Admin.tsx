@@ -174,6 +174,20 @@ export default function Admin() {
     pro: waitlistEntries.filter((e) => e.plan === "pro").length,
   }), [waitlistEntries]);
 
+  // Revenue from active subscribers in user_profiles. Stripe is the source of
+  // truth, but for an at-a-glance MRR we trust the plan flag we set when the
+  // stripe-webhook fires checkout.session.completed.
+  const revenueStats = useMemo(() => {
+    const plusCount = users.filter((u) => u.plan === "plus").length;
+    const proCount = users.filter((u) => u.plan === "pro").length;
+    const totalSubs = plusCount + proCount;
+    const mrr = plusCount * 10 + proCount * 30;
+    const conversionRate = users.length > 0
+      ? Math.round((totalSubs / users.length) * 100)
+      : 0;
+    return { plusCount, proCount, totalSubs, mrr, conversionRate };
+  }, [users]);
+
   async function handleSendLaunchEmail() {
     if (waitlistEntries.length === 0) {
       toast.error("No waitlist entries found");
@@ -717,35 +731,146 @@ export default function Admin() {
           {/* ═══════════════════════════════════════════════ */}
           {section === "revenue" && (
             <>
-              <h2 className="text-lg font-bold">Revenue</h2>
-
-              <div className="bg-card border border-border/20 rounded-xl p-8 text-center">
-                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
-                  <CreditCard className="w-6 h-6 text-primary" />
-                </div>
-                <h3 className="text-lg font-bold mb-2">Stripe Integration Coming Soon</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed max-w-md mx-auto mb-6">
-                  Connect Stripe to view your revenue, Premium and Business subscribers in real time.
-                  Free, Pro ($10/mo) and Business ($29/mo) plans will be tracked here.
-                </p>
-                <div className="grid grid-cols-3 gap-4 max-w-sm mx-auto mb-6">
-                  <div className="bg-accent/30 rounded-lg p-3">
-                    <p className="text-xl font-bold text-muted-foreground">$0</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">MRR</p>
-                  </div>
-                  <div className="bg-accent/30 rounded-lg p-3">
-                    <p className="text-xl font-bold text-muted-foreground">0</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">Pro Subscribers</p>
-                  </div>
-                  <div className="bg-accent/30 rounded-lg p-3">
-                    <p className="text-xl font-bold text-muted-foreground">0</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">Business Subscribers</p>
-                  </div>
-                </div>
-                <Button className="h-10 gap-2 text-sm" disabled>
-                  <Crown className="w-4 h-4" /> Configure Stripe
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-bold">Revenue</h2>
+                <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs" onClick={refetchUsers} disabled={usersLoading}>
+                  <RefreshCw className={cn("w-3 h-3", usersLoading && "animate-spin")} /> Refresh
                 </Button>
               </div>
+
+              {usersLoading && users.length === 0 ? (
+                <div className="flex justify-center py-16">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                </div>
+              ) : (
+                <>
+                  {/* Headline cards */}
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    <StatCard icon={DollarSign} label="MRR" value={revenueStats.mrr} suffix="$" accent />
+                    <StatCard icon={Crown} label="Total Subscribers" value={revenueStats.totalSubs} />
+                    <StatCard icon={Zap} label="Plus ($10)" value={revenueStats.plusCount} />
+                    <StatCard icon={Crown} label="Pro ($30)" value={revenueStats.proCount} />
+                  </div>
+
+                  {/* Plan split visualization */}
+                  <div className="bg-card border border-border/20 rounded-xl p-5">
+                    <h3 className="text-sm font-semibold mb-4">Plan distribution</h3>
+                    {revenueStats.totalSubs === 0 ? (
+                      <p className="text-xs text-muted-foreground py-2">
+                        No subscribers yet. Numbers update automatically when the Stripe webhook fires <code className="text-[10px] bg-accent/30 px-1 py-0.5 rounded">checkout.session.completed</code>.
+                      </p>
+                    ) : (
+                      <div className="space-y-3">
+                        <div>
+                          <div className="flex items-center justify-between text-xs mb-1.5">
+                            <span className="font-medium">Plus — $10/mo</span>
+                            <span className="text-muted-foreground">
+                              {revenueStats.plusCount} ({Math.round((revenueStats.plusCount / revenueStats.totalSubs) * 100)}%)
+                              <span className="ml-2 text-primary font-semibold">${revenueStats.plusCount * 10}</span>
+                            </span>
+                          </div>
+                          <div className="h-2 bg-accent/30 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-primary rounded-full"
+                              style={{ width: `${(revenueStats.plusCount / revenueStats.totalSubs) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <div className="flex items-center justify-between text-xs mb-1.5">
+                            <span className="font-medium">Pro — $30/mo</span>
+                            <span className="text-muted-foreground">
+                              {revenueStats.proCount} ({Math.round((revenueStats.proCount / revenueStats.totalSubs) * 100)}%)
+                              <span className="ml-2 text-primary font-semibold">${revenueStats.proCount * 30}</span>
+                            </span>
+                          </div>
+                          <div className="h-2 bg-accent/30 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-purple-400 rounded-full"
+                              style={{ width: `${(revenueStats.proCount / revenueStats.totalSubs) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Conversion + Stripe link */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-card border border-border/20 rounded-xl p-5">
+                      <h3 className="text-sm font-semibold mb-3">Conversion to paid</h3>
+                      <div className="flex items-baseline gap-2 mt-4">
+                        <span className="text-4xl font-bold text-primary">{revenueStats.conversionRate}</span>
+                        <span className="text-sm text-muted-foreground">%</span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-1.5">
+                        {revenueStats.totalSubs} of {users.length} accounts are paying
+                      </p>
+                      <div className="mt-3 h-2 bg-accent/30 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary rounded-full transition-all"
+                          style={{ width: `${revenueStats.conversionRate}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="bg-card border border-border/20 rounded-xl p-5">
+                      <h3 className="text-sm font-semibold mb-3">Stripe Dashboard</h3>
+                      <p className="text-xs text-muted-foreground leading-relaxed mb-4">
+                        For live charges, refunds and customer details, go directly to Stripe — this view shows what our DB has recorded via webhook.
+                      </p>
+                      <a
+                        href="https://dashboard.stripe.com/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+                      >
+                        Open Stripe Dashboard →
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* Paying users table */}
+                  <div className="bg-card border border-border/20 rounded-xl p-5 overflow-x-auto">
+                    <h3 className="text-sm font-semibold mb-3">Paying users</h3>
+                    {revenueStats.totalSubs === 0 ? (
+                      <p className="text-xs text-muted-foreground py-2">No paying users yet.</p>
+                    ) : (
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="text-muted-foreground border-b border-border/20">
+                            <th className="text-left py-2 pr-3 font-medium">Email</th>
+                            <th className="text-left py-2 pr-3 font-medium">Name</th>
+                            <th className="text-left py-2 pr-3 font-medium">Plan</th>
+                            <th className="text-left py-2 pr-3 font-medium">Content</th>
+                            <th className="text-left py-2 font-medium">Signup</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {users
+                            .filter((u) => u.plan === "plus" || u.plan === "pro")
+                            .map((u) => (
+                              <tr key={u.user_id} className="border-b border-border/10 hover:bg-accent/20 transition-colors">
+                                <td className="py-2.5 pr-3 font-medium max-w-[260px] truncate" title={u.email}>{u.email || "—"}</td>
+                                <td className="py-2.5 pr-3 font-medium">{u.first_name || "—"}</td>
+                                <td className="py-2.5 pr-3">
+                                  <span className={cn(
+                                    "px-1.5 py-0.5 rounded text-[10px] font-medium",
+                                    u.plan === "pro" ? "bg-purple-500/15 text-purple-400" : "bg-primary/15 text-primary",
+                                  )}>
+                                    {u.plan === "pro" ? "Pro ($30)" : "Plus ($10)"}
+                                  </span>
+                                </td>
+                                <td className="py-2.5 pr-3 font-medium">{u.content_count}</td>
+                                <td className="py-2.5 text-muted-foreground">{formatDate(u.created_at)}</td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+                </>
+              )}
             </>
           )}
 
