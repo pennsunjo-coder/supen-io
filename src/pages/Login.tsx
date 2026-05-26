@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Navigate, Link, useLocation } from "react-router-dom";
+import { useNavigate, Navigate, Link, useLocation, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
@@ -22,8 +22,16 @@ const GoogleIcon = () => (
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { user, loading: authLoading, signIn, signUp, signInWithGoogle } = useAuth();
-  const [isSignUp, setIsSignUp] = useState(location.state?.signup === true);
+  // Plan can arrive via React Router state (landing CTAs) OR as a URL query
+  // param (?plan=plus / ?plan=pro) — the latter is how the launch email
+  // links into Stripe checkout. We normalize both into a single value.
+  const urlPlan = searchParams.get("plan");
+  const incomingPlan = (location.state?.plan as string | undefined) ?? urlPlan ?? undefined;
+  const [isSignUp, setIsSignUp] = useState(
+    location.state?.signup === true || searchParams.get("signup") === "1" || urlPlan !== null,
+  );
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState(location.state?.email || "");
   const [password, setPassword] = useState("");
@@ -41,9 +49,10 @@ const Login = () => {
   if (user) {
     // Already authenticated. If they arrived here with a plan in mind, send
     // them to /settings (where the Upgrade button lives); otherwise dashboard.
-    const incomingPlan = location.state?.plan;
     if (incomingPlan === "plus" || incomingPlan === "pro") {
-      return <Navigate to="/settings" state={{ tab: "compte" }} replace />;
+      // Persist so the redirected page can pick up where we left off.
+      sessionStorage.setItem("pendingPlan", incomingPlan);
+      return <Navigate to="/settings" state={{ tab: "compte", plan: incomingPlan }} replace />;
     }
     return <Navigate to="/dashboard" replace />;
   }
@@ -62,10 +71,11 @@ const Login = () => {
         toast.error(error);
         return;
       }
-      // Plan-aware redirect. Plan can come from this navigation (landing CTA)
-      // or from a previous signup that's now signing in for the first time
-      // (we stashed it in sessionStorage when email confirmation was required).
-      const requested = (location.state?.plan as string | undefined) ?? sessionStorage.getItem("pendingPlan");
+      // Plan-aware redirect. Plan can come from this navigation (landing CTA),
+      // from a URL query param (?plan=plus from the launch email), or from a
+      // previous signup that's now signing in for the first time (we stashed
+      // it in sessionStorage when email confirmation was required).
+      const requested = incomingPlan ?? sessionStorage.getItem("pendingPlan");
       const validPlan = requested === "plus" || requested === "pro" ? requested : null;
 
       if (validPlan) {

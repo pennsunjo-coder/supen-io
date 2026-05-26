@@ -149,23 +149,63 @@ function buildFeedbackEmail(name: string): string {
 }
 
 // ── Launch Announcement ──
+// Two plan cards (Plus / Pro) with direct CTAs into Stripe checkout.
+// Links route to /login?plan=plus|pro — Login.tsx reads the param,
+// signs the user in/up, then redirects straight to Stripe.
 function buildLaunchEmail(name: string): string {
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${STYLES}</style></head>
+  const PLUS_URL = "https://www.supenli.ai/login?plan=plus";
+  const PRO_URL = "https://www.supenli.ai/login?plan=pro";
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${STYLES}
+.plan{background:rgba(36,168,155,0.04);border:1px solid rgba(36,168,155,0.18);border-radius:16px;padding:24px;margin-bottom:14px}
+.plan.pro{background:linear-gradient(135deg,rgba(36,168,155,0.10),rgba(36,168,155,0.04));border-color:rgba(36,168,155,0.35);position:relative}
+.plan-pop{position:absolute;top:-10px;right:18px;background:#24A89B;color:#0d1117;font-size:10px;font-weight:800;letter-spacing:1px;padding:3px 10px;border-radius:10px;text-transform:uppercase}
+.plan-n{font-size:14px;color:rgba(255,255,255,0.5);font-weight:600;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px}
+.plan-p{font-size:32px;font-weight:800;color:#fff;margin-bottom:4px;line-height:1}
+.plan-p span{font-size:14px;font-weight:500;color:rgba(255,255,255,0.5)}
+.plan-d{color:rgba(255,255,255,0.6);font-size:13px;line-height:1.5;margin:12px 0 18px}
+.plan-l{list-style:none;padding:0;margin:0 0 22px}
+.plan-l li{color:rgba(255,255,255,0.75);font-size:13px;line-height:1.6;padding-left:22px;position:relative;margin-bottom:7px}
+.plan-l li::before{content:"\\2713";color:#24A89B;font-weight:700;position:absolute;left:0;top:0}
+.plan-cta{display:block;text-align:center;background:rgba(36,168,155,0.15);color:#24A89B;border:1px solid rgba(36,168,155,0.4);padding:13px 24px;border-radius:10px;text-decoration:none;font-weight:700;font-size:14px}
+.plan-cta.solid{background:linear-gradient(135deg,#24A89B,#1a8a7f);color:#fff;border:none;box-shadow:0 6px 18px rgba(36,168,155,0.3)}
+</style></head>
 <body><div class="wr"><div class="cd">
 <div class="hd">${LOGO}<p class="sub">The wait is over</p></div>
 <div class="bd">
-<div class="bg">${I.zap} We are LIVE!</div>
+<div class="bg">${I.zap} We are LIVE</div>
 <div class="gr">It's time to go viral, ${name}.</div>
-<p class="tx">The wait is officially over. <span class="hl">Supenli.ai</span> is now open to all waitlist members.<br><br>As an early supporter, you now have priority access to the full engine to create, optimize and automate your content strategy across 6 platforms.</p>
-<div class="ft">
-<div class="fi">${I.chk}<div class="fi-t"><strong>Elite Content Engine</strong><br>Generate high-performing scripts for LinkedIn, X, YouTube and more.</div></div>
-<div class="fi">${I.chk}<div class="fi-t"><strong>Visual Creator</strong><br>Turn any text into premium infographics in one click.</div></div>
-<div class="fi">${I.chk}<div class="fi-t"><strong>AI Strategy Coach</strong><br>Get real-time advice on how to improve your reach.</div></div>
+<p class="tx">Supenli.ai is officially open. As a waitlist member you're first in line — pick the plan that fits and the engine is yours in seconds.</p>
+
+<div class="plan">
+  <div class="plan-n">Plus</div>
+  <div class="plan-p">$10<span> / month</span></div>
+  <div class="plan-d">For creators serious about consistency.</div>
+  <ul class="plan-l">
+    <li>Unlimited viral content across 6 platforms</li>
+    <li>50 infographics per month</li>
+    <li>Smart sources (PDFs, URLs, YouTube)</li>
+    <li>AI Coach with personalized strategy</li>
+  </ul>
+  <a href="${PLUS_URL}" class="plan-cta">Choose Plus &rarr;</a>
 </div>
-<p class="tx" style="margin-top:24px">Click below to claim your spot and choose the plan that fits your growth goals.</p>
-<div class="ct"><a href="${APP}" class="cta">Get Started Now &rarr;</a></div>
+
+<div class="plan pro">
+  <span class="plan-pop">Most popular</span>
+  <div class="plan-n">Pro</div>
+  <div class="plan-p">$30<span> / month</span></div>
+  <div class="plan-d">For creators who go all in.</div>
+  <ul class="plan-l">
+    <li>Everything in Plus</li>
+    <li>300 infographics per month</li>
+    <li>Priority generation queue</li>
+    <li>Early access to new features</li>
+  </ul>
+  <a href="${PRO_URL}" class="plan-cta solid">Choose Pro &rarr;</a>
+</div>
+
+<div class="wn">${I.lck} Secure checkout via Stripe. Cancel any time from your account settings.</div>
 <div class="dv"></div>
-<p class="tx" style="font-size:13px;margin-bottom:0;text-align:center">Let's build your audience together.</p>
+<p class="tx" style="font-size:13px;margin-bottom:0;text-align:center">Questions before subscribing? Just reply to this email.</p>
 </div>
 <div class="fo"><p>&copy; 2026 Supenli.ai &middot; Built for the next era of creators.</p></div>
 </div></div></body></html>`;
