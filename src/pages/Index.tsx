@@ -303,14 +303,16 @@ const Index = () => {
 
           <motion.div variants={fadeUp} custom={3} className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button size="lg" onClick={() => navigate("/login")} className="bg-foreground text-background hover:scale-[1.02] active:scale-95 h-12 px-8 text-sm font-bold rounded-full group transition-all shadow-xl">
-              Start Creating Free
+              Start Creating
               <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
             </Button>
-            <div className="flex -space-x-2.5 items-center">
-              {[23, 32, 68, 44].map((i) => (
-                <img key={i} src={`https://randomuser.me/api/portraits/men/${i}.jpg`} className="w-9 h-9 rounded-full border-2 border-background object-cover" alt="User" />
-              ))}
-              <div className="flex flex-col items-start ml-4 text-left">
+            <div className="flex items-center gap-4">
+              <div className="flex -space-x-2.5">
+                {[23, 32, 68, 44].map((i) => (
+                  <img key={i} src={`https://randomuser.me/api/portraits/men/${i}.jpg`} className="w-9 h-9 rounded-full border-2 border-background object-cover" alt="User" />
+                ))}
+              </div>
+              <div className="flex flex-col items-start text-left">
                 <div className="flex items-center">
                   {[...Array(5)].map((_, i) => <Star key={i} className="w-2.5 h-2.5 text-primary fill-primary" />)}
                 </div>
@@ -469,7 +471,7 @@ const Index = () => {
             ))}
             <div className="grid grid-cols-5 bg-primary/10 border-t border-primary/20">
               <div className="px-6 py-4 text-[9px] font-black uppercase tracking-widest">Monthly price</div>
-              <div className="px-6 py-4 text-center text-sm font-black text-primary">$11</div>
+              <div className="px-6 py-4 text-center text-sm font-black text-primary">$10</div>
               <div className="px-6 py-4 text-center text-xs font-bold text-muted-foreground/40">$20</div>
               <div className="px-6 py-4 text-center text-xs font-bold text-muted-foreground/40">$49</div>
               <div className="px-6 py-4 text-center text-xs font-bold text-muted-foreground/40">$20</div>
