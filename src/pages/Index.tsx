@@ -73,7 +73,7 @@ const plans = [
       "No infographics",
       "Upgrade anytime",
     ],
-    cta: "Start free →",
+    cta: "Try for free →",
     highlighted: false,
     rotation: "rotate-[-2deg]",
     plan: "free" as const,

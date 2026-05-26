@@ -101,26 +101,26 @@ const Login = () => {
       }
 
       if (isSignUp) {
-        // No specific plan was passed in state — but every signup is supposed
-        // to end on the plan picker so the user can pick Plus/Pro right away.
+        // Free-plan signup: drop the user straight into the app. They get
+        // 3 lifetime generations, and only see the paywall modal in the
+        // Studio when they try the 4th. No upfront plan picker.
         const { data: { user: signedUpUser } } = await supabase.auth.getUser();
         if (signedUpUser) {
-          // Session is live (Supabase Email Confirm OFF) → straight to /settings.
           sessionStorage.removeItem("pendingSignup");
-          navigate("/settings", { state: { tab: "compte" } });
+          navigate("/dashboard");
         } else {
-          // Email confirmation required: remember the intent so the next
-          // sign-in lands on the plan picker too.
+          // Email confirmation required: remember and welcome them straight
+          // into the dashboard on first sign-in.
           sessionStorage.setItem("pendingSignup", "1");
-          toast.success("Account created! Confirm your email, then sign back in to pick your plan.");
+          toast.success("Account created! Confirm your email, then sign back in to start creating.");
         }
       } else {
-        // Sign-in. If a recent signup is still pending its first sign-in,
-        // finish that flow by sending the user to the plan picker.
+        // Sign-in. Pending-signup flag just means we should land them on
+        // the dashboard (not on a stale redirectTo).
         const pendingSignup = sessionStorage.getItem("pendingSignup");
         if (pendingSignup === "1") {
           sessionStorage.removeItem("pendingSignup");
-          navigate("/settings", { state: { tab: "compte" } });
+          navigate("/dashboard");
         } else {
           navigate(location.state?.redirectTo || "/dashboard");
         }

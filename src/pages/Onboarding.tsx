@@ -123,7 +123,7 @@ const Onboarding = () => {
 
   useEffect(() => {
     if (!profileLoading && onboardingCompleted && !completed) {
-      window.location.href = "/dashboard";
+      window.location.href = "/dashboard/studio";
     }
   }, [profileLoading, onboardingCompleted, completed]);
 
@@ -678,7 +678,7 @@ const Onboarding = () => {
                       transition={{ duration: 0.4 }}
                     >
                       <Button
-                        onClick={() => { window.location.href = "/dashboard"; }}
+                        onClick={() => { window.location.href = "/dashboard/studio"; }}
                         className="h-14 px-10 text-base font-bold rounded-xl gap-3"
                         size="lg"
                       >
