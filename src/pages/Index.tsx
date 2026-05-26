@@ -760,18 +760,34 @@ const Index = () => {
               </div>
             </div>
 
-            {["Product", "Resources", "Legal"].map((title) => (
-              <div key={title}>
-                <h4 className="text-[9px] font-black uppercase tracking-[0.4em] text-foreground mb-8 opacity-40">{title}</h4>
-                <ul className="space-y-4">
-                  {(title === "Product" ? ["Features", "Pricing", "FAQ"] : title === "Resources" ? ["Contact", "Support"] : ["Privacy", "Terms"]).map((link) => (
-                    <li key={link}>
-                      <a href="#" className="text-sm font-bold text-muted-foreground hover:text-primary transition-colors">{link}</a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+            {(() => {
+              const sections: Record<string, { label: string; href: string }[]> = {
+                Product: [
+                  { label: "Features", href: "#features" },
+                  { label: "Pricing", href: "#pricing" },
+                  { label: "FAQ", href: "#faq" },
+                ],
+                Resources: [
+                  { label: "Support", href: "mailto:pennsunjo@gmail.com" },
+                ],
+                Legal: [
+                  { label: "Privacy", href: "/privacy" },
+                  { label: "Terms", href: "/terms" },
+                ],
+              };
+              return Object.entries(sections).map(([title, links]) => (
+                <div key={title}>
+                  <h4 className="text-[9px] font-black uppercase tracking-[0.4em] text-foreground mb-8 opacity-40">{title}</h4>
+                  <ul className="space-y-4">
+                    {links.map((link) => (
+                      <li key={link.label}>
+                        <a href={link.href} className="text-sm font-bold text-muted-foreground hover:text-primary transition-colors">{link.label}</a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ));
+            })()}
           </div>
 
           <div className="flex flex-col md:flex-row items-center justify-between pt-12 border-t border-white/[0.03] gap-8">
