@@ -269,6 +269,11 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
   const [lastStyleMemoryUsed, setLastStyleMemoryUsed] = useState(false);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<Record<number, "liked" | "disliked" | null>>({});
+  // Paywall modal — opens when a free user hits the lifetime quota (3 gens)
+  // or tries to generate an infographic. Null = closed; non-null = reason
+  // string shown inside the modal.
+  const [paywall, setPaywall] = useState<{ title: string; body: string } | null>(null);
+  const [checkoutLoading, setCheckoutLoading] = useState<"plus" | "pro" | null>(null);
   const { schedulePost } = useCalendar();
   const [scheduleIdx, setScheduleIdx] = useState<number | null>(null);
   const [scheduleDate, setScheduleDate] = useState(new Date().toISOString().slice(0, 10));
@@ -405,30 +410,47 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
       : sanitizeInput(sourceText, 5000);
     if (!sanitized) return;
 
-    // Plan-based generation quota: count successful generations from
-    // content_sessions over the rolling day/month window. Free 5/day,
-    // Plus 20/day & 100/month, Pro unlimited. Block before any API spend.
+    // Plan-based generation quota. Free users hit a hard LIFETIME cap (3
+    // generations forever) and then the paywall pops. Paying plans fall back
+    // to the rolling day/month windows. Block before any API spend.
     try {
       const limits = getPlanLimits(profile?.plan);
       const { data: { user: u } } = await supabase.auth.getUser();
-      if (u && (limits.generationsPerDay !== "unlimited" || limits.generationsPerMonth !== "unlimited")) {
-        const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-        const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-        const [{ count: dayCount }, { count: monthCount }] = await Promise.all([
-          supabase.from("content_sessions").select("id", { count: "exact", head: true }).eq("user_id", u.id).gte("created_at", dayAgo),
-          supabase.from("content_sessions").select("id", { count: "exact", head: true }).eq("user_id", u.id).gte("created_at", monthAgo),
-        ]);
-        if (limits.generationsPerDay !== "unlimited" && (dayCount ?? 0) >= limits.generationsPerDay) {
-          const msg = upgradeMessage(profile?.plan, `Daily generations (${limits.generationsPerDay})`);
-          toast.error(msg, { duration: 8000 });
-          setError(msg);
-          return;
+      if (u) {
+        // Free plan — lifetime quota. Count every content_session ever.
+        if (limits.generationsLifetime !== "unlimited") {
+          const { count: lifetimeCount } = await supabase
+            .from("content_sessions")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", u.id);
+          if ((lifetimeCount ?? 0) >= limits.generationsLifetime) {
+            setPaywall({
+              title: "You've used your free generations",
+              body: `Free accounts get ${limits.generationsLifetime} lifetime generations. Upgrade to Plus or Pro to keep creating.`,
+            });
+            return;
+          }
         }
-        if (limits.generationsPerMonth !== "unlimited" && (monthCount ?? 0) >= limits.generationsPerMonth) {
-          const msg = upgradeMessage(profile?.plan, `Monthly generations (${limits.generationsPerMonth})`);
-          toast.error(msg, { duration: 8000 });
-          setError(msg);
-          return;
+        // Paid plans — keep the rolling-window safety nets.
+        if (limits.generationsPerDay !== "unlimited" || limits.generationsPerMonth !== "unlimited") {
+          const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+          const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+          const [{ count: dayCount }, { count: monthCount }] = await Promise.all([
+            supabase.from("content_sessions").select("id", { count: "exact", head: true }).eq("user_id", u.id).gte("created_at", dayAgo),
+            supabase.from("content_sessions").select("id", { count: "exact", head: true }).eq("user_id", u.id).gte("created_at", monthAgo),
+          ]);
+          if (limits.generationsPerDay !== "unlimited" && (dayCount ?? 0) >= limits.generationsPerDay) {
+            const msg = upgradeMessage(profile?.plan, `Daily generations (${limits.generationsPerDay})`);
+            toast.error(msg, { duration: 8000 });
+            setError(msg);
+            return;
+          }
+          if (limits.generationsPerMonth !== "unlimited" && (monthCount ?? 0) >= limits.generationsPerMonth) {
+            const msg = upgradeMessage(profile?.plan, `Monthly generations (${limits.generationsPerMonth})`);
+            toast.error(msg, { duration: 8000 });
+            setError(msg);
+            return;
+          }
         }
       }
     } catch (e) {
@@ -1121,7 +1143,13 @@ ${buildAntiAiRules(tightness)}`;
             toast("Premium infographics unlocked on Plus", {
               description: "Upgrade to turn your posts into branded visuals.",
               duration: 10000,
-              action: { label: "Upgrade →", onClick: () => navigate("/settings") },
+              action: {
+                label: "Upgrade →",
+                onClick: () => setPaywall({
+                  title: "Infographics are a paid feature",
+                  body: "Free accounts get text generation only. Upgrade to Plus or Pro to turn any post into a branded visual.",
+                }),
+              },
             });
           }
         }, 5000);
@@ -1296,6 +1324,16 @@ ${buildAntiAiRules(tightness)}`;
     // If already generated and not forcing regen → toggle panel visibility
     if (generatedImages[idx] && !forceRegenerate) {
       setImagePanel(imagePanel === idx ? null : idx);
+      return;
+    }
+
+    // Free plan can't generate visuals at all — open the paywall instead of
+    // burning an API call that will come back 402.
+    if (!getPlanLimits(profile?.plan).premiumInfographics) {
+      setPaywall({
+        title: "Visuals are a paid feature",
+        body: "Free accounts get text generation only. Upgrade to Plus or Pro to turn any post into a branded visual.",
+      });
       return;
     }
 
@@ -1799,6 +1837,99 @@ ${buildAntiAiRules(tightness)}`;
           )}
         </div>
       )}
+
+      {/* Paywall modal — opens when free users hit the lifetime quota or
+          try to use a paid-only feature (infographics). The two CTAs both
+          fire Stripe checkout via the existing createCheckoutSession flow. */}
+      <AnimatePresence>
+        {paywall && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+            onClick={() => !checkoutLoading && setPaywall(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 12 }}
+              className="bg-card border border-border/40 rounded-2xl shadow-2xl w-full max-w-md p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-primary" />
+                </div>
+                <h3 className="text-base font-bold">{paywall.title}</h3>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-5">{paywall.body}</p>
+
+              <div className="space-y-2.5">
+                <button
+                  disabled={!!checkoutLoading}
+                  onClick={async () => {
+                    setCheckoutLoading("plus");
+                    try {
+                      const { data: { user: u } } = await supabase.auth.getUser();
+                      if (!u?.id || !u.email) throw new Error("Sign in required");
+                      const { createCheckoutSession } = await import("@/lib/stripe");
+                      const url = await createCheckoutSession("plus", u.id, u.email);
+                      window.location.href = url;
+                    } catch (err) {
+                      toast.error(err instanceof Error ? err.message : "Couldn't start checkout. Try again.");
+                      setCheckoutLoading(null);
+                    }
+                  }}
+                  className="w-full flex items-center justify-between rounded-xl border border-primary/30 bg-primary/10 hover:bg-primary/15 transition-colors px-4 py-3 text-left disabled:opacity-50"
+                >
+                  <div>
+                    <p className="text-sm font-bold">Plus — $10/month</p>
+                    <p className="text-[11px] text-muted-foreground">100 generations / month, 50 infographics</p>
+                  </div>
+                  {checkoutLoading === "plus"
+                    ? <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                    : <ArrowRight className="w-4 h-4 text-primary" />}
+                </button>
+
+                <button
+                  disabled={!!checkoutLoading}
+                  onClick={async () => {
+                    setCheckoutLoading("pro");
+                    try {
+                      const { data: { user: u } } = await supabase.auth.getUser();
+                      if (!u?.id || !u.email) throw new Error("Sign in required");
+                      const { createCheckoutSession } = await import("@/lib/stripe");
+                      const url = await createCheckoutSession("pro", u.id, u.email);
+                      window.location.href = url;
+                    } catch (err) {
+                      toast.error(err instanceof Error ? err.message : "Couldn't start checkout. Try again.");
+                      setCheckoutLoading(null);
+                    }
+                  }}
+                  className="w-full flex items-center justify-between rounded-xl border border-border/40 hover:border-border/60 hover:bg-accent/40 transition-colors px-4 py-3 text-left disabled:opacity-50"
+                >
+                  <div>
+                    <p className="text-sm font-bold">Pro — $30/month</p>
+                    <p className="text-[11px] text-muted-foreground">Unlimited generations, 300 infographics</p>
+                  </div>
+                  {checkoutLoading === "pro"
+                    ? <Loader2 className="w-4 h-4 animate-spin" />
+                    : <ArrowRight className="w-4 h-4" />}
+                </button>
+              </div>
+
+              <button
+                disabled={!!checkoutLoading}
+                onClick={() => setPaywall(null)}
+                className="w-full mt-4 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+              >
+                Maybe later
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <InfographicModal
         open={showInfographic && selectedVariation !== null}

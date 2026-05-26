@@ -29,6 +29,41 @@ Deno.serve(async (req) => {
     });
     if (!allowed) return new Response(JSON.stringify({ error: "Generation limit reached (20/h). Please try again later." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
+    // Free-plan lifetime quota. Free users get 3 generations forever (each
+    // generation produces 5 variations / rows, so 15 rows = 3 used). Admin
+    // emails and active Plus/Pro plans bypass.
+    const ADMIN_EMAILS = ["gamalielkelman@gmail.com", "pennsunjo@gmail.com"];
+    const FREE_LIFETIME_LIMIT = 3;
+    const VARIATIONS_PER_GENERATION = 5;
+    if (!ADMIN_EMAILS.includes(user.email ?? "")) {
+      const { data: profile } = await adminClient
+        .from("user_profiles")
+        .select("plan, plan_expires_at")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      const now = Date.now();
+      const expiresAt = profile?.plan_expires_at ? new Date(profile.plan_expires_at).getTime() : 0;
+      const isPaying = (profile?.plan === "plus" || profile?.plan === "pro") && expiresAt > now;
+      if (!isPaying) {
+        const { count: rowCount } = await adminClient
+          .from("generated_content")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", user.id);
+        const generationsUsed = Math.floor((rowCount ?? 0) / VARIATIONS_PER_GENERATION);
+        if (generationsUsed >= FREE_LIFETIME_LIMIT) {
+          return new Response(
+            JSON.stringify({
+              error: "Free plan limit reached. Upgrade to Plus or Pro to keep generating.",
+              code: "free_quota_exceeded",
+              used: generationsUsed,
+              limit: FREE_LIFETIME_LIMIT,
+            }),
+            { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
+      }
+    }
+
     // Body
     const { platform, format, sourceText, sourceMode, activeSourceIds } = await req.json();
     if (!platform || !format || !sourceText) return new Response(JSON.stringify({ error: "platform, format and sourceText are required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });

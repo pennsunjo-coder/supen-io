@@ -29,8 +29,24 @@ Deno.serve(async (req) => {
     if (userErr || !user) return new Response(JSON.stringify({ error: "Invalid session" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     if (!ADMIN_EMAILS.includes(user.email ?? "")) {
-      const { data: profile } = await userClient.from("user_profiles").select("plan").eq("user_id", user.id).maybeSingle();
+      const { data: profile } = await userClient.from("user_profiles").select("plan, plan_expires_at").eq("user_id", user.id).maybeSingle();
       const plan = profile?.plan as string | undefined;
+      const expiresAt = profile?.plan_expires_at ? new Date(profile.plan_expires_at).getTime() : 0;
+      const isPaying = (plan === "plus" || plan === "pro") && expiresAt > Date.now();
+
+      // Free plan: no infographics at all. Bounce with paywall code so the
+      // client can pop the upgrade modal instead of a generic error.
+      if (!isPaying) {
+        return new Response(
+          JSON.stringify({
+            error: "Infographics are not available on the Free plan. Upgrade to Plus or Pro to unlock visuals.",
+            code: "free_no_infographic",
+          }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
+      // Paying user — enforce monthly cap.
       const monthly = IMAGE_LIMITS[plan ?? ""] ?? FREE_IMAGE_LIMIT;
       // check_rate_limit forces auth.uid(), so it MUST run on the user client.
       const { data: allowed } = await userClient.rpc("check_rate_limit", {

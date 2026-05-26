@@ -60,6 +60,25 @@ const tierColors = { gold: "bg-amber-500/90", green: "bg-emerald-500/90", cyan: 
 
 const plans = [
   {
+    name: "Free",
+    icon: Sparkles,
+    price: "$0",
+    period: "/forever",
+    desc: "Test the engine — no card required",
+    features: [
+      "3 generations total (lifetime)",
+      "All 6 platforms (IG, TikTok, FB, LinkedIn, YT, X)",
+      "5 viral variations per generation",
+      "Anti-AI humanization",
+      "No infographics",
+      "Upgrade anytime",
+    ],
+    cta: "Start free →",
+    highlighted: false,
+    rotation: "rotate-[-2deg]",
+    plan: "free" as const,
+  },
+  {
     name: "Plus",
     icon: Sparkles,
     price: "$10",
@@ -78,6 +97,7 @@ const plans = [
     cta: "Start for $10/month →",
     highlighted: true,
     rotation: "rotate-[1deg]",
+    plan: "plus" as const,
   },
   {
     name: "Pro",
@@ -89,6 +109,7 @@ const plans = [
     cta: "Get Pro →",
     highlighted: false,
     rotation: "rotate-[-2deg]",
+    plan: "pro" as const,
   },
 ];
 
@@ -131,7 +152,6 @@ const platforms = [
   { name: "Facebook", icon: PlatformFacebook },
   { name: "Threads", icon: PlatformThreads },
   { name: "TikTok", icon: PlatformTikTok },
-  { name: "Newsletter", icon: null },
 ];
 
 // Animated counter that counts up when scrolled into view
@@ -581,7 +601,7 @@ const Index = () => {
             <h2 className="font-display text-5xl md:text-6xl font-black mb-6 tracking-display">Start free. <span className="text-primary">Scale fast.</span></h2>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 gap-6 items-start max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-6 items-start">
             {plans.map((plan, i) => {
               const PlanIcon = plan.icon;
               return (

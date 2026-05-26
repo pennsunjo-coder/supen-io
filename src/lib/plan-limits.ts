@@ -19,6 +19,9 @@ export interface PlanLimits {
   generationsPerMonth: number | "unlimited";
   /** Per-hour cap kept as a safety net against abuse / runaway clients. */
   generationsPerHour: number;
+  /** Lifetime generations. Free trial — once spent, never refills.
+   *  Paid plans set this to "unlimited" so the daily/monthly caps bind instead. */
+  generationsLifetime: number | "unlimited";
   /** Image / infographic generations per rolling 30-day window. Each
    *  regeneration counts as one. Enforced server-side. */
   imagesPerMonth: number | "unlimited";
@@ -33,10 +36,11 @@ export interface PlanLimits {
 export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
   free: {
     maxSources: 3,
-    generationsPerDay: 5,
-    generationsPerMonth: 5 * 30, // soft cap; daily is the binding limit
-    generationsPerHour: 5,
-    imagesPerMonth: 5, // grace allowance before subscribing
+    generationsPerDay: "unlimited", // gated by lifetime, not daily
+    generationsPerMonth: "unlimited",
+    generationsPerHour: 3,
+    generationsLifetime: 3, // 3 lifetime generations, then forced upgrade
+    imagesPerMonth: 0, // no infographics on free
     premiumInfographics: false,
     styleMemory: false,
     advancedAnalytics: false,
@@ -46,6 +50,7 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
     generationsPerDay: 20,
     generationsPerMonth: 100,
     generationsPerHour: 20,
+    generationsLifetime: "unlimited",
     imagesPerMonth: 50,
     premiumInfographics: true,
     styleMemory: true,
@@ -56,6 +61,7 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
     generationsPerDay: "unlimited",
     generationsPerMonth: "unlimited",
     generationsPerHour: 60,
+    generationsLifetime: "unlimited",
     imagesPerMonth: 300,
     premiumInfographics: true,
     styleMemory: true,
