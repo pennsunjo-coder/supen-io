@@ -581,7 +581,7 @@ const Index = () => {
             <h2 className="font-display text-5xl md:text-6xl font-black mb-6 tracking-display">Start free. <span className="text-primary">Scale fast.</span></h2>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-6 items-start">
+          <div className="grid md:grid-cols-2 gap-6 items-start max-w-4xl mx-auto">
             {plans.map((plan, i) => {
               const PlanIcon = plan.icon;
               return (
