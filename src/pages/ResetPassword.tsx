@@ -45,10 +45,16 @@ export default function ResetPassword() {
 
       if (error) throw error;
 
-      setDone(true);
-      toast.success("Password updated successfully!");
+      // Sign the user out so the next session uses the new password.
+      // Supabase auto-authenticated them with the recovery token; without
+      // signOut they'd land on the dashboard with the OLD session still
+      // valid and never actually log in with the password they just chose.
+      await supabase.auth.signOut();
 
-      setTimeout(() => navigate("/dashboard"), 2000);
+      setDone(true);
+      toast.success("Password updated! Sign in with your new password.");
+
+      setTimeout(() => navigate("/login"), 2000);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to update password.";
       toast.error(msg);
@@ -74,7 +80,7 @@ export default function ResetPassword() {
                 <CheckCircle className="w-8 h-8 text-emerald-400" />
               </div>
               <h2 className="text-lg font-bold mb-2">Password updated!</h2>
-              <p className="text-sm text-muted-foreground">Redirecting to your dashboard...</p>
+              <p className="text-sm text-muted-foreground">Redirecting to login — sign in with your new password.</p>
             </div>
           ) : (
             <>
