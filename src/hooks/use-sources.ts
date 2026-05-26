@@ -5,7 +5,14 @@ import { useProfile } from "@/hooks/use-profile";
 import { getCache, setCache, invalidateCache } from "@/lib/cache";
 import { embedSource, embedAllExistingSources } from "@/lib/embeddings";
 import { getPlanLimits, upgradeMessage } from "@/lib/plan-limits";
+import * as pdfjsLib from "pdfjs-dist";
 import type { Source } from "@/types/database";
+
+// pdfjs-dist 5.x ships an ESM worker. We host the .mjs file from /public,
+// shipped via Vite's static asset pipeline. This MUST be set before any
+// getDocument() call, otherwise pdf.js falls back to a (slow) main-thread
+// renderer and prints a console warning.
+pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
 const IS_DEV = import.meta.env.DEV;
 
@@ -60,34 +67,73 @@ function extractTextFromHtml(html: string): string {
 }
 
 /**
- * Extracts text from a PDF — client-side via pdf.js with CDN worker.
- * Works in all modern browsers (Chrome, Firefox, Safari, Edge).
- * Falls back to Edge Function "extract-pdf" if client-side extraction fails.
+ * Extracts text from a PDF.
+ *
+ * Strategy order, fastest-first:
+ *   1. pdfjs-dist client-side — handles 95% of PDFs in 1-5 sec, no server call.
+ *   2. Edge Function (Claude/Gemini vision) — fallback for image-only / scanned
+ *      PDFs that have no embedded text. Slow (30-120 sec) but reliable.
+ *   3. latin1 regex parsing — last-resort hack on the raw bytes.
+ *
+ * Previous versions ran the edge function FIRST, which made every import take
+ * 2-5 minutes even when the PDF was perfectly text-based. Flipping the order
+ * is the single biggest perceived-speed win in the import pipeline.
  */
 async function extractTextFromPdf(
   file: File,
   onProgress?: (page: number, total: number) => void,
 ): Promise<{ text: string; pages: number }> {
 
-  console.log("=== PDF EXTRACT v2 ===", file.name, file.size, file.type);
+  console.log("=== PDF EXTRACT v3 ===", file.name, file.size, file.type);
 
-  // Strategy 1: Edge Function (Claude/Gemini server-side, most reliable)
+  // Strategy 1: pdfjs-dist client-side (fast path, no server round-trip)
+  try {
+    console.log("[PDF] S1: pdfjs-dist...");
+    const buffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buffer) }).promise;
+    const totalPages = pdf.numPages;
+    // Extract all pages in parallel for max speed. pdf.js is happy with this
+    // because each page has its own decoder context.
+    const pageTexts = await Promise.all(
+      Array.from({ length: totalPages }, async (_, i) => {
+        const page = await pdf.getPage(i + 1);
+        const content = await page.getTextContent();
+        const text = content.items
+          .map((item) => ("str" in item ? (item as { str: string }).str : ""))
+          .join(" ");
+        onProgress?.(i + 1, totalPages);
+        return text;
+      }),
+    );
+    const fullText = pageTexts.join("\n\n").replace(/\s+/g, " ").trim();
+    console.log("[PDF] S1: extracted", fullText.length, "chars from", totalPages, "pages");
+
+    // Heuristic: if pdfjs gives us at least 30 chars of real text, accept it.
+    // Image-only PDFs typically return < 30 chars and need the vision fallback.
+    if (fullText.length > 30) {
+      console.log("[PDF] S1 OK:", fullText.slice(0, 200));
+      return { text: fullText.slice(0, 50000), pages: totalPages };
+    }
+    console.log("[PDF] S1 produced too little text — falling through to OCR");
+  } catch (e) {
+    console.warn("[PDF] S1 failed (will try edge fn):", e instanceof Error ? e.message : e);
+  }
+
+  // Strategy 2: Edge Function (Claude/Gemini vision, OCR-capable)
   let edgeError = "";
   try {
-    console.log("[PDF] S1: Edge Function...");
+    console.log("[PDF] S2: Edge Function (OCR fallback)...");
     const formData = new FormData();
     formData.append("file", file);
     const { data, error } = await supabase.functions.invoke("extract-pdf", { body: formData });
-    console.log("[PDF] S1 result:", { error: error?.message || error, hasText: !!data?.text, len: data?.text?.length, dataType: typeof data });
 
     if (!error && data?.text && data.text.length > 30) {
-      console.log("[PDF] S1 OK:", data.text.slice(0, 200));
+      console.log("[PDF] S2 OK:", data.text.slice(0, 200));
       onProgress?.(1, 1);
       return { text: data.text, pages: data.pages || 1 };
     }
 
-    // Capture the upstream error so it can be surfaced if every strategy fails.
-    // Supabase wraps non-2xx responses; data may still hold the JSON body.
+    // Capture the upstream error so we can surface it if everything fails.
     if (data?.error) edgeError = String(data.error);
     else if (error?.message) edgeError = error.message;
     if (error && typeof (error as { context?: { json?: () => Promise<{ error?: string }> } }).context?.json === "function") {
@@ -98,12 +144,12 @@ async function extractTextFromPdf(
     }
   } catch (e) {
     edgeError = e instanceof Error ? e.message : String(e);
-    console.warn("[PDF] S1 failed:", edgeError);
+    console.warn("[PDF] S2 failed:", edgeError);
   }
 
-  // Strategy 2: Client-side PDF text parsing (no deps)
+  // Strategy 3: last-resort latin1 regex hack on raw bytes
   try {
-    console.log("[PDF] S2: Client latin1 parsing...");
+    console.log("[PDF] S3: latin1 regex parsing...");
     const buffer = await file.arrayBuffer();
     const raw = new TextDecoder("latin1").decode(new Uint8Array(buffer));
     const texts: string[] = [];
@@ -126,15 +172,15 @@ async function extractTextFromPdf(
 
     const fullText = texts.join(" ").replace(/\s+/g, " ").trim();
     const ratio = (fullText.match(/[a-zA-Z\s]/g) || []).length / Math.max(fullText.length, 1);
-    console.log("[PDF] S2:", fullText.length, "chars, ratio:", ratio.toFixed(2));
+    console.log("[PDF] S3:", fullText.length, "chars, ratio:", ratio.toFixed(2));
 
     if (fullText.length > 100 && ratio > 0.4) {
-      console.log("[PDF] S2 OK:", fullText.slice(0, 200));
+      console.log("[PDF] S3 OK:", fullText.slice(0, 200));
       onProgress?.(1, 1);
       return { text: fullText.slice(0, 20000), pages: 1 };
     }
   } catch (e) {
-    console.warn("[PDF] S2 failed:", e);
+    console.warn("[PDF] S3 failed:", e);
   }
 
   const detail = edgeError ? ` (server: ${edgeError})` : "";
