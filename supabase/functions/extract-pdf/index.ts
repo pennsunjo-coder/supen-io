@@ -56,9 +56,9 @@ async function tryAnthropic(base64: string, apiKey: string, model: string): Prom
   return text;
 }
 
-async function tryGemini(base64: string, apiKey: string): Promise<string> {
+async function tryGemini(base64: string, apiKey: string, model: string): Promise<string> {
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -114,16 +114,19 @@ serve(async (req) => {
     const base64 = encode(bytes);
     console.log(`[extract-pdf] base64 length=${base64.length}`);
 
-    // Try strategies in order. Anthropic first when its key is set; collect each error
-    // so the client sees exactly what every attempt returned.
+    // Try strategies in order. Gemini first — it's faster than Claude vision
+    // for PDF text extraction and Google keeps the model fresh, so it's the
+    // most reliable fallback for the image-only PDFs that miss the pdfjs
+    // client-side fast path. Anthropic comes after as a safety net.
     const strategies: Strategy[] = [];
+    if (geminiKey) {
+      strategies.push({ name: "gemini-2.5-flash",   run: () => tryGemini(base64, geminiKey, "gemini-2.5-flash") });
+      strategies.push({ name: "gemini-2.5-pro",     run: () => tryGemini(base64, geminiKey, "gemini-2.5-pro") });
+    }
     if (anthropicKey) {
       strategies.push({ name: "claude-sonnet-4-5",  run: () => tryAnthropic(base64, anthropicKey, "claude-sonnet-4-5") });
       strategies.push({ name: "claude-haiku-4-5",   run: () => tryAnthropic(base64, anthropicKey, "claude-haiku-4-5-20251001") });
       strategies.push({ name: "claude-3-5-sonnet",  run: () => tryAnthropic(base64, anthropicKey, "claude-3-5-sonnet-20241022") });
-    }
-    if (geminiKey) {
-      strategies.push({ name: "gemini-2.0-flash",   run: () => tryGemini(base64, geminiKey) });
     }
 
     const failures: string[] = [];
