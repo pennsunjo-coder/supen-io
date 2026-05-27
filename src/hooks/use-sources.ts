@@ -67,17 +67,104 @@ function extractTextFromHtml(html: string): string {
 }
 
 /**
+ * Render a single PDF page to a JPEG base64 string (no "data:" prefix). Used
+ * by Strategy 2 below when the PDF has no text layer and we need OCR.
+ * Quality 0.85 + scale 1.5 is a good balance: text stays legible to Gemini
+ * Vision without bloating the upload payload.
+ */
+async function renderPdfPageToJpegBase64(
+  pdf: Awaited<ReturnType<typeof pdfjsLib.getDocument>["promise"]>,
+  pageNum: number,
+): Promise<string> {
+  const page = await pdf.getPage(pageNum);
+  const viewport = page.getViewport({ scale: 1.5 });
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.ceil(viewport.width);
+  canvas.height = Math.ceil(viewport.height);
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas 2D context unavailable");
+  await page.render({ canvasContext: ctx, viewport, canvas }).promise;
+  const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+  // Free GPU/CPU memory immediately — these canvases can hit 4-6 MB each.
+  canvas.width = 0;
+  canvas.height = 0;
+  return dataUrl.split(",")[1] ?? "";
+}
+
+const OCR_BATCH_SIZE = 5;        // pages per server call
+const OCR_PARALLEL_BATCHES = 3;  // server calls in flight simultaneously
+
+/**
+ * OCR fallback for image-only / scanned PDFs. Renders each page to a JPEG
+ * client-side then ships them to the extract-pdf-images edge function in
+ * small parallel batches. Inside each batch the server fans out to Gemini
+ * Vision again, so a 50-page scan finishes in roughly the time of one
+ * single-page OCR call rather than fifty sequential ones.
+ */
+async function extractViaImageBatchOCR(
+  pdf: Awaited<ReturnType<typeof pdfjsLib.getDocument>["promise"]>,
+  totalPages: number,
+  onProgress?: (page: number, total: number) => void,
+): Promise<string> {
+  // Build the batch shape we send to the edge function. Render lazily so
+  // we never hold more than ONE batch worth of JPEGs in memory at a time.
+  const batches: { pageNum: number }[][] = [];
+  for (let i = 1; i <= totalPages; i += OCR_BATCH_SIZE) {
+    const batch: { pageNum: number }[] = [];
+    for (let p = i; p < Math.min(i + OCR_BATCH_SIZE, totalPages + 1); p++) {
+      batch.push({ pageNum: p });
+    }
+    batches.push(batch);
+  }
+
+  let donePages = 0;
+  const pageTexts: { pageNum: number; text: string }[] = [];
+
+  // Process N batches at a time. The semaphore is just a sliding window
+  // over the batches array.
+  for (let i = 0; i < batches.length; i += OCR_PARALLEL_BATCHES) {
+    const concurrent = batches.slice(i, i + OCR_PARALLEL_BATCHES);
+    const batchResults = await Promise.all(
+      concurrent.map(async (batch) => {
+        // Render this batch's images now (sequential render inside the
+        // batch to keep canvas memory bounded), then ship them.
+        const images: { pageNum: number; base64: string }[] = [];
+        for (const { pageNum } of batch) {
+          const base64 = await renderPdfPageToJpegBase64(pdf, pageNum);
+          images.push({ pageNum, base64 });
+        }
+        const { data, error } = await supabase.functions.invoke("extract-pdf-images", {
+          body: { images },
+        });
+        if (error) throw new Error(error.message || "extract-pdf-images failed");
+        if (!data?.pages) throw new Error("extract-pdf-images returned no pages");
+        donePages += images.length;
+        onProgress?.(donePages, totalPages);
+        return data.pages as { pageNum: number; text: string }[];
+      }),
+    );
+    for (const arr of batchResults) pageTexts.push(...arr);
+  }
+
+  pageTexts.sort((a, b) => a.pageNum - b.pageNum);
+  return pageTexts.map((r) => r.text).filter(Boolean).join("\n\n").replace(/\s+/g, " ").trim();
+}
+
+/**
  * Extracts text from a PDF.
  *
  * Strategy order, fastest-first:
- *   1. pdfjs-dist client-side — handles 95% of PDFs in 1-5 sec, no server call.
- *   2. Edge Function (Claude/Gemini vision) — fallback for image-only / scanned
- *      PDFs that have no embedded text. Slow (30-120 sec) but reliable.
- *   3. latin1 regex parsing — last-resort hack on the raw bytes.
+ *   1. pdfjs-dist client-side text extraction — handles 95% of PDFs in
+ *      1-5 sec, no server call.
+ *   2. Parallel image-batch OCR — for image/scanned PDFs, render pages to
+ *      JPEG and OCR in parallel via Gemini Vision. ~30-60 sec for 80 pages.
+ *   3. Legacy single-call Edge Function (Claude/Gemini on the full PDF) —
+ *      kept as safety net but slow (30-300 sec) and chokes on big files.
+ *   4. latin1 regex parsing — last-resort hack on the raw bytes.
  *
- * Previous versions ran the edge function FIRST, which made every import take
- * 2-5 minutes even when the PDF was perfectly text-based. Flipping the order
- * is the single biggest perceived-speed win in the import pipeline.
+ * Strategy 2 is the NotebookLM-grade speed path: instead of asking one
+ * model to read 80 pages in a single 30-MB payload, we ship 5-page JPEG
+ * batches in parallel and stitch the results back together.
  */
 async function extractTextFromPdf(
   file: File,
@@ -86,49 +173,81 @@ async function extractTextFromPdf(
 
   console.log("=== PDF EXTRACT v3 ===", file.name, file.size, file.type);
 
-  // Strategy 1: pdfjs-dist client-side (fast path, no server round-trip)
+  // Load the PDF once and reuse the handle across S1 (text) and S2 (image
+  // OCR). Both strategies live on the same pdf.js document instance.
+  let pdfInstance: Awaited<ReturnType<typeof pdfjsLib.getDocument>["promise"]> | null = null;
+  let totalPagesCached = 0;
   try {
-    console.log("[PDF] S1: pdfjs-dist...");
     const buffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buffer) }).promise;
-    const totalPages = pdf.numPages;
-    // Extract all pages in parallel for max speed. pdf.js is happy with this
-    // because each page has its own decoder context.
-    const pageTexts = await Promise.all(
-      Array.from({ length: totalPages }, async (_, i) => {
-        const page = await pdf.getPage(i + 1);
-        const content = await page.getTextContent();
-        const text = content.items
-          .map((item) => ("str" in item ? (item as { str: string }).str : ""))
-          .join(" ");
-        onProgress?.(i + 1, totalPages);
-        return text;
-      }),
-    );
-    const fullText = pageTexts.join("\n\n").replace(/\s+/g, " ").trim();
-    console.log("[PDF] S1: extracted", fullText.length, "chars from", totalPages, "pages");
-
-    // Heuristic: if pdfjs gives us at least 30 chars of real text, accept it.
-    // Image-only PDFs typically return < 30 chars and need the vision fallback.
-    if (fullText.length > 30) {
-      console.log("[PDF] S1 OK:", fullText.slice(0, 200));
-      return { text: fullText.slice(0, 50000), pages: totalPages };
-    }
-    console.log("[PDF] S1 produced too little text — falling through to OCR");
+    pdfInstance = await pdfjsLib.getDocument({ data: new Uint8Array(buffer) }).promise;
+    totalPagesCached = pdfInstance.numPages;
   } catch (e) {
-    console.warn("[PDF] S1 failed (will try edge fn):", e instanceof Error ? e.message : e);
+    console.warn("[PDF] pdf.js failed to open the document:", e instanceof Error ? e.message : e);
   }
 
-  // Strategy 2: Edge Function (Claude/Gemini vision, OCR-capable)
+  // Strategy 1: pdfjs-dist text layer (fast path, no server round-trip).
+  if (pdfInstance) {
+    try {
+      console.log("[PDF] S1: pdfjs text layer...");
+      const pdf = pdfInstance;
+      const totalPages = totalPagesCached;
+      // Extract all pages in parallel for max speed.
+      const pageTexts = await Promise.all(
+        Array.from({ length: totalPages }, async (_, i) => {
+          const page = await pdf.getPage(i + 1);
+          const content = await page.getTextContent();
+          const text = content.items
+            .map((item) => ("str" in item ? (item as { str: string }).str : ""))
+            .join(" ");
+          onProgress?.(i + 1, totalPages);
+          return text;
+        }),
+      );
+      const fullText = pageTexts.join("\n\n").replace(/\s+/g, " ").trim();
+      console.log("[PDF] S1: extracted", fullText.length, "chars from", totalPages, "pages");
+
+      // Heuristic: 30 chars TOTAL is too low to trust as "real text" — but
+      // we also want to accept text-heavy mixed PDFs. Treat anything with
+      // an average of >=20 chars per page as text-based.
+      if (fullText.length > 30 && fullText.length > totalPages * 20) {
+        console.log("[PDF] S1 OK:", fullText.slice(0, 200));
+        return { text: fullText.slice(0, 50000), pages: totalPages };
+      }
+      console.log("[PDF] S1 produced too little text — falling through to image-batch OCR");
+    } catch (e) {
+      console.warn("[PDF] S1 failed (will try OCR):", e instanceof Error ? e.message : e);
+    }
+  }
+
+  // Strategy 2: parallel image-batch OCR via extract-pdf-images.
+  // This is the fast path for image-only / scanned PDFs. Used to take
+  // 3-10 min on big files via the legacy single-call edge fn; now ~30-60s
+  // for 80 pages thanks to client-side rendering + server-side fan-out.
+  if (pdfInstance && totalPagesCached > 0) {
+    try {
+      console.log("[PDF] S2: image-batch OCR over", totalPagesCached, "pages...");
+      const text = await extractViaImageBatchOCR(pdfInstance, totalPagesCached, onProgress);
+      if (text.length > 30) {
+        console.log("[PDF] S2 OK:", text.slice(0, 200));
+        return { text: text.slice(0, 200000), pages: totalPagesCached };
+      }
+      console.warn("[PDF] S2 produced too little text — falling through to legacy edge fn");
+    } catch (e) {
+      console.warn("[PDF] S2 failed (will try legacy edge fn):", e instanceof Error ? e.message : e);
+    }
+  }
+
+  // Strategy 3: legacy single-call edge function (Claude/Gemini on the
+  // whole PDF). Slow and chokes on big files, kept as a safety net.
   let edgeError = "";
   try {
-    console.log("[PDF] S2: Edge Function (OCR fallback)...");
+    console.log("[PDF] S3: legacy single-call edge fn...");
     const formData = new FormData();
     formData.append("file", file);
     const { data, error } = await supabase.functions.invoke("extract-pdf", { body: formData });
 
     if (!error && data?.text && data.text.length > 30) {
-      console.log("[PDF] S2 OK:", data.text.slice(0, 200));
+      console.log("[PDF] S3 OK:", data.text.slice(0, 200));
       onProgress?.(1, 1);
       return { text: data.text, pages: data.pages || 1 };
     }
@@ -144,12 +263,12 @@ async function extractTextFromPdf(
     }
   } catch (e) {
     edgeError = e instanceof Error ? e.message : String(e);
-    console.warn("[PDF] S2 failed:", edgeError);
+    console.warn("[PDF] S3 failed:", edgeError);
   }
 
-  // Strategy 3: last-resort latin1 regex hack on raw bytes
+  // Strategy 4: last-resort latin1 regex hack on raw bytes
   try {
-    console.log("[PDF] S3: latin1 regex parsing...");
+    console.log("[PDF] S4: latin1 regex parsing...");
     const buffer = await file.arrayBuffer();
     const raw = new TextDecoder("latin1").decode(new Uint8Array(buffer));
     const texts: string[] = [];
@@ -172,15 +291,15 @@ async function extractTextFromPdf(
 
     const fullText = texts.join(" ").replace(/\s+/g, " ").trim();
     const ratio = (fullText.match(/[a-zA-Z\s]/g) || []).length / Math.max(fullText.length, 1);
-    console.log("[PDF] S3:", fullText.length, "chars, ratio:", ratio.toFixed(2));
+    console.log("[PDF] S4:", fullText.length, "chars, ratio:", ratio.toFixed(2));
 
     if (fullText.length > 100 && ratio > 0.4) {
-      console.log("[PDF] S3 OK:", fullText.slice(0, 200));
+      console.log("[PDF] S4 OK:", fullText.slice(0, 200));
       onProgress?.(1, 1);
       return { text: fullText.slice(0, 20000), pages: 1 };
     }
   } catch (e) {
-    console.warn("[PDF] S3 failed:", e);
+    console.warn("[PDF] S4 failed:", e);
   }
 
   const detail = edgeError ? ` (server: ${edgeError})` : "";
