@@ -410,6 +410,12 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
       : sanitizeInput(sourceText, 5000);
     if (!sanitized) return;
 
+    // Flip the button into "Generating..." state immediately so the click
+    // gets visible feedback even though the quota check below takes ~1s.
+    // If quota blocks, we reset the state inside the catch branches.
+    setIsGenerating(true);
+    setError(null);
+
     // Plan-based generation quota. Free users hit a hard LIFETIME cap (3
     // generations forever) and then the paywall pops. Paying plans fall back
     // to the rolling day/month windows. Block before any API spend.
@@ -424,6 +430,7 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
             .select("id", { count: "exact", head: true })
             .eq("user_id", u.id);
           if ((lifetimeCount ?? 0) >= limits.generationsLifetime) {
+            setIsGenerating(false);
             setPaywall({
               title: "You've used your free generations",
               body: `Free accounts get ${limits.generationsLifetime} lifetime generations. Upgrade to Plus or Pro to keep creating.`,
@@ -440,12 +447,14 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
             supabase.from("content_sessions").select("id", { count: "exact", head: true }).eq("user_id", u.id).gte("created_at", monthAgo),
           ]);
           if (limits.generationsPerDay !== "unlimited" && (dayCount ?? 0) >= limits.generationsPerDay) {
+            setIsGenerating(false);
             const msg = upgradeMessage(profile?.plan, `Daily generations (${limits.generationsPerDay})`);
             toast.error(msg, { duration: 8000 });
             setError(msg);
             return;
           }
           if (limits.generationsPerMonth !== "unlimited" && (monthCount ?? 0) >= limits.generationsPerMonth) {
+            setIsGenerating(false);
             const msg = upgradeMessage(profile?.plan, `Monthly generations (${limits.generationsPerMonth})`);
             toast.error(msg, { duration: 8000 });
             setError(msg);
@@ -457,10 +466,11 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
       console.warn("[StudioWizard] Quota check failed (non-blocking):", e);
     }
 
-    setIsGenerating(true);
+    // setIsGenerating + setError were already set above so the button could
+    // show feedback during the quota check. Reset the variation-related state
+    // here so a previous run's output doesn't flash on screen.
     setVariations([]);
     setSelectedVariation(null);
-    setError(null);
     setShowInfographic(false);
     setGeneratedInfographicBase64(null);
 
@@ -1163,8 +1173,12 @@ ${buildAntiAiRules(tightness)}`;
       invalidateCache("history:");
       if (onGenerationComplete) onGenerationComplete();
       toast.success("Saved! Opening workspace...");
-      // Navigate to immersive editor after short delay
-      setTimeout(() => navigate(`/editor/${sessionId}`), 1500);
+      // Navigate immediately — the insert at line 1120 already finished
+      // and returned savedRows, so the data is in Postgres. The previous
+      // 1500ms setTimeout created a race window where Editor.tsx could
+      // load and query before some downstream replication caught up,
+      // landing the user on "Content not found".
+      navigate(`/editor/${sessionId}`);
       return true;
     } catch (err) {
       console.error("[StudioWizard] Save exception:", err);

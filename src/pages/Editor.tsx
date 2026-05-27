@@ -41,14 +41,24 @@ export default function Editor() {
   const fetchData = useCallback(async () => {
     if (!user || !sessionId) return;
     setLoading(true);
-    
+
+    // One-shot retry guard. Studio just inserts and immediately navigates
+    // here; in rare cases (slow Supabase, edge replica lag) the row isn't
+    // visible to the first SELECT. Retrying once after 1s avoids the false
+    // "Content not found" flash on a freshly-created session.
+    const runQuery = async () => supabase
+      .from("generated_content")
+      .select("*")
+      .eq("user_id", user.id)
+      .or(`session_id.eq.${sessionId},id.eq.${sessionId}`)
+      .order("viral_score", { ascending: false });
+
     try {
-      const { data, error } = await supabase
-        .from("generated_content")
-        .select("*")
-        .eq("user_id", user.id)
-        .or(`session_id.eq.${sessionId},id.eq.${sessionId}`)
-        .order("viral_score", { ascending: false });
+      let { data, error } = await runQuery();
+      if (!error && (!data || data.length === 0)) {
+        await new Promise((r) => setTimeout(r, 1000));
+        ({ data, error } = await runQuery());
+      }
 
       if (error) {
         console.error("[Editor] Fetch error:", error);
@@ -58,7 +68,7 @@ export default function Editor() {
         const inf = data.find((r) => r.format === "Infographic" && r.infographic_base64);
         const infFallback = data.find((r) => r.format === "Infographic");
         const attached = posts.find((r) => r.infographic_base64);
-        
+
         setVariations(posts);
         setInfographic(inf?.infographic_base64 || attached?.infographic_base64 || infFallback?.infographic_base64 || null);
         setTopic(posts[0]?.content?.split(/\s+/).slice(0, 10).join(" ") || "Untitled");
