@@ -69,30 +69,36 @@ function extractTextFromHtml(html: string): string {
 /**
  * Render a single PDF page to a JPEG base64 string (no "data:" prefix). Used
  * by Strategy 2 below when the PDF has no text layer and we need OCR.
- * Quality 0.85 + scale 1.5 is a good balance: text stays legible to Gemini
- * Vision without bloating the upload payload.
+ *
+ * Scale 1.3 + quality 0.75 keeps the JPEG around 200-400 KB even for dense
+ * pages (vs. the ~1 MB we got at scale 1.5 / quality 0.85). That matters
+ * because Supabase Edge Functions cap request bodies at ~6 MB total —
+ * batches of 3 pages now stay comfortably under that.
  */
 async function renderPdfPageToJpegBase64(
   pdf: Awaited<ReturnType<typeof pdfjsLib.getDocument>["promise"]>,
   pageNum: number,
 ): Promise<string> {
   const page = await pdf.getPage(pageNum);
-  const viewport = page.getViewport({ scale: 1.5 });
+  const viewport = page.getViewport({ scale: 1.3 });
   const canvas = document.createElement("canvas");
   canvas.width = Math.ceil(viewport.width);
   canvas.height = Math.ceil(viewport.height);
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas 2D context unavailable");
   await page.render({ canvasContext: ctx, viewport, canvas }).promise;
-  const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+  const dataUrl = canvas.toDataURL("image/jpeg", 0.75);
   // Free GPU/CPU memory immediately — these canvases can hit 4-6 MB each.
   canvas.width = 0;
   canvas.height = 0;
   return dataUrl.split(",")[1] ?? "";
 }
 
-const OCR_BATCH_SIZE = 5;        // pages per server call
-const OCR_PARALLEL_BATCHES = 3;  // server calls in flight simultaneously
+// Tuned conservatively. 3 pages × ~300 KB JPEG ≈ 1 MB request body — well
+// inside Supabase's 6 MB cap. 4 parallel batches keeps the throughput up.
+const OCR_BATCH_SIZE = 3;        // pages per server call
+const OCR_PARALLEL_BATCHES = 4;  // server calls in flight simultaneously
+const OCR_MAX_PAGES = 150;       // refuse PDFs bigger than this — costs spiral and timing gets messy
 
 /**
  * OCR fallback for image-only / scanned PDFs. Renders each page to a JPEG
@@ -106,6 +112,13 @@ async function extractViaImageBatchOCR(
   totalPages: number,
   onProgress?: (page: number, total: number) => void,
 ): Promise<string> {
+  if (totalPages > OCR_MAX_PAGES) {
+    throw new Error(
+      `PDF too large for OCR (${totalPages} pages, max ${OCR_MAX_PAGES}). ` +
+      `Split the document and re-upload, or paste the content as a note.`,
+    );
+  }
+
   // Build the batch shape we send to the edge function. Render lazily so
   // we never hold more than ONE batch worth of JPEGs in memory at a time.
   const batches: { pageNum: number }[][] = [];
@@ -136,7 +149,21 @@ async function extractViaImageBatchOCR(
         const { data, error } = await supabase.functions.invoke("extract-pdf-images", {
           body: { images },
         });
-        if (error) throw new Error(error.message || "extract-pdf-images failed");
+        if (error) {
+          // supabase.functions.invoke wraps non-2xx responses; the real
+          // error JSON is hidden on `error.context`. Dig it out so the
+          // user sees "GEMINI_API_KEY not configured" instead of the
+          // useless "Edge Function returned a non-2xx status code".
+          let detail = error.message || "extract-pdf-images failed";
+          const ctx = (error as { context?: Response }).context;
+          if (ctx && typeof ctx.json === "function") {
+            try {
+              const body = await ctx.json();
+              if (body?.error) detail = String(body.error);
+            } catch { /* ignore */ }
+          }
+          throw new Error(detail);
+        }
         if (!data?.pages) throw new Error("extract-pdf-images returned no pages");
         donePages += images.length;
         onProgress?.(donePages, totalPages);
