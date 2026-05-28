@@ -112,6 +112,33 @@ export default function Settings() {
     setUpgrading(null);
   }
 
+  const [openingPortal, setOpeningPortal] = useState(false);
+  async function handleManageBilling() {
+    setOpeningPortal(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("manage-billing", { body: {} });
+      if (error) {
+        const ctx = (error as { context?: Response }).context;
+        let msg = error.message;
+        if (ctx && typeof ctx.json === "function") {
+          try {
+            const body = await ctx.json();
+            if (body?.error) msg = body.error;
+          } catch { /* ignore */ }
+        }
+        throw new Error(msg);
+      }
+      if (data?.url) {
+        window.location.href = data.url as string;
+      } else {
+        throw new Error("No billing portal URL returned");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't open billing portal.");
+      setOpeningPortal(false);
+    }
+  }
+
   async function handleCancelSubscription() {
     setCanceling(true);
     try {
@@ -500,10 +527,33 @@ export default function Settings() {
                 })}
               </div>
 
-              {/* Cancel subscription — only shown to users with an active
-                  Plus/Pro plan. Immediate cancel: Stripe sub is killed and
-                  user_profiles flips to "free" the moment they confirm,
-                  so the paid features lock instantly. */}
+              {/* Manage billing — ALWAYS visible. Opens the Stripe Customer
+                  Portal (cancel, change card, invoices). Works even when our
+                  DB is out of sync because the edge fn looks the customer up
+                  in Stripe by email. This is the reliable cancel path. */}
+              <div className="bg-card border border-border/30 rounded-xl p-6">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-semibold">Manage subscription &amp; billing</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Cancel your plan, update your card, or download invoices in the secure Stripe portal.
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={handleManageBilling}
+                    disabled={openingPortal}
+                    className="h-9 gap-2 text-xs shrink-0"
+                  >
+                    {openingPortal ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CreditCard className="w-3.5 h-3.5" />}
+                    {openingPortal ? "Opening..." : "Manage billing"}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Quick in-app cancel — shown to users we KNOW are on an active
+                  Plus/Pro plan. Instant downgrade to Free. The Stripe portal
+                  above is the fallback when our plan flag is stale. */}
               {planActive && currentPlan !== "free" && (
                 <div className="bg-card border border-border/30 rounded-xl p-6">
                   <div className="flex items-center justify-between gap-4">
