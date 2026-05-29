@@ -688,10 +688,10 @@ export default function Settings() {
                 <div className="flex items-center justify-between py-2">
                   <p className="text-sm text-muted-foreground">Support</p>
                   <a
-                    href="mailto:support@supenli.ai"
+                    href="mailto:pennsunjo@gmail.com"
                     className="text-sm text-primary hover:underline"
                   >
-                    support@supenli.ai
+                    pennsunjo@gmail.com
                   </a>
                 </div>
                 <div className="border-t border-border/20" />
