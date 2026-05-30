@@ -35,7 +35,7 @@ const features = [
 ];
 
 const testimonials = [
-  { name: "Awa K. Pen", role: "Expert en IA", image: "/awa-kippen.jpg", text: "Supenli.ai transformed the way I create. I focus on ideas, the AI handles the rest. My LinkedIn engagement tripled." },
+  { name: "Awa K. Pen", role: "AI Expert", image: "/awa-kippen.jpg", text: "Supenli.ai transformed the way I create. I focus on ideas, the AI handles the rest. My LinkedIn engagement tripled." },
   { name: "Marcus Johnson", role: "Content Strategist · New York, USA", image: "https://randomuser.me/api/portraits/men/32.jpg", text: "I generate 5 variations in 30 seconds. Before, I used to spend 2 hours on a single LinkedIn post. Game over for writer's block." },
   { name: "Elena Torres", role: "Digital Marketer · Washington, USA", image: "https://randomuser.me/api/portraits/women/68.jpg", text: "The Anti-AI mode is mind-blowing. Even my most demanding clients detect nothing. My content finally sounds human." },
 ];
