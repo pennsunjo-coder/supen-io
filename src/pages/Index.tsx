@@ -753,6 +753,7 @@ const Index = () => {
                   { Icon: Linkedin, href: "https://www.linkedin.com/in/awa-k-penn/" },
                   { Icon: Facebook, href: "https://www.facebook.com/profile.php?id=61562708253269&locale=fr_FR" },
                   { Icon: Instagram, href: "https://www.instagram.com/awakpenn/" },
+                  { Icon: Youtube, href: "https://www.youtube.com/@awakpenn" },
                 ].map(({ Icon, href }) => (
                   <a key={href} href={href} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full border border-white/[0.05] flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary transition-all duration-300">
                     <Icon className="w-3.5 h-3.5" />
