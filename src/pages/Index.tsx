@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import {
   Zap, ArrowRight, Sparkles, BookOpen, Wand2, Shield,
   Youtube, FileText, Globe, MessageSquare, Check, Star,
-  ChevronDown, Twitter, Instagram, Linkedin, Mail,
+  ChevronDown, Twitter, Facebook, Linkedin, Mail,
   Layers, Target, PenTool, BarChart3, Users, Sun, Moon,
   X as XIcon, Brain, TrendingUp, Clock, CreditCard, CalendarDays,
 } from "lucide-react";
@@ -749,9 +749,9 @@ const Index = () => {
               </p>
               <div className="flex gap-4">
                 {[
-                  { Icon: Twitter, href: "https://x.com" },
-                  { Icon: Linkedin, href: "https://linkedin.com" },
-                  { Icon: Instagram, href: "https://instagram.com" },
+                  { Icon: Twitter, href: "https://x.com/TawohAwa" },
+                  { Icon: Linkedin, href: "https://www.linkedin.com/in/awa-k-penn/" },
+                  { Icon: Facebook, href: "https://www.facebook.com/profile.php?id=61562708253269&locale=fr_FR" },
                 ].map(({ Icon, href }) => (
                   <a key={href} href={href} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full border border-white/[0.05] flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary transition-all duration-300">
                     <Icon className="w-3.5 h-3.5" />
