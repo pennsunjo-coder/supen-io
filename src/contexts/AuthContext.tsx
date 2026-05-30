@@ -7,6 +7,7 @@ import {
 } from "react";
 import type { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+import { withSupabaseRetry } from "@/lib/resilience";
 
 interface AuthState {
   user: User | null;
@@ -41,8 +42,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setState((prev) => (prev.loading ? { ...prev, loading: false } : prev));
     }, 6000);
 
-    supabase.auth
-      .getSession()
+    // Wrap getSession in retry — this fires on every page load and is the
+    // single biggest source of "users staring at a spinner" when Supabase
+    // Auth blips. Retries: 600ms / 1.8s / 5.4s — usually one of them lands
+    // before the user notices anything.
+    withSupabaseRetry(() => supabase.auth.getSession())
       .then(({ data: { session } }) => {
         if (cancelled) return;
         setState({ user: session?.user ?? null, session, loading: false });
@@ -73,7 +77,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     email: string,
     password: string
   ): Promise<{ error: string | null }> => {
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await withSupabaseRetry(() =>
+      supabase.auth.signUp({ email, password }),
+    );
     if (error) return { error: error.message };
 
     // Send welcome email via Resend (fire and forget)
@@ -99,19 +105,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     email: string,
     password: string
   ): Promise<{ error: string | null }> => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { error } = await withSupabaseRetry(() =>
+      supabase.auth.signInWithPassword({ email, password }),
+    );
     if (error) return { error: error.message };
     return { error: null };
   };
 
   const signInWithGoogle = async (): Promise<{ error: string | null }> => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/dashboard` },
-    });
+    const { error } = await withSupabaseRetry(() =>
+      supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${window.location.origin}/dashboard` },
+      }),
+    );
     if (error) return { error: error.message };
     return { error: null };
   };

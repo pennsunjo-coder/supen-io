@@ -23,6 +23,17 @@ interface RetryOptions {
   onRetry?: (attempt: number, delayMs: number) => void;
 }
 
+export function isTransientError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  const msg = err.message;
+  const status = (err as { status?: number }).status;
+  if (status && status >= 500 && status < 600) return true;
+  return /\b(429|500|502|503|504|520|521|522|523|524)\b/.test(msg)
+    || /rate.?limit|too.?many|overloaded|529/i.test(msg)
+    || /network|fetch|load.?failed|aborterror|connection|timeout/i.test(msg)
+    || /Edge Function returned a non-2xx/i.test(msg); // Supabase wrapper wraps 5xx as this
+}
+
 export async function withRetry<T>(
   fn: () => Promise<T>,
   options: RetryOptions = {},
@@ -33,35 +44,52 @@ export async function withRetry<T>(
     try {
       return await fn();
     } catch (err: unknown) {
-      const isRateLimit = err instanceof Error && (
-        err.message.includes("429") ||
-        err.message.includes("rate") ||
-        err.message.includes("Too many") ||
-        (err as { status?: number }).status === 429
-      );
-
-      const isRetryable = isRateLimit || (
-        err instanceof Error && (
-          err.message.includes("overloaded") ||
-          err.message.includes("529") ||
-          err.message.includes("500") ||
-          err.message.includes("503") ||
-          err.message.includes("network") ||
-          err.message.includes("fetch") ||
-          err.message.includes("Load failed")
-        )
-      );
-
-      if (!isRetryable || attempt >= maxRetries) {
+      if (!isTransientError(err) || attempt >= maxRetries) {
         throw err;
       }
-
       const delayMs = baseDelayMs * Math.pow(2, attempt);
       if (onRetry) onRetry(attempt + 1, delayMs);
       await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
   }
 
+  throw new Error("Max retries reached");
+}
+
+/**
+ * Retry wrapper for Supabase methods that return `{ data, error }` instead
+ * of throwing. Transient errors (Cloudflare 522, network, rate limit) get
+ * retried with exponential backoff; user errors (wrong password, etc.)
+ * pass through untouched.
+ *
+ * Default: 4 attempts at 600ms / 1.8s / 5.4s / 16s — total wall-time ~24s
+ * worst case. Good for "Supabase Auth blipped on us" hiding.
+ */
+export async function withSupabaseRetry<T extends { error: unknown }>(
+  fn: () => Promise<T>,
+  options: RetryOptions = {},
+): Promise<T> {
+  const { maxRetries = 3, baseDelayMs = 600, onRetry } = options;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const result = await fn();
+      if (!result.error || !isTransientError(result.error) || attempt >= maxRetries) {
+        return result;
+      }
+      const delayMs = baseDelayMs * Math.pow(3, attempt);
+      if (onRetry) onRetry(attempt + 1, delayMs);
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    } catch (err) {
+      // Some Supabase methods throw on hard failures (e.g. signInWithOAuth
+      // when the redirect itself fails). Funnel those through the same
+      // transient check so we don't bail too eagerly.
+      if (!isTransientError(err) || attempt >= maxRetries) throw err;
+      const delayMs = baseDelayMs * Math.pow(3, attempt);
+      if (onRetry) onRetry(attempt + 1, delayMs);
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
   throw new Error("Max retries reached");
 }
 
