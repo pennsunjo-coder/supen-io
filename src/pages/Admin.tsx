@@ -201,26 +201,27 @@ export default function Admin() {
     return { plusCount, proCount, totalSubs, mrr, conversionRate };
   }, [users]);
 
-  async function handleSendLaunchEmail() {
-    if (waitlistEntries.length === 0) {
-      toast.error("No waitlist entries found");
-      return;
-    }
-    if (!confirm(`Are you sure you want to send the launch email to all ${waitlistEntries.length} members?`)) return;
+  // Per-row "Send" loading state (id of the entry currently being sent),
+  // and multi-select state for batch send. Both share the same underlying
+  // sender function so the email logic stays in one place.
+  const [sendingTo, setSendingTo] = useState<string | null>(null);
+  const [selectedWaitlistIds, setSelectedWaitlistIds] = useState<Set<string>>(new Set());
 
-    setIsSendingEmails(true);
+  // Core sender — shared by per-row, send-selected, and send-to-all paths.
+  async function sendLaunchEmailsTo(
+    entries: WaitlistEntry[],
+  ): Promise<{ success: number; failed: number }> {
     let success = 0;
     let failed = 0;
-
-    for (const entry of waitlistEntries) {
+    for (const entry of entries) {
       try {
         const { error } = await supabase.functions.invoke("send-email", {
           body: {
             to: entry.email,
             subject: "We are LIVE! 🚀 - Supenli.ai",
             type: "launch",
-            data: { name: entry.first_name || "there" }
-          }
+            data: { name: entry.first_name || "there" },
+          },
         });
         if (error) throw error;
         success++;
@@ -229,7 +230,68 @@ export default function Admin() {
         failed++;
       }
     }
+    return { success, failed };
+  }
 
+  async function handleSendOne(entry: WaitlistEntry) {
+    setSendingTo(entry.id);
+    const { success, failed } = await sendLaunchEmailsTo([entry]);
+    setSendingTo(null);
+    if (success > 0) toast.success(`Sent to ${entry.email}`);
+    if (failed > 0) toast.error(`Failed to send to ${entry.email}`);
+  }
+
+  async function handleSendSelected() {
+    const targets = filteredWaitlist.filter((e) => selectedWaitlistIds.has(e.id));
+    if (targets.length === 0) {
+      toast.error("Select at least one entry first.");
+      return;
+    }
+    if (!confirm(`Send the launch email to ${targets.length} selected ${targets.length === 1 ? "person" : "people"}?`)) return;
+    setIsSendingEmails(true);
+    const { success, failed } = await sendLaunchEmailsTo(targets);
+    setIsSendingEmails(false);
+    if (success > 0) toast.success(`Sent ${success} launch ${success === 1 ? "email" : "emails"}!`);
+    if (failed > 0) toast.error(`${failed} ${failed === 1 ? "email" : "emails"} failed.`);
+    setSelectedWaitlistIds(new Set());
+  }
+
+  function toggleSelect(id: string) {
+    setSelectedWaitlistIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAllVisible() {
+    if (filteredWaitlist.every((e) => selectedWaitlistIds.has(e.id))) {
+      // Everything visible is already selected → deselect those (keep
+      // anything selected outside the current filter, just in case).
+      setSelectedWaitlistIds((prev) => {
+        const next = new Set(prev);
+        filteredWaitlist.forEach((e) => next.delete(e.id));
+        return next;
+      });
+    } else {
+      setSelectedWaitlistIds((prev) => {
+        const next = new Set(prev);
+        filteredWaitlist.forEach((e) => next.add(e.id));
+        return next;
+      });
+    }
+  }
+
+  async function handleSendLaunchEmail() {
+    if (waitlistEntries.length === 0) {
+      toast.error("No waitlist entries found");
+      return;
+    }
+    if (!confirm(`Are you sure you want to send the launch email to ALL ${waitlistEntries.length} members?`)) return;
+
+    setIsSendingEmails(true);
+    const { success, failed } = await sendLaunchEmailsTo(waitlistEntries);
     setIsSendingEmails(false);
     if (success > 0) toast.success(`Sent ${success} launch emails!`);
     if (failed > 0) toast.error(`${failed} emails failed to send.`);
@@ -993,23 +1055,50 @@ export default function Admin() {
                 </form>
               </div>
 
-              {/* Send launch email — placeholder */}
-              <div className="bg-card border border-border/20 rounded-xl p-5 flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-semibold">Send Launch Email</h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Notify all {waitlistStats.total} waitlist members when you launch.
-                  </p>
+              {/* Send launch email — three paths now:
+                  - per-row Send button (test one address at a time)
+                  - "Send to selected" using the row checkboxes
+                  - "Send to all" for the full broadcast */}
+              <div className="bg-card border border-border/20 rounded-xl p-5">
+                <div className="flex items-start justify-between gap-4 flex-wrap">
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-semibold">Send Launch Email</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Test one email at a time with the Send button on each row, pick
+                      a subset with the checkboxes, or blast the full {waitlistStats.total}-member waitlist.
+                    </p>
+                    {selectedWaitlistIds.size > 0 && (
+                      <p className="text-[11px] text-primary mt-2 font-medium">
+                        {selectedWaitlistIds.size} selected
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs gap-1.5"
+                      onClick={handleSendSelected}
+                      disabled={isSendingEmails || waitlistLoading || selectedWaitlistIds.size === 0}
+                    >
+                      {isSendingEmails && selectedWaitlistIds.size > 0
+                        ? <Loader2 className="w-3 h-3 animate-spin" />
+                        : <Mail className="w-3 h-3" />}
+                      Send to selected ({selectedWaitlistIds.size})
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="h-8 text-xs gap-1.5"
+                      onClick={handleSendLaunchEmail}
+                      disabled={isSendingEmails || waitlistLoading || waitlistEntries.length === 0}
+                    >
+                      {isSendingEmails && selectedWaitlistIds.size === 0
+                        ? <Loader2 className="w-3 h-3 animate-spin" />
+                        : <Mail className="w-3 h-3" />}
+                      Send to all ({waitlistStats.total})
+                    </Button>
+                  </div>
                 </div>
-                <Button 
-                  size="sm" 
-                  className="h-8 text-xs gap-1.5" 
-                  onClick={handleSendLaunchEmail}
-                  disabled={isSendingEmails || waitlistLoading || waitlistEntries.length === 0}
-                >
-                  {isSendingEmails ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3" />}
-                  {isSendingEmails ? "Sending..." : "Send to All"}
-                </Button>
               </div>
 
               {/* Table */}
@@ -1022,17 +1111,36 @@ export default function Admin() {
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="text-muted-foreground border-b border-border/20">
+                        <th className="text-left py-2 pr-3 w-6">
+                          <input
+                            type="checkbox"
+                            aria-label="Select all visible"
+                            checked={filteredWaitlist.length > 0 && filteredWaitlist.every((e) => selectedWaitlistIds.has(e.id))}
+                            onChange={toggleSelectAllVisible}
+                            className="accent-primary cursor-pointer"
+                          />
+                        </th>
                         <th className="text-left py-2 pr-3 font-medium">Email</th>
                         <th className="text-left py-2 pr-3 font-medium">Name</th>
                         <th className="text-left py-2 pr-3 font-medium">Plan</th>
                         <th className="text-left py-2 pr-3 font-medium">Paid</th>
                         <th className="text-left py-2 pr-3 font-medium">Notified</th>
-                        <th className="text-left py-2 font-medium">Joined</th>
+                        <th className="text-left py-2 pr-3 font-medium">Joined</th>
+                        <th className="text-right py-2 font-medium">Send</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredWaitlist.map((e) => (
                         <tr key={e.id} className="border-b border-border/10 hover:bg-accent/20 transition-colors">
+                          <td className="py-2.5 pr-3">
+                            <input
+                              type="checkbox"
+                              aria-label={`Select ${e.email}`}
+                              checked={selectedWaitlistIds.has(e.id)}
+                              onChange={() => toggleSelect(e.id)}
+                              className="accent-primary cursor-pointer"
+                            />
+                          </td>
                           <td className="py-2.5 pr-3 font-medium">{e.email}</td>
                           <td className="py-2.5 pr-3 text-muted-foreground">{e.first_name || "—"}</td>
                           <td className="py-2.5 pr-3">
@@ -1071,7 +1179,24 @@ export default function Admin() {
                               </span>
                             </button>
                           </td>
-                          <td className="py-2.5 text-muted-foreground">{formatDate(e.created_at)}</td>
+                          <td className="py-2.5 pr-3 text-muted-foreground">{formatDate(e.created_at)}</td>
+                          <td className="py-2.5 text-right">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              disabled={sendingTo === e.id || isSendingEmails}
+                              onClick={() => handleSendOne(e)}
+                              className="h-7 px-2 gap-1.5 text-[10px]"
+                              title={`Send launch email to ${e.email}`}
+                            >
+                              {sendingTo === e.id ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Mail className="w-3 h-3" />
+                              )}
+                              Send
+                            </Button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
