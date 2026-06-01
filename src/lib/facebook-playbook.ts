@@ -31,6 +31,14 @@ STRUCTURE: "STORY + ENGAGEMENT"
 Reference: Trust-building post that drives real comments.
 Target: 120-180 words.
 
+SUCCESS BRIEF:
+- Target reaction: reader RELATES, REFLECTS, and comments with their own experience.
+- Success = 15+ word comments, not just likes.
+- Always: open with a specific grounded moment (time, place, sensory anchor).
+- Always: build tension before revealing the insight.
+- Always: end on a question answerable only with personal experience.
+- Never: motivational closer ("you got this"), advice voice, generic stakes.
+
 OPENING (1-2 lines):
 Open with a specific, grounded moment. Time, place, one sensory detail.
 Not "I was struggling" — "It was 11pm Tuesday and my battery hit 3%."
@@ -57,6 +65,15 @@ MANDATORY:
 STRUCTURE: "OPINION + AUTHORITY"
 Reference: Sharp position post that builds credibility.
 Target: 100-150 words.
+
+SUCCESS BRIEF:
+- Target reaction: reader AGREES STRONGLY or feels compelled to respond.
+- Success = comments that take a side (agreement OR rebuttal), shares with a quote.
+- Always: state a clear position EARLY (line 1 or 2).
+- Always: support with ONE concrete example (named tool, real number, real timeframe).
+- Always: keep language plain and direct.
+- Never: hedge or soften the stance ("might", "could", "I think").
+- Never: stack 3 examples — one beats three.
 
 POSITION (1-2 lines):
 State your take in the first line. No "I think" — just the claim.
@@ -145,6 +162,15 @@ const THREAD_TEMPLATES: Record<FacebookThreadStructure, string> = {
 STRUCTURE: "EDUCATIONAL SERIES (5-PART)"
 Each post: 80-120 words. Five posts total.
 
+SUCCESS BRIEF:
+- Target reaction: reader SAVES post 1 and RETURNS for posts 2-5.
+- Success = comments asking "when's part 2?" + saves on the recap post.
+- Always: break the idea into clear stages — one stage per post.
+- Always: keep each post focused on ONE point (no two-for-one).
+- Always: create anticipation for the next post ("Tomorrow: …").
+- Never: cram parts 1 and 2 into the same post.
+- Never: drop the recap — it's what makes part 5 shareable.
+
 POST 1 — The promise:
 "Most [audience] get [topic] wrong. Here's the actual [framework]."
 Tease parts 2-5 in the last line.
@@ -171,6 +197,16 @@ MANDATORY:
   story_arc: `
 STRUCTURE: "STORY ARC (4-6 POSTS)"
 Each post: 80-120 words. Tells one story across the wall.
+
+SUCCESS BRIEF:
+- Target reaction: reader FOLLOWS the wall to see what happened next.
+- Success = comments on multiple posts in the series, shares of post 1 with quoted curiosity.
+- Always: start with a strong specific moment (named place, exact time, sensory anchor).
+- Always: build tension across posts — each post raises the stakes.
+- Always: reveal the insight gradually — never front-load.
+- Always: end with a clear takeaway (one transferable rule, not a moral speech).
+- Never: dump the lesson in post 1.
+- Never: end on a sales pitch — end on a question instead.
 
 POST 1 — Specific opening moment:
 Time, place, one detail. End with tension hook.

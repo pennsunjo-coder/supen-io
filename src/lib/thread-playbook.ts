@@ -382,6 +382,32 @@ SIGNATURE MOVES (use these — they're what thread readers respond to)
 5. Cliffhanger close on the hook post
    End with a colon and "👇" or "Here's how:" — never a period.
 
+6. Visible numbering inside the post body
+   For long threads (5+ posts), start each non-hook post with its index
+   as text: "2)", "3)", "4)" — readers scroll fast and the number gives
+   them an anchor without re-reading the previous post.
+   Example: "3) Now the scary part" / "4) The 'bye Microsoft' domino effect".
+   Pair the number with a 4-6 word sub-hook in the same line — never just
+   the bare number followed by a paragraph.
+
+7. The "This is NOT theory" proof block
+   Late in the thread (post N-1 or N), insert a single post that drops
+   the receipt: a leak, podcast quote, internal screenshot, named source.
+   Opens with "This is NOT theory." or "Here's the proof:" then ONE
+   specific source (named person, date, link, exact quote).
+   This is the share-trigger — readers re-share for the proof, not the hook.
+
+8. Negation cascade ("Not X. Not Y. Actually Z.")
+   Inside a body post, use a 3-line cascade to kill weak frames before
+   landing the real one:
+     "Not chatbots.
+      Not assistants.
+      Actual agents that can:
+      - open apps
+      - click buttons
+      - finish tasks"
+   The dash-bullet action list after the cascade is the payoff.
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 HOOK BANK — Post 1 openers. Steal the SHAPE, swap in the user's topic.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

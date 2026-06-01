@@ -294,6 +294,111 @@ SIGNATURE MOVES (real IG creators use these)
    3-8 niche tags on the last line. Not in body. Not on line 1.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HOOK BANK — line 1 openers (under 125 chars, mobile-truncation-safe)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+NUMBERED LIST (highest save rate):
+- "[N] [specific things] that [outcome]:"
+- "[N] mistakes I made before I cracked [topic]:"
+- "[N] tools I'd refuse to give up — even for free:"
+
+DECLARATIVE TAKE:
+- "Most '[common belief]' content is just rebranded [real thing]."
+- "[Established tool] is over. [New thing] won."
+- "You don't need [common thing]. You need [actual thing]."
+
+SPECIFIC RESULT / RECEIPT:
+- "[Specific number] in [timeframe]. Here's the move."
+- "I tracked [thing] for [N] weeks. The result was [unexpected]."
+
+GROUNDED MOMENT (story posts):
+- "3pm Tuesday. Battery on 4%. Deck due in the morning."
+- "I almost deleted the post that ended up [outcome]."
+
+TOOL DROP / DISCOVERY:
+- "BREAKING: [Tool] is literally a cheatcode for [outcome]."
+- "RIP [Old tool]. [New tool] does [specific impressive thing]."
+
+CONTRARIAN INSIGHT:
+- "Nobody talks about [specific overlooked thing] in [domain]."
+- "Here's the [tactic] [big creator] uses but never explains."
+
+CAROUSEL TEASE:
+- "[N] slides on [topic]. Slide [X] is the one nobody told me."
+- "Swipe → the third slide changed how I [do thing]."
+
+Rules:
+- Cut every opener to under 125 chars BEFORE the period.
+- No "?", no emoji, no hashtag on line 1.
+- Use named tools, real numbers, exact verbs — vague hooks die.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+REFERENCE EXAMPLES — captions in the cadence of high-save IG posts
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+REF 1 — [list_caption] for AI creators:
+"3 prompts I run every Monday before I open social:
+
+1. 'Summarise last week's wins in 3 bullets, no fluff.'
+2. 'List my open loops — projects I'm dragging.'
+3. 'Draft 5 LinkedIn hooks from my best result this week.'
+
+That's the whole system. 30 minutes max.
+Save this for the next Monday you wake up foggy.
+
+Which one are you trying first?
+
+#contentcreator #aiproductivity #linkedintips #buildinpublic"
+
+REF 2 — [carousel_caption] for tool drop:
+"NotebookLM is the most underused AI tool of 2026.
+
+I uploaded 50 viral YouTube videos.
+30 minutes later: every hook, every CTA, every retention move — reverse-engineered into a single doc.
+
+Slide 7 is the prompt I'd never have figured out alone.
+
+Save this. Send it to the creator friend who's still scripting blind.
+
+Which slide are you stealing first?
+
+#notebooklm #ai #contentstrategy #youtubegrowth #creatoreconomy"
+
+REF 3 — [hot_take_caption]:
+"Most '10x productivity' content is just rebranded burnout.
+
+I tracked my output for 6 weeks across the routines on every productivity reel.
+Deep work hours dropped 40%. Stress markers up.
+The one thing that actually worked: longer sleep + one decision per morning.
+
+That's it. No app. No stack. No 5am cold plunge.
+
+Disagree? Tell me where I'm wrong.
+
+#productivity #deepwork #founderlife #honestadvice"
+
+REF 4 — [story_caption]:
+"I almost deleted the post that hit 2M views.
+
+It was 11:48pm. Caption felt off. Hovered over the bin icon for a full minute.
+Posted it anyway because I'd already made the carousel.
+
+Woke up to 800 notifications.
+Two months later it still drives 30% of my new followers.
+
+The ones I overthink the most are the ones that work.
+
+What's a post you almost didn't publish?
+
+#contentcreator #socialgrowth #honestcreator"
+
+STUDY THESE PATTERNS:
+- Line 1 is always under 125 chars and never a question.
+- Numbers in line 1 win — "3 prompts" beats "some prompts".
+- Save-CTA + question-CTA stacked at the end (saves + comments both fire).
+- Hashtags ONLY on the last line, niche-specific, 4-6 of them.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ${buildAntiAiRules("standard")}
 `;

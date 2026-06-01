@@ -15,12 +15,14 @@
 import { buildAntiAiRules } from "@/lib/anti-ai-rules";
 
 export type TweetStructure =
-  | "hot_take"        // Strong opinion, one line. "X is over. Y won."
-  | "before_after"    // "OLD: X. NEW: Y." (single tweet variant)
-  | "tiny_list"       // 3 items max, line break between each
-  | "question_hook"   // One sharp question that invites quote-tweets
-  | "specific_proof"  // "I did X. Here's the receipt:" + one stat
-  | "tool_drop";      // "[Tool] just did X. Free. Link below."
+  | "hot_take"             // Strong opinion, one line. "X is over. Y won."
+  | "before_after"         // "OLD: X. NEW: Y." (single tweet variant)
+  | "tiny_list"            // 3 items max, line break between each
+  | "question_hook"        // One sharp question that invites quote-tweets
+  | "specific_proof"       // "I did X. Here's the receipt:" + one stat
+  | "tool_drop"            // "[Tool] just did X. Free. Link below."
+  | "historical_analogy"   // "In 2007 iPhone killed Nokia. In 2026 X will kill Y."
+  | "breaking_announcement"; // "BREAKING: [Tool] is literally a Cheatcode for [outcome]"
 
 export interface NicheHint {
   keywords: string[];
@@ -28,10 +30,10 @@ export interface NicheHint {
 }
 
 const NICHE_STRUCTURE_MAP: NicheHint[] = [
-  { keywords: ["ai", "gpt", "claude", "gemini", "tool", "tech", "automation", "code"], preferredStructures: ["tool_drop", "hot_take", "before_after", "specific_proof"] },
-  { keywords: ["marketing", "growth", "audience", "content", "creator", "viral", "followers"], preferredStructures: ["hot_take", "specific_proof", "tiny_list", "question_hook"] },
-  { keywords: ["business", "entrepreneur", "startup", "founder", "saas"], preferredStructures: ["specific_proof", "hot_take", "before_after", "tiny_list"] },
-  { keywords: ["finance", "invest", "money", "saving", "wealth"], preferredStructures: ["before_after", "tiny_list", "specific_proof"] },
+  { keywords: ["ai", "gpt", "claude", "gemini", "tool", "tech", "automation", "code"], preferredStructures: ["tool_drop", "breaking_announcement", "historical_analogy", "hot_take", "before_after", "specific_proof"] },
+  { keywords: ["marketing", "growth", "audience", "content", "creator", "viral", "followers"], preferredStructures: ["hot_take", "specific_proof", "tiny_list", "question_hook", "breaking_announcement"] },
+  { keywords: ["business", "entrepreneur", "startup", "founder", "saas"], preferredStructures: ["historical_analogy", "specific_proof", "hot_take", "before_after", "tiny_list"] },
+  { keywords: ["finance", "invest", "money", "saving", "wealth"], preferredStructures: ["before_after", "tiny_list", "specific_proof", "historical_analogy"] },
 ];
 
 function detectNicheStructures(niche: string, content: string): TweetStructure[] {
@@ -42,7 +44,7 @@ function detectNicheStructures(niche: string, content: string): TweetStructure[]
       matches.push(...hint.preferredStructures);
     }
   }
-  if (matches.length === 0) return ["hot_take", "specific_proof", "tool_drop", "tiny_list", "question_hook"];
+  if (matches.length === 0) return ["hot_take", "specific_proof", "tool_drop", "historical_analogy", "breaking_announcement"];
   return Array.from(new Set(matches)).slice(0, 5);
 }
 
@@ -169,6 +171,56 @@ MANDATORY:
 - One specific capability (verb + object), not a vague claim.
 - One stat OR one real URL — never both, the tweet needs air.
 `,
+
+  historical_analogy: `
+STRUCTURE: "HISTORICAL ANALOGY / PARALLEL TIMELINE"
+Pattern: two past disruptions + one near-future prediction. Triggers
+the "oh shit, this is the same shape" recognition that drives shares.
+Length: 200-500 characters (worth the room — the cadence IS the hook).
+
+FORMULA:
+"In [past year], [X] killed [Y].
+In [more recent year], [Z] killed [W].
+In [near-future year], [new thing] will kill [target].
+
+[One line of why this time is different]."
+
+EXAMPLE (verbatim viral pattern):
+"In 2007, iPhone killed Nokia.
+In 2012, Netflix killed Blockbuster.
+In 2026, Macrohard will kill Microsoft.
+
+Software that builds itself doesn't need a company that sells it."
+
+MANDATORY:
+- Three lines, three time anchors, three subject-verb-object beats.
+- Same VERB across all three lines ("killed / will kill") — repetition IS the rhythm.
+- Final line MUST predict, not just observe. Stakes are the share-trigger.
+- One follow-up line (max 12 words) that names the mechanism.
+`,
+
+  breaking_announcement: `
+STRUCTURE: "BREAKING / CHEATCODE DROP"
+Pattern: news-anchor cadence applied to a tool, model, or workflow.
+Reads like a leak. Replies and quote-tweets come from "wait, really?".
+Length: 100-260 characters.
+
+FORMULAS:
+"BREAKING: [Tool/Person] is literally a Cheatcode for [outcome]."
+"BREAKING: [Tool] just [verb-ed] [established behaviour]. [Plain stat]."
+"RIP [established product]. [New thing] just [killer move]."
+
+EXAMPLE:
+"BREAKING: NotebookLM is literally a Cheatcode for studying any viral YouTube channel.
+
+7 prompts. 30 minutes. Full reverse-engineering."
+
+MANDATORY:
+- "BREAKING:" or "RIP" in word 1 — never further down.
+- One specific verb of impact ("just turned", "just killed", "just replaced").
+- Follow with a 3-line proof block (stat / process / receipt) — short, dash-style.
+- No emojis. The cadence is already news-room — don't dilute it.
+`,
 };
 
 /**
@@ -234,6 +286,78 @@ SIGNATURE MOVES (real X creators use these)
 
 4. The contrarian sentence
    One line, no qualifiers. "Newsletters aren't dead. Yours is."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HOOK BANK — first-5-words that earn the thumb-stop
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+NEWS-ROOM CADENCE:
+- "BREAKING: [Tool] is literally a Cheatcode for [outcome]."
+- "RIP [established product]. [New thing] just [killer move]."
+- "[Year]. The year [X] killed [Y]."
+
+HISTORICAL PARALLEL:
+- "In 2007 iPhone killed Nokia. In 2026 [X] will kill [Y]."
+- "Same year [past disruption]. Same shape, different industry."
+
+CONTRARIAN PUNCH:
+- "[Established belief] is over. [New thing] won."
+- "Stop [doing common thing]. Just [do uncommon thing]."
+- "You don't need [common thing]. You need [actual thing]."
+- "[Common advice] is wrong. Here's what actually works:"
+
+RECEIPT FIRST:
+- "[Specific number] in [timeframe]. Here's the move:"
+- "I [did X]. Here's the receipt:"
+- "$[price]. [Outcome]. Took [time]."
+
+TOOL DROP:
+- "[Tool] just [verb-ed] [previously-hard thing]."
+- "Try this: [URL] → [exact menu path] → [action]."
+
+NEGATION CASCADE (works inline mid-tweet too):
+- "Not [obvious thing]. Not [adjacent thing]. Actually [real thing]."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+REFERENCE EXAMPLES — viral on X, study the cadence
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+REF 1 — Historical analogy (single tweet, thread-opener variant):
+"In 2007, iPhone killed Nokia.
+In 2012, Netflix killed Blockbuster.
+In 2026, Macrohard will kill Microsoft.
+
+And Elon Musk is behind it."
+
+REF 2 — BREAKING cadence with proof block:
+"BREAKING: NotebookLM is literally a Cheatcode for studying any viral YouTube channel.
+
+7 prompts. 30 minutes. Full reverse-engineering.
+
+(Save this before they patch the workflow)"
+
+REF 3 — Negation cascade closer:
+"Not chatbots.
+Not assistants.
+Actual agents that can:
+— write the code
+— deploy the app
+— sell the SaaS
+— refund the customer
+
+That's why Microsoft should be worried."
+
+REF 4 — Receipt-first hot take:
+"15,000 followers in 30 days. Same workflow every morning: 1 viral hook, 1 carousel, 1 reply ladder. That's it."
+
+REF 5 — Tool drop, no commentary:
+"Try this: notebooklm.google.com → Discover sources → paste 50 YouTube URLs → 'Generate audio overview'. 2 minutes. Free."
+
+STUDY THESE PATTERNS:
+- Repetition of structure ("In [year], [X] killed [Y]" × 3) IS the hook.
+- "And [bombshell]" as a closer line is a share-trigger — it implies a thread.
+- Dash-bullet action lists (— write — deploy — sell) hit harder than commas.
+- Parenthetical asides ("(Save this before they patch it)") add urgency without hype.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
