@@ -669,7 +669,28 @@ ${profile?.target_audience ? `Target audience: ${profile.target_audience}` : ''}
 ${profile?.preferred_tone ? `Tone: ${profile.preferred_tone}` : ''}
 
 Generate 5 complete ${selectedFormat} variations.
-Each must be radically different in angle and structure.
+
+VARIATION DIVERSITY — NON-NEGOTIABLE:
+Each of the 5 variations MUST use a DIFFERENT hook archetype AND a
+DIFFERENT structure from the playbook. Assign one archetype per variation:
+
+  Variation 1 — CONTRARIAN ("Most people think X. They're wrong.")
+  Variation 2 — FOUNDER CONFESSION ("I spent N months doing X the hard way.")
+  Variation 3 — NUMBERED FRAMEWORK ("Here are the N specific steps.")
+  Variation 4 — PATTERN-INTERRUPT ("BREAKING: / Stop X / [Tool] just X")
+  Variation 5 — QUESTION HOOK ("Why do N% of [audience] [outcome]?")
+
+NO TWO VARIATIONS may share the same key phrase verbatim. If variation 1
+uses a memorable quote, the other 4 MUST express the same idea with
+completely different wording. Repeated phrasing across variations reveals
+the model is reskinning ONE post into five. That's a failure.
+
+ARTIFACT RULE — every variation over 100 words MUST contain at least ONE
+concrete copyable artifact: a verbatim prompt in quotes, a real URL or
+button-path, a numbered list with exact actions, a .md file inventory,
+OR the full hashtag set (if you mention hashtags, SHOW them on the last
+line). Posts that reference content without showing it are filler.
+
 ${combinedContext ? `Each variation must contain at least one verbatim quote and one hard number from the ${sourceLabel}.` : ''}
 Use white space and line breaks generously.
 Make each post visually clean and easy to read.

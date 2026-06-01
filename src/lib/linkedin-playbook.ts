@@ -762,6 +762,39 @@ structure below. Pick from these (matched to user's niche: "${niche || "general"
 ${templates}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HARD RULE — ONE COPYABLE ARTIFACT PER POST (non-negotiable)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Every post over 800 characters MUST contain at least ONE of:
+
+  ✦ A VERBATIM PROMPT in quotes (5-30 words, copy-pasteable):
+    "Read my files. Ask me questions before you start."
+    "Generate 3 versions of [topic] using these 5 blocks: [block list]"
+
+  ✦ A REAL URL or BUTTON PATH:
+    "Go to gemini.google.com → click Tools → Create image"
+    "claude.com/settings → Capabilities → Skills → Upload"
+
+  ✦ A .md FILE INVENTORY (3-4 filenames + one-line purpose each):
+    ✦ my-context.md — exported from [tool]
+    ✦ about-me.md — who you are, how you write
+    ✦ voice.md — banned words, signature phrases
+
+  ✦ A FULL HASHTAG SET (if you mention hashtags, SHOW them on the last
+    line — never reference "10 hashtags pour X" without printing them)
+
+  ✦ A SPECIFIC NUMBERED FRAMEWORK with each step's exact action
+    (not "5 blocks" — list the 5 with one concrete instruction each)
+
+  ✦ A NAMED OUTPUT EXAMPLE: a 2-3 line excerpt of the actual thing
+    the post is about (e.g., a 3-line snippet of a generated post)
+
+WITHOUT AN ARTIFACT THE POST IS FILLER. If you mention a thing
+("the Prompt 3", "10 hashtags", "a 5-block structure"), you MUST
+SHOW the thing in the post itself. Referencing content the reader
+can't see signals an LLM that's bluffing.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 LINKEDIN FORMATTING RULES (data-backed, 537k posts analyzed)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

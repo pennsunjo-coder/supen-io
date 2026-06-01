@@ -238,6 +238,27 @@ NEGATIVE PARALLELISM ("Not just X, it's Y" / "It's not X, it's Y" /
 "Not only X but also Y") — use ONCE per post maximum, never as a
 structural device. Two or more is the strongest single tell of AI prose.
 
+SAFE-HOUSE FORMULAS — banned outright. When the model gets pressure
+to "sound smart" it falls back on these. Each one is a signature
+LLM tell. The em-dash sandwich variant is the worst.
+  ❌ "X n'est pas Y — c'est Z."
+  ❌ "X is not Y — it's Z."
+  ❌ "X isn't Y, it's Z."
+  ❌ "C'est pas X. C'est Y." (when used as a one-liner reveal)
+  ❌ "It's not the X. It's the Y."
+  ❌ "X isn't about Y. It's about Z."
+If you find yourself reaching for this shape, write the claim as a
+single declarative sentence instead: "Y is the thing." Period.
+
+CROSS-VARIATION REPETITION — when generating multiple variations of
+the same topic, NO two variations may share the same key phrase
+verbatim. If variation 1 says "n'est pas une question de chance, c'est
+une structure", NO other variation may use that quote, that shape, or
+its rough translation. Each variation must reach the same conclusion
+through DIFFERENT wording and a DIFFERENT angle. Repeated phrasing
+across variations reveals the model is reskinning one post, not
+producing five.
+
 STACCATO TRIPLET ("No X. No Y. Just Z.") — use ONCE per post maximum,
 never twice in the same piece. LLMs cycle this rhythm mechanically.
 
