@@ -101,26 +101,26 @@ const Login = () => {
       }
 
       if (isSignUp) {
-        // Free-plan signup: drop the user straight into the app. They get
-        // 3 lifetime generations, and only see the paywall modal in the
-        // Studio when they try the 4th. No upfront plan picker.
+        // Paid-only model: every signup is funneled to the plan picker on
+        // the Subscription tab. The Free plan was removed, so the user
+        // must commit to Plus ($10) or Pro ($30) before getting access.
         const { data: { user: signedUpUser } } = await supabase.auth.getUser();
         if (signedUpUser) {
           sessionStorage.removeItem("pendingSignup");
-          navigate("/dashboard");
+          navigate("/settings", { state: { tab: "compte" } });
         } else {
           // Email confirmation required: remember and welcome them straight
-          // into the dashboard on first sign-in.
+          // to the plan picker on first sign-in.
           sessionStorage.setItem("pendingSignup", "1");
-          toast.success("Account created! Confirm your email, then sign back in to start creating.");
+          toast.success("Account created! Confirm your email, then sign back in to pick your plan.");
         }
       } else {
-        // Sign-in. Pending-signup flag just means we should land them on
-        // the dashboard (not on a stale redirectTo).
+        // Sign-in. If they're a fresh signup who just confirmed their
+        // email, land them on the plan picker so they finish the funnel.
         const pendingSignup = sessionStorage.getItem("pendingSignup");
         if (pendingSignup === "1") {
           sessionStorage.removeItem("pendingSignup");
-          navigate("/dashboard");
+          navigate("/settings", { state: { tab: "compte" } });
         } else {
           navigate(location.state?.redirectTo || "/dashboard");
         }

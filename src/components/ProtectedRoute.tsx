@@ -2,6 +2,7 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/use-profile";
 import { Loader2 } from "lucide-react";
+import PlanGate from "@/components/PlanGate";
 
 interface Props {
   children: React.ReactNode;
@@ -49,8 +50,9 @@ export default function ProtectedRoute({ children, skipOnboardingCheck = false }
     return <Navigate to="/onboarding" replace />;
   }
 
-  // 6. All good → render the page. No more hard paywall at the door —
-  // Free users get 3 lifetime generations and only hit the in-Studio
-  // upgrade modal when they cross that limit (StudioWizard handles it).
-  return <>{children}</>;
+  // 6. Hard paywall — the Free plan was removed: Supenli.ai is a paid
+  // tool, users must pick Plus or Pro before accessing any feature.
+  // PlanGate shows the two-plan picker until profile.plan is active.
+  // Admins and active subscribers pass through untouched.
+  return <PlanGate>{children}</PlanGate>;
 }
