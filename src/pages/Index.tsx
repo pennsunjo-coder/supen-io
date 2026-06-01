@@ -247,7 +247,7 @@ const Index = () => {
               onClick={() => navigate("/login")} 
               className="bg-primary text-primary-foreground hover:brightness-110 active:scale-95 rounded-full px-6 h-10 text-sm font-bold shadow-lg shadow-primary/25 transition-all"
             >
-              Get started free
+              Start
             </Button>
           </div>
         </div>
@@ -579,7 +579,7 @@ const Index = () => {
             viewport={{ once: true }} transition={{ duration: 0.5 }}
           >
             <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-4 block">Fair Pricing</span>
-            <h2 className="font-display text-5xl md:text-6xl font-black mb-6 tracking-display">Start free. <span className="text-primary">Scale fast.</span></h2>
+            <h2 className="font-display text-5xl md:text-6xl font-black mb-6 tracking-display">Start. <span className="text-primary">Scale fast.</span></h2>
           </motion.div>
 
           <div className="grid md:grid-cols-2 gap-6 items-start max-w-4xl mx-auto">
@@ -709,7 +709,7 @@ const Index = () => {
             Used by 2,500+ creators across six platforms — without the AI-generated smell.
           </p>
           <Button size="lg" onClick={() => navigate("/login")} className="bg-foreground text-background hover:scale-105 active:scale-95 font-black uppercase tracking-[0.2em] h-14 px-10 text-sm rounded-full transition-all shadow-2xl shadow-white/5">
-            Get started free
+            Start
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         </motion.div>

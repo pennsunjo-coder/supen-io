@@ -591,7 +591,7 @@ export default function Admin() {
                   <div>
                     <h3 className="text-sm font-semibold">Re-engagement reminders</h3>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Email signups who haven't generated content (3+ days old, 7+ days inactive, free plan).
+                      Email signups who haven't generated content (3+ days old, 7+ days inactive, no active plan).
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">

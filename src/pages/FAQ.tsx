@@ -24,7 +24,7 @@ const FAQS = [
   },
   {
     q: "Is there a free plan?",
-    a: "Yes! The free plan includes access to the YouTube Transcriber tool (unlimited), 5 content generations per day, and basic source management. It's perfect for trying out the platform and seeing the quality of our output before committing to a paid plan.",
+    a: "No — Supenli.ai is a paid tool. Plus is $10/month (100 generations + 50 infographics) and Pro is $30/month (unlimited generations + 300 infographics). You can cancel anytime from Settings and access remains until the end of the billing period.",
   },
   {
     q: "What's included in Pro and Plus plans?",

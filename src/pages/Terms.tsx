@@ -63,7 +63,6 @@ export default function Terms() {
             <h2 className="text-xl font-semibold text-foreground mb-4">4. Subscription Plans & Billing</h2>
             <p className="mb-3">Supenli.ai offers the following plans:</p>
             <ul className="list-disc list-inside space-y-1.5 ml-2">
-              <li><strong className="text-foreground">Free</strong> — 3 lifetime content generations, text only, no infographics. No credit card required.</li>
               <li><strong className="text-foreground">Plus — $10/month</strong> — 100 generations per month, 50 infographics per month, full feature access.</li>
               <li><strong className="text-foreground">Pro — $30/month</strong> — unlimited generations, 300 infographics per month, priority queue, early access to new features.</li>
             </ul>

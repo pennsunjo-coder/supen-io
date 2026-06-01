@@ -186,7 +186,7 @@ export default function Settings() {
         }
         throw new Error(msg);
       }
-      toast.success("Subscription canceled. You're back on the Free plan.");
+      toast.success("Subscription canceled. Your access ends immediately.");
       setShowCancelConfirm(false);
       await refreshProfile();
     } catch (err) {
@@ -591,7 +591,7 @@ export default function Settings() {
                     <div>
                       <p className="text-sm font-semibold">Cancel subscription</p>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        Cancel immediately and go back to the Free plan. You'll lose access to paid features right away.
+                        Cancel immediately. You'll lose access to all features right away.
                       </p>
                     </div>
                     {!showCancelConfirm ? (
