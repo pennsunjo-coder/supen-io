@@ -59,8 +59,11 @@ export async function createCheckoutSession(
       plan,
       userId,
       email,
-      successUrl: `${window.location.origin}/dashboard`,
-      cancelUrl: `${window.location.origin}/settings`,
+      // Land the user straight on the Subscription tab after paying so
+      // they see "Current plan" + the Manage Billing button right away,
+      // and the ?checkout=success param triggers a toast confirmation.
+      successUrl: `${window.location.origin}/settings?tab=compte&checkout=success`,
+      cancelUrl: `${window.location.origin}/settings?tab=compte`,
     },
   });
 

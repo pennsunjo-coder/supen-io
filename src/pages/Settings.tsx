@@ -65,16 +65,47 @@ export default function Settings() {
   const { user, signOut } = useAuth();
   const { profile, loading: profileLoading, updateProfile, refetch: refreshProfile } = useProfile();
 
-  // Optional ?tab via navigation state — e.g. Login sends { tab: "compte" } so
-  // fresh signups land directly on the plan picker instead of the profile form.
+  // Tab selection can come from either React Router state (in-app
+  // navigation, e.g. Login sending { tab: "compte" }) or from a URL
+  // query param (cross-domain hop, e.g. Stripe Checkout success URL
+  // `?tab=compte&checkout=success`). URL wins because it's the only
+  // signal we still get after the Stripe redirect.
   const location = useLocation();
+  const urlParams = new URLSearchParams(location.search);
+  const urlTab = urlParams.get("tab");
   const stateTab = location.state?.tab;
-  const initialTab: Section = stateTab === "profil" || stateTab === "preferences" || stateTab === "compte" || stateTab === "about"
-    ? stateTab
+  const rawTab = urlTab ?? stateTab;
+  const initialTab: Section = rawTab === "profil" || rawTab === "preferences" || rawTab === "compte" || rawTab === "about"
+    ? rawTab
     : "profil";
+  const justCheckedOut = urlParams.get("checkout") === "success";
   const [activeSection, setActiveSection] = useState<Section>(initialTab);
   const [saving, setSaving] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
+
+  // Refetch the profile every time the user lands on / switches to the
+  // Subscription tab. useProfile() only fetches once on mount, so after
+  // a Stripe checkout (user_profiles flipped to plus/pro by the webhook)
+  // the cached profile still says "free" — that's why the Plus card was
+  // showing "Upgrade to Plus" instead of "Current plan" and why the
+  // Manage Billing section stayed hidden. One refetch on tab-activation
+  // closes the gap without any polling.
+  useEffect(() => {
+    if (activeSection === "compte") {
+      refreshProfile();
+    }
+  }, [activeSection, refreshProfile]);
+
+  // Stripe success handoff. Cancel the ?checkout=success param after
+  // showing the toast so a reload doesn't re-fire it, and trigger an
+  // extra refetch in case the webhook hadn't quite landed before the
+  // user got bounced back here.
+  useEffect(() => {
+    if (!justCheckedOut) return;
+    toast.success("Subscription activated! Welcome aboard 🚀");
+    refreshProfile();
+    navigate(location.pathname, { replace: true });
+  }, [justCheckedOut, refreshProfile, navigate, location.pathname]);
 
   // Profile fields
   const [firstName, setFirstName] = useState("");
