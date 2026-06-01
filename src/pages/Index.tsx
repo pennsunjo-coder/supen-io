@@ -15,7 +15,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { LogoFull } from "@/components/Logo";
 import { useAuth } from "@/contexts/AuthContext";
 
-const ROTATING_WORDS = ["Viral", "Compelling", "Human", "Irresistible"];
+const ROTATING_WORDS = ["Viral", "Compelling", "Human", "Yours"];
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -415,8 +415,8 @@ const Index = () => {
             viewport={{ once: true }} transition={{ duration: 0.5 }}
           >
             <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-[9px] font-black uppercase tracking-[0.3em] mb-4">Capabilities</span>
-            <h2 className="font-display text-3xl md:text-5xl font-black mb-4 tracking-display">Everything you need to <span className="italic text-primary">go viral</span></h2>
-            <p className="text-muted-foreground max-w-md mx-auto text-sm font-medium opacity-60">From research to publishing, Supenli.ai handles the entire content creation workflow.</p>
+            <h2 className="font-display text-3xl md:text-5xl font-black mb-4 tracking-display">All the unfair advantages, <span className="italic text-primary">in one place</span></h2>
+            <p className="text-muted-foreground max-w-md mx-auto text-sm font-medium opacity-60">Research sources, generate, score for virality, ship. No new tab to open, no plugin to install.</p>
           </motion.div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -719,13 +719,13 @@ const Index = () => {
         >
           <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-primary/10 border border-primary/20 mb-10">
             <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Ready to dominate?</span>
+            <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Your audience is waiting</span>
           </div>
           <h2 className="font-display text-4xl md:text-6xl lg:text-7xl font-black mb-6 tracking-display leading-[1.1]">
-            Create your first <br /><span className="text-primary italic">viral content</span>
+            Stop staring at <br /><span className="text-primary italic">the blank page</span>
           </h2>
           <p className="text-sm md:text-base text-muted-foreground mb-12 max-w-lg mx-auto font-medium opacity-60">
-            Join 2,500+ creators using Supenli.ai to create content that converts.
+            Used by 2,500+ creators across six platforms — without the AI-generated smell.
           </p>
           <Button size="lg" onClick={() => navigate("/login")} className="bg-foreground text-background hover:scale-105 active:scale-95 font-black uppercase tracking-[0.2em] h-14 px-10 text-sm rounded-full transition-all shadow-2xl shadow-white/5">
             Get started free
@@ -745,7 +745,7 @@ const Index = () => {
                 </Link>
               </div>
               <p className="text-sm text-muted-foreground font-medium leading-relaxed max-w-xs mb-8 opacity-60">
-                AI-powered content creation platform for creators who want to sound human. Build your legacy, one viral post at a time.
+                AI that writes for social — without sounding like AI. For creators who want their voice back.
               </p>
               <div className="flex gap-4">
                 {[
@@ -793,7 +793,7 @@ const Index = () => {
           </div>
 
           <div className="flex flex-col md:flex-row items-center justify-between pt-12 border-t border-white/[0.03] gap-8">
-            <p className="text-[9px] font-black uppercase tracking-[0.4em] text-muted-foreground/30">© 2026 Supenli.ai. Built for virality.</p>
+            <p className="text-[9px] font-black uppercase tracking-[0.4em] text-muted-foreground/30">© 2026 Supenli.ai. Made for creators.</p>
             <div className="flex gap-8">
               <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/20">Secure Platform</span>
             </div>
