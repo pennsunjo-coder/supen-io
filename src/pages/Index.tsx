@@ -105,7 +105,7 @@ const plans = [
     price: "$30",
     period: "/month",
     desc: "For agencies and content teams",
-    features: ["Everything in Plus", "Unlimited generations", "3 team members", "Shared workspaces", "Advanced analytics", "Dedicated onboarding", "Dedicated support"],
+    features: ["Everything in Plus", "Unlimited generations", "Shared workspaces", "Advanced analytics", "Dedicated onboarding", "Dedicated support"],
     cta: "Get Pro →",
     highlighted: false,
     rotation: "rotate-[-2deg]",
