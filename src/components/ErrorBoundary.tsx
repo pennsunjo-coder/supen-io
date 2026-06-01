@@ -37,24 +37,21 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="min-h-screen bg-background flex items-center justify-center p-6">
           <div className="max-w-md w-full text-center">
-            {/* Icone d'erreur */}
             <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center mx-auto mb-6">
               <AlertTriangle className="w-8 h-8 text-destructive" />
             </div>
 
-            {/* Message */}
             <h1 className="text-xl font-bold text-foreground mb-2">
-              Oups, quelque chose s'est mal passe
+              Something went wrong
             </h1>
             <p className="text-sm text-muted-foreground mb-8 leading-relaxed">
-              Une erreur inattendue s'est produite. Tes donnees sont en securite.
+              An unexpected error occurred. Your data is safe.
             </p>
 
-            {/* Details collapsibles */}
             {this.state.error && (
               <details className="mb-6 text-left bg-accent/20 border border-border/30 rounded-xl p-4">
                 <summary className="text-xs font-medium text-muted-foreground cursor-pointer">
-                  Details techniques
+                  Technical details
                 </summary>
                 <code className="text-[11px] text-destructive/80 break-all block mt-2">
                   {this.state.error.message}
@@ -62,11 +59,10 @@ export class ErrorBoundary extends Component<Props, State> {
               </details>
             )}
 
-            {/* Actions */}
             <div className="flex flex-col gap-3">
               <Button onClick={this.handleReset} className="w-full gap-2">
                 <RefreshCw className="w-4 h-4" />
-                Reessayer
+                Try again
               </Button>
               <Button
                 variant="outline"
