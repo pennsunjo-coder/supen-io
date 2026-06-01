@@ -2,8 +2,12 @@ import { supabase } from "@/lib/supabase";
 
 /**
  * Secure AI API proxy — all calls go through the "chat" Edge Function.
- * The system now uses OpenAI (GPT-4o) as the primary engine for better reliability.
- * The API key lives server-side only (OPENAI_API_KEY secret in Supabase).
+ * The primary engine is Anthropic Claude (Opus 4.8). If Claude fails with an
+ * auth/quota/network/5xx error, the edge function silently falls back to
+ * OpenAI (GPT-4o) so the user never sees the failure. As a last-resort safety
+ * net, if the chat function itself returns a "model not found" error, this
+ * wrapper falls back to a direct call against the "openai" edge function.
+ * API keys live server-side only (ANTHROPIC_API_KEY + OPENAI_API_KEY secrets).
  */
 
 export interface ClaudeMessage {
