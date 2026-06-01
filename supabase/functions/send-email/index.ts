@@ -381,13 +381,19 @@ Deno.serve(async (req) => {
     else if (type === "contact") html = buildContactEmail(data?.name || "there", data?.email || "", data?.subject || "", data?.message || "");
     else throw new Error(`Unknown email type: ${type}`);
 
+    // From-line tuning for deliverability. A personal-looking name in
+    // the From + a real human reply_to pushes Gmail to score the email
+    // as 1-to-1 instead of bulk marketing, which lands more sends in
+    // Primary instead of Promotions. Specific call sites can still
+    // override reply_to (e.g. the Contact form passes the visitor's
+    // address so we can hit Reply directly).
     const payload: Record<string, unknown> = {
-      from: "Supenli.ai <noreply@supenli.ai>",
+      from: "Awa K. Pen <noreply@supenli.ai>",
       to: [to],
       subject,
       html,
+      reply_to: replyTo || "pennsunjo@gmail.com",
     };
-    if (replyTo) payload.reply_to = replyTo;
 
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
