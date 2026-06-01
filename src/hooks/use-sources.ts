@@ -5,6 +5,7 @@ import { useProfile } from "@/hooks/use-profile";
 import { getCache, setCache, invalidateCache } from "@/lib/cache";
 import { embedSource, embedAllExistingSources } from "@/lib/embeddings";
 import { distillSource } from "@/lib/distill-source";
+import { scoreContent } from "@/lib/content-score";
 import { getPlanLimits, upgradeMessage } from "@/lib/plan-limits";
 import * as pdfjsLib from "pdfjs-dist";
 import type { Source } from "@/types/database";
@@ -490,6 +491,7 @@ export function useSources() {
       if (chunks.length === 1) {
         const { data: inserted, error } = await supabase.from("sources").insert({
           user_id: user.id, type: "url", title, content: chunks[0],
+          content_score: scoreContent(chunks[0]),
         }).select("id, content");
         if (error) return { error: error.message };
         if (inserted) {
@@ -500,6 +502,7 @@ export function useSources() {
         const inserts = chunks.map((chunk, i) => ({
           user_id: user.id, type: "url" as const,
           title: `${title} (${i + 1}/${chunks.length})`, content: chunk,
+          content_score: scoreContent(chunk),
         }));
         const { data: inserted, error } = await supabase.from("sources").insert(inserts).select("id, content");
         if (error) return { error: error.message };
@@ -530,6 +533,7 @@ export function useSources() {
           type: "note",
           title: title.slice(0, 200),
           content: chunks[0],
+          content_score: scoreContent(chunks[0]),
         }).select("id, content");
         if (error) return { error: error.message };
         if (inserted) {
@@ -542,6 +546,7 @@ export function useSources() {
           type: "note" as const,
           title: `${title.slice(0, 180)} (${i + 1}/${chunks.length})`,
           content: chunk,
+          content_score: scoreContent(chunk),
         }));
         const { data: inserted, error } = await supabase.from("sources").insert(inserts).select("id, content");
         if (error) return { error: error.message };
@@ -610,6 +615,7 @@ export function useSources() {
           title: chunks.length === 1 ? title : `${title} (${i + 1}/${chunks.length})`,
           content: chunk,
           file_path: i === 0 ? filePath : null,
+          content_score: scoreContent(chunk),
         }));
         const { data: inserted, error } = await supabase
           .from("sources")
@@ -701,6 +707,7 @@ export function useSources() {
       if (chunks.length === 1) {
         const { data: inserted, error } = await supabase.from("sources").insert({
           user_id: user.id, type: "url", title, content: chunks[0],
+          content_score: scoreContent(chunks[0]),
         }).select("id, content");
         if (error) return { error: error.message };
         if (inserted) {
@@ -711,6 +718,7 @@ export function useSources() {
         const inserts = chunks.map((chunk, i) => ({
           user_id: user.id, type: "url" as const,
           title: `${title} (${i + 1}/${chunks.length})`, content: chunk,
+          content_score: scoreContent(chunk),
         }));
         const { data: inserted, error } = await supabase.from("sources").insert(inserts).select("id, content");
         if (error) return { error: error.message };

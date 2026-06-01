@@ -65,6 +65,8 @@ export interface UserSourceMatch {
   content: string;
   type: string;
   similarity: number;
+  /** Heuristic 0-1 quality score from src/lib/content-score.ts. */
+  content_score?: number;
 }
 
 // ─── Relevance filtering ───
@@ -72,9 +74,18 @@ export interface UserSourceMatch {
 /**
  * Minimum trigram score worth keeping — cuts common-word noise ("the", "how",
  * "you") that scrapes past the SQL floor (0.05) without being topically
- * relevant.
+ * relevant. Tightened from 0.08 → 0.12 after audit: keyword-only matches
+ * around 0.08-0.10 were diluting Studio prompts with chunks that shared
+ * vocabulary but no real topical overlap.
  */
-export const TRIGRAM_RELEVANCE_FLOOR = 0.08;
+export const TRIGRAM_RELEVANCE_FLOOR = 0.12;
+
+/**
+ * Drop chunks below this content_score from retrieval entirely. They're
+ * Table-of-Contents / copyright / navigation pages — never useful as
+ * source material. See src/lib/content-score.ts for the heuristic.
+ */
+const CONTENT_SCORE_FLOOR = 0.3;
 
 /**
  * Drop weakly-related chunks so the generation prompt isn't diluted with
@@ -103,6 +114,69 @@ export function filterByRelevance<T extends { similarity: number }>(
 }
 
 /**
+ * Hydrate retrieved chunks with their content_score, drop boilerplate
+ * (score < CONTENT_SCORE_FLOOR), and re-rank by similarity × content_score.
+ *
+ * The SQL RPCs return chunks ranked purely by topical similarity. That's
+ * great for relevance but agnostic to QUALITY — a TOC page that happens
+ * to share keywords with the query ranks the same as a viral-pattern-rich
+ * paragraph. This step does the quality gate client-side:
+ * 1. Fetch content_score for every returned chunk in a single query.
+ * 2. Drop chunks below the floor (boilerplate).
+ * 3. Re-rank by similarity × content_score so high-signal chunks bubble up.
+ * 4. Slice back down to the caller's requested limit.
+ *
+ * Falls back gracefully if the column doesn't exist yet — pre-migration
+ * rows just keep their similarity ranking unchanged.
+ */
+async function gateAndRankByQuality<T extends UserSourceMatch>(
+  results: T[],
+  limit: number,
+): Promise<T[]> {
+  if (results.length === 0) return results;
+
+  // Fetch scores in one shot
+  let scoreMap = new Map<string, number>();
+  try {
+    const ids = results.map((r) => r.id);
+    const { data } = await supabase
+      .from("sources")
+      .select("id, content_score")
+      .in("id", ids);
+    if (data) {
+      for (const row of data as Array<{ id: string; content_score: number | null }>) {
+        if (row.content_score !== null && row.content_score !== undefined) {
+          scoreMap.set(row.id, row.content_score);
+        }
+      }
+    }
+  } catch {
+    // Column missing or DB error — degrade to similarity-only ranking
+    scoreMap = new Map();
+  }
+
+  // Attach scores, drop boilerplate, re-rank
+  const scored = results
+    .map((r) => ({
+      ...r,
+      content_score: scoreMap.get(r.id) ?? 0.5,
+    }))
+    .filter((r) => (r.content_score ?? 0.5) >= CONTENT_SCORE_FLOOR);
+
+  scored.sort((a, b) => {
+    const aRank = a.similarity * (a.content_score ?? 0.5);
+    const bRank = b.similarity * (b.content_score ?? 0.5);
+    return bRank - aRank;
+  });
+
+  // Safety: if the quality gate stripped everything, return the original
+  // top result so the user's sources are still represented.
+  if (scored.length === 0 && results.length > 0) return results.slice(0, 1);
+
+  return scored.slice(0, limit) as T[];
+}
+
+/**
  * Search user sources using the best available method:
  * 1. Semantic search via pgvector (if embeddings exist)
  * 2. Trigram search via pg_trgm (if RPC available)
@@ -117,6 +191,12 @@ export async function searchUserSources(
 
   console.log("[RAG] Searching", activeSourceIds.length, "sources, limit:", limit);
 
+  // Over-fetch so the post-retrieval quality gate has headroom: if half
+  // the topical matches turn out to be boilerplate (TOC, copyright,
+  // navigation), we still have enough high-signal chunks left to fill
+  // the caller's requested `limit`.
+  const fetchCount = limit * 2;
+
   // ── Strategy 1: Semantic search via pgvector ──
   try {
     const queryEmbedding = await generateEmbedding(query);
@@ -127,13 +207,14 @@ export async function searchUserSources(
           query_embedding: JSON.stringify(queryEmbedding),
           user_id_param: user.id,
           source_ids: activeSourceIds,
-          match_count: limit,
+          match_count: fetchCount,
           match_threshold: 0.3,
         });
         if (!error && data && data.length > 0) {
-          const filtered = filterByRelevance(data as UserSourceMatch[]);
-          console.log("[RAG] Vector search hit:", data.length, "results,", filtered.length, "kept");
-          return filtered;
+          const relevant = filterByRelevance(data as UserSourceMatch[]);
+          const gated = await gateAndRankByQuality(relevant, limit);
+          console.log("[RAG] Vector:", data.length, "hits →", relevant.length, "relevant →", gated.length, "quality-gated");
+          return gated;
         }
       }
     }
@@ -146,28 +227,54 @@ export async function searchUserSources(
     const { data, error } = await supabase.rpc("search_user_sources", {
       query_text: query,
       source_ids: activeSourceIds,
-      match_count: limit,
+      match_count: fetchCount,
     });
     if (!error && data && data.length > 0) {
-      const filtered = filterByRelevance(data as UserSourceMatch[], 0.5, TRIGRAM_RELEVANCE_FLOOR);
-      console.log("[RAG] Trigram search hit:", data.length, "results,", filtered.length, "kept");
-      return filtered;
+      const relevant = filterByRelevance(data as UserSourceMatch[], 0.5, TRIGRAM_RELEVANCE_FLOOR);
+      const gated = await gateAndRankByQuality(relevant, limit);
+      console.log("[RAG] Trigram:", data.length, "hits →", relevant.length, "relevant →", gated.length, "quality-gated");
+      return gated;
     }
   } catch {
     // Trigram search unavailable — fall through
   }
 
   // ── Strategy 3: Direct source loading (no ranking) ──
+  // No similarity to rank by, but still drop boilerplate via content_score.
   try {
     const { data: sources } = await supabase
+      .from("sources")
+      .select("id, title, content, type, content_score")
+      .in("id", activeSourceIds)
+      .gte("content_score", CONTENT_SCORE_FLOOR)
+      .order("content_score", { ascending: false })
+      .limit(limit);
+
+    if (sources && sources.length > 0) {
+      console.log("[RAG] Direct load (quality-gated):", sources.length, "sources");
+      return sources.map((s) => ({
+        id: s.id,
+        title: s.title,
+        content: s.content,
+        type: s.type,
+        similarity: 1,
+        content_score: (s as { content_score?: number }).content_score ?? 0.5,
+      }));
+    }
+
+    // Last resort: ignore quality gate so the user's sources are still
+    // represented when all their chunks happen to score below the floor
+    // (very small corpora, or pre-migration rows with NULL scores that
+    // weren't backfilled).
+    const { data: fallback } = await supabase
       .from("sources")
       .select("id, title, content, type")
       .in("id", activeSourceIds)
       .limit(limit);
 
-    if (sources) {
-      console.log("[RAG] Direct load:", sources.length, "sources");
-      return sources.map((s) => ({
+    if (fallback) {
+      console.log("[RAG] Direct load (fallback, no quality gate):", fallback.length, "sources");
+      return fallback.map((s) => ({
         id: s.id,
         title: s.title,
         content: s.content,
