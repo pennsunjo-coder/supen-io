@@ -104,6 +104,7 @@ export default function Admin() {
   const { entries: waitlistEntries, loading: waitlistLoading, refetch: refetchWaitlist } = useWaitlist();
   const [waitlistFilter, setWaitlistFilter] = useState<"all" | "free" | "plus" | "pro">("all");
   const [userSearch, setUserSearch] = useState("");
+  const [userPlanFilter, setUserPlanFilter] = useState<"all" | "free" | "plus" | "pro">("all");
   const [isSendingEmails, setIsSendingEmails] = useState(false);
   const [isSendingReminders, setIsSendingReminders] = useState(false);
   const [reminderPreview, setReminderPreview] = useState<{ count: number; emails: string[] } | null>(null);
@@ -152,15 +153,27 @@ export default function Admin() {
   }
 
   const filteredUsers = useMemo(() => {
-    if (!userSearch.trim()) return users;
+    // Plan filter is applied first, then the search box narrows from there.
+    let base = users;
+    if (userPlanFilter !== "all") {
+      base = base.filter((u) => (u.plan || "free") === userPlanFilter);
+    }
+    if (!userSearch.trim()) return base;
     const q = userSearch.toLowerCase();
-    return users.filter((u) =>
+    return base.filter((u) =>
       u.first_name.toLowerCase().includes(q) ||
       u.niche.toLowerCase().includes(q) ||
       u.user_id.includes(q) ||
       (u.email?.toLowerCase().includes(q) ?? false)
     );
-  }, [users, userSearch]);
+  }, [users, userSearch, userPlanFilter]);
+
+  const userPlanStats = useMemo(() => ({
+    total: users.length,
+    free: users.filter((u) => (u.plan || "free") === "free").length,
+    plus: users.filter((u) => u.plan === "plus").length,
+    pro: users.filter((u) => u.plan === "pro").length,
+  }), [users]);
 
   const filteredWaitlist = useMemo(() => {
     if (waitlistFilter === "all") return waitlistEntries;
@@ -467,7 +480,7 @@ export default function Admin() {
           {section === "users" && (
             <>
               <div className="flex items-center justify-between gap-4">
-                <h2 className="text-lg font-bold shrink-0">Users ({filteredUsers.length})</h2>
+                <h2 className="text-lg font-bold shrink-0">Users ({filteredUsers.length}/{userPlanStats.total})</h2>
                 <div className="flex items-center gap-2 flex-1 max-w-sm">
                   <div className="relative flex-1">
                     <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
@@ -482,6 +495,31 @@ export default function Admin() {
                     {usersLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
                   </Button>
                 </div>
+              </div>
+
+              {/* Plan filter pills — click to scope the users table to a
+                  specific plan tier. "All" is the default; the count next to
+                  each label is live and updates when refetch fires. */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {([
+                  { id: "all" as const, label: "All", count: userPlanStats.total },
+                  { id: "free" as const, label: "Free", count: userPlanStats.free },
+                  { id: "plus" as const, label: "Plus ($10)", count: userPlanStats.plus },
+                  { id: "pro" as const, label: "Pro ($30)", count: userPlanStats.pro },
+                ]).map((f) => (
+                  <button
+                    key={f.id}
+                    onClick={() => setUserPlanFilter(f.id)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all whitespace-nowrap",
+                      userPlanFilter === f.id
+                        ? "bg-primary/10 text-primary border border-primary/30"
+                        : "text-muted-foreground border border-border/20 hover:border-border/40 hover:text-foreground",
+                    )}
+                  >
+                    {f.label} · {f.count}
+                  </button>
+                ))}
               </div>
 
               {/* Re-engagement reminders — emails inactive users who signed up but

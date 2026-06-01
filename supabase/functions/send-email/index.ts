@@ -251,6 +251,32 @@ ${features.map((f) => `<div class="fi">${I.chk}<div class="fi-t">${f}</div></div
 </div></div></body></html>`;
 }
 
+// ── Subscription cancelled ──
+// Fired by stripe-webhook on customer.subscription.deleted. Confirms the
+// cancel went through, reminds them they keep their Free plan, and leaves
+// the door wide open if they ever come back.
+function buildSubscriptionCancelledEmail(name: string, plan: "plus" | "pro"): string {
+  const planLabel = plan === "pro" ? "Pro" : "Plus";
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${STYLES}</style></head>
+<body><div class="wr"><div class="cd">
+<div class="hd">${LOGO}<p class="sub">Subscription canceled</p></div>
+<div class="bd">
+<div class="bg">${I.chk} Cancellation confirmed</div>
+<div class="gr">${name}, your ${planLabel} subscription is canceled.</div>
+<p class="tx">You won't be billed again. Your account stays open on the <span class="hl">Free plan</span> — you keep your past content and you can still generate up to 3 lifetime drafts.</p>
+<div class="ft">
+<div class="fi">${I.chk}<div class="fi-t"><strong>No more charges</strong><br>Your card will not be billed at the next cycle.</div></div>
+<div class="fi">${I.chk}<div class="fi-t"><strong>Past content stays</strong><br>Everything you generated is still in your dashboard.</div></div>
+<div class="fi">${I.zap}<div class="fi-t"><strong>One click to come back</strong><br>If you want to resubscribe later, the upgrade button is right there in Settings.</div></div>
+</div>
+<div class="ct"><a href="${APP}" class="cta">Go to my dashboard &rarr;</a></div>
+<div class="dv"></div>
+<p class="tx" style="font-size:13px;margin-bottom:0;text-align:center">If you canceled by mistake or have a question, just reply to this email — we read every message.</p>
+</div>
+<div class="fo"><p>&copy; 2026 Supenli.ai &middot; Sorry to see you go.</p></div>
+</div></div></body></html>`;
+}
+
 // ── Reminder / re-engagement ──
 function buildReminderEmail(name: string, message?: string, daysAway?: number): string {
   const intro = daysAway && daysAway > 0
@@ -351,6 +377,7 @@ Deno.serve(async (req) => {
     else if (type === "launch") html = buildLaunchEmail(data?.name || "there");
     else if (type === "reminder") html = buildReminderEmail(data?.name || "there", data?.message, data?.daysAway);
     else if (type === "subscription-activated") html = buildSubscriptionActivatedEmail(data?.name || "there", data?.plan === "pro" ? "pro" : "plus");
+    else if (type === "subscription-cancelled") html = buildSubscriptionCancelledEmail(data?.name || "there", data?.plan === "pro" ? "pro" : "plus");
     else if (type === "contact") html = buildContactEmail(data?.name || "there", data?.email || "", data?.subject || "", data?.message || "");
     else throw new Error(`Unknown email type: ${type}`);
 

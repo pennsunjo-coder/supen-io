@@ -97,16 +97,49 @@ serve(async (req) => {
     }
   }
 
-  // Subscription cancelled → downgrade to free
+  // Subscription cancelled → downgrade to free + send confirmation email
   if (event.type === "customer.subscription.deleted") {
     const subscription = event.data.object as Stripe.Subscription;
     const userId = subscription.metadata?.userId;
     if (userId) {
+      // Read the previous plan BEFORE flipping the row — the email needs
+      // to know whether they were on Plus or Pro to address them properly.
+      const { data: priorProfile } = await supabase
+        .from("user_profiles")
+        .select("plan, first_name")
+        .eq("user_id", userId)
+        .maybeSingle();
+      const priorPlan = priorProfile?.plan === "pro" ? "pro" : "plus";
+      const firstName = priorProfile?.first_name || "there";
+
       await supabase.from("user_profiles").update({
         plan: "free",
         stripe_subscription_id: null,
         plan_expires_at: null,
       }).eq("user_id", userId);
+
+      // Cancellation confirmation email (fire-and-forget).
+      try {
+        const { data: userRow } = await supabase.auth.admin.getUserById(userId);
+        const toEmail = userRow.user?.email;
+        if (toEmail) {
+          await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-email`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+            },
+            body: JSON.stringify({
+              to: toEmail,
+              subject: `Your Supenli.ai ${priorPlan === "pro" ? "Pro" : "Plus"} subscription has been canceled`,
+              type: "subscription-cancelled",
+              data: { name: firstName, plan: priorPlan },
+            }),
+          });
+        }
+      } catch (err) {
+        console.warn("[stripe-webhook] subscription-cancelled email failed:", err);
+      }
     }
   }
 
