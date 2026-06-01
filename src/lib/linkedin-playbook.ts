@@ -1073,7 +1073,75 @@ Three-rung ladder (analogy triplet):
   e.g. "Prompts = telling a stranger your job every morning. Projects = a binder on day one. Skills = training an employee once, forever."
 Contrarian credibility:
 - "PS: I don't care about [brand]. I don't pick sides. Here's what actually works:"
+Migration / break-up (defection frame):
+- "How to break up with [old tool] (and switch to [new tool] in [time]):"
+- "Why I deleted [established tool] and what I use now."
+Mastery timeboxed:
+- "You're using just 1% of [tool]. Here's how to master it in one week:"
+- "You bought [tool] for [easy use case]. Here's the 10× use case nobody shows you:"
+Filter / share-driven positioning:
+- "I want to be the greatest filter to the [domain] noise."
+- "If this article helped you, be that person for someone else (and share it):"
+Use-case catalog:
+- "I wrote a full guide with [N] prompts to copy-paste. To access it, for free, go to: [URL]"
+- "Here are the [N] use cases of [tool] every [audience] should run this week:"
 Rules: line 1 must earn the click before "...see more". Lead with the outcome or the contrarian take. No "I'm excited to share", no "In today's world".
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+EXTRA STRUCTURES — combine with existing templates when the topic fits.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[migration_guide] — "break up with X, switch to Y" frame
+Use this when the post is about moving from an incumbent tool to a new
+one (ChatGPT → Claude, Notion → Obsidian, Mailchimp → Beehiiv, etc.).
+Distinct from install_guide: the emotional anchor is defection, not
+discovery.
+
+Hook line: "How to break up with [old tool] (and switch to [new tool] in [time]):"
+Body: 5-7 numbered steps mixing DATA EXPORT (from the old tool) with
+NEW-TOOL SETUP. Include at least ONE file-inventory artifact — a list
+of 3-4 .md files the reader should create to seed the new tool:
+  ✦ my-context.md — exported from [old tool]
+  ✦ about-me.md — who you are, how you write, what you hate
+  ✦ rules-to-never-sound-like-AI.md
+  ✦ projects.md — the work you're currently shipping
+Include ONE copyable opening prompt verbatim, e.g.:
+  "Read my files. Ask me questions before you start."
+Close: ♻️ repost variant + the 3 .md filenames you'd save in DMs.
+
+[use_case_catalog] — "N prompts / N use cases of [tool]" frame
+Different shape from comparison_table: this is a numbered catalog of
+8-12 self-contained use cases, each one line title + one line description.
+No emoji bullets. No ☑. Just clean numbered prompts.
+
+Hook line: "Here are the [N] use cases of [tool] every [audience] should run this week:"
+Body example (LinkedIn-friendly cadence):
+  1. Competitive Watch — track any competitor's moves (last 90 days).
+  2. Market Entry Check — does this niche have demand right now?
+  3. Sales Prep Brief — pull the 3 angles your prospect will respond to.
+  4. Industry News Digest — what changed this week, what matters, what doesn't.
+  5. Cold DM Re-roll — rewrite a flat opener into 5 punchier variants.
+  ...
+Length: 1500-2500 chars. NO 1,200-char cap. The catalog IS the value.
+Close: "Save this. Run one per day. Tell me which one hits hardest."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+EXTRA SIGNATURE MOVES (PDF gap-fills)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+A. Share-driven CTA (alternative to ♻️ repost / save-this / P.S.):
+   "If this article helped you, be that person for someone else."
+   Closes a post about high-leverage tools or workflows.
+
+B. .md file inventory as a tool-tutorial close:
+   List 3-4 .md filenames with one-line purposes. Pair with an opening
+   prompt verbatim. Reads as a copyable artifact, not advice.
+
+C. Opening-prompt artifact (one verbatim, copyable line):
+   "Read my files. Ask me questions before you start." OR
+   "Do [task]. Read my folder. Ask me questions first." OR
+   "Start every conversation with: '[exact prompt]'"
+   Embed inside any tool_tutorial / migration_guide / contrarian_hack.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

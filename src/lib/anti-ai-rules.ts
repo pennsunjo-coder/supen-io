@@ -51,6 +51,8 @@ const ERA_2024_GPT4O = [
   "enhancing",
   "highlight", // as a verb
   "highlighting",
+  "emphasize",
+  "emphasized",
   "emphasizing",
   "underscoring",
   "leverage",
@@ -59,8 +61,11 @@ const ERA_2024_GPT4O = [
   "illuminate",
   "facilitate",
   "navigate", // figurative
+  "elevate",
   "elevating",
+  "empower",
   "empowering",
+  "unlock", // as a marketing verb
   "transformative",
   "holistic",
   "synergy",
@@ -87,14 +92,55 @@ const ERA_2024_GPT4O = [
   "rich cultural heritage",
 ];
 
+// ── AILEGACY / AISUPERFICIAL cluster (Reinhart 2025, Markey 2025) ──
+// The single highest-leverage gap from the Anti AI writing PDF audit.
+// These are the words the field guide flags MOST insistently as the modern
+// AI tell — they survived past "delve" being scrubbed by every model.
+// "Reflects broader trends... contributes to... embodies... symbolises..."
+// is the prose shape that triggered the Michael Zacs feedback most directly.
+const ERA_LEGACY_REFLECTS = [
+  "crucial",
+  "key", // as an adjective ("key insight", "key takeaway")
+  "enduring",
+  "enduring legacy",
+  "enduring influence",
+  "enduring relevance",
+  "reflects",
+  "reflecting",
+  "symbolizes",
+  "symbolize",
+  "symbolizing",
+  "embodies",
+  "embodying",
+  "contributing to",
+  "contributes to",
+  "palpable",
+  "cacophony",
+  "continuation",
+  "forefront",
+  "at the forefront of",
+  "breathtaking",
+  "stunning",
+  "captivating",
+  "nestled",
+  "in the heart of",
+];
+
 const ERA_2025_GPT5 = [
   "in today's fast-paced",
   "in the dynamic landscape",
   "evolving landscape",
   "ever-evolving",
   "rapidly evolving",
+  "as it continues to evolve",
+  "in this rapidly changing",
   "in the age of",
   "in the era of",
+  "embark on a journey",
+  "embark on this journey",
+  "dive into",
+  "dive right in",
+  "dive right into",
 ];
 
 // ─── Forbidden phrases — the "AI tells" everyone now recognises ───
@@ -113,9 +159,21 @@ const FORBIDDEN_PHRASES = [
   "ever wondered",
   "here's the thing",
   "here's the truth",
+  "but here's the thing",
+  "then i realized",
+  "the result?",
+  "hot take:",
   "let's dive in",
   "let's delve into",
   "without further ado",
+
+  // Filler bridges (sound like a TED-talk teleprompter, never a friend)
+  "at its core",
+  "that being said",
+  "to put it simply",
+  "in a nutshell",
+  "at the end of the day",
+  "thinking outside the box",
 
   // Section summaries / conclusion clichés
   "in summary",
@@ -173,10 +231,36 @@ EM DASHES — limit ONE per post maximum.
 Use commas, periods, parentheses, or colons instead.
 LLMs deploy em dashes mechanically as a "Swiss-army connector"; readers now
 read multiple em dashes as a tell, not as style.
+Sandwich form ("word—word", no spaces) is the strongest tell — always
+prefer "word, word" or "word (word)" when an em dash sneaks in at all.
 
-NEGATIVE PARALLELISM ("Not just X, it's Y" / "It's not X, it's Y") —
-use ONCE per post maximum, never as a structural device.
-Two or more is the strongest single tell of AI prose.
+NEGATIVE PARALLELISM ("Not just X, it's Y" / "It's not X, it's Y" /
+"Not only X but also Y") — use ONCE per post maximum, never as a
+structural device. Two or more is the strongest single tell of AI prose.
+
+STACCATO TRIPLET ("No X. No Y. Just Z.") — use ONCE per post maximum,
+never twice in the same piece. LLMs cycle this rhythm mechanically.
+
+COLON-TITLE / SUBTITLE FORMULA — banned. "Master X in Y Days:", "From
+Beginner to Pro: The Complete Guide", "Why X Matters: A Breakdown". Real
+people don't add colon subtitles to social posts. Pick one half of the
+phrase and ship that.
+
+FORCED-SASS / EDGE-LORD OPENERS — banned: "But here's the thing:",
+"Then I realized:", "The result?", "Hot take:", "Plot twist:", "Here's
+the kicker:". These are LLM substitutes for an actual hook. State the
+specific claim directly instead.
+
+VOICE-LOCK — never write a whole post in only 2nd person OR only 3rd
+person. Within any post longer than 50 words, the voice must shift at
+least once (e.g. "I noticed..." → "you've probably hit this too..." or
+"here's what they did..." → "I tried it last week..."). Voice-lock is a
+high-signal AI tell.
+
+SENTENCE-LENGTH UNIFORMITY — if every sentence in a draft sits in the
+15-30 word range, that's an AI failure mode (low burstiness). A real
+post mixes 3-word jabs with 25-word reflections. Variance is the goal,
+not consistency.
 
 RULE OF THREE — limit ONE triplet per post.
 Three adjectives in a row, three short phrases ending with "and",
@@ -236,6 +320,67 @@ represents a tool that...". Plain "is" is the human choice.
 
 OPENER "ADDITIONALLY/MOREOVER/FURTHERMORE" — never start a sentence with
 these. Start with the actual point.
+
+MULTI-SIGNAL CO-OCCURRENCE — the AI-writing field guide is explicit that
+the diagnosis is multi-signal: curly quotes + em dash + parallel triplet
+in the same paragraph is the strongest detector. If your draft has TWO
+of these signals in close proximity, rewrite the paragraph from scratch.
+Single-signal occurrences read as style. Co-occurrence reads as a model.
+`;
+
+// ─── Before / after examples (teach by demonstration) ───
+// Source: paired rewrites from the Anti AI writing.pdf field guide.
+// The model learns the rules faster from one good example than from
+// fifty banned phrases. Keep these tight and load-bearing.
+
+const REWRITE_EXAMPLES = `
+REWRITE EXAMPLES — the same idea, AI-shaped vs human-shaped.
+Mirror the right column. Avoid every move in the left column.
+
+1. COPULATIVE PUFFERY
+   ❌ Gallery 825 serves as LAAA's exhibition space, providing a focal
+      point for the artistic community.
+   ✅ Gallery 825 is LAAA's exhibition arm.
+
+2. "DESPITE...CONTINUES TO THRIVE" WASH
+   ❌ Despite its industrial slowdown, Korattur faces challenges yet
+      continues to thrive, embodying enduring resilience.
+   ✅ Korattur's factories shut down in the 90s. The town never came back.
+
+3. PARTICIPLE-TAIL ANALYSIS
+   ❌ He works closely with junior staff, creating a lively atmosphere
+      within the department.
+   ✅ He works closely with junior staff. The department feels lively
+      because he's in it.
+
+4. NEGATIVE PARALLELISM STACK
+   ❌ This is not dissolution. Rather, it constitutes a transformation.
+      It is not a mirror but a portal into something deeper.
+   ✅ This isn't dissolution. It's transformation.
+
+5. OVERATTRIBUTION
+   ❌ Her work has been featured in Vogue, Wired, Toronto Star, the
+      Guardian, and other major media outlets.
+   ✅ Vogue ran a piece on her in March 2024. (Or drop the line entirely.)
+
+6. AI-SOUP CLOSER
+   ❌ In today's fast-paced and rapidly evolving digital landscape,
+      AI writing has emerged as a game-changing technology that
+      empowers creators to unlock new levels of productivity, ensuring
+      a more efficient and impactful future for content creation.
+   ✅ AI writing is good now. It's going to keep getting better.
+      What you do with it matters more than which model you pick.
+
+7. COLON-TITLE → DIRECT CLAIM
+   ❌ Master Claude in 30 Days: The Ultimate Productivity Guide
+   ✅ Master Claude in 30 days. Here's the plan.
+
+8. AILEGACY CLUSTER
+   ❌ This product reflects a crucial moment in design history,
+      symbolizing the enduring legacy of Bauhaus principles and
+      contributing to a renewed appreciation of form.
+   ✅ The design is Bauhaus. That's why it still looks right 100 years
+      later.
 `;
 
 // ─── Voice + specificity (what TO do, not just what to avoid) ───
@@ -244,13 +389,26 @@ const REQUIRED_VOICE = `
 VOICE — write like a person, not a model:
 - Contractions everywhere: you're, don't, it's, we're, I'm.
 - Mix first person ("I shipped this in 90 days") with second person
-  ("here's how you steal it"). Voice switching is a human signal.
-- Sentence length: vary it. Mostly short. One longer one for rhythm.
-  Like this. Then a fragment. Then a longer one that lands the point.
+  ("here's how you steal it"). Voice switching is a human signal —
+  REQUIRED at least once in any post over 50 words. A piece written
+  entirely in 2nd-person OR entirely in 3rd-person reads as a model.
+- Sentence length: vary it AGGRESSIVELY. Mostly short. One longer one
+  for rhythm. Mix 3-word jabs with 25-word reflections in the same post.
+  Like this. Then a fragment. Then a longer sentence that lands the
+  point because the rhythm earned it. Uniform 15-30 word sentences =
+  AI rhythm. The variance is the human signal.
+- Inject ONE sensory detail, metaphor, curveball, or piece of humor
+  per post. Not three (that's a rule-of-three tell). One.
 - One committed position per post. No "on the other hand" middle ground.
+- Hedging: cap at ONE per post total ("might", "could", "perhaps",
+  "generally", "typically"). Past one, commit or cut the sentence.
+- Speak TO the reader, not AT them. "You" pulls them in. "One" /
+  "people" / "individuals" pushes them away.
 - Concrete > abstract. "47% drop in reach" beats "significant decline".
 - NO FORMATTING. No bolding, no italics. Use line breaks for white space.
 - A typo or a one-word sentence is a feature, not a bug. Be human.
+- No pat-on-the-back energy ("Overall verdict: your routine is extremely
+  well thought-out!"). Real people are not relentlessly encouraging.
 
 SPECIFICITY — non-negotiable:
 - Real tool names: Claude, Gemini, NotebookLM, Notion, Vislo, Stripe.
@@ -291,6 +449,7 @@ export function buildAntiAiRules(
   const allBannedWords = [
     ...ERA_2023_GPT4,
     ...ERA_2024_GPT4O,
+    ...ERA_LEGACY_REFLECTS,
     ...ERA_2025_GPT5,
   ];
 
@@ -322,6 +481,7 @@ ${phraseList}
 
 FORBIDDEN PATTERNS:
 ${FORBIDDEN_PATTERNS}
+${REWRITE_EXAMPLES}
 
 ${REQUIRED_VOICE}
 
@@ -340,5 +500,6 @@ clean version.
 export const BANNED_WORDS_INLINE = [
   ...ERA_2023_GPT4,
   ...ERA_2024_GPT4O,
+  ...ERA_LEGACY_REFLECTS,
   ...ERA_2025_GPT5,
 ].join(", ");

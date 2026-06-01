@@ -541,13 +541,19 @@ It's not going to the people who spend all day watching tutorials.
 It's going to the people who have learned a small set of high-leverage
 AI skills."
 
-[disruption_breakdown] —
+[contrarian_truth] (second variant — "most people mess up X") —
 "Most people mess up NotebookLM before they even type a single prompt.
 They add a few sources, click generate, and then they wonder why the
 output feels generic or even unreliable. But here is the key.
 NotebookLM is not a typical chatbot like Gemini, ChatGPT, or Claude.
 It is more like a research system, and the quality of what you get
 depends on what you feed it and how you set it up."
+
+[disruption_breakdown] (the actual "RIP X / Y just killed it" frame) —
+"BREAKING: RIP ChatGPT for power users. Google just released Gemini 2.5
+Pro with Deep Research, and it does in 90 seconds what used to take a
+$200/month Perplexity Pro account 15 minutes. In this video I'll show
+you the exact workflow — and why I cancelled my ChatGPT Plus this week."
 
 [ecosystem_guide] —
 "While so many people are still paying for ChatGPT, Claude, and even
@@ -602,7 +608,34 @@ Cost / free angle:
 Opportunity / gold-rush:
 - "AI is booming in [year], and there's a global gold rush happening. Most people are standing right next to it and don't realise."
 - "What's the most lucrative way to use [tool] in [year] if you're starting from zero — no followers, no budget, no plan?"
+Almost-impossible claim:
+- "I'm going to say something that will sound crazy, but it is 100% true. In [year], you can [outcome] without [the painful blocker]."
+Stuck-blocker / "this video is for you":
+- "If you've ever wanted to [outcome] but stopped the moment you thought about [painful blocker], then this video is for you."
+- "So if you have ever thought about [outcome] but felt stuck, confused, or short on money, this video is for you."
+Old-truth-no-longer-true:
+- "Most people still think [outcome] means [old painful way]. That used to be true. It is not true anymore."
 Rules: back the hook with a concrete tool, number, or result within the first 2 lines. Then go straight into the Intro/promise — no "hey guys."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+EXTRA CLOSING VARIANTS (use when the standard close doesn't fit)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Community / Q&A close (for income/business topics where viewers want
+hand-holding — Awa uses this on Faceless YouTube and Digital Products):
+"If you have any questions or concerns, drop them in the comments,
+and I will be waiting for you."
+
+Self-intro signoff (warm signature — Awa uses this on Gemini-style
+ecosystem walkthroughs):
+"I'm Awa K. Penn, and I'll see you in the next video."
+(Swap "Awa K. Penn" for the user's actual creator name when it's known
+from their profile; otherwise omit and use the standard signoff.)
+
+Action-frame close (great for business_cases and listicle):
+"So here is your action for today. Pick one idea from this list.
+Create a few examples. Test it on one channel for a week. Then come
+back and tell me which one worked."
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
