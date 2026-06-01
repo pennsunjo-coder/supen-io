@@ -17,13 +17,21 @@ serve(async (req) => {
 
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(
+    // Supabase Edge Functions run on Deno, whose SubtleCryptoProvider
+    // only exposes async crypto primitives. The sync `constructEvent`
+    // throws "SubtleCryptoProvider cannot be used in a synchronous
+    // context" on every single delivery. constructEventAsync is the
+    // documented Stripe API for async runtimes (Deno, Cloudflare
+    // Workers, etc.). This single line is why 100% of our live
+    // webhook deliveries were failing.
+    event = await stripe.webhooks.constructEventAsync(
       body,
       signature!,
       Deno.env.get("STRIPE_WEBHOOK_SECRET") || "",
     );
   } catch (err) {
-    return new Response(`Webhook Error: ${err.message}`, { status: 400 });
+    const message = err instanceof Error ? err.message : String(err);
+    return new Response(`Webhook Error: ${message}`, { status: 400 });
   }
 
   // Checkout completed → activate plan
