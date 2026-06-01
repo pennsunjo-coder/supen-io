@@ -211,6 +211,46 @@ function buildLaunchEmail(name: string): string {
 </div></div></body></html>`;
 }
 
+// ── Subscription activated (payment confirmation) ──
+// Fired by stripe-webhook on checkout.session.completed. Confirms the
+// plan is live, recaps what they get, and points them to the dashboard
+// + the billing portal (so cancellation is one click from the email).
+function buildSubscriptionActivatedEmail(name: string, plan: "plus" | "pro"): string {
+  const planLabel = plan === "pro" ? "Pro" : "Plus";
+  const planPrice = plan === "pro" ? "$30/month" : "$10/month";
+  const features = plan === "pro"
+    ? [
+        "Unlimited generations across 6 platforms",
+        "300 infographics per month",
+        "Priority generation queue",
+        "Style memory + advanced analytics",
+        "Early access to new features",
+      ]
+    : [
+        "100 generations per month across 6 platforms",
+        "50 infographics per month",
+        "Anti-AI humanization on every output",
+        "Smart sources (PDFs, URLs, YouTube)",
+        "AI Coach with personalized strategy",
+      ];
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${STYLES}</style></head>
+<body><div class="wr"><div class="cd">
+<div class="hd">${LOGO}<p class="sub">Payment Confirmed</p></div>
+<div class="bd">
+<div class="bg">${I.str} ${planLabel} activated</div>
+<div class="gr">Welcome to Supenli.ai ${planLabel}, ${name}!</div>
+<p class="tx">Your payment of <span class="hl">${planPrice}</span> went through and your account is now upgraded. Everything below is unlocked right now — no waiting, no extra step.</p>
+<div class="ft">
+${features.map((f) => `<div class="fi">${I.chk}<div class="fi-t">${f}</div></div>`).join("")}
+</div>
+<div class="ct"><a href="${APP}" class="cta">Open my dashboard &rarr;</a></div>
+<div class="dv"></div>
+<p class="tx" style="font-size:13px;margin-bottom:0;text-align:center">Need to update your card, download invoices, or cancel? It's all in <a href="https://www.supenli.ai/settings" style="color:#24A89B;text-decoration:none">your Settings page</a>.<br><br>Welcome aboard — let's go build your audience.</p>
+</div>
+<div class="fo"><p>&copy; 2026 Supenli.ai &middot; You're receiving this because you upgraded.</p></div>
+</div></div></body></html>`;
+}
+
 // ── Reminder / re-engagement ──
 function buildReminderEmail(name: string, message?: string, daysAway?: number): string {
   const intro = daysAway && daysAway > 0
@@ -310,6 +350,7 @@ Deno.serve(async (req) => {
     else if (type === "waitlist") html = buildWaitlistEmail(data?.name || "there");
     else if (type === "launch") html = buildLaunchEmail(data?.name || "there");
     else if (type === "reminder") html = buildReminderEmail(data?.name || "there", data?.message, data?.daysAway);
+    else if (type === "subscription-activated") html = buildSubscriptionActivatedEmail(data?.name || "there", data?.plan === "pro" ? "pro" : "plus");
     else if (type === "contact") html = buildContactEmail(data?.name || "there", data?.email || "", data?.subject || "", data?.message || "");
     else throw new Error(`Unknown email type: ${type}`);
 

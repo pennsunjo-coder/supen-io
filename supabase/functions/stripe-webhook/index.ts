@@ -34,7 +34,7 @@ serve(async (req) => {
     return new Response(`Webhook Error: ${message}`, { status: 400 });
   }
 
-  // Checkout completed → activate plan
+  // Checkout completed → activate plan + send confirmation email
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
     const userId = session.metadata?.userId;
@@ -47,6 +47,53 @@ serve(async (req) => {
         stripe_subscription_id: session.subscription as string,
         plan_expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       }).eq("user_id", userId);
+
+      // Welcome-to-Plus/Pro confirmation email. Fire-and-forget: never
+      // block the webhook response on email delivery (Stripe retries
+      // anything that doesn't return 2xx fast enough). We pull the
+      // recipient + name from the profile row we just updated so the
+      // greeting is personalized.
+      try {
+        const recipientEmail = session.customer_details?.email || session.customer_email;
+        let firstName = session.customer_details?.name?.split(" ")[0] || "there";
+        if (!recipientEmail) {
+          // Fall back to the user_profiles row if Stripe didn't include
+          // the email in the session metadata.
+          const { data: profile } = await supabase
+            .from("user_profiles")
+            .select("first_name")
+            .eq("user_id", userId)
+            .maybeSingle();
+          if (profile?.first_name) firstName = profile.first_name as string;
+        }
+
+        // Resolve the email last: prefer Stripe's, fall back to auth.users.
+        let toEmail = recipientEmail;
+        if (!toEmail) {
+          const { data: userRow } = await supabase.auth.admin.getUserById(userId);
+          toEmail = userRow.user?.email ?? null;
+        }
+
+        if (toEmail) {
+          await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-email`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+            },
+            body: JSON.stringify({
+              to: toEmail,
+              subject: plan === "pro" ? "Welcome to Supenli.ai Pro 🚀" : "Welcome to Supenli.ai Plus 🚀",
+              type: "subscription-activated",
+              data: { name: firstName, plan },
+            }),
+          });
+        }
+      } catch (err) {
+        // Non-blocking — DB is already updated, email failure is recoverable
+        // (user still gets access, we just don't celebrate them by email).
+        console.warn("[stripe-webhook] subscription-activated email failed:", err);
+      }
     }
   }
 
