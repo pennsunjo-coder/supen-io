@@ -13,6 +13,7 @@ import { callClaude } from "@/lib/anthropic";
 import { sanitizeInput } from "@/lib/security";
 import { toast } from "sonner";
 import { searchViralReferences, ViralReference, searchUserSources } from "@/lib/embeddings";
+import { fetchDistillationsForSources, renderDistillationForPrompt } from "@/lib/distill-source";
 import { invalidateCache } from "@/lib/cache";
 import { supabase } from "@/lib/supabase";
 import { assertOnline, withRetry, withTimeout, friendlyError } from "@/lib/resilience";
@@ -563,6 +564,26 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
               }).join('\n\n');
             }
           } catch { /* network */ }
+        }
+      }
+
+      // === Distillation injection ===
+      // Prepend the viral patterns we pre-extracted at upload time (hooks,
+      // tools, URLs, results, reusable structures). This is what makes the
+      // model write content shaped like the source instead of just quoting
+      // its text. Cheap: one supplementary SELECT, no extra LLM call.
+      if (allSourceIds.length > 0 && sourceContext) {
+        try {
+          const distillations = await fetchDistillationsForSources(allSourceIds);
+          if (distillations.length > 0) {
+            const distillBlock = distillations
+              .map(({ title, distillation }) => renderDistillationForPrompt(title, distillation))
+              .join("\n\n");
+            sourceContext = `${distillBlock}\n\n━━━ FULL SOURCE EXCERPTS BELOW ━━━\n\n${sourceContext}`;
+            if (IS_DEV) console.log("[Distillation] Prepended", distillations.length, "viral extracts");
+          }
+        } catch (e) {
+          if (IS_DEV) console.warn("[Distillation] Fetch failed:", e);
         }
       }
 

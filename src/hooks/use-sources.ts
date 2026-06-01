@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/use-profile";
 import { getCache, setCache, invalidateCache } from "@/lib/cache";
 import { embedSource, embedAllExistingSources } from "@/lib/embeddings";
+import { distillSource } from "@/lib/distill-source";
 import { getPlanLimits, upgradeMessage } from "@/lib/plan-limits";
 import * as pdfjsLib from "pdfjs-dist";
 import type { Source } from "@/types/database";
@@ -491,7 +492,10 @@ export function useSources() {
           user_id: user.id, type: "url", title, content: chunks[0],
         }).select("id, content");
         if (error) return { error: error.message };
-        if (inserted) inserted.forEach((s) => embedSource(s.id, s.content).catch(() => {}));
+        if (inserted) {
+          inserted.forEach((s) => embedSource(s.id, s.content).catch(() => {}));
+          distillSource(inserted.map((s) => s.id), title, pageContent).catch(() => {});
+        }
       } else {
         const inserts = chunks.map((chunk, i) => ({
           user_id: user.id, type: "url" as const,
@@ -499,7 +503,10 @@ export function useSources() {
         }));
         const { data: inserted, error } = await supabase.from("sources").insert(inserts).select("id, content");
         if (error) return { error: error.message };
-        if (inserted) inserted.forEach((s) => embedSource(s.id, s.content).catch(() => {}));
+        if (inserted) {
+          inserted.forEach((s) => embedSource(s.id, s.content).catch(() => {}));
+          distillSource(inserted.map((s) => s.id), title, pageContent).catch(() => {});
+        }
       }
 
       invalidateCache(`sources:${user.id}`);
@@ -525,7 +532,10 @@ export function useSources() {
           content: chunks[0],
         }).select("id, content");
         if (error) return { error: error.message };
-        if (inserted) inserted.forEach((s) => embedSource(s.id, s.content).catch(() => {}));
+        if (inserted) {
+          inserted.forEach((s) => embedSource(s.id, s.content).catch(() => {}));
+          distillSource(inserted.map((s) => s.id), title.slice(0, 200), content).catch(() => {});
+        }
       } else {
         const inserts = chunks.map((chunk, i) => ({
           user_id: user.id,
@@ -535,7 +545,10 @@ export function useSources() {
         }));
         const { data: inserted, error } = await supabase.from("sources").insert(inserts).select("id, content");
         if (error) return { error: error.message };
-        if (inserted) inserted.forEach((s) => embedSource(s.id, s.content).catch(() => {}));
+        if (inserted) {
+          inserted.forEach((s) => embedSource(s.id, s.content).catch(() => {}));
+          distillSource(inserted.map((s) => s.id), title.slice(0, 200), content).catch(() => {});
+        }
       }
 
       invalidateCache(`sources:${user.id}`);
@@ -620,6 +633,10 @@ export function useSources() {
           realSources.forEach((s) => {
             if (s.content) embedSource(s.id, s.content).catch(() => {});
           });
+          // Fire-and-forget viral-pattern distillation on the FULL PDF text
+          // (Claude reads the whole thing once and stamps the result onto
+          // every chunk row).
+          distillSource(realSources.map((s) => s.id), title, pdfText).catch(() => {});
         }
 
         invalidateCache(`sources:${user.id}`);
@@ -686,7 +703,10 @@ export function useSources() {
           user_id: user.id, type: "url", title, content: chunks[0],
         }).select("id, content");
         if (error) return { error: error.message };
-        if (inserted) inserted.forEach((s) => embedSource(s.id, s.content).catch(() => {}));
+        if (inserted) {
+          inserted.forEach((s) => embedSource(s.id, s.content).catch(() => {}));
+          distillSource(inserted.map((s) => s.id), title, content).catch(() => {});
+        }
       } else {
         const inserts = chunks.map((chunk, i) => ({
           user_id: user.id, type: "url" as const,
@@ -694,7 +714,10 @@ export function useSources() {
         }));
         const { data: inserted, error } = await supabase.from("sources").insert(inserts).select("id, content");
         if (error) return { error: error.message };
-        if (inserted) inserted.forEach((s) => embedSource(s.id, s.content).catch(() => {}));
+        if (inserted) {
+          inserted.forEach((s) => embedSource(s.id, s.content).catch(() => {}));
+          distillSource(inserted.map((s) => s.id), title, content).catch(() => {});
+        }
       }
 
       invalidateCache(`sources:${user.id}`);
