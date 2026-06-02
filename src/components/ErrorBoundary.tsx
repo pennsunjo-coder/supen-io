@@ -12,6 +12,16 @@ interface State {
   error: Error | null;
 }
 
+// Signature of DOM-mutation crashes caused by external agents (browser
+// translators, Grammarly, password managers, ad-blockers that inject UI).
+// React's reconciliation loses track of nodes the external agent rewrote
+// and explodes the moment it tries to unmount or update them. The page is
+// fundamentally fine — the next mount usually succeeds. Auto-reload once.
+const EXTERNAL_DOM_MUTATION_SIGNATURE =
+  /removeChild|insertBefore|is not a child of this node|Failed to execute '[^']+' on 'Node'/i;
+
+const AUTO_RELOAD_FLAG = "supenli:errorBoundary:autoReloaded";
+
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
@@ -24,9 +34,26 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: { componentStack: string }) {
     console.error("[ErrorBoundary]", error, info);
+
+    // Auto-recovery for transient DOM-mutation crashes from browser
+    // translators / extensions. We do it ONCE per session (sessionStorage
+    // flag) so a real bug doesn't trap the user in a reload loop.
+    if (
+      typeof window !== "undefined" &&
+      typeof sessionStorage !== "undefined" &&
+      EXTERNAL_DOM_MUTATION_SIGNATURE.test(error?.message ?? "") &&
+      !sessionStorage.getItem(AUTO_RELOAD_FLAG)
+    ) {
+      sessionStorage.setItem(AUTO_RELOAD_FLAG, "1");
+      console.warn("[ErrorBoundary] External DOM mutation detected — auto-reloading once to recover.");
+      // Small delay so the console log lands before the reload kills the page.
+      setTimeout(() => window.location.reload(), 50);
+    }
   }
 
   handleReset = () => {
+    // Clear the auto-reload flag so a future genuine crash can recover too.
+    try { sessionStorage.removeItem(AUTO_RELOAD_FLAG); } catch { /* ignore */ }
     this.setState({ hasError: false, error: null });
   };
 
