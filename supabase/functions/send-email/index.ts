@@ -388,7 +388,13 @@ Deno.serve(async (req) => {
     // override reply_to (e.g. the Contact form passes the visitor's
     // address so we can hit Reply directly).
     const payload: Record<string, unknown> = {
-      from: "Awa K. Pen <noreply@supenli.ai>",
+      // Brand-name From (not a personal name). The product is Supenli.ai;
+      // emails should read as product communication, not 1-to-1 mail from
+      // the founder. Personal-name From was tried earlier for Gmail
+      // Promotions-tab evasion but readers misread it as a personal email
+      // — keep reply_to pointing at a real human inbox for trust signals
+      // instead.
+      from: "Supenli.ai <noreply@supenli.ai>",
       to: [to],
       subject,
       html,
