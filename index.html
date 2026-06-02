@@ -1,8 +1,18 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en" translate="no">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Block browser auto-translate. When Safari/Chrome translate the page,
+         they rewrite text nodes inside React-managed elements, which then
+         throws "Failed to execute 'removeChild' on 'Node': The node to be
+         removed is not a child of this node" the moment React tries to
+         unmount or update the affected subtree (most visibly during the
+         onboarding → dashboard navigation). The combination of an English
+         lang attr, translate="no" on <html>, the google/notranslate meta,
+         and class="notranslate" on <body> covers every major browser. -->
+    <meta name="google" content="notranslate" />
+    <meta http-equiv="Content-Language" content="en" />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%2324A89B'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Arial Black' font-weight='900' font-size='20' fill='white'>S</text></svg>">
     <title>Supenli.ai — Create Viral Content in Seconds</title>
     <meta name="description" content="Generate 5 viral social media variations in 30 seconds. AI-powered content creation for LinkedIn, Instagram, X and TikTok creators." />
@@ -28,7 +38,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   </head>
 
-  <body>
+  <body class="notranslate">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
