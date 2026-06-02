@@ -107,26 +107,6 @@ function buildResetEmail(resetLink: string, name?: string): string {
 </div></div></body></html>`;
 }
 
-// ── Content ready ──
-
-function buildContentReadyEmail(name: string, platform: string, topic: string): string {
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${STYLES}</style></head>
-<body><div class="wr"><div class="cd">
-<div class="hd">${LOGO}</div>
-<div class="bd">
-<div class="bg">${I.trn} ${platform}</div>
-<div class="gr">Your content is ready!</div>
-<p class="tx">Hey <span class="hl">${name}</span>,<br><br>Your <strong>${platform}</strong> content about "<span class="hl">${topic}</span>" has been generated with <strong>5 viral variations</strong> ready to publish.</p>
-<div class="ft">
-<div class="fi">${I.chk}<div class="fi-t"><strong>5 variations generated</strong><br>Each variation has a different angle and hook.</div></div>
-<div class="fi">${I.trn}<div class="fi-t"><strong>Virality score</strong><br>Identify the best variation to maximize your reach.</div></div>
-</div>
-<div class="ct"><a href="${APP}" class="cta">View my content &rarr;</a></div>
-</div>
-<div class="fo"><p>&copy; 2026 Supenli.ai</p></div>
-</div></div></body></html>`;
-}
-
 // ── Feedback ──
 
 function buildFeedbackEmail(name: string): string {
@@ -371,7 +351,6 @@ Deno.serve(async (req) => {
     let html = "";
     if (type === "welcome") html = buildWelcomeEmail(data?.name || "there");
     else if (type === "reset-password") html = buildResetEmail(data?.resetLink || "#", data?.name);
-    else if (type === "content-ready") html = buildContentReadyEmail(data?.name || "there", data?.platform || "Social Media", data?.topic || "your topic");
     else if (type === "feedback") html = buildFeedbackEmail(data?.name || "there");
     else if (type === "waitlist") html = buildWaitlistEmail(data?.name || "there");
     else if (type === "launch") html = buildLaunchEmail(data?.name || "there");

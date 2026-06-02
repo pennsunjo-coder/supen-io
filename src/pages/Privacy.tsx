@@ -61,7 +61,7 @@ export default function Privacy() {
               <li>To provide, maintain, and operate the Service (content generation, AI chat, infographics).</li>
               <li>To personalize your experience based on your niche, platforms, style memory, and past content.</li>
               <li>To process subscriptions and payments via Stripe.</li>
-              <li>To send transactional emails (account confirmation, password reset, subscription updates, content-ready notifications).</li>
+              <li>To send transactional emails (account confirmation, password reset, subscription updates).</li>
               <li>To send re-engagement emails to inactive accounts (you can opt out at any time).</li>
               <li>To enforce plan quotas, rate limits, and security policies.</li>
               <li>To improve the Service through aggregated, anonymized usage analytics.</li>
