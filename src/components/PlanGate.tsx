@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Loader2, Crown, Check, LogOut } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Loader2, Crown, Check, LogOut, Clock } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/use-profile";
 import { useAdmin } from "@/hooks/use-admin";
@@ -16,17 +16,72 @@ const PAYWALL_ENABLED = import.meta.env.VITE_PAYWALL_ENABLED !== "false";
 /**
  * Wraps the app. A user with no active Plus/Pro subscription sees the plan
  * picker instead of the app. Admins and active subscribers pass through.
+ *
+ * Pending-payment detection: when a user has a stripe_customer_id but their
+ * plan is still "free", that means a checkout has fired (we set the customer
+ * on session redirect / first webhook touch) but the plan-flip hasn't landed
+ * yet. Showing the paywall in that window is how Anthony Keen got double-
+ * charged. Show a "payment processing" screen with auto-refresh instead.
  */
 export default function PlanGate({ children }: { children: React.ReactNode }) {
   const { user, signOut } = useAuth();
-  const { profile } = useProfile();
+  const { profile, refetch: refetchProfile } = useProfile();
   const { isAdmin } = useAdmin();
   const [upgrading, setUpgrading] = useState<string | null>(null);
 
   const active = isPlanActive(profile?.plan, profile?.plan_expires_at);
+  const hasPendingPayment = !!profile?.stripe_customer_id && !active;
+
+  // While a payment is pending, refetch profile every 5s so the user sees
+  // the activation land without having to refresh. Stops as soon as the
+  // plan flips active (the parent re-renders and unmounts this branch).
+  useEffect(() => {
+    if (!hasPendingPayment) return;
+    const id = window.setInterval(() => refetchProfile(), 5000);
+    return () => window.clearInterval(id);
+  }, [hasPendingPayment, refetchProfile]);
 
   if (!PAYWALL_ENABLED || isAdmin || active) {
     return <>{children}</>;
+  }
+
+  // Payment was initiated (Stripe customer exists) but plan hasn't flipped.
+  // Show a friendly pending screen so the user doesn't try to pay again.
+  if (hasPendingPayment) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center px-4 py-12">
+        <div className="max-w-md w-full text-center">
+          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
+            <Clock className="w-8 h-8 text-primary" />
+          </div>
+          <h1 className="text-2xl font-bold mb-2">Payment is processing</h1>
+          <p className="text-sm text-muted-foreground mb-2 leading-relaxed">
+            We've received your checkout. The plan activates as soon as Stripe confirms the charge — usually under a minute, sometimes a few.
+          </p>
+          <p className="text-sm font-semibold mb-8">
+            Please don't click Pay again. Your card has already been charged.
+          </p>
+          <div className="flex flex-col gap-3">
+            <Button onClick={() => refetchProfile()} className="w-full gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Checking again…
+            </Button>
+            <a
+              href="mailto:pennsunjo@gmail.com?subject=Payment%20pending%20%E2%80%94%20still%20not%20activated"
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Stuck for over 5 min? Email support
+            </a>
+            <button
+              onClick={() => signOut()}
+              className="text-xs text-muted-foreground/60 hover:text-foreground transition-colors flex items-center gap-1.5 justify-center mt-2"
+            >
+              <LogOut className="w-3 h-3" /> Sign out
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   async function handleChoose(plan: "plus" | "pro") {

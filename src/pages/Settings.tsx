@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import {
   ArrowLeft, User, Sliders, CreditCard, Info,
-  LogOut, Trash2, ExternalLink, Crown, Check, Loader2,
+  LogOut, Trash2, ExternalLink, Crown, Check, Loader2, AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -96,16 +96,59 @@ export default function Settings() {
     }
   }, [activeSection, refreshProfile]);
 
-  // Stripe success handoff. Cancel the ?checkout=success param after
-  // showing the toast so a reload doesn't re-fire it, and trigger an
-  // extra refetch in case the webhook hadn't quite landed before the
-  // user got bounced back here.
+  // Stripe success handoff — POLL until the webhook flips the plan in DB.
+  // Single-shot refetch (the previous behavior) was the silent bug behind
+  // Anthony Keen's double-charge: webhook took >10s to fire, refetch ran
+  // once, profile still said "free", paywall reappeared, user paid again.
+  // Now we poll every 3s for up to 60s and show an "Activating…" banner
+  // so the user knows the payment is being processed and DOES NOT click
+  // Pay again. After 60s we surface a contact-support fallback.
+  const [activationPolling, setActivationPolling] = useState(false);
+  const [activationTimedOut, setActivationTimedOut] = useState(false);
+
   useEffect(() => {
     if (!justCheckedOut) return;
-    toast.success("Subscription activated! Welcome aboard 🚀");
+
+    // Clear the ?checkout=success param immediately so refresh / back
+    // navigation doesn't restart the polling on stale state.
+    const cleanUrl = `${location.pathname}${urlParams.get("tab") ? `?tab=${urlParams.get("tab")}` : ""}`;
+    navigate(cleanUrl, { replace: true });
+
+    setActivationPolling(true);
+    setActivationTimedOut(false);
+
+    // Immediate first refetch — covers the happy case where the webhook
+    // was faster than the redirect.
     refreshProfile();
-    navigate(location.pathname, { replace: true });
-  }, [justCheckedOut, refreshProfile, navigate, location.pathname]);
+
+    const POLL_INTERVAL_MS = 3000;
+    const TIMEOUT_MS = 60_000;
+    let elapsed = 0;
+    const intervalId = window.setInterval(() => {
+      elapsed += POLL_INTERVAL_MS;
+      refreshProfile();
+      if (elapsed >= TIMEOUT_MS) {
+        window.clearInterval(intervalId);
+        setActivationPolling(false);
+        setActivationTimedOut(true);
+      }
+    }, POLL_INTERVAL_MS);
+
+    return () => window.clearInterval(intervalId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [justCheckedOut]);
+
+  // Detect plan transition out of polling — fires a one-shot success toast
+  // and exits the "Activating…" banner state. Decoupled from the polling
+  // effect so the polling loop doesn't need to chase React state updates.
+  useEffect(() => {
+    if (!activationPolling) return;
+    if (profile?.plan && profile.plan !== "free") {
+      setActivationPolling(false);
+      setActivationTimedOut(false);
+      toast.success(`Welcome to Supenli.ai ${profile.plan === "pro" ? "Pro" : "Plus"}! 🚀`);
+    }
+  }, [activationPolling, profile?.plan]);
 
   // Profile fields
   const [firstName, setFirstName] = useState("");
@@ -512,6 +555,36 @@ export default function Settings() {
                 <h2 className="text-lg font-bold mb-1">Subscription</h2>
                 <p className="text-sm text-muted-foreground">Manage your subscription and account</p>
               </div>
+
+              {/* Post-checkout activation status. While the Stripe webhook
+                  flips the plan in DB, we explicitly tell the user not to
+                  click Pay again — that's how the double-charge incidents
+                  started. After 60s without an update, surface a contact
+                  path instead of leaving them confused. */}
+              {activationPolling && (
+                <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-start gap-3">
+                  <Loader2 className="w-4 h-4 text-primary animate-spin shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold mb-0.5">Activating your subscription…</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      This usually takes 5–30 seconds. <strong>Please don't click Pay again</strong> — your payment is being processed.
+                    </p>
+                  </div>
+                </div>
+              )}
+              {activationTimedOut && (
+                <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-4 flex items-start gap-3">
+                  <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold mb-0.5">Payment is still processing</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed mb-2">
+                      It usually takes under a minute, but sometimes the bank confirmation is slower. Refresh in a few minutes — if your plan still hasn't activated, email{" "}
+                      <a href="mailto:pennsunjo@gmail.com" className="text-primary hover:underline">pennsunjo@gmail.com</a>{" "}
+                      and we'll fix it manually within the hour. <strong>Do not pay again</strong> — the charge already went through.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Plan cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

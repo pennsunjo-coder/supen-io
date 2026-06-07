@@ -48,6 +48,36 @@ serve(async (req) => {
     return new Response(`Webhook Error: ${message}`, { status: 400 });
   }
 
+  // ── Idempotency gate ──
+  // Stripe retries failed deliveries automatically AND the Dashboard
+  // "Replay" feature lets us re-send any past event. Without this gate,
+  // replaying an invoice.payment_succeeded would extend plan_expires_at
+  // by another 30 days on every replay. Insert event.id BEFORE any work
+  // (PRIMARY KEY conflict = already processed → ACK 200, do nothing).
+  try {
+    const { error: insertErr } = await supabase
+      .from("processed_stripe_events")
+      .insert({ event_id: event.id, event_type: event.type });
+    if (insertErr) {
+      // Unique-violation = already processed (idempotent ACK). Any other
+      // error = log and continue (don't block the webhook on the audit log).
+      if (insertErr.code === "23505") {
+        console.log(`[stripe-webhook] event ${event.id} already processed — ACKing`);
+        return new Response(JSON.stringify({ received: true, duplicate: true }), {
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      console.warn(`[stripe-webhook] processed_stripe_events insert failed (continuing):`, insertErr);
+    }
+  } catch (err) {
+    // Table missing or other DB issue — fail open so we don't break
+    // production on a logging concern. The handler below is still safe
+    // for state-shape-idempotent events (checkout.session.completed,
+    // customer.subscription.deleted), only invoice.payment_succeeded
+    // is sensitive to double-processing.
+    console.warn(`[stripe-webhook] idempotency check skipped:`, err);
+  }
+
   // ── Critical DB work + non-blocking email triggers ──
   // Wrap every event handler in a try/catch so a bug or transient DB error
   // never poisons the ACK — Stripe disables endpoints that don't return 2xx
