@@ -26,12 +26,13 @@ serve(async (req) => {
     const priceId = PRICES[plan];
     if (!priceId) throw new Error("Invalid plan or price not configured");
 
+    const separator = successUrl.includes("?") ? "&" : "?";
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       payment_method_types: ["card"],
       customer_email: email,
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${successUrl}?upgraded=true&plan=${plan}`,
+      success_url: `${successUrl}${separator}upgraded=true&plan=${plan}`,
       cancel_url: cancelUrl,
       metadata: { userId, plan },
       subscription_data: {

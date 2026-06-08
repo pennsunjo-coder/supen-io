@@ -54,5 +54,10 @@ export default function ProtectedRoute({ children, skipOnboardingCheck = false }
   // tool, users must pick Plus or Pro before accessing any feature.
   // PlanGate shows the two-plan picker until profile.plan is active.
   // Admins and active subscribers pass through untouched.
+  // Settings page is always accessible so they can choose/manage their plan.
+  if (location.pathname === "/settings") {
+    return <>{children}</>;
+  }
+
   return <PlanGate>{children}</PlanGate>;
 }
