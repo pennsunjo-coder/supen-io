@@ -13,6 +13,7 @@ export interface AdminUser {
   created_at: string;
   content_count: number;
   plan?: string;
+  plan_expires_at?: string | null;
   last_sign_in_at?: string | null;
 }
 

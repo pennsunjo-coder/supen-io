@@ -641,6 +641,7 @@ export default function Admin() {
                       <tr className="text-muted-foreground border-b border-border/20">
                         <th className="text-left py-2 pr-3 font-medium">Email</th>
                         <th className="text-left py-2 pr-3 font-medium">Name</th>
+                        <th className="text-left py-2 pr-3 font-medium">Plan</th>
                         <th className="text-left py-2 pr-3 font-medium">Niche</th>
                         <th className="text-left py-2 pr-3 font-medium">Platforms</th>
                         <th className="text-left py-2 pr-3 font-medium">Onboarding</th>
@@ -650,10 +651,27 @@ export default function Admin() {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredUsers.map((u) => (
+                      {filteredUsers.map((u) => {
+                        const planValue = (u.plan || "free").toLowerCase();
+                        const planClass = planValue === "pro"
+                          ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
+                          : planValue === "plus"
+                            ? "bg-primary/15 text-primary border-primary/30"
+                            : "bg-muted/30 text-muted-foreground border-border/30";
+                        return (
                         <tr key={u.user_id} className="border-b border-border/10 hover:bg-accent/20 transition-colors">
                           <td className="py-2.5 pr-3 font-medium max-w-[260px] truncate" title={u.email}>{u.email || "—"}</td>
                           <td className="py-2.5 pr-3 font-medium">{u.first_name || "—"}</td>
+                          <td className="py-2.5 pr-3">
+                            <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full border text-[10px] font-semibold uppercase tracking-wide", planClass)}>
+                              {planValue}
+                            </span>
+                            {u.plan_expires_at && planValue !== "free" && (
+                              <span className="ml-1.5 text-[10px] text-muted-foreground" title={`Expires ${u.plan_expires_at}`}>
+                                {formatDate(u.plan_expires_at)}
+                              </span>
+                            )}
+                          </td>
                           <td className="py-2.5 pr-3 text-muted-foreground">{u.niche || "—"}</td>
                           <td className="py-2.5 pr-3 text-muted-foreground max-w-[200px] truncate">{u.platforms?.join(", ") || "—"}</td>
                           <td className="py-2.5 pr-3"><Badge ok={u.onboarding_completed} /></td>
@@ -676,7 +694,8 @@ export default function Admin() {
                             </Button>
                           </td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                   {filteredUsers.length === 0 && (
