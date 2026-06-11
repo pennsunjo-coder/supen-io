@@ -420,16 +420,23 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
     // Plan-based generation quota. Free users hit a hard LIFETIME cap (3
     // generations forever) and then the paywall pops. Paying plans fall back
     // to the rolling day/month windows. Block before any API spend.
+    //
+    // Source of truth: distinct session_id in generated_content (one count
+    // per "click" on Generate, regardless of how many variations it produced).
+    // The old code read content_sessions, which silently stayed empty because
+    // the insert was rejected on a missing column — so the quota was a no-op
+    // for months. The new count_generation_sessions(user_id, since) RPC keeps
+    // the math accurate without needing to backfill anything.
     try {
       const limits = getPlanLimits(profile?.plan);
       const { data: { user: u } } = await supabase.auth.getUser();
       if (u) {
-        // Free plan — lifetime quota. Count every content_session ever.
+        // Free plan — lifetime quota. Count distinct sessions ever.
         if (limits.generationsLifetime !== "unlimited") {
-          const { count: lifetimeCount } = await supabase
-            .from("content_sessions")
-            .select("id", { count: "exact", head: true })
-            .eq("user_id", u.id);
+          const { data: lifetimeCount } = await supabase.rpc("count_generation_sessions", {
+            p_user_id: u.id,
+            p_since: null,
+          });
           if ((lifetimeCount ?? 0) >= limits.generationsLifetime) {
             setIsGenerating(false);
             setPaywall({
@@ -443,9 +450,9 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
         if (limits.generationsPerDay !== "unlimited" || limits.generationsPerMonth !== "unlimited") {
           const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
           const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-          const [{ count: dayCount }, { count: monthCount }] = await Promise.all([
-            supabase.from("content_sessions").select("id", { count: "exact", head: true }).eq("user_id", u.id).gte("created_at", dayAgo),
-            supabase.from("content_sessions").select("id", { count: "exact", head: true }).eq("user_id", u.id).gte("created_at", monthAgo),
+          const [{ data: dayCount }, { data: monthCount }] = await Promise.all([
+            supabase.rpc("count_generation_sessions", { p_user_id: u.id, p_since: dayAgo }),
+            supabase.rpc("count_generation_sessions", { p_user_id: u.id, p_since: monthAgo }),
           ]);
           if (limits.generationsPerDay !== "unlimited" && (dayCount ?? 0) >= limits.generationsPerDay) {
             setIsGenerating(false);
