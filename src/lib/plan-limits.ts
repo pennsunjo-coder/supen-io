@@ -34,13 +34,20 @@ export interface PlanLimits {
 }
 
 export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
+  // There is no Free tier any more — Supenli.ai is paid-only (Plus or Pro).
+  // The "free" key is kept here because user_profiles.plan defaults to
+  // "free" for any account that hasn't completed a Stripe checkout yet,
+  // and removing the entry would break Record<Plan, PlanLimits>. Every
+  // quota is set to 0 / false so that if a "free" user somehow bypasses
+  // PlanGate and reaches the Studio, the quota check refuses the
+  // generation rather than silently letting it through.
   free: {
-    maxSources: 3,
-    generationsPerDay: "unlimited", // gated by lifetime, not daily
-    generationsPerMonth: "unlimited",
-    generationsPerHour: 3,
-    generationsLifetime: 3, // 3 lifetime generations, then forced upgrade
-    imagesPerMonth: 0, // no infographics on free
+    maxSources: 0,
+    generationsPerDay: 0,
+    generationsPerMonth: 0,
+    generationsPerHour: 0,
+    generationsLifetime: 0,
+    imagesPerMonth: 0,
     premiumInfographics: false,
     styleMemory: false,
     advancedAnalytics: false,
@@ -86,5 +93,6 @@ export function isOverLimit(
 /** Friendly upgrade copy for the toast / banner that fires on a block. */
 export function upgradeMessage(currentPlan: string | null | undefined, feature: string): string {
   const next = currentPlan === "plus" ? "Pro" : "Plus";
-  return `${feature} limit reached on the ${currentPlan ?? "Free"} plan. Upgrade to ${next} for more.`;
+  const current = currentPlan === "plus" ? "Plus" : "Pro";
+  return `${feature} limit reached on the ${current} plan. Upgrade to ${next} for more.`;
 }

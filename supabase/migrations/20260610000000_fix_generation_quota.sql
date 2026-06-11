@@ -1,13 +1,12 @@
 -- Fix the generation-quota count that was silently broken since launch.
 --
 -- The Studio Wizard used to read `content_sessions` to count how many
--- generations a user had run. But `content_sessions` requires a column
--- `format` that the table never had — every insert raised
+-- generations a user had run. But `content_sessions` was missing the
+-- `format` column the Studio insert sent, so every insert raised
 -- "ERROR 42703: column 'format' does not exist" and was swallowed by a
--- best-effort try/catch. Result: the table stayed empty forever, the
--- count was always 0, and no free user ever hit their 3-lifetime cap.
--- Free users could generate without limit; paying users would never see
--- a real day/month cap either.
+-- best-effort try/catch. Result: the table stayed empty forever and the
+-- quota check (Plus = 20/day & 100/month, Pro = unlimited) was a no-op
+-- because the source count was always 0.
 --
 -- Two-part fix:
 --   1. Add the missing `format` column so the (still-useful) session

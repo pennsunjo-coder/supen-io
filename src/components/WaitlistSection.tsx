@@ -11,7 +11,6 @@ import { validateEmail } from "@/lib/security";
 const SEED_COUNT = 2400;
 
 const plans = [
-  { id: "free" as const, label: "Free", desc: "Notify me" },
   { id: "plus" as const, label: "Plus", desc: "$10/mo" },
   { id: "pro" as const, label: "Pro", desc: "$29/mo" },
 ];
@@ -19,7 +18,7 @@ const plans = [
 export default function WaitlistSection() {
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
-  const [plan, setPlan] = useState<"free" | "plus" | "pro">("free");
+  const [plan, setPlan] = useState<"plus" | "pro">("plus");
   const [loading, setLoading] = useState(false);
   const [joined, setJoined] = useState(false);
   const [count, setCount] = useState<number | null>(null);

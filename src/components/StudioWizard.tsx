@@ -417,36 +417,23 @@ const StudioWizard = ({ activeSourceIds = [], sources = [], profile, sessions = 
     setIsGenerating(true);
     setError(null);
 
-    // Plan-based generation quota. Free users hit a hard LIFETIME cap (3
-    // generations forever) and then the paywall pops. Paying plans fall back
-    // to the rolling day/month windows. Block before any API spend.
-    //
-    // Source of truth: distinct session_id in generated_content (one count
-    // per "click" on Generate, regardless of how many variations it produced).
-    // The old code read content_sessions, which silently stayed empty because
-    // the insert was rejected on a missing column — so the quota was a no-op
-    // for months. The new count_generation_sessions(user_id, since) RPC keeps
+    // Plan-based generation quota. Plus and Pro fall back to the rolling
+    // day/month windows from plan-limits.ts. Source of truth: distinct
+    // session_id in generated_content (one count per click on Generate,
+    // regardless of how many variations it produced). The old code read
+    // content_sessions, which silently stayed empty because the insert
+    // was rejected on a missing column — so the quota was a no-op for
+    // months. The new count_generation_sessions(user_id, since) RPC keeps
     // the math accurate without needing to backfill anything.
+    //
+    // There is no Free tier — every account that reaches the Studio is
+    // already on Plus or Pro (PlanGate enforces this). If somehow an
+    // unpaid account slips through, the zero quotas in PLAN_LIMITS.free
+    // will refuse the generation here too.
     try {
       const limits = getPlanLimits(profile?.plan);
       const { data: { user: u } } = await supabase.auth.getUser();
       if (u) {
-        // Free plan — lifetime quota. Count distinct sessions ever.
-        if (limits.generationsLifetime !== "unlimited") {
-          const { data: lifetimeCount } = await supabase.rpc("count_generation_sessions", {
-            p_user_id: u.id,
-            p_since: null,
-          });
-          if ((lifetimeCount ?? 0) >= limits.generationsLifetime) {
-            setIsGenerating(false);
-            setPaywall({
-              title: "You've used your free generations",
-              body: `Free accounts get ${limits.generationsLifetime} lifetime generations. Upgrade to Plus or Pro to keep creating.`,
-            });
-            return;
-          }
-        }
-        // Paid plans — keep the rolling-window safety nets.
         if (limits.generationsPerDay !== "unlimited" || limits.generationsPerMonth !== "unlimited") {
           const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
           const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
