@@ -6,7 +6,7 @@ import {
   ArrowLeft, LayoutDashboard, Users, FileText,
   BarChart3, CreditCard, Loader2, TrendingUp, Calendar,
   ChevronLeft, ChevronRight, Zap, DollarSign, Crown,
-  Search, RefreshCw, Download, Mail, Trash2,
+  Search, RefreshCw, Download, Mail, Trash2, Check,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
@@ -108,6 +108,50 @@ export default function Admin() {
   const [isSendingEmails, setIsSendingEmails] = useState(false);
   const [isSendingReminders, setIsSendingReminders] = useState(false);
   const [reminderPreview, setReminderPreview] = useState<{ count: number; emails: string[] } | null>(null);
+
+  // Stripe ↔ user_profiles reconciliation. Pulls every active Stripe sub
+  // and finds rows where the plan / customer_id / expiry have drifted
+  // (typically: webhook missed the event, manual SQL activation without
+  // backfilling stripe ids, etc.). Dry-run shows the diff; Apply patches it.
+  const [reconcileLoading, setReconcileLoading] = useState(false);
+  type ReconcileMismatch = {
+    email: string; user_id: string | null;
+    stripe_customer_id: string; stripe_subscription_id: string | null;
+    current_plan_in_db: string | null; expected_plan: "plus" | "pro";
+    current_expiry: string | null; expected_expiry: string;
+    reason: string;
+  };
+  type ReconcileResult = {
+    mode: "dry-run" | "apply";
+    total_active_stripe_subs: number;
+    mismatches_found: number;
+    updates_applied?: number;
+    mismatches: ReconcileMismatch[];
+  };
+  const [reconcileResult, setReconcileResult] = useState<ReconcileResult | null>(null);
+
+  async function runReconcileStripe(apply: boolean) {
+    setReconcileLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("reconcile-stripe", {
+        body: { apply },
+      });
+      if (error) throw error;
+      setReconcileResult(data as ReconcileResult);
+      if (apply) {
+        toast.success(`${(data as ReconcileResult).updates_applied ?? 0} subscription(s) reconciled`);
+        await refetchUsers();
+      } else {
+        const found = (data as ReconcileResult).mismatches_found ?? 0;
+        if (found === 0) toast.success("Stripe and DB are in sync — nothing to fix");
+        else toast.message(`${found} mismatch(es) found — review then click Apply`);
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Reconcile failed");
+    } finally {
+      setReconcileLoading(false);
+    }
+  }
 
   // Preview which users would receive a re-engagement reminder
   // (dry-run on the send-reminders edge function — no email is sent).
@@ -852,10 +896,53 @@ export default function Admin() {
             <>
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-bold">Revenue</h2>
-                <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs" onClick={refetchUsers} disabled={usersLoading}>
-                  <RefreshCw className={cn("w-3 h-3", usersLoading && "animate-spin")} /> Refresh
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs" onClick={() => runReconcileStripe(false)} disabled={reconcileLoading}>
+                    {reconcileLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />} Sync from Stripe (preview)
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs" onClick={refetchUsers} disabled={usersLoading}>
+                    <RefreshCw className={cn("w-3 h-3", usersLoading && "animate-spin")} /> Refresh
+                  </Button>
+                </div>
               </div>
+
+              {reconcileResult && (
+                <div className="bg-card border border-border/30 rounded-xl p-4 space-y-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-xs font-semibold">
+                      Stripe reconciliation —{" "}
+                      <span className={reconcileResult.mode === "apply" ? "text-primary" : "text-muted-foreground"}>{reconcileResult.mode}</span>
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {reconcileResult.total_active_stripe_subs ?? 0} active Stripe subs ·{" "}
+                      <span className={reconcileResult.mismatches_found > 0 ? "text-amber-500 font-semibold" : "text-muted-foreground"}>
+                        {reconcileResult.mismatches_found ?? 0} mismatches
+                      </span>
+                      {reconcileResult.updates_applied != null && (
+                        <span className="ml-2 text-primary font-semibold">· {reconcileResult.updates_applied} applied</span>
+                      )}
+                    </p>
+                  </div>
+                  {reconcileResult.mismatches && reconcileResult.mismatches.length > 0 && (
+                    <div className="space-y-1.5 mt-2">
+                      {reconcileResult.mismatches.slice(0, 20).map((m, i) => (
+                        <div key={i} className="text-[11px] bg-accent/20 rounded p-2 leading-relaxed">
+                          <div className="font-mono">{m.email || "(no email)"} → {m.expected_plan}</div>
+                          <div className="text-muted-foreground">{m.reason}</div>
+                        </div>
+                      ))}
+                      {reconcileResult.mode === "dry-run" && (
+                        <Button size="sm" className="h-8 gap-1.5 text-xs mt-2" onClick={() => runReconcileStripe(true)} disabled={reconcileLoading}>
+                          {reconcileLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />} Apply {reconcileResult.mismatches_found} fixes
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                  {reconcileResult.mismatches_found === 0 && (
+                    <p className="text-[11px] text-muted-foreground">All Stripe subscriptions are in sync with user_profiles. Nothing to fix.</p>
+                  )}
+                </div>
+              )}
 
               {usersLoading && users.length === 0 ? (
                 <div className="flex justify-center py-16">
