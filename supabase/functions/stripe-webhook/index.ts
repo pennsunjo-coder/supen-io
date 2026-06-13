@@ -168,8 +168,13 @@ serve(async (req) => {
         const subscription = await stripe.subscriptions.retrieve(subscriptionId);
         const userId = subscription.metadata?.userId;
         if (userId) {
+          const plan = (subscription.metadata?.plan || "plus") as string;
+          // Use the actual period end from Stripe, not Date.now() + 30 days,
+          // so the expiry is always in sync with the billing cycle.
+          const expiresAt = new Date(subscription.current_period_end * 1000).toISOString();
           await supabase.from("user_profiles").update({
-            plan_expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            plan,
+            plan_expires_at: expiresAt,
           }).eq("user_id", userId);
         }
       }

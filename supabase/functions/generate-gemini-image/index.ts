@@ -48,7 +48,6 @@ Deno.serve(async (req) => {
 
       // Paying user — enforce monthly cap.
       const monthly = IMAGE_LIMITS[plan ?? ""] ?? FREE_IMAGE_LIMIT;
-      // check_rate_limit forces auth.uid(), so it MUST run on the user client.
       const { data: allowed } = await userClient.rpc("check_rate_limit", {
         p_user_id: user.id, p_function: "images_monthly", p_max_requests: monthly, p_window_hours: 720,
       });
@@ -63,23 +62,20 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const { prompt, size } = body;
-    
+
     if (!prompt) return new Response(JSON.stringify({ error: "Missing prompt" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    // --- DIRECT IMAGE GENERATION (Gemini 2.5 Flash Image) ---
-    // No "Architect" middle-layer. The prompt arrives pre-built from the client.
     const imageUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${GEMINI_API_KEY}`;
-    
+
     console.log("[generate-gemini-image] Direct generation with Gemini 2.5 Flash Image. Prompt length:", prompt.length);
 
-    // Map size to Gemini aspect ratio
     const sizeMap: Record<string, string> = {
       "1024x1024": "1:1",
       "1080x1350": "3:4",
       "1200x627": "16:9",
     };
     const aspectRatio = sizeMap[size] || "3:4";
-    
+
     const response = await fetch(imageUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
